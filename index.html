@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>ระบบพัสดุครุภัณฑ์ - ตำรวจทางหลวง</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<style>
+/* ============ CONFIG ============ */
+:root{
+  --bg-1:#0a1826; --bg-2:#122539; --bg-3:#1a3350;
+  --glass:rgba(255,255,255,.07); --glass-brd:rgba(255,255,255,.14); --glass-hi:rgba(255,255,255,.12);
+  --text:#eaf1f8; --text-dim:#8fa3ba; --gold:#cda44e; --gold-soft:rgba(205,164,78,.16);
+  --ok:#49c98a; --warn:#e8b64f; --bad:#e8687a; --off:#7c8ea3;
+  --radius:18px; --radius-sm:12px;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;height:100%;}
+body{
+  font-family:'Kanit',sans-serif; color:var(--text); min-height:100vh;
+  background:radial-gradient(1200px 800px at 15% -10%, var(--bg-3), transparent),
+             radial-gradient(1000px 700px at 110% 10%, #16314f, transparent),
+             linear-gradient(180deg, var(--bg-1), var(--bg-2));
+  background-attachment:fixed; padding-bottom:88px; overflow-x:hidden;
+}
+::-webkit-scrollbar{width:0;height:0;}
+a{color:inherit;text-decoration:none;}
+button{font-family:inherit;}
+
+/* ---------- top bar ---------- */
+.topbar{
+  position:sticky; top:0; z-index:40; padding:14px 16px 10px;
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+  background:linear-gradient(180deg, rgba(10,24,38,.85), rgba(10,24,38,.55));
+  border-bottom:1px solid var(--glass-brd);
+}
+.brand{display:flex; align-items:center; gap:10px;}
+.brand-badge{
+  width:38px;height:38px;border-radius:11px; display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(150deg, var(--gold), #8a6a25); font-weight:700; color:#1a1206; font-size:17px;
+  box-shadow:0 4px 14px rgba(205,164,78,.35);
+}
+.brand-title{font-size:14.5px; font-weight:600; line-height:1.15;}
+.brand-sub{font-size:11px; color:var(--text-dim); font-weight:300;}
+.profile{display:flex; align-items:center; gap:8px;}
+.profile img{width:32px;height:32px;border-radius:50%; border:1.5px solid var(--glass-brd); object-fit:cover;}
+.role-pill{
+  font-size:10.5px; padding:3px 9px; border-radius:99px; font-weight:500; letter-spacing:.2px;
+  background:var(--gold-soft); color:var(--gold); border:1px solid rgba(205,164,78,.35);
+}
+.role-pill.viewer{ background:rgba(124,142,163,.14); color:var(--off); border-color:rgba(124,142,163,.3);}
+
+/* ---------- page shell ---------- */
+.page{max-width:640px; margin:0 auto; padding:14px 16px 6px;}
+.section-title{font-size:17px; font-weight:600; margin:18px 2px 10px; display:flex; align-items:center; justify-content:space-between;}
+.section-title small{font-size:12px; color:var(--text-dim); font-weight:300;}
+
+/* ---------- glass components ---------- */
+.glass{
+  background:var(--glass); border:1px solid var(--glass-brd); border-radius:var(--radius);
+  backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+  box-shadow:0 8px 30px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.06);
+}
+.stat-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:10px;}
+.stat-card{padding:14px 16px; border-radius:var(--radius-sm);}
+.stat-num{font-size:24px; font-weight:600; line-height:1.1;}
+.stat-label{font-size:11.5px; color:var(--text-dim); margin-top:4px; font-weight:300;}
+.stat-card.accent{border-color:rgba(205,164,78,.35);}
+.stat-card.warn .stat-num{color:var(--warn);}
+.stat-card.bad .stat-num{color:var(--bad);}
+.stat-card.ok .stat-num{color:var(--ok);}
+
+.chart-card{padding:16px; margin-bottom:12px;}
+.chart-card h4{margin:0 0 10px; font-size:13.5px; font-weight:500; color:var(--text-dim);}
+.chart-wrap{position:relative; height:200px;}
+
+.search-row{display:flex; gap:8px; margin-bottom:12px;}
+.input, select.input{
+  width:100%; padding:11px 14px; border-radius:12px; border:1px solid var(--glass-brd);
+  background:rgba(255,255,255,.05); color:var(--text); font-family:inherit; font-size:14px; outline:none;
+}
+.input::placeholder{color:var(--text-dim);}
+.input:focus{border-color:rgba(205,164,78,.5);}
+.chip-row{display:flex; gap:7px; overflow-x:auto; padding-bottom:2px; margin-bottom:12px;}
+.chip{
+  flex:none; padding:7px 14px; border-radius:99px; font-size:12.5px; border:1px solid var(--glass-brd);
+  background:rgba(255,255,255,.04); color:var(--text-dim); cursor:pointer; white-space:nowrap;
+}
+.chip.active{background:var(--gold-soft); color:var(--gold); border-color:rgba(205,164,78,.4);}
+
+.list-item{
+  padding:13px 14px; border-radius:var(--radius-sm); margin-bottom:9px;
+  display:flex; align-items:center; gap:12px; cursor:pointer;
+}
+.li-icon{
+  width:42px;height:42px;border-radius:11px; flex:none; display:flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,.06); font-size:19px;
+}
+.li-body{flex:1; min-width:0;}
+.li-title{font-size:14px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.li-sub{font-size:11.5px; color:var(--text-dim); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.status-badge{font-size:10.5px; padding:4px 9px; border-radius:99px; font-weight:500; flex:none;}
+.status-ready{background:rgba(73,201,138,.15); color:var(--ok);}
+.status-borrowed{background:rgba(232,182,79,.15); color:var(--warn);}
+.status-repair{background:rgba(232,104,122,.15); color:var(--bad);}
+.status-disposed{background:rgba(124,142,163,.15); color:var(--off);}
+.status-overdue{background:rgba(232,104,122,.22); color:var(--bad);}
+.status-returned{background:rgba(124,142,163,.15); color:var(--off);}
+.empty-state{text-align:center; padding:40px 20px; color:var(--text-dim); font-size:13px;}
+
+.fab{
+  position:fixed; right:18px; bottom:96px; z-index:45; width:54px;height:54px; border-radius:50%;
+  background:linear-gradient(150deg, var(--gold), #8a6a25); color:#1a1206; border:none; font-size:26px;
+  box-shadow:0 10px 26px rgba(205,164,78,.4); cursor:pointer; display:flex;align-items:center;justify-content:center;
+}
+
+/* ---------- bottom tab bar ---------- */
+.tabbar{
+  position:fixed; bottom:0; left:0; right:0; z-index:50; display:flex; justify-content:space-around;
+  padding:8px 6px calc(8px + env(safe-area-inset-bottom));
+  background:linear-gradient(0deg, rgba(8,18,29,.92), rgba(8,18,29,.72));
+  backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border-top:1px solid var(--glass-brd);
+}
+.tab{
+  flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:6px 2px;
+  color:var(--text-dim); background:none; border:none; font-family:inherit; cursor:pointer;
+}
+.tab .ico{font-size:19px;}
+.tab .lbl{font-size:10px; font-weight:400;}
+.tab.active{color:var(--gold);}
+
+/* ---------- modal ---------- */
+.overlay{
+  position:fixed; inset:0; background:rgba(4,10,17,.6); backdrop-filter:blur(4px); z-index:80;
+  display:flex; align-items:flex-end; justify-content:center;
+}
+.sheet{
+  width:100%; max-width:640px; max-height:88vh; overflow-y:auto; border-radius:22px 22px 0 0;
+  background:linear-gradient(180deg, #16283c, #0e1c2c); border:1px solid var(--glass-brd); border-bottom:none;
+  padding:20px 18px calc(24px + env(safe-area-inset-bottom));
+  animation:slideup .25s ease-out;
+}
+@keyframes slideup{from{transform:translateY(24px); opacity:0;} to{transform:translateY(0); opacity:1;}}
+.sheet-handle{width:38px;height:4px;border-radius:99px; background:rgba(255,255,255,.2); margin:0 auto 14px;}
+.sheet-title{font-size:16.5px; font-weight:600; margin-bottom:16px;}
+.field{margin-bottom:12px;}
+.field label{display:block; font-size:12px; color:var(--text-dim); margin-bottom:6px;}
+.btn-row{display:flex; gap:10px; margin-top:18px;}
+.btn{
+  flex:1; padding:13px; border-radius:12px; border:none; font-family:inherit; font-size:14px; font-weight:500; cursor:pointer;
+}
+.btn-primary{background:linear-gradient(150deg, var(--gold), #8a6a25); color:#1a1206;}
+.btn-ghost{background:rgba(255,255,255,.06); color:var(--text); border:1px solid var(--glass-brd);}
+.btn-danger{background:rgba(232,104,122,.15); color:var(--bad); border:1px solid rgba(232,104,122,.3);}
+
+.login-wrap{min-height:100vh; display:flex; align-items:center; justify-content:center; flex-direction:column; padding:30px; text-align:center;}
+.login-badge{
+  width:76px;height:76px;border-radius:22px; display:flex;align-items:center;justify-content:center; margin-bottom:22px;
+  background:linear-gradient(150deg, var(--gold), #8a6a25); font-size:34px; box-shadow:0 12px 32px rgba(205,164,78,.35);
+}
+.login-title{font-size:19px; font-weight:600; margin-bottom:6px;}
+.login-sub{font-size:13px; color:var(--text-dim); margin-bottom:28px; max-width:280px; line-height:1.6;}
+.spinner{width:26px;height:26px;border-radius:50%; border:3px solid rgba(255,255,255,.15); border-top-color:var(--gold); animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.toast{
+  position:fixed; top:14px; left:50%; transform:translateX(-50%); z-index:100; padding:11px 20px; border-radius:12px;
+  background:rgba(15,28,42,.95); border:1px solid var(--glass-brd); font-size:13px; box-shadow:0 8px 24px rgba(0,0,0,.4);
+  opacity:0; transition:opacity .25s, transform .25s;
+}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(4px);}
+.detail-row{display:flex; justify-content:space-between; padding:9px 0; border-bottom:1px solid rgba(255,255,255,.06); font-size:13px;}
+.detail-row span:first-child{color:var(--text-dim);}
+.hint{font-size:11px; color:var(--text-dim); margin-top:14px; line-height:1.6;}
+
+/* ---------- print form (official requisition document) ---------- */
+#printArea{display:none;}
+@media print{
+  html,body{background:#fff !important;}
+  body *{visibility:hidden;}
+  #printArea, #printArea *{visibility:visible;}
+  #printArea{display:block !important; position:absolute; top:0; left:0; width:100%; padding:14mm 16mm; color:#000; font-family:'TH Sarabun New','Kanit',sans-serif;}
+  .pf-table{width:100%; border-collapse:collapse; margin:14px 0;}
+  .pf-table th, .pf-table td{border:1px solid #333; padding:6px 8px; font-size:13.5px;}
+  .pf-table th{background:#eee;}
+}
+.pf-head{text-align:center; margin-bottom:6px;}
+.pf-seal{font-size:11px; color:#666; border:1px dashed #999; display:inline-block; padding:10px 22px; border-radius:6px; margin-bottom:8px;}
+.pf-title{font-size:19px; font-weight:700; margin:4px 0;}
+.pf-org{font-size:14px; margin-bottom:14px;}
+.pf-line{display:flex; justify-content:space-between; font-size:14px; margin:4px 0;}
+.pf-signblock{width:46%; display:inline-block; vertical-align:top; font-size:14px; line-height:2.1; margin-top:26px;}
+</style>
+</head>
+<body>
+
+<div id="loginScreen" class="login-wrap">
+  <div class="login-badge">🛡️</div>
+  <div class="login-title">ระบบพัสดุครุภัณฑ์</div>
+  <div class="login-sub">ตำรวจทางหลวง<br>กำลังเข้าสู่ระบบผ่าน LINE...</div>
+  <div class="spinner"></div>
+  <div class="hint" id="loginHint"></div>
+</div>
+
+<div id="app" style="display:none;">
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-badge">🛡️</div>
+      <div>
+        <div class="brand-title">ระบบพัสดุครุภัณฑ์</div>
+        <div class="brand-sub">ตำรวจทางหลวง</div>
+      </div>
+    </div>
+    <div class="profile">
+      <span class="role-pill" id="rolePill">…</span>
+      <img id="profileImg" src="" alt="">
+    </div>
+  </div>
+
+  <div class="page" id="view-dashboard"></div>
+  <div class="page" id="view-assets" style="display:none;"></div>
+  <div class="page" id="view-borrow" style="display:none;"></div>
+  <div class="page" id="view-maint" style="display:none;"></div>
+  <div class="page" id="view-reports" style="display:none;"></div>
+
+  <button class="fab" id="fabBtn" style="display:none;">＋</button>
+
+  <div class="tabbar">
+    <button class="tab active" data-tab="dashboard"><span class="ico">🏠</span><span class="lbl">หน้าหลัก</span></button>
+    <button class="tab" data-tab="assets"><span class="ico">📦</span><span class="lbl">ครุภัณฑ์</span></button>
+    <button class="tab" data-tab="borrow"><span class="ico">🔄</span><span class="lbl">ยืม-คืน</span></button>
+    <button class="tab" data-tab="maint"><span class="ico">🔧</span><span class="lbl">ซ่อมบำรุง</span></button>
+    <button class="tab" data-tab="reports"><span class="ico">📊</span><span class="lbl">รายงาน</span></button>
+  </div>
+</div>
+
+<div id="modalRoot"></div>
+<div id="toast" class="toast"></div>
+<div id="printArea"></div>
+
+<script>
+/* =========================================================
+   CONFIG — แก้ 2 บรรทัดนี้ก่อนใช้งานจริง
+   ========================================================= */
+const API_URL = 'https://script.google.com/macros/s/PUT_YOUR_DEPLOYMENT_ID_HERE/exec';
+const LIFF_ID = 'PUT_YOUR_LIFF_ID_HERE';
+const ORG_NAME = 'สถานีตำรวจทางหลวง 3 กองกำกับการ 1 กองบังคับการตำรวจทางหลวง';   // แก้เป็นชื่อหน่วยงานของท่าน
+const GUN_CATEGORY = 'อาวุธปืน';
+
+/* ========================================================= STATE */
+const state = {
+  user: null, role: 'guest',
+  assets: [], borrow: [], maint: [], components: [], dashboard: null,
+  tab: 'dashboard', assetFilter: 'all', assetSearch: ''
+};
+const CATS = ['อาวุธปืน','ยานพาหนะ','สื่อสาร','คอมพิวเตอร์/IT','เครื่องแบบ/สนาม','อื่นๆ'];
+const COMPONENT_TYPES = ['ซองกระสุน/แม็กกาซีน','ศูนย์เล็ง/กล้อง','ไฟฉายติดปืน','สายสะพาย','ซองพกพา','อุปกรณ์ทำความสะอาด','อื่นๆ'];
+
+/* ========================================================= INIT / LOGIN */
+async function init() {
+  try {
+    await liff.init({ liffId: LIFF_ID });
+    if (!liff.isLoggedIn()) { liff.login(); return; }
+    const profile = await liff.getProfile();
+    state.user = { id: profile.userId, name: profile.displayName, picture: profile.pictureUrl };
+  } catch (err) {
+    document.getElementById('loginHint').textContent = 'ไม่สามารถเชื่อมต่อ LINE ได้ (' + err.message + ') — ตรวจสอบ LIFF_ID ในไฟล์นี้';
+    return;
+  }
+  const check = await apiGet('checkUser', { lineUserId: state.user.id });
+  state.role = check.found ? check.role : 'unknown';
+  if (state.role === 'unknown') {
+    document.getElementById('loginHint').textContent = 'บัญชี LINE นี้ยังไม่ได้รับสิทธิ์ใช้งาน กรุณาติดต่อแอดมินเพื่อเพิ่มชื่อในระบบ (LINE ID: ' + state.user.id + ')';
+    return;
+  }
+  document.getElementById('profileImg').src = state.user.picture || '';
+  const pill = document.getElementById('rolePill');
+  pill.textContent = state.role === 'admin' ? 'แอดมิน' : 'ดูอย่างเดียว';
+  if (state.role !== 'admin') pill.classList.add('viewer');
+
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  await loadAll();
+  renderTab('dashboard');
+}
+
+/* ========================================================= API */
+async function apiGet(action, params) {
+  const qs = new URLSearchParams({ action, ...params }).toString();
+  const res = await fetch(API_URL + '?' + qs);
+  const j = await res.json();
+  if (!j.ok) throw new Error(j.error);
+  return j.data;
+}
+async function apiPost(action, payload) {
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action, lineUserId: state.user.id, payload })
+  });
+  const j = await res.json();
+  if (!j.ok) throw new Error(j.error);
+  return j.data;
+}
+
+async function loadAll() {
+  const [assets, borrow, maint, components, dashboard] = await Promise.all([
+    apiGet('getAssets', {}), apiGet('getBorrowLogs', {}), apiGet('getMaintLogs', {}), apiGet('getComponents', {}), apiGet('getDashboard', {})
+  ]);
+  state.assets = assets; state.borrow = borrow; state.maint = maint; state.components = components; state.dashboard = dashboard;
+}
+function componentsOf(assetId) { return state.components.filter(c => c['รหัสครุภัณฑ์หลัก'] === assetId); }
+
+/* ========================================================= UTIL */
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+function thaiDate(v) {
+  if (!v) return '-';
+  const d = new Date(v);
+  if (isNaN(d)) return v;
+  const months = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  return d.getDate() + ' ' + months[d.getMonth()] + ' ' + (d.getFullYear() + 543);
+}
+function isoDate(v) {
+  const d = v ? new Date(v) : new Date();
+  return d.toISOString().slice(0, 10);
+}
+function statusClass(s) {
+  return { 'พร้อมใช้งาน':'status-ready','กำลังยืม':'status-borrowed','ซ่อมบำรุง':'status-repair','จำหน่ายแล้ว':'status-disposed',
+           'เกินกำหนด':'status-overdue','คืนแล้ว':'status-returned','รอซ่อม':'status-repair','กำลังซ่อม':'status-borrowed','ซ่อมเสร็จ':'status-ready' }[s] || '';
+}
+function catIcon(c) {
+  return { 'อาวุธปืน':'🔫','ยานพาหนะ':'🚓','สื่อสาร':'📡','คอมพิวเตอร์/IT':'💻','เครื่องแบบ/สนาม':'🎽' }[c] || '📦';
+}
+const isAdmin = () => state.role === 'admin';
+
+/* ========================================================= TABS */
+document.querySelectorAll('.tab').forEach(btn => {
+  btn.addEventListener('click', () => renderTab(btn.dataset.tab));
+});
+function renderTab(name) {
+  state.tab = name;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
+  document.getElementById('view-' + name).style.display = 'block';
+  const fab = document.getElementById('fabBtn');
+  fab.style.display = (isAdmin() && ['assets','borrow','maint'].includes(name)) ? 'flex' : 'none';
+  fab.onclick = () => {
+    if (name === 'assets') openAssetForm();
+    if (name === 'borrow') openBorrowForm();
+    if (name === 'maint') openMaintForm();
+  };
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'assets') renderAssets();
+  if (name === 'borrow') renderBorrow();
+  if (name === 'maint') renderMaint();
+  if (name === 'reports') renderReports();
+}
+
+/* ========================================================= DASHBOARD */
+function renderDashboard() {
+  const d = state.dashboard;
+  const el = document.getElementById('view-dashboard');
+  el.innerHTML = `
+    <div class="section-title">ภาพรวมระบบ <small>อัปเดตล่าสุดวันนี้</small></div>
+    <div class="stat-grid">
+      <div class="glass stat-card accent"><div class="stat-num">${d.totalAssets}</div><div class="stat-label">ครุภัณฑ์ทั้งหมด</div></div>
+      <div class="glass stat-card warn"><div class="stat-num">${d.borrowedCount}</div><div class="stat-label">กำลังถูกยืม</div></div>
+      <div class="glass stat-card bad"><div class="stat-num">${d.overdueCount}</div><div class="stat-label">เกินกำหนดคืน</div></div>
+      <div class="glass stat-card ok"><div class="stat-num">${d.repairCount}</div><div class="stat-label">อยู่ระหว่างซ่อม</div></div>
+    </div>
+    <div class="section-title">มูลค่าครุภัณฑ์รวม <small></small></div>
+    <div class="glass" style="padding:18px; text-align:center;">
+      <div style="font-size:26px; font-weight:600; color:var(--gold);">${Number(d.totalValue).toLocaleString()} บาท</div>
+      <div class="stat-label">คำนวณจากมูลค่าที่บันทึกไว้ในทะเบียนครุภัณฑ์</div>
+    </div>
+    <div class="section-title">สัดส่วนตามหมวดหมู่</div>
+    <div class="glass chart-card"><div class="chart-wrap"><canvas id="catChart"></canvas></div></div>
+  `;
+  drawDoughnut('catChart', d.byCategory);
+}
+
+let chartRefs = {};
+function drawDoughnut(id, dataObj) {
+  const ctx = document.getElementById(id);
+  if (chartRefs[id]) chartRefs[id].destroy();
+  const labels = Object.keys(dataObj), values = Object.values(dataObj);
+  chartRefs[id] = new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data: values, backgroundColor:['#cda44e','#49c98a','#5aa9e6','#e8687a','#e8b64f','#7c8ea3'], borderWidth:0 }] },
+    options: { plugins:{ legend:{ position:'bottom', labels:{ color:'#c9d6e3', font:{ family:'Kanit', size:11 }, padding:12 } } }, cutout:'62%' }
+  });
+}
+function drawBar(id, dataObj) {
+  const ctx = document.getElementById(id);
+  if (chartRefs[id]) chartRefs[id].destroy();
+  const labels = Object.keys(dataObj), values = Object.values(dataObj);
+  chartRefs[id] = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets: [{ data: values, backgroundColor:'#cda44e', borderRadius:6, maxBarThickness:34 }] },
+    options: { plugins:{ legend:{ display:false } },
+      scales:{ x:{ ticks:{ color:'#8fa3ba', font:{ family:'Kanit', size:10.5 } }, grid:{ display:false } },
+               y:{ ticks:{ color:'#8fa3ba', font:{ family:'Kanit', size:10.5 } }, grid:{ color:'rgba(255,255,255,.06)' } } } }
+  });
+}
+
+/* ========================================================= ASSETS */
+function renderAssets() {
+  const el = document.getElementById('view-assets');
+  const filtered = state.assets.filter(a => {
+    const matchCat = state.assetFilter === 'all' || a['หมวดหมู่'] === state.assetFilter;
+    const matchSearch = !state.assetSearch || (a['ชื่อครุภัณฑ์']||'').toLowerCase().includes(state.assetSearch) || (a['รหัสครุภัณฑ์']||'').toLowerCase().includes(state.assetSearch);
+    return matchCat && matchSearch;
+  });
+  el.innerHTML = `
+    <div class="section-title">ทะเบียนครุภัณฑ์ <small>${state.assets.length} รายการ</small></div>
+    <div class="search-row"><input class="input" id="assetSearchInput" placeholder="ค้นหาชื่อหรือรหัสครุภัณฑ์..." value="${state.assetSearch}"></div>
+    <div class="chip-row">
+      <div class="chip ${state.assetFilter==='all'?'active':''}" data-cat="all">ทั้งหมด</div>
+      ${CATS.map(c => `<div class="chip ${state.assetFilter===c?'active':''}" data-cat="${c}">${c}</div>`).join('')}
+    </div>
+    <div id="assetList">${filtered.length ? filtered.map(assetRow).join('') : emptyState('ไม่พบครุภัณฑ์ที่ค้นหา')}</div>
+  `;
+  document.getElementById('assetSearchInput').oninput = (e) => { state.assetSearch = e.target.value.toLowerCase(); renderAssets(); };
+  document.querySelectorAll('#view-assets .chip').forEach(c => c.onclick = () => { state.assetFilter = c.dataset.cat; renderAssets(); });
+  document.querySelectorAll('.asset-item').forEach(it => it.onclick = () => openAssetDetail(it.dataset.id));
+}
+function emptyState(msg) { return `<div class="glass empty-state">${msg}</div>`; }
+function assetRow(a) {
+  return `<div class="glass list-item asset-item" data-id="${a['รหัสครุภัณฑ์']}">
+    <div class="li-icon">${catIcon(a['หมวดหมู่'])}</div>
+    <div class="li-body">
+      <div class="li-title">${a['ชื่อครุภัณฑ์']}</div>
+      <div class="li-sub">${a['รหัสครุภัณฑ์']} · ${a['ผู้ครอบครอง/หน่วยงาน'] || 'คลังพัสดุ'}</div>
+    </div>
+    <div class="status-badge ${statusClass(a['สถานะ'])}">${a['สถานะ']}</div>
+  </div>`;
+}
+function openAssetDetail(id) {
+  const a = state.assets.find(x => x['รหัสครุภัณฑ์'] === id);
+  if (!a) return;
+  const history = state.borrow.filter(b => b['รหัสครุภัณฑ์'] === id).slice(-5).reverse();
+  showSheet(`
+    <div class="sheet-title">${a['ชื่อครุภัณฑ์']}</div>
+    <div class="detail-row"><span>รหัสครุภัณฑ์</span><span>${a['รหัสครุภัณฑ์']}</span></div>
+    <div class="detail-row"><span>หมวดหมู่</span><span>${a['หมวดหมู่']}</span></div>
+    <div class="detail-row"><span>ยี่ห้อ/รุ่น</span><span>${a['ยี่ห้อ/รุ่น'] || '-'}</span></div>
+    <div class="detail-row"><span>หมายเลขเครื่อง</span><span>${a['หมายเลขเครื่อง'] || '-'}</span></div>
+    <div class="detail-row"><span>วันที่รับเข้า</span><span>${thaiDate(a['วันที่รับเข้า'])}</span></div>
+    <div class="detail-row"><span>มูลค่า</span><span>${a['มูลค่า(บาท)'] ? Number(a['มูลค่า(บาท)']).toLocaleString()+' บาท' : '-'}</span></div>
+    <div class="detail-row"><span>สถานะ</span><span class="status-badge ${statusClass(a['สถานะ'])}">${a['สถานะ']}</span></div>
+    <div class="detail-row"><span>ผู้ครอบครอง</span><span>${a['ผู้ครอบครอง/หน่วยงาน'] || '-'}</span></div>
+    <div class="detail-row"><span>หมายเหตุ</span><span>${a['หมายเหตุ'] || '-'}</span></div>
+    ${a['หมวดหมู่'] === GUN_CATEGORY ? componentsSection(id) : ''}
+    ${history.length ? `<div class="hint" style="margin-top:16px; font-weight:500; color:var(--text);">ประวัติการยืม-คืนล่าสุด</div>` + history.map(h => `<div class="detail-row"><span>${h['ผู้ยืม']}</span><span>${thaiDate(h['วันที่ยืม'])} · ${h['สถานะ']}</span></div>`).join('') : ''}
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="btnPrintAssetForm">พิมพ์ใบเบิกเปล่า</button>
+    </div>
+    ${isAdmin() ? `<div class="btn-row">
+      <button class="btn btn-ghost" id="btnEditAsset">แก้ไข</button>
+      <button class="btn btn-danger" id="btnDeleteAsset">ลบ</button>
+    </div>` : ''}
+  `);
+  document.getElementById('btnPrintAssetForm').onclick = () => printRequisitionForm({ items: [a], components: componentsOf(id) });
+  if (isAdmin()) {
+    document.getElementById('btnEditAsset').onclick = () => { closeSheet(); openAssetForm(a); };
+    document.getElementById('btnDeleteAsset').onclick = async () => {
+      if (!confirm('ยืนยันการลบครุภัณฑ์นี้?')) return;
+      await apiPost('deleteAsset', { id }); closeSheet(); toast('ลบรายการแล้ว'); await loadAll(); renderAssets();
+    };
+    document.querySelectorAll('.btnAddComponent').forEach(b => b.onclick = () => openComponentForm(id));
+    document.querySelectorAll('.comp-item').forEach(it => it.onclick = () => openComponentForm(id, componentsOf(id).find(c => c['รหัสส่วนควบ'] === it.dataset.id)));
+  }
+}
+function componentsSection(assetId) {
+  const comps = componentsOf(assetId);
+  return `
+    <div class="hint" style="margin-top:16px; font-weight:500; color:var(--text); display:flex; justify-content:space-between; align-items:center;">
+      <span>ส่วนควบของอาวุธปืนนี้ (${comps.length})</span>
+      ${isAdmin() ? '<span class="btnAddComponent" style="color:var(--gold); cursor:pointer; font-weight:500;">+ เพิ่มส่วนควบ</span>' : ''}
+    </div>
+    ${comps.length ? comps.map(c => `
+      <div class="detail-row comp-item" data-id="${c['รหัสส่วนควบ']}" style="cursor:${isAdmin() ? 'pointer' : 'default'};">
+        <span>${c['ชื่อส่วนควบ']} <span style="color:var(--text-dim); font-size:11px;">(${c['ประเภท'] || '-'})</span></span>
+        <span class="status-badge ${statusClass(c['สถานะ'])}">${c['สถานะ']}</span>
+      </div>`).join('') : `<div class="hint">ยังไม่มีข้อมูลส่วนควบ</div>`}
+  `;
+}
+function openAssetForm(a) {
+  const editing = !!a;
+  showSheet(`
+    <div class="sheet-title">${editing ? 'แก้ไขครุภัณฑ์' : 'เพิ่มครุภัณฑ์ใหม่'}</div>
+    <div class="field"><label>ชื่อครุภัณฑ์</label><input class="input" id="f_name" value="${a ? a['ชื่อครุภัณฑ์'] : ''}"></div>
+    <div class="field"><label>หมวดหมู่</label>
+      <select class="input" id="f_cat">${CATS.map(c => `<option ${a && a['หมวดหมู่']===c?'selected':''}>${c}</option>`).join('')}</select>
+    </div>
+    <div class="field"><label>ยี่ห้อ/รุ่น</label><input class="input" id="f_brand" value="${a ? a['ยี่ห้อ/รุ่น']||'' : ''}"></div>
+    <div class="field"><label>หมายเลขเครื่อง/serial</label><input class="input" id="f_serial" value="${a ? a['หมายเลขเครื่อง']||'' : ''}"></div>
+    <div class="field"><label>วันที่รับเข้า</label><input class="input" type="date" id="f_date" value="${a && a['วันที่รับเข้า'] ? isoDate(a['วันที่รับเข้า']) : isoDate()}"></div>
+    <div class="field"><label>มูลค่า (บาท)</label><input class="input" type="number" id="f_value" value="${a ? a['มูลค่า(บาท)']||'' : ''}"></div>
+    <div class="field"><label>ผู้ครอบครอง/หน่วยงาน</label><input class="input" id="f_holder" value="${a ? a['ผู้ครอบครอง/หน่วยงาน']||'' : ''}"></div>
+    <div class="field"><label>หมายเหตุ</label><input class="input" id="f_note" value="${a ? a['หมายเหตุ']||'' : ''}"></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="btnCancel">ยกเลิก</button>
+      <button class="btn btn-primary" id="btnSave">บันทึก</button>
+    </div>
+  `);
+  document.getElementById('btnCancel').onclick = closeSheet;
+  document.getElementById('btnSave').onclick = async () => {
+    const payload = {
+      id: a ? a['รหัสครุภัณฑ์'] : undefined,
+      name: val('f_name'), category: val('f_cat'), brand: val('f_brand'), serial: val('f_serial'),
+      receivedDate: val('f_date'), value: val('f_value'), holder: val('f_holder'), note: val('f_note')
+    };
+    if (!payload.name) { toast('กรุณากรอกชื่อครุภัณฑ์'); return; }
+    await apiPost(editing ? 'updateAsset' : 'addAsset', payload);
+    closeSheet(); toast(editing ? 'แก้ไขข้อมูลแล้ว' : 'เพิ่มครุภัณฑ์แล้ว'); await loadAll(); renderAssets();
+  };
+}
+
+function openComponentForm(parentId, c) {
+  const editing = !!c;
+  showSheet(`
+    <div class="sheet-title">${editing ? 'แก้ไขส่วนควบ' : 'เพิ่มส่วนควบ'}</div>
+    <div class="field"><label>ชื่อส่วนควบ</label><input class="input" id="c_name" value="${c ? c['ชื่อส่วนควบ'] : ''}"></div>
+    <div class="field"><label>ประเภท</label>
+      <select class="input" id="c_type">${COMPONENT_TYPES.map(t => `<option ${c && c['ประเภท']===t?'selected':''}>${t}</option>`).join('')}</select>
+    </div>
+    <div class="field"><label>หมายเลข/ซีเรียล</label><input class="input" id="c_serial" value="${c ? c['หมายเลข/ซีเรียล']||'' : ''}"></div>
+    <div class="field"><label>หมายเหตุ</label><input class="input" id="c_note" value="${c ? c['หมายเหตุ']||'' : ''}"></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="btnCancel">ยกเลิก</button>
+      <button class="btn btn-primary" id="btnSave">บันทึก</button>
+    </div>
+    ${editing ? `<div class="btn-row"><button class="btn btn-danger" id="btnDeleteComp">ลบส่วนควบนี้</button></div>` : ''}
+  `);
+  document.getElementById('btnCancel').onclick = closeSheet;
+  document.getElementById('btnSave').onclick = async () => {
+    if (!val('c_name')) { toast('กรุณากรอกชื่อส่วนควบ'); return; }
+    const payload = { id: c ? c['รหัสส่วนควบ'] : undefined, parentId, name: val('c_name'), type: val('c_type'), serial: val('c_serial'), note: val('c_note') };
+    await apiPost(editing ? 'updateComponent' : 'addComponent', payload);
+    closeSheet(); toast('บันทึกส่วนควบแล้ว'); await loadAll(); openAssetDetail(parentId);
+  };
+  if (editing) {
+    document.getElementById('btnDeleteComp').onclick = async () => {
+      if (!confirm('ยืนยันการลบส่วนควบนี้?')) return;
+      await apiPost('deleteComponent', { id: c['รหัสส่วนควบ'] });
+      closeSheet(); toast('ลบส่วนควบแล้ว'); await loadAll(); openAssetDetail(parentId);
+    };
+  }
+}
+
+/* ========================================================= BORROW */
+function renderBorrow() {
+  const el = document.getElementById('view-borrow');
+  const active = state.borrow.filter(b => b['สถานะ'] !== 'คืนแล้ว');
+  const history = state.borrow.filter(b => b['สถานะ'] === 'คืนแล้ว').slice(-15).reverse();
+  el.innerHTML = `
+    <div class="section-title">รายการยืม-คืน <small>${active.length} รายการค้างคืน</small></div>
+    <div id="borrowActive">${active.length ? active.map(borrowRow).join('') : emptyState('ไม่มีรายการค้างคืน')}</div>
+    <div class="section-title">ประวัติที่คืนแล้ว</div>
+    <div>${history.length ? history.map(borrowRow).join('') : emptyState('ยังไม่มีประวัติ')}</div>
+  `;
+  document.querySelectorAll('.borrow-item').forEach(it => it.onclick = () => openBorrowDetail(it.dataset.id));
+}
+function borrowRow(b) {
+  return `<div class="glass list-item borrow-item" data-id="${b['รหัสรายการ']}">
+    <div class="li-icon">🔄</div>
+    <div class="li-body">
+      <div class="li-title">${b['ชื่อครุภัณฑ์']}</div>
+      <div class="li-sub">ผู้ยืม: ${b['ผู้ยืม']} · กำหนดคืน ${thaiDate(b['กำหนดคืน'])}</div>
+    </div>
+    <div class="status-badge ${statusClass(b['สถานะ'])}">${b['สถานะ']}</div>
+  </div>`;
+}
+function borrowedComponentIds(b) {
+  return String(b['รหัสส่วนควบที่ยืม'] || '').split(',').map(s => s.trim()).filter(Boolean);
+}
+function openBorrowDetail(id) {
+  const b = state.borrow.find(x => x['รหัสรายการ'] === id);
+  if (!b) return;
+  const compIds = borrowedComponentIds(b);
+  const compNames = compIds.map(cid => { const c = state.components.find(x => x['รหัสส่วนควบ'] === cid); return c ? c['ชื่อส่วนควบ'] : cid; });
+  showSheet(`
+    <div class="sheet-title">${b['ชื่อครุภัณฑ์']}</div>
+    <div class="detail-row"><span>ผู้ยืม</span><span>${b['ผู้ยืม']}</span></div>
+    <div class="detail-row"><span>วันที่ยืม</span><span>${thaiDate(b['วันที่ยืม'])}</span></div>
+    <div class="detail-row"><span>กำหนดคืน</span><span>${thaiDate(b['กำหนดคืน'])}</span></div>
+    <div class="detail-row"><span>สถานะ</span><span class="status-badge ${statusClass(b['สถานะ'])}">${b['สถานะ']}</span></div>
+    ${b['วันที่คืนจริง'] ? `<div class="detail-row"><span>วันที่คืนจริง</span><span>${thaiDate(b['วันที่คืนจริง'])}</span></div>` : ''}
+    ${compNames.length ? `<div class="detail-row"><span>ส่วนควบที่ยืมด้วย</span><span>${compNames.join(', ')}</span></div>` : ''}
+    <div class="detail-row"><span>หมายเหตุ</span><span>${b['หมายเหตุ'] || '-'}</span></div>
+    <div class="btn-row"><button class="btn btn-ghost" id="btnPrintForm">🖨️ พิมพ์ใบเบิก/ยืมพัสดุ</button></div>
+    ${isAdmin() && b['สถานะ'] !== 'คืนแล้ว' ? `<div class="btn-row"><button class="btn btn-primary" id="btnReturn">บันทึกการคืน</button></div>` : ''}
+  `);
+  document.getElementById('btnPrintForm').onclick = () => printRequisitionForm({ borrow: b, componentNames: compNames });
+  if (isAdmin() && b['สถานะ'] !== 'คืนแล้ว') {
+    document.getElementById('btnReturn').onclick = async () => {
+      await apiPost('returnAsset', { borrowId: id, returnDate: isoDate() });
+      closeSheet(); toast('บันทึกการคืนแล้ว'); await loadAll(); renderBorrow();
+    };
+  }
+}
+function openBorrowForm() {
+  const available = state.assets.filter(a => a['สถานะ'] === 'พร้อมใช้งาน');
+  showSheet(`
+    <div class="sheet-title">บันทึกการยืม</div>
+    <div class="field"><label>ครุภัณฑ์</label>
+      <select class="input" id="f_asset">${available.map(a => `<option value="${a['รหัสครุภัณฑ์']}">${a['ชื่อครุภัณฑ์']} (${a['รหัสครุภัณฑ์']})</option>`).join('')}</select>
+    </div>
+    <div class="field" id="f_compWrap"></div>
+    <div class="field"><label>ผู้ยืม (ชื่อ-สกุล)</label><input class="input" id="f_borrower"></div>
+    <div class="field"><label>วันที่ยืม</label><input class="input" type="date" id="f_borrowdate" value="${isoDate()}"></div>
+    <div class="field"><label>กำหนดคืน</label><input class="input" type="date" id="f_duedate" value="${isoDate()}"></div>
+    <div class="field"><label>ผู้อนุมัติ</label><input class="input" id="f_approver" value="${state.user.name}"></div>
+    <div class="field"><label>หมายเหตุ</label><input class="input" id="f_bnote"></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="btnCancel">ยกเลิก</button>
+      <button class="btn btn-primary" id="btnSave">บันทึก</button>
+    </div>
+  `);
+  if (!available.length) { toast('ไม่มีครุภัณฑ์ที่พร้อมให้ยืมในขณะนี้'); }
+  function refreshComponentPicker() {
+    const asset = state.assets.find(a => a['รหัสครุภัณฑ์'] === val('f_asset'));
+    const wrap = document.getElementById('f_compWrap');
+    if (!asset || asset['หมวดหมู่'] !== GUN_CATEGORY) { wrap.innerHTML = ''; return; }
+    const comps = componentsOf(asset['รหัสครุภัณฑ์']).filter(c => c['สถานะ'] === 'พร้อมใช้งาน');
+    wrap.innerHTML = `<label>ส่วนควบที่ยืมไปด้วย</label>` + (comps.length
+      ? comps.map(c => `<label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:400; margin-bottom:7px; color:var(--text);">
+          <input type="checkbox" class="f_comp_chk" value="${c['รหัสส่วนควบ']}" style="width:16px;height:16px;"> ${c['ชื่อส่วนควบ']} <span style="color:var(--text-dim); font-size:11px;">(${c['ประเภท']||'-'})</span>
+        </label>`).join('')
+      : `<div class="hint">ยังไม่มีส่วนควบที่พร้อมใช้งานสำหรับอาวุธปืนนี้</div>`);
+  }
+  refreshComponentPicker();
+  document.getElementById('f_asset').onchange = refreshComponentPicker;
+  document.getElementById('btnCancel').onclick = closeSheet;
+  document.getElementById('btnSave').onclick = async () => {
+    const assetId = val('f_asset');
+    const asset = state.assets.find(a => a['รหัสครุภัณฑ์'] === assetId);
+    if (!val('f_borrower')) { toast('กรุณากรอกชื่อผู้ยืม'); return; }
+    const componentIds = Array.from(document.querySelectorAll('.f_comp_chk:checked')).map(el => el.value);
+    await apiPost('borrowAsset', {
+      assetId, assetName: asset ? asset['ชื่อครุภัณฑ์'] : '', borrower: val('f_borrower'),
+      borrowDate: val('f_borrowdate'), dueDate: val('f_duedate'), approver: val('f_approver'), note: val('f_bnote'),
+      componentIds
+    });
+    closeSheet(); toast('บันทึกการยืมแล้ว'); await loadAll(); renderBorrow();
+  };
+}
+
+/* ========================================================= MAINTENANCE */
+function renderMaint() {
+  const el = document.getElementById('view-maint');
+  const open = state.maint.filter(m => m['สถานะ'] !== 'ซ่อมเสร็จ');
+  const done = state.maint.filter(m => m['สถานะ'] === 'ซ่อมเสร็จ').slice(-15).reverse();
+  el.innerHTML = `
+    <div class="section-title">งานซ่อมบำรุง <small>${open.length} รายการค้าง</small></div>
+    <div>${open.length ? open.map(maintRow).join('') : emptyState('ไม่มีงานซ่อมค้าง')}</div>
+    <div class="section-title">ประวัติซ่อมเสร็จแล้ว</div>
+    <div>${done.length ? done.map(maintRow).join('') : emptyState('ยังไม่มีประวัติ')}</div>
+  `;
+  document.querySelectorAll('.maint-item').forEach(it => it.onclick = () => openMaintDetail(it.dataset.id));
+}
+function maintRow(m) {
+  return `<div class="glass list-item maint-item" data-id="${m['รหัสรายการ']}">
+    <div class="li-icon">🔧</div>
+    <div class="li-body">
+      <div class="li-title">${m['ชื่อครุภัณฑ์']}</div>
+      <div class="li-sub">${m['อาการ/ปัญหา']}</div>
+    </div>
+    <div class="status-badge ${statusClass(m['สถานะ'])}">${m['สถานะ']}</div>
+  </div>`;
+}
+function openMaintDetail(id) {
+  const m = state.maint.find(x => x['รหัสรายการ'] === id);
+  if (!m) return;
+  showSheet(`
+    <div class="sheet-title">${m['ชื่อครุภัณฑ์']}</div>
+    <div class="detail-row"><span>วันที่แจ้ง</span><span>${thaiDate(m['วันที่แจ้ง'])}</span></div>
+    <div class="detail-row"><span>อาการ/ปัญหา</span><span>${m['อาการ/ปัญหา']}</span></div>
+    <div class="detail-row"><span>ผู้แจ้ง</span><span>${m['ผู้แจ้ง'] || '-'}</span></div>
+    <div class="detail-row"><span>สถานะ</span><span class="status-badge ${statusClass(m['สถานะ'])}">${m['สถานะ']}</span></div>
+    <div class="detail-row"><span>ค่าใช้จ่าย</span><span>${m['ค่าใช้จ่าย(บาท)'] ? Number(m['ค่าใช้จ่าย(บาท)']).toLocaleString()+' บาท' : '-'}</span></div>
+    <div class="detail-row"><span>ผู้รับผิดชอบ</span><span>${m['ผู้รับผิดชอบ'] || '-'}</span></div>
+    ${isAdmin() && m['สถานะ'] !== 'ซ่อมเสร็จ' ? `
+    <div class="field" style="margin-top:14px;"><label>อัปเดตสถานะ</label>
+      <select class="input" id="f_mstatus">
+        <option ${m['สถานะ']==='รอซ่อม'?'selected':''}>รอซ่อม</option>
+        <option ${m['สถานะ']==='กำลังซ่อม'?'selected':''}>กำลังซ่อม</option>
+        <option>ซ่อมเสร็จ</option>
+      </select>
+    </div>
+    <div class="field"><label>ผู้รับผิดชอบ/ร้านซ่อม</label><input class="input" id="f_mresp" value="${m['ผู้รับผิดชอบ']||''}"></div>
+    <div class="field"><label>ค่าใช้จ่าย (บาท)</label><input class="input" type="number" id="f_mcost" value="${m['ค่าใช้จ่าย(บาท)']||''}"></div>
+    <div class="btn-row"><button class="btn btn-primary" id="btnUpdateMaint">บันทึก</button></div>
+    ` : ''}
+  `);
+  if (isAdmin() && m['สถานะ'] !== 'ซ่อมเสร็จ') {
+    document.getElementById('btnUpdateMaint').onclick = async () => {
+      const status = val('f_mstatus');
+      await apiPost('updateMaint', {
+        id, status, responsible: val('f_mresp'), cost: val('f_mcost'),
+        finishDate: status === 'ซ่อมเสร็จ' ? isoDate() : ''
+      });
+      closeSheet(); toast('อัปเดตสถานะแล้ว'); await loadAll(); renderMaint();
+    };
+  }
+}
+function openMaintForm() {
+  showSheet(`
+    <div class="sheet-title">แจ้งซ่อมบำรุง</div>
+    <div class="field"><label>ครุภัณฑ์</label>
+      <select class="input" id="f_asset">${state.assets.map(a => `<option value="${a['รหัสครุภัณฑ์']}">${a['ชื่อครุภัณฑ์']} (${a['รหัสครุภัณฑ์']})</option>`).join('')}</select>
+    </div>
+    <div class="field"><label>อาการ/ปัญหา</label><input class="input" id="f_issue"></div>
+    <div class="field"><label>ผู้แจ้ง</label><input class="input" id="f_reporter" value="${state.user.name}"></div>
+    <div class="field"><label>วันที่แจ้ง</label><input class="input" type="date" id="f_rdate" value="${isoDate()}"></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="btnCancel">ยกเลิก</button>
+      <button class="btn btn-primary" id="btnSave">บันทึก</button>
+    </div>
+  `);
+  document.getElementById('btnCancel').onclick = closeSheet;
+  document.getElementById('btnSave').onclick = async () => {
+    const assetId = val('f_asset');
+    const asset = state.assets.find(a => a['รหัสครุภัณฑ์'] === assetId);
+    if (!val('f_issue')) { toast('กรุณากรอกอาการ/ปัญหา'); return; }
+    await apiPost('addMaint', { assetId, assetName: asset ? asset['ชื่อครุภัณฑ์'] : '', issue: val('f_issue'), reporter: val('f_reporter'), reportDate: val('f_rdate') });
+    closeSheet(); toast('แจ้งซ่อมแล้ว'); await loadAll(); renderMaint();
+  };
+}
+
+/* ========================================================= REPORTS */
+function renderReports() {
+  const el = document.getElementById('view-reports');
+  const d = state.dashboard;
+  el.innerHTML = `
+    <div class="section-title">รายงานสรุป</div>
+    <div class="glass chart-card"><h4>จำนวนครุภัณฑ์ตามสถานะ</h4><div class="chart-wrap"><canvas id="statusChart"></canvas></div></div>
+    <div class="glass chart-card"><h4>จำนวนครุภัณฑ์ตามหมวดหมู่</h4><div class="chart-wrap"><canvas id="catChart2"></canvas></div></div>
+  `;
+  drawBar('statusChart', d.byStatus);
+  drawDoughnut('catChart2', d.byCategory);
+}
+
+/* ========================================================= SHEET/MODAL */
+function showSheet(html) {
+  document.getElementById('modalRoot').innerHTML = `<div class="overlay" id="overlayEl"><div class="sheet"><div class="sheet-handle"></div>${html}</div></div>`;
+  document.getElementById('overlayEl').addEventListener('click', (e) => { if (e.target.id === 'overlayEl') closeSheet(); });
+}
+function closeSheet() { document.getElementById('modalRoot').innerHTML = ''; }
+function val(id) { return document.getElementById(id).value; }
+
+/* ========================================================= PRINT: ใบเบิก/ยืมพัสดุ (ฟอร์มราชการ) */
+function printRequisitionForm(opts) {
+  let rows = [];
+  let borrowerName = '', dueDateText = '', noteText = '';
+
+  if (opts.borrow) {
+    const b = opts.borrow;
+    borrowerName = b['ผู้ยืม'] || '';
+    dueDateText = thaiDate(b['กำหนดคืน']);
+    noteText = b['หมายเหตุ'] || '';
+    rows.push({
+      name: b['ชื่อครุภัณฑ์'], code: b['รหัสครุภัณฑ์'], qty: 1,
+      comp: (opts.componentNames || []).join(', ') || '-'
+    });
+  } else if (opts.items) {
+    rows = opts.items.map(a => ({
+      name: a['ชื่อครุภัณฑ์'], code: a['รหัสครุภัณฑ์'], qty: 1,
+      comp: (opts.components || []).map(c => c['ชื่อส่วนควบ']).join(', ') || '-'
+    }));
+  }
+
+  const today = thaiDate(new Date());
+  const html = `
+    <div class="pf-head">
+      <div class="pf-seal">[ ตราครุฑ ]</div>
+      <div class="pf-title">บันทึกข้อความ</div>
+      <div class="pf-org">เรื่อง ขอเบิก - ยืมพัสดุครุภัณฑ์</div>
+    </div>
+    <div class="pf-line"><span>ส่วนราชการ&nbsp; ${ORG_NAME}</span><span></span></div>
+    <div class="pf-line"><span>ที่ ........................................ /..................</span><span>วันที่ ${today}</span></div>
+    <div style="margin:14px 0 6px; font-size:14px;">เรียน&nbsp; ผู้บังคับบัญชา</div>
+    <div style="font-size:14px; line-height:1.9; text-indent:38px;">
+      ด้วยข้าพเจ้า <b>${borrowerName || '.............................................................'}</b> ตำแหน่ง ...............................................................
+      มีความประสงค์ขอเบิก/ยืมพัสดุครุภัณฑ์ของทางราชการ เพื่อนำไปใช้ในการปฏิบัติหน้าที่ราชการ ตามรายการดังต่อไปนี้
+    </div>
+    <table class="pf-table">
+      <thead><tr><th style="width:6%;">ลำดับ</th><th>รายการครุภัณฑ์</th><th style="width:18%;">รหัส/หมายเลขเครื่อง</th><th style="width:8%;">จำนวน</th><th style="width:26%;">ส่วนควบที่เบิก/ยืมด้วย</th></tr></thead>
+      <tbody>
+        ${rows.map((r, i) => `<tr><td style="text-align:center;">${i + 1}</td><td>${r.name}</td><td>${r.code}</td><td style="text-align:center;">${r.qty}</td><td>${r.comp}</td></tr>`).join('')}
+        ${rows.length < 3 ? Array.from({ length: 3 - rows.length }).map(() => `<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td></tr>`).join('') : ''}
+      </tbody>
+    </table>
+    <div style="font-size:14px;">กำหนดส่งคืนภายในวันที่ &nbsp; <b>${dueDateText || '...................................'}</b></div>
+    <div style="font-size:14px; margin-top:4px;">หมายเหตุ &nbsp; ${noteText || '-'}</div>
+    <div style="font-size:14px; margin-top:16px;">จึงเรียนมาเพื่อโปรดพิจารณาอนุมัติ</div>
+
+    <div style="margin-top:10px;">
+      <div class="pf-signblock" style="text-align:center;">
+        ลงชื่อ ..................................................... ผู้เบิก/ผู้ยืม<br>
+        ( ..................................................... )<br>
+        ตำแหน่ง .....................................................<br>
+        วันที่ .....................................................
+      </div>
+      <div class="pf-signblock" style="text-align:center; float:right;">
+        ลงชื่อ ..................................................... ผู้อนุมัติ/ผู้จ่ายพัสดุ<br>
+        ( ..................................................... )<br>
+        ตำแหน่ง .....................................................<br>
+        วันที่ .....................................................
+      </div>
+    </div>
+  `;
+  document.getElementById('printArea').innerHTML = html;
+  setTimeout(() => window.print(), 80);
+}
+
+init();
+</script>
+</body>
+</html>
