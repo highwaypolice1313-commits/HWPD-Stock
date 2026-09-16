@@ -200,9 +200,28 @@ button{font-family:inherit;}
 <div id="loginScreen" class="login-wrap">
   <div class="login-badge">🛡️</div>
   <div class="login-title">ระบบพัสดุครุภัณฑ์</div>
-  <div class="login-sub">ตำรวจทางหลวง<br>กำลังเข้าสู่ระบบผ่าน LINE...</div>
-  <div class="spinner"></div>
+  <div class="login-sub" id="loginSubText">ตำรวจทางหลวง<br>กำลังเข้าสู่ระบบผ่าน LINE...</div>
+  <div class="spinner" id="loginSpinner"></div>
   <div class="hint" id="loginHint"></div>
+
+  <div id="codeLoginBox" style="display:none; width:100%; max-width:280px; margin-top:6px;">
+    <div class="field" style="text-align:left;">
+      <label>ชื่อผู้ใช้</label>
+      <input class="input" id="cl_username" autocomplete="username" placeholder="ชื่อผู้ใช้">
+    </div>
+    <div class="field" style="text-align:left;">
+      <label>รหัสผ่าน</label>
+      <input class="input" id="cl_password" type="password" autocomplete="current-password" placeholder="รหัสผ่าน">
+    </div>
+    <button class="btn btn-primary" style="width:100%;" id="btnCodeLogin">เข้าสู่ระบบ</button>
+    <div class="hint" id="codeLoginError" style="color:var(--bad);"></div>
+  </div>
+
+  <div style="margin-top:18px;">
+    <span id="toggleLoginModeLink" style="color:var(--gold); font-size:12.5px; cursor:pointer; text-decoration:underline;">
+      เข้าสู่ระบบด้วยชื่อผู้ใช้และรหัสผ่านแทน
+    </span>
+  </div>
 </div>
 
 <div id="app" style="display:none;">
@@ -260,24 +279,100 @@ const state = {
 const CATS = ['อาวุธปืน','ยานพาหนะ','สื่อสาร','คอมพิวเตอร์/IT','เครื่องแบบ/สนาม','อื่นๆ'];
 const COMPONENT_TYPES = ['ซองกระสุน/แม็กกาซีน','ศูนย์เล็ง/กล้อง','ไฟฉายติดปืน','สายสะพาย','ซองพกพา','อุปกรณ์ทำความสะอาด','อื่นๆ'];
 
-/* ========================================================= INIT / LOGIN */
+/* ========================================================= INIT / LOGIN
+   ผู้ใช้สามารถเข้าสู่ระบบได้ 2 ทาง:
+   1) ผ่าน LINE LIFF (อัตโนมัติ ถ้าตั้งค่า LIFF_ID และเปิดผ่านแอป/เบราว์เซอร์ที่ใช้ LINE ได้)
+   2) ด้วยชื่อผู้ใช้ + รหัสผ่าน (ตั้งค่าให้ผู้ใช้แต่ละคนได้จากฝั่ง Apps Script — ดูฟังก์ชัน
+      setPasswordForUser() ใน Code.gs) — ใช้กรณีเปิดนอกแอป LINE หรือยังไม่ได้ตั้งค่า LIFF_ID
+   ถ้า LIFF ใช้งานไม่ได้ ระบบจะสลับไปแสดงฟอร์มชื่อผู้ใช้/รหัสผ่านให้อัตโนมัติ
+   ========================================================= */
+let loginMode = 'liff'; // 'liff' | 'code'
+
 async function init() {
+  await tryLiffLogin();
+}
+
+async function tryLiffLogin() {
+  setLoginUiForLiffAttempt();
   try {
     await liff.init({ liffId: LIFF_ID });
     if (!liff.isLoggedIn()) { liff.login(); return; }
     const profile = await liff.getProfile();
-    state.user = { id: profile.userId, name: profile.displayName, picture: profile.pictureUrl };
+    await completeLogin({ id: profile.userId, name: profile.displayName, picture: profile.pictureUrl });
   } catch (err) {
-    document.getElementById('loginHint').textContent = 'ไม่สามารถเชื่อมต่อ LINE ได้ (' + err.message + ') — ตรวจสอบ LIFF_ID ในไฟล์นี้';
-    return;
+    // LIFF ใช้งานไม่ได้ (ยังไม่ตั้งค่า LIFF_ID / เปิดนอกแอป LINE / ปัญหาการเชื่อมต่อ) — สลับไปใช้รหัสผ่านแทน
+    document.getElementById('loginSpinner').style.display = 'none';
+    document.getElementById('loginHint').textContent = '';
+    showCodeLoginForm();
   }
-  const check = await apiGet('checkUser', { lineUserId: state.user.id });
-  state.role = check.found ? check.role : 'unknown';
+}
+
+function setLoginUiForLiffAttempt() {
+  loginMode = 'liff';
+  document.getElementById('loginSubText').innerHTML = 'ตำรวจทางหลวง<br>กำลังเข้าสู่ระบบผ่าน LINE...';
+  document.getElementById('loginSpinner').style.display = 'block';
+  document.getElementById('codeLoginBox').style.display = 'none';
+  document.getElementById('loginHint').textContent = '';
+  document.getElementById('toggleLoginModeLink').textContent = 'เข้าสู่ระบบด้วยชื่อผู้ใช้และรหัสผ่านแทน';
+}
+
+function showCodeLoginForm() {
+  loginMode = 'code';
+  document.getElementById('loginSubText').innerHTML = 'ตำรวจทางหลวง<br>เข้าสู่ระบบด้วยชื่อผู้ใช้และรหัสผ่าน';
+  document.getElementById('loginSpinner').style.display = 'none';
+  document.getElementById('codeLoginBox').style.display = 'block';
+  document.getElementById('toggleLoginModeLink').textContent = 'เข้าสู่ระบบผ่าน LINE แทน';
+}
+
+document.getElementById('toggleLoginModeLink').addEventListener('click', () => {
+  if (loginMode === 'liff') { showCodeLoginForm(); } else { tryLiffLogin(); }
+});
+document.getElementById('btnCodeLogin').addEventListener('click', doCodeLogin);
+document.getElementById('cl_password').addEventListener('keydown', (e) => { if (e.key === 'Enter') doCodeLogin(); });
+document.getElementById('cl_username').addEventListener('keydown', (e) => { if (e.key === 'Enter') doCodeLogin(); });
+
+async function doCodeLogin() {
+  const username = val('cl_username').trim();
+  const password = val('cl_password');
+  const errEl = document.getElementById('codeLoginError');
+  errEl.textContent = '';
+  if (!username || !password) { errEl.textContent = 'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน'; return; }
+  const btn = document.getElementById('btnCodeLogin');
+  btn.disabled = true; btn.textContent = 'กำลังเข้าสู่ระบบ...';
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'loginWithCode', payload: { username, password } })
+    });
+    const j = await res.json();
+    if (!j.ok) throw new Error(j.error);
+    await completeLogin({ id: j.data.identifier, name: j.data.name, picture: '' }, j.data.role);
+  } catch (err) {
+    errEl.textContent = err.message;
+  } finally {
+    btn.disabled = false; btn.textContent = 'เข้าสู่ระบบ';
+  }
+}
+
+async function completeLogin(user, knownRole) {
+  state.user = user;
+  if (knownRole) {
+    state.role = knownRole;
+  } else {
+    const check = await apiGet('checkUser', { lineUserId: user.id });
+    state.role = check.found ? check.role : 'unknown';
+  }
   if (state.role === 'unknown') {
-    document.getElementById('loginHint').textContent = 'บัญชี LINE นี้ยังไม่ได้รับสิทธิ์ใช้งาน กรุณาติดต่อแอดมินเพื่อเพิ่มชื่อในระบบ (LINE ID: ' + state.user.id + ')';
+    document.getElementById('loginSpinner').style.display = 'none';
+    document.getElementById('loginHint').textContent = 'บัญชีนี้ยังไม่ได้รับสิทธิ์ใช้งาน กรุณาติดต่อแอดมินเพื่อเพิ่มชื่อในระบบ (รหัสผู้ใช้: ' + user.id + ')';
     return;
   }
-  document.getElementById('profileImg').src = state.user.picture || '';
+  if (user.picture) {
+    document.getElementById('profileImg').src = user.picture;
+    document.getElementById('profileImg').style.display = 'inline-block';
+  } else {
+    document.getElementById('profileImg').style.display = 'none';
+  }
   const pill = document.getElementById('rolePill');
   pill.textContent = state.role === 'admin' ? 'แอดมิน' : 'ดูอย่างเดียว';
   if (state.role !== 'admin') pill.classList.add('viewer');
