@@ -243,211 +243,453 @@ svg{display:block;}
 .pf-signblock{width:46%; display:inline-block; vertical-align:top; font-size:14px; line-height:2.1; margin-top:26px;}
 
 /* =========================================================
-   DESKTOP POLISH
-   มือถือคง layout เดิม / จอคอมขยายเป็น workspace แบบ dashboard
+   DESKTOP REDESIGN V2
+   Mobile = original
+   Desktop >= 900px = full dashboard / left navigation
    ========================================================= */
-@media (min-width: 900px){
-  body{padding-bottom:24px;}
+@media (min-width:900px){
 
-  .topbar{
-    padding:12px 32px;
-    min-height:66px;
-    box-shadow:0 1px 0 rgba(21,36,56,.04);
+  body{
+    padding-bottom:24px;
+    background:
+      radial-gradient(1000px 500px at 75% -10%, rgba(169,124,47,.10), transparent 65%),
+      linear-gradient(180deg,#f5f7fa 0%,#e9eef4 100%);
   }
-  .brand{gap:12px;}
-  .brand-badge{width:42px;height:42px;border-radius:12px;}
-  .brand-title{font-size:16px;}
-  .brand-sub{font-size:12px;}
 
-  /* content width เหมาะกับจอคอม ไม่บีบเป็นคอลัมน์มือถือ */
-  .page{
-    width:min(1180px, calc(100vw - 64px));
-    max-width:none;
-    margin:0 auto;
-    padding:26px 0 80px;
-  }
-  .section-title{
-    font-size:19px;
-    margin:8px 0 14px;
-  }
-  .section-title small{font-size:12px;}
-
-  .hero-card{
-    padding:24px 28px;
-    border-radius:20px;
-  }
-  .hero-row{gap:32px;}
-  .hero-label{font-size:13px;}
-  .hero-num{font-size:38px;}
-  .hero-num--sm{font-size:29px;}
-  .hero-unit{font-size:13px;}
-
-  .stat-grid{
-    grid-template-columns:repeat(3,minmax(0,1fr));
-    gap:14px;
-    margin-top:14px;
-  }
-  .stat-card{
-    padding:20px 16px;
-    min-height:105px;
+  /* ----- LEFT NAVIGATION ----- */
+  .tabbar{
+    position:fixed;
+    left:0;
+    top:0;
+    bottom:0;
+    width:236px;
+    height:100vh;
+    z-index:70;
     display:flex;
     flex-direction:column;
-    justify-content:center;
+    justify-content:flex-start;
+    align-items:stretch;
+    gap:6px;
+    padding:26px 14px 20px;
+    background:linear-gradient(180deg,#102b4b 0%,#0b2038 100%);
+    border:0;
+    border-right:1px solid rgba(255,255,255,.08);
+    border-radius:0;
+    box-shadow:8px 0 28px rgba(15,35,58,.12);
   }
-  .stat-num{font-size:28px;}
-  .stat-label{font-size:12px;margin-top:7px;}
 
-  /* dashboard: สองคอลัมน์บน desktop */
+  .tabbar::before{
+    content:"ระบบพัสดุครุภัณฑ์";
+    display:block;
+    color:#fff;
+    font-size:18px;
+    font-weight:600;
+    padding:4px 12px 2px;
+  }
+
+  .tabbar::after{
+    content:"ตำรวจทางหลวง";
+    display:block;
+    color:rgba(255,255,255,.62);
+    font-size:12px;
+    font-weight:300;
+    padding:0 12px 24px;
+    border-bottom:1px solid rgba(255,255,255,.10);
+    margin-bottom:10px;
+  }
+
+  .tab{
+    flex:0 0 auto;
+    width:100%;
+    min-width:0;
+    min-height:48px;
+    display:flex;
+    flex-direction:row;
+    align-items:center;
+    justify-content:flex-start;
+    gap:12px;
+    padding:12px 14px;
+    border-radius:11px;
+    color:rgba(255,255,255,.68);
+    background:transparent;
+    text-align:left;
+    transition:background .18s ease,color .18s ease,transform .18s ease;
+  }
+
+  .tab:hover{
+    background:rgba(255,255,255,.08);
+    color:#fff;
+    transform:translateX(2px);
+  }
+
+  .tab.active{
+    color:#fff;
+    background:linear-gradient(90deg,rgba(169,124,47,.28),rgba(169,124,47,.10));
+    box-shadow:inset 3px 0 0 #c99b4b;
+  }
+
+  .tab .ico,
+  .tab .ico svg{
+    width:20px;
+    height:20px;
+  }
+
+  .tab .lbl{
+    font-size:14px;
+    font-weight:400;
+  }
+
+  /* ----- TOP HEADER ----- */
+  .topbar{
+    margin-left:236px;
+    padding:14px 34px;
+    min-height:72px;
+    background:rgba(255,255,255,.92);
+    border-bottom:1px solid #dce3eb;
+    box-shadow:0 4px 18px rgba(21,36,56,.05);
+    backdrop-filter:blur(18px);
+  }
+
+  .brand{
+    visibility:hidden;
+    width:1px;
+    overflow:hidden;
+  }
+
+  .profile{
+    margin-left:auto;
+  }
+
+  .profile img{
+    width:38px;
+    height:38px;
+  }
+
+  .role-pill{
+    font-size:12px;
+    padding:6px 12px;
+  }
+
+  /* ----- MAIN WORKSPACE ----- */
+  .page{
+    max-width:none;
+    width:auto;
+    margin-left:236px;
+    margin-right:0;
+    padding:30px 38px 70px;
+  }
+
+  .section-title{
+    font-size:20px;
+    margin:8px 0 16px;
+    color:#142b45;
+  }
+
+  .section-title small{
+    font-size:12px;
+  }
+
+  /* ----- DASHBOARD ----- */
   #view-dashboard{
     display:grid !important;
-    grid-template-columns:minmax(0,1.15fr) minmax(360px,.85fr);
-    gap:18px;
+    grid-template-columns:minmax(0,1.65fr) minmax(340px,.85fr);
+    gap:20px;
     align-items:start;
   }
+
   #view-dashboard > .section-title:nth-child(1){
     grid-column:1 / -1;
+    margin-top:0;
   }
-  #view-dashboard > .hero-card{grid-column:1 / -1;}
-  #view-dashboard > .stat-grid{grid-column:1 / -1;}
+
+  #view-dashboard > .hero-card{
+    grid-column:1;
+    min-height:176px;
+    padding:28px 32px;
+    border-radius:20px;
+    background:linear-gradient(135deg,#ffffff 0%,#f9fbfd 100%);
+    box-shadow:0 12px 32px rgba(21,36,56,.08);
+  }
+
+  .hero-row{
+    gap:32px;
+  }
+
+  .hero-label{
+    font-size:13px;
+  }
+
+  .hero-num{
+    font-size:42px;
+  }
+
+  .hero-num--sm{
+    font-size:30px;
+  }
+
+  .hero-unit{
+    font-size:13px;
+  }
+
+  #view-dashboard > .stat-grid{
+    grid-column:2;
+    grid-row:2;
+    grid-template-columns:1fr;
+    gap:12px;
+    margin:0;
+  }
+
+  .stat-card{
+    min-height:50px;
+    padding:16px 20px;
+    text-align:left;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    border-radius:15px;
+    box-shadow:0 8px 24px rgba(21,36,56,.06);
+  }
+
+  .stat-num{
+    font-size:28px;
+  }
+
+  .stat-label{
+    margin:0;
+    font-size:13px;
+  }
+
   #view-dashboard > .section-title:nth-child(5){
     grid-column:1 / -1;
+    margin-top:4px;
   }
+
   #view-dashboard > .chart-card{
     grid-column:1 / -1;
-    padding:22px;
+    padding:26px 28px;
+    margin-bottom:0;
+    border-radius:20px;
+    box-shadow:0 10px 28px rgba(21,36,56,.06);
   }
-  .chart-wrap{height:300px;}
 
-  /* รายการข้อมูล: ไม่ให้แคบแบบมือถือ */
+  .chart-wrap{
+    height:330px;
+  }
+
+  /* ----- LIST / DATA PAGES ----- */
   #view-assets .search-row{
-    max-width:720px;
+    max-width:900px;
   }
+
+  .search-row{
+    gap:12px;
+    margin-bottom:16px;
+  }
+
+  .input,
+  select.input{
+    min-height:46px;
+    font-size:14px;
+    border-radius:11px;
+    background:#fff;
+  }
+
   .chip-row{
-    flex-wrap:wrap;
     overflow:visible;
+    flex-wrap:wrap;
     gap:8px;
+    margin-bottom:18px;
   }
+
   .chip{
-    padding:8px 15px;
+    padding:9px 16px;
     font-size:13px;
+    border-radius:10px;
     transition:.18s ease;
   }
+
   .chip:hover{
     border-color:var(--brass-line);
     transform:translateY(-1px);
   }
+
   .list-item{
-    padding:16px 18px;
-    min-height:72px;
+    min-height:78px;
+    padding:16px 20px;
     margin-bottom:10px;
-    transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+    border-radius:14px;
+    transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease;
   }
+
   .list-item:hover{
-    transform:translateY(-1px);
+    transform:translateY(-2px);
     border-color:rgba(22,52,90,.18);
-    box-shadow:0 8px 22px rgba(21,36,56,.08);
+    box-shadow:0 12px 28px rgba(21,36,56,.09);
   }
-  .li-icon{width:44px;height:44px;}
-  .li-title{font-size:15px;}
-  .li-sub{font-size:12px;}
-  .status-badge{font-size:12px;padding:5px 11px 5px 10px;}
 
-  /* ปุ่มเพิ่มบนคอมให้อยู่มุมขวาล่างแบบเดิม แต่เล็กและไม่บังข้อมูล */
+  .li-icon{
+    width:46px;
+    height:46px;
+    border-radius:12px;
+  }
+
+  .li-title{
+    font-size:15px;
+  }
+
+  .li-sub{
+    font-size:12px;
+    margin-top:4px;
+  }
+
+  .status-badge{
+    font-size:12px;
+    padding:6px 12px;
+  }
+
+  /* ----- REPORTS ----- */
+  #view-reports{
+    display:grid !important;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+    align-items:start;
+  }
+
+  #view-reports > .section-title{
+    grid-column:1 / -1;
+  }
+
+  #view-reports > .chart-card{
+    margin:0;
+    min-height:430px;
+    padding:24px;
+    border-radius:18px;
+  }
+
+  #view-reports .chart-wrap{
+    height:340px;
+  }
+
+  /* ----- FAB ----- */
   .fab{
-    right:32px;
-    bottom:32px;
-    width:56px;height:56px;
-    box-shadow:0 12px 30px rgba(22,52,90,.25);
+    right:34px;
+    bottom:34px;
+    width:58px;
+    height:58px;
+    box-shadow:0 14px 34px rgba(22,52,90,.28);
   }
 
-  /* bottom navigation เปลี่ยนเป็นแถบนำทางด้านบน/กลางจอ */
-  .tabbar{
-    position:sticky;
-    top:66px;
-    bottom:auto;
-    width:min(1180px, calc(100vw - 64px));
-    margin:0 auto;
-    padding:10px 6px;
-    border:1px solid var(--panel-line);
-    border-radius:0 0 16px 16px;
-    background:rgba(255,255,255,.94);
-    box-shadow:0 6px 20px rgba(21,36,56,.05);
-    justify-content:flex-start;
-    gap:4px;
-  }
-  .tab{
-    flex:0 0 auto;
-    min-width:120px;
-    flex-direction:row;
-    justify-content:center;
-    gap:8px;
-    padding:9px 16px;
-    border-radius:10px;
-    font-size:13px;
-    transition:.18s ease;
-  }
-  .tab:hover{background:var(--brass-wash);}
-  .tab .lbl{font-size:13px;}
-  .tab .ico,.tab .ico svg{width:18px;height:18px;}
-
-  /* modal บนคอมเป็น dialog กลางจอ ไม่ใช่ bottom sheet */
+  /* ----- MODAL: desktop dialog, not bottom sheet ----- */
   .overlay{
     align-items:center;
-    padding:24px;
+    padding:28px;
+    background:rgba(10,24,40,.50);
   }
+
   .sheet{
-    width:min(720px, 100%);
-    max-width:720px;
-    max-height:min(86vh,820px);
+    width:min(760px,calc(100vw - 120px));
+    max-width:760px;
+    max-height:88vh;
+    overflow-y:auto;
     border-radius:20px;
-    border:1px solid var(--panel-line);
-    padding:26px 28px 28px;
-    box-shadow:0 24px 70px rgba(21,36,56,.22);
+    border:1px solid #dce3eb;
+    padding:28px 32px 30px;
+    box-shadow:0 28px 80px rgba(10,24,40,.28);
   }
-  .sheet-handle{display:none;}
-  .sheet-title{font-size:19px;margin-bottom:20px;}
-  .field{margin-bottom:14px;}
-  .field label{font-size:12.5px;}
-  .btn-row{gap:12px;}
+
+  .sheet-handle{
+    display:none;
+  }
+
+  .sheet-title{
+    font-size:20px;
+    margin-bottom:22px;
+  }
+
+  .field{
+    margin-bottom:15px;
+  }
+
+  .field label{
+    font-size:13px;
+    margin-bottom:7px;
+  }
+
+  .btn-row{
+    gap:12px;
+    margin-top:20px;
+  }
+
   .btn{
     min-height:46px;
     padding:12px 18px;
     font-size:14px;
+    border-radius:11px;
   }
 
-  /* login desktop ให้ดูเป็น application card */
-  .login-wrap{padding:40px;}
-  .login-badge{width:84px;height:84px;}
-  .login-title{font-size:22px;}
-  .login-sub{font-size:14px;}
+  /* ----- LOGIN DESKTOP ----- */
+  .login-wrap{
+    background:
+      radial-gradient(900px 500px at 50% 10%,rgba(169,124,47,.15),transparent 65%),
+      linear-gradient(135deg,#0d2038,#16345a);
+    color:#fff;
+  }
+
+  .login-title{
+    font-size:24px;
+  }
+
+  .login-sub{
+    font-size:14px;
+    color:rgba(255,255,255,.72);
+  }
+
+  .login-badge{
+    width:92px;
+    height:92px;
+    border-radius:24px;
+    margin-bottom:24px;
+  }
+
   #codeLoginBox{
-    max-width:380px !important;
-    padding:26px;
-    background:rgba(255,255,255,.82);
-    border:1px solid var(--panel-line);
+    max-width:400px !important;
+    padding:28px;
+    background:rgba(255,255,255,.98);
+    border:0;
     border-radius:18px;
-    box-shadow:0 12px 32px rgba(21,36,56,.07);
+    box-shadow:0 24px 60px rgba(0,0,0,.20);
+    color:var(--ink);
   }
 
-  /* print ยังคงทำงานตามเดิม */
+  #toggleLoginModeLink{
+    color:#fff !important;
+  }
 }
 
-@media (min-width: 900px) and (max-width: 1199px){
-  .page,.tabbar{width:calc(100vw - 40px);}
-  .topbar{padding-left:20px;padding-right:20px;}
-  .tab{min-width:105px;}
+/* medium desktop */
+@media (min-width:900px) and (max-width:1199px){
+  .tabbar{width:210px;}
+  .topbar,.page{margin-left:210px;}
+  #view-dashboard{
+    grid-template-columns:1fr;
+  }
+  #view-dashboard > .hero-card,
+  #view-dashboard > .stat-grid,
+  #view-dashboard > .chart-card{
+    grid-column:1;
+    grid-row:auto;
+  }
+  #view-dashboard > .stat-grid{
+    grid-template-columns:repeat(3,1fr);
+  }
 }
 
-@media (min-width: 1200px){
-  .topbar{padding-left:max(32px, calc((100vw - 1240px)/2));padding-right:max(32px, calc((100vw - 1240px)/2));}
-  .page{width:min(1240px, calc(100vw - 80px));}
-  .tabbar{width:min(1240px, calc(100vw - 80px));}
-}
-
-/* ปรับจอคอมแนวตั้ง/พื้นที่แคบไม่ให้ dashboard เบียดกัน */
-@media (min-width:900px) and (max-width:1050px){
-  #view-dashboard{grid-template-columns:1fr;}
-  #view-dashboard > .chart-card{grid-column:1;}
+/* large desktop */
+@media (min-width:1400px){
+  .page{padding-left:54px;padding-right:54px;}
+  #view-dashboard{
+    grid-template-columns:minmax(0,1.75fr) minmax(380px,.75fr);
+  }
 }
 
 </style>
