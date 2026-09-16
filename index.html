@@ -243,6 +243,51 @@ svg{display:block;}
 .pf-signblock{width:46%; display:inline-block; vertical-align:top; font-size:14px; line-height:2.1; margin-top:26px;}
 
 /* =========================================================
+   UX IMPROVEMENTS V4
+   - ปุ่มรีเฟรชข้อมูล / สถานะการเชื่อมต่อ
+   - Loading overlay ระหว่างโหลด/บันทึก
+   - ป้องกันการกดบันทึกซ้ำ
+   - รายการยืมที่เลยกำหนดแสดงสถานะอัตโนมัติ
+   - desktop ใช้พื้นที่ได้ดีขึ้น แต่ mobile คงโครงเดิม
+   ========================================================= */
+.refresh-btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  min-width:42px;height:38px;padding:0 11px;border:1px solid var(--panel-line);
+  border-radius:10px;background:#fff;color:var(--ink);cursor:pointer;font-size:12px;
+  box-shadow:0 2px 8px rgba(21,36,56,.05);transition:.18s ease;
+}
+.refresh-btn:hover{transform:translateY(-1px);border-color:var(--brass-line);background:var(--brass-wash);}
+.refresh-btn:disabled{opacity:.6;cursor:wait;transform:none;}
+.refresh-btn svg{width:17px;height:17px;}
+.refresh-btn.loading svg{animation:spin .8s linear infinite;}
+.connection-dot{width:7px;height:7px;border-radius:50%;background:var(--ok);display:inline-block;box-shadow:0 0 0 3px var(--ok-wash);}
+.connection-dot.offline{background:var(--bad);box-shadow:0 0 0 3px var(--bad-wash);}
+.loading-overlay{
+  position:fixed;inset:0;z-index:120;background:rgba(245,247,250,.58);backdrop-filter:blur(2px);
+  display:none;align-items:center;justify-content:center;
+}
+.loading-overlay.show{display:flex;}
+.loading-card{min-width:180px;padding:20px 24px;border-radius:16px;background:#fff;border:1px solid var(--panel-line);box-shadow:0 18px 50px rgba(21,36,56,.16);text-align:center;}
+.loading-card .spinner{margin:0 auto 10px;}
+.loading-text{font-size:13px;color:var(--ink-dim);}
+.last-sync{font-size:10.5px;color:var(--ink-faint);margin-left:4px;white-space:nowrap;}
+@media (min-width:900px){
+  .topbar{min-height:66px;}
+  .desktop-tools{display:flex !important;align-items:center;gap:9px;}
+  .refresh-btn{height:40px;min-width:44px;}
+  .page{min-height:calc(100vh - 66px);}
+  .list-item{transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease;}
+  .list-item:hover{transform:translateY(-1px);box-shadow:0 10px 25px rgba(21,36,56,.09);border-color:#cbd5e1;}
+  .sheet{max-width:700px;border-radius:20px;max-height:90vh;border-bottom:1px solid var(--panel-line);margin:20px;padding:24px;}
+  .overlay{align-items:center;}
+  .sheet-handle{display:none;}
+}
+@media (max-width:899px){
+  .desktop-tools{display:flex !important;align-items:center;gap:7px;}
+  .last-sync{display:none;}
+}
+
+/* =========================================================
    DESKTOP REDESIGN V2
    Mobile = original
    Desktop >= 900px = full dashboard / left navigation
@@ -738,6 +783,13 @@ svg{display:block;}
       </div>
     </div>
     <div class="profile">
+      <div class="desktop-tools">
+        <span class="connection-dot" id="connectionDot" title="สถานะการเชื่อมต่อ"></span>
+        <span class="last-sync" id="lastSync">ยังไม่ได้อัปเดต</span>
+        <button class="refresh-btn" id="refreshBtn" type="button" title="รีเฟรชข้อมูล" aria-label="รีเฟรชข้อมูล">
+          <svg viewBox="0 0 20 20" fill="none"><path d="M16 6.5A6.5 6.5 0 104.7 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M16 3.5v3h-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
       <span class="role-pill" id="rolePill">…</span>
       <img id="profileImg" src="" alt="">
     </div>
@@ -780,6 +832,12 @@ svg{display:block;}
 <div id="modalRoot"></div>
 <div id="toast" class="toast"></div>
 <div id="printArea"></div>
+<div class="loading-overlay" id="loadingOverlay" aria-live="polite" aria-busy="true">
+  <div class="loading-card">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loadingText">กำลังโหลดข้อมูล...</div>
+  </div>
+</div>
 
 <script>
 /* =========================================================
@@ -913,34 +971,130 @@ async function completeLogin(user, knownRole) {
   const appEl = document.getElementById('app');
   appEl.style.display = 'block';
   appEl.classList.add('app-in'); // แอนิเมชันเข้าแอปครั้งเดียวตอนล็อกอินสำเร็จ
-  await loadAll();
-  renderTab('dashboard');
+  try {
+    await loadAll(true);
+    renderTab('dashboard');
+  } catch (err) {
+    document.getElementById('app').style.display = 'block';
+    renderTab('dashboard');
+    toast('เข้าสู่ระบบแล้ว แต่โหลดข้อมูลไม่สำเร็จ: ' + (err.message || 'กรุณารีเฟรช'));
+  }
 }
 
 /* ========================================================= API */
-async function apiGet(action, params) {
-  const qs = new URLSearchParams({ action, ...params }).toString();
-  const res = await fetch(API_URL + '?' + qs);
-  const j = await res.json();
-  if (!j.ok) throw new Error(j.error);
-  return j.data;
+let busyCount = 0;
+let lastSyncAt = null;
+
+function setLoading(show, text = 'กำลังโหลดข้อมูล...') {
+  const overlay = document.getElementById('loadingOverlay');
+  const label = document.getElementById('loadingText');
+  if (!overlay) return;
+  if (show) {
+    busyCount++;
+    if (label) label.textContent = text;
+    overlay.classList.add('show');
+  } else {
+    busyCount = Math.max(0, busyCount - 1);
+    if (!busyCount) overlay.classList.remove('show');
+  }
 }
-async function apiPost(action, payload) {
-  const res = await fetch(API_URL, {
-    method: 'POST',
-    body: JSON.stringify({ action, lineUserId: state.user.id, payload })
-  });
-  const j = await res.json();
-  if (!j.ok) throw new Error(j.error);
-  return j.data;
+function setConnection(ok) {
+  const dot = document.getElementById('connectionDot');
+  if (dot) dot.classList.toggle('offline', !ok);
+}
+function updateSyncLabel() {
+  const el = document.getElementById('lastSync');
+  if (!el || !lastSyncAt) return;
+  el.textContent = 'อัปเดต ' + lastSyncAt.toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'});
+}
+function setButtonBusy(btn, busy, textBusy = 'กำลังบันทึก...') {
+  if (!btn) return;
+  if (busy) {
+    btn.dataset.originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = textBusy;
+    btn.setAttribute('aria-busy','true');
+  } else {
+    btn.disabled = false;
+    btn.textContent = btn.dataset.originalText || 'บันทึก';
+    btn.removeAttribute('aria-busy');
+  }
 }
 
-async function loadAll() {
-  const [assets, borrow, maint, components, dashboard] = await Promise.all([
-    apiGet('getAssets', {}), apiGet('getBorrowLogs', {}), apiGet('getMaintLogs', {}), apiGet('getComponents', {}), apiGet('getDashboard', {})
-  ]);
-  state.assets = assets; state.borrow = borrow; state.maint = maint; state.components = components; state.dashboard = dashboard;
+async function fetchJson(url, options = {}, timeout = 20000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeout);
+  try {
+    const res = await fetch(url, {...options, signal: controller.signal, cache:'no-store'});
+    if (!res.ok) throw new Error('เซิร์ฟเวอร์ตอบกลับผิดพลาด (' + res.status + ')');
+    const j = await res.json();
+    if (!j.ok) throw new Error(j.error || 'ไม่สามารถดำเนินการได้');
+    return j.data;
+  } catch (err) {
+    if (err.name === 'AbortError') throw new Error('การเชื่อมต่อใช้เวลานานเกินไป กรุณาลองใหม่');
+    throw err;
+  } finally { clearTimeout(timer); }
 }
+
+async function apiGet(action, params = {}) {
+  const qs = new URLSearchParams({ action, ...params }).toString();
+  return fetchJson(API_URL + '?' + qs);
+}
+async function apiPost(action, payload) {
+  return fetchJson(API_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action, lineUserId: state.user?.id, payload })
+  });
+}
+
+async function loadAll(showLoader = false) {
+  if (showLoader) setLoading(true, 'กำลังอัปเดตข้อมูล...');
+  try {
+    const results = await Promise.allSettled([
+      apiGet('getAssets', {}),
+      apiGet('getBorrowLogs', {}),
+      apiGet('getMaintLogs', {}),
+      apiGet('getComponents', {}),
+      apiGet('getDashboard', {})
+    ]);
+    const names = ['assets','borrow','maint','components','dashboard'];
+    const errors = [];
+    results.forEach((r, i) => {
+      if (r.status === 'fulfilled') state[names[i]] = r.value;
+      else errors.push(r.reason?.message || 'ไม่สามารถโหลดข้อมูลบางส่วนได้');
+    });
+    const successCount = results.filter(r => r.status === 'fulfilled').length;
+    setConnection(successCount === results.length);
+    if (successCount) {
+      lastSyncAt = new Date();
+      updateSyncLabel();
+    }
+    if (errors.length) {
+      toast(successCount ? 'อัปเดตได้บางส่วน กรุณาลองรีเฟรชอีกครั้ง' : 'ไม่สามารถเชื่อมต่อฐานข้อมูลได้');
+      if (!successCount) throw new Error(errors[0]);
+    }
+    return { successCount, errors };
+  } finally {
+    if (showLoader) setLoading(false);
+  }
+}
+
+async function refreshData() {
+  const btn = document.getElementById('refreshBtn');
+  if (btn?.disabled) return;
+  if (btn) { btn.disabled = true; btn.classList.add('loading'); }
+  try {
+    await loadAll(true);
+    renderTab(state.tab || 'dashboard');
+    toast('อัปเดตข้อมูลล่าสุดแล้ว');
+  } catch (err) {
+    setConnection(false);
+    toast(err.message || 'รีเฟรชข้อมูลไม่สำเร็จ');
+  } finally {
+    if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
+  }
+}
+
 function componentsOf(assetId) { return state.components.filter(c => c['รหัสครุภัณฑ์หลัก'] === assetId); }
 
 /* ========================================================= UTIL */
@@ -974,11 +1128,16 @@ const isAdmin = () => state.role === 'admin';
 document.querySelectorAll('.tab').forEach(btn => {
   btn.addEventListener('click', () => renderTab(btn.dataset.tab));
 });
+document.getElementById('refreshBtn')?.addEventListener('click', refreshData);
+window.addEventListener('online', () => setConnection(true));
+window.addEventListener('offline', () => { setConnection(false); toast('ขณะนี้อุปกรณ์ออฟไลน์'); });
 function renderTab(name) {
   state.tab = name;
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
-  document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
-  document.getElementById('view-' + name).style.display = 'block';
+  document.querySelectorAll('.page').forEach(p => { p.style.display = 'none'; });
+  const activePage = document.getElementById('view-' + name);
+  if (activePage) activePage.style.display = 'block';
+  window.scrollTo({top:0, behavior:'smooth'});
   const fab = document.getElementById('fabBtn');
   fab.style.display = (isAdmin() && ['assets','borrow','maint'].includes(name)) ? 'flex' : 'none';
   fab.onclick = () => {
@@ -1156,8 +1315,11 @@ function openAssetForm(a) {
       receivedDate: val('f_date'), value: val('f_value'), holder: val('f_holder'), note: val('f_note')
     };
     if (!payload.name) { toast('กรุณากรอกชื่อครุภัณฑ์'); return; }
-    await apiPost(editing ? 'updateAsset' : 'addAsset', payload);
-    closeSheet(); toast(editing ? 'แก้ไขข้อมูลแล้ว' : 'เพิ่มครุภัณฑ์แล้ว'); await loadAll(); renderAssets();
+    const saveBtn = document.getElementById('btnSave'); if (saveBtn.disabled) return; setButtonBusy(saveBtn,true); setLoading(true,'กำลังบันทึกข้อมูล...');
+    try {
+      await apiPost(editing ? 'updateAsset' : 'addAsset', payload);
+      closeSheet(); toast(editing ? 'แก้ไขข้อมูลแล้ว' : 'เพิ่มครุภัณฑ์แล้ว'); await loadAll(); renderAssets();
+    } catch(err) { toast(err.message || 'บันทึกไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(saveBtn,false); }
   };
 }
 
@@ -1181,8 +1343,11 @@ function openComponentForm(parentId, c) {
   document.getElementById('btnSave').onclick = async () => {
     if (!val('c_name')) { toast('กรุณากรอกชื่อส่วนควบ'); return; }
     const payload = { id: c ? c['รหัสส่วนควบ'] : undefined, parentId, name: val('c_name'), type: val('c_type'), serial: val('c_serial'), note: val('c_note') };
-    await apiPost(editing ? 'updateComponent' : 'addComponent', payload);
-    closeSheet(); toast('บันทึกส่วนควบแล้ว'); await loadAll(); openAssetDetail(parentId);
+    const saveBtn = document.getElementById('btnSave'); if (saveBtn.disabled) return; setButtonBusy(saveBtn,true); setLoading(true,'กำลังบันทึกส่วนควบ...');
+    try {
+      await apiPost(editing ? 'updateComponent' : 'addComponent', payload);
+      closeSheet(); toast('บันทึกส่วนควบแล้ว'); await loadAll(); openAssetDetail(parentId);
+    } catch(err) { toast(err.message || 'บันทึกส่วนควบไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(saveBtn,false); }
   };
   if (editing) {
     document.getElementById('btnDeleteComp').onclick = async () => {
@@ -1206,6 +1371,12 @@ function renderBorrow() {
   `;
   document.querySelectorAll('.borrow-item').forEach(it => it.onclick = () => openBorrowDetail(it.dataset.id));
 }
+function effectiveBorrowStatus(b) {
+  if (b['สถานะ'] === 'คืนแล้ว') return 'คืนแล้ว';
+  const due = new Date(b['กำหนดคืน']);
+  if (!isNaN(due) && due.getTime() < new Date().setHours(0,0,0,0)) return 'เกินกำหนด';
+  return b['สถานะ'] || 'กำลังยืม';
+}
 function borrowRow(b) {
   return `<div class="glass list-item borrow-item" data-id="${b['รหัสรายการ']}">
     <div class="li-icon">${ICONS.swap}</div>
@@ -1213,7 +1384,7 @@ function borrowRow(b) {
       <div class="li-title">${b['ชื่อครุภัณฑ์']}</div>
       <div class="li-sub">ผู้ยืม: ${b['ผู้ยืม']} · กำหนดคืน ${thaiDate(b['กำหนดคืน'])}</div>
     </div>
-    <div class="status-badge ${statusClass(b['สถานะ'])}">${b['สถานะ']}</div>
+    <div class="status-badge ${statusClass(effectiveBorrowStatus(b))}">${effectiveBorrowStatus(b)}</div>
   </div>`;
 }
 function borrowedComponentIds(b) {
@@ -1239,8 +1410,11 @@ function openBorrowDetail(id) {
   document.getElementById('btnPrintForm').onclick = () => printRequisitionForm({ borrow: b, componentNames: compNames });
   if (isAdmin() && b['สถานะ'] !== 'คืนแล้ว') {
     document.getElementById('btnReturn').onclick = async () => {
-      await apiPost('returnAsset', { borrowId: id, returnDate: isoDate() });
-      closeSheet(); toast('บันทึกการคืนแล้ว'); await loadAll(); renderBorrow();
+      const btn = document.getElementById('btnReturn'); if (btn.disabled) return; setButtonBusy(btn,true,'กำลังบันทึกการคืน...'); setLoading(true,'กำลังบันทึกการคืน...');
+      try {
+        await apiPost('returnAsset', { borrowId: id, returnDate: isoDate() });
+        closeSheet(); toast('บันทึกการคืนแล้ว'); await loadAll(); renderBorrow();
+      } catch(err) { toast(err.message || 'บันทึกการคืนไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(btn,false); }
     };
   }
 }
@@ -1254,7 +1428,7 @@ function openBorrowForm() {
     <div class="field" id="f_compWrap"></div>
     <div class="field"><label>ผู้ยืม (ชื่อ-สกุล)</label><input class="input" id="f_borrower"></div>
     <div class="field"><label>วันที่ยืม</label><input class="input" type="date" id="f_borrowdate" value="${isoDate()}"></div>
-    <div class="field"><label>กำหนดคืน</label><input class="input" type="date" id="f_duedate" value="${isoDate()}"></div>
+    <div class="field"><label>กำหนดคืน</label><input class="input" type="date" id="f_duedate" value="${isoDate(new Date(Date.now()+7*86400000))}"></div>
     <div class="field"><label>ผู้อนุมัติ</label><input class="input" id="f_approver" value="${state.user.name}"></div>
     <div class="field"><label>หมายเหตุ</label><input class="input" id="f_bnote"></div>
     <div class="btn-row">
@@ -1280,14 +1454,24 @@ function openBorrowForm() {
   document.getElementById('btnSave').onclick = async () => {
     const assetId = val('f_asset');
     const asset = state.assets.find(a => a['รหัสครุภัณฑ์'] === assetId);
-    if (!val('f_borrower')) { toast('กรุณากรอกชื่อผู้ยืม'); return; }
+    if (!val('f_borrower').trim()) { toast('กรุณากรอกชื่อผู้ยืม'); return; }
+    if (!val('f_asset')) { toast('ไม่พบครุภัณฑ์ที่พร้อมให้ยืม'); return; }
+    if (!val('f_borrowdate') || !val('f_duedate')) { toast('กรุณาระบุวันที่ยืมและกำหนดคืน'); return; }
+    if (val('f_duedate') < val('f_borrowdate')) { toast('กำหนดคืนต้องไม่ก่อนวันที่ยืม'); return; }
     const componentIds = Array.from(document.querySelectorAll('.f_comp_chk:checked')).map(el => el.value);
+    const saveBtn = document.getElementById('btnSave');
+    if (saveBtn.disabled) return;
+    setButtonBusy(saveBtn, true);
+    setLoading(true, 'กำลังบันทึกการยืม...');
+    try {
     await apiPost('borrowAsset', {
       assetId, assetName: asset ? asset['ชื่อครุภัณฑ์'] : '', borrower: val('f_borrower'),
       borrowDate: val('f_borrowdate'), dueDate: val('f_duedate'), approver: val('f_approver'), note: val('f_bnote'),
       componentIds
     });
     closeSheet(); toast('บันทึกการยืมแล้ว'); await loadAll(); renderBorrow();
+    } catch (err) { toast(err.message || 'บันทึกการยืมไม่สำเร็จ'); }
+    finally { setLoading(false); setButtonBusy(saveBtn, false); }
   };
 }
 
@@ -1341,11 +1525,14 @@ function openMaintDetail(id) {
   if (isAdmin() && m['สถานะ'] !== 'ซ่อมเสร็จ') {
     document.getElementById('btnUpdateMaint').onclick = async () => {
       const status = val('f_mstatus');
-      await apiPost('updateMaint', {
-        id, status, responsible: val('f_mresp'), cost: val('f_mcost'),
-        finishDate: status === 'ซ่อมเสร็จ' ? isoDate() : ''
-      });
-      closeSheet(); toast('อัปเดตสถานะแล้ว'); await loadAll(); renderMaint();
+      const saveBtn = document.getElementById('btnUpdateMaint'); if (saveBtn.disabled) return; setButtonBusy(saveBtn,true); setLoading(true,'กำลังอัปเดตงานซ่อม...');
+      try {
+        await apiPost('updateMaint', {
+          id, status, responsible: val('f_mresp'), cost: val('f_mcost'),
+          finishDate: status === 'ซ่อมเสร็จ' ? isoDate() : ''
+        });
+        closeSheet(); toast('อัปเดตสถานะแล้ว'); await loadAll(); renderMaint();
+      } catch(err) { toast(err.message || 'อัปเดตไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(saveBtn,false); }
     };
   }
 }
@@ -1368,8 +1555,11 @@ function openMaintForm() {
     const assetId = val('f_asset');
     const asset = state.assets.find(a => a['รหัสครุภัณฑ์'] === assetId);
     if (!val('f_issue')) { toast('กรุณากรอกอาการ/ปัญหา'); return; }
-    await apiPost('addMaint', { assetId, assetName: asset ? asset['ชื่อครุภัณฑ์'] : '', issue: val('f_issue'), reporter: val('f_reporter'), reportDate: val('f_rdate') });
-    closeSheet(); toast('แจ้งซ่อมแล้ว'); await loadAll(); renderMaint();
+    const saveBtn = document.getElementById('btnSave'); if (saveBtn.disabled) return; setButtonBusy(saveBtn,true); setLoading(true,'กำลังบันทึกงานซ่อม...');
+    try {
+      await apiPost('addMaint', { assetId, assetName: asset ? asset['ชื่อครุภัณฑ์'] : '', issue: val('f_issue'), reporter: val('f_reporter'), reportDate: val('f_rdate') });
+      closeSheet(); toast('แจ้งซ่อมแล้ว'); await loadAll(); renderMaint();
+    } catch(err) { toast(err.message || 'แจ้งซ่อมไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(saveBtn,false); }
   };
 }
 
