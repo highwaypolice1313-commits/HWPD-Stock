@@ -241,6 +241,215 @@ svg{display:block;}
 .pf-org{font-size:14px; margin-bottom:14px;}
 .pf-line{display:flex; justify-content:space-between; font-size:14px; margin:4px 0;}
 .pf-signblock{width:46%; display:inline-block; vertical-align:top; font-size:14px; line-height:2.1; margin-top:26px;}
+
+/* =========================================================
+   DESKTOP POLISH
+   มือถือคง layout เดิม / จอคอมขยายเป็น workspace แบบ dashboard
+   ========================================================= */
+@media (min-width: 900px){
+  body{padding-bottom:24px;}
+
+  .topbar{
+    padding:12px 32px;
+    min-height:66px;
+    box-shadow:0 1px 0 rgba(21,36,56,.04);
+  }
+  .brand{gap:12px;}
+  .brand-badge{width:42px;height:42px;border-radius:12px;}
+  .brand-title{font-size:16px;}
+  .brand-sub{font-size:12px;}
+
+  /* content width เหมาะกับจอคอม ไม่บีบเป็นคอลัมน์มือถือ */
+  .page{
+    width:min(1180px, calc(100vw - 64px));
+    max-width:none;
+    margin:0 auto;
+    padding:26px 0 80px;
+  }
+  .section-title{
+    font-size:19px;
+    margin:8px 0 14px;
+  }
+  .section-title small{font-size:12px;}
+
+  .hero-card{
+    padding:24px 28px;
+    border-radius:20px;
+  }
+  .hero-row{gap:32px;}
+  .hero-label{font-size:13px;}
+  .hero-num{font-size:38px;}
+  .hero-num--sm{font-size:29px;}
+  .hero-unit{font-size:13px;}
+
+  .stat-grid{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:14px;
+    margin-top:14px;
+  }
+  .stat-card{
+    padding:20px 16px;
+    min-height:105px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+  }
+  .stat-num{font-size:28px;}
+  .stat-label{font-size:12px;margin-top:7px;}
+
+  /* dashboard: สองคอลัมน์บน desktop */
+  #view-dashboard{
+    display:grid !important;
+    grid-template-columns:minmax(0,1.15fr) minmax(360px,.85fr);
+    gap:18px;
+    align-items:start;
+  }
+  #view-dashboard > .section-title:nth-child(1){
+    grid-column:1 / -1;
+  }
+  #view-dashboard > .hero-card{grid-column:1 / -1;}
+  #view-dashboard > .stat-grid{grid-column:1 / -1;}
+  #view-dashboard > .section-title:nth-child(5){
+    grid-column:1 / -1;
+  }
+  #view-dashboard > .chart-card{
+    grid-column:1 / -1;
+    padding:22px;
+  }
+  .chart-wrap{height:300px;}
+
+  /* รายการข้อมูล: ไม่ให้แคบแบบมือถือ */
+  #view-assets .search-row{
+    max-width:720px;
+  }
+  .chip-row{
+    flex-wrap:wrap;
+    overflow:visible;
+    gap:8px;
+  }
+  .chip{
+    padding:8px 15px;
+    font-size:13px;
+    transition:.18s ease;
+  }
+  .chip:hover{
+    border-color:var(--brass-line);
+    transform:translateY(-1px);
+  }
+  .list-item{
+    padding:16px 18px;
+    min-height:72px;
+    margin-bottom:10px;
+    transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+  }
+  .list-item:hover{
+    transform:translateY(-1px);
+    border-color:rgba(22,52,90,.18);
+    box-shadow:0 8px 22px rgba(21,36,56,.08);
+  }
+  .li-icon{width:44px;height:44px;}
+  .li-title{font-size:15px;}
+  .li-sub{font-size:12px;}
+  .status-badge{font-size:12px;padding:5px 11px 5px 10px;}
+
+  /* ปุ่มเพิ่มบนคอมให้อยู่มุมขวาล่างแบบเดิม แต่เล็กและไม่บังข้อมูล */
+  .fab{
+    right:32px;
+    bottom:32px;
+    width:56px;height:56px;
+    box-shadow:0 12px 30px rgba(22,52,90,.25);
+  }
+
+  /* bottom navigation เปลี่ยนเป็นแถบนำทางด้านบน/กลางจอ */
+  .tabbar{
+    position:sticky;
+    top:66px;
+    bottom:auto;
+    width:min(1180px, calc(100vw - 64px));
+    margin:0 auto;
+    padding:10px 6px;
+    border:1px solid var(--panel-line);
+    border-radius:0 0 16px 16px;
+    background:rgba(255,255,255,.94);
+    box-shadow:0 6px 20px rgba(21,36,56,.05);
+    justify-content:flex-start;
+    gap:4px;
+  }
+  .tab{
+    flex:0 0 auto;
+    min-width:120px;
+    flex-direction:row;
+    justify-content:center;
+    gap:8px;
+    padding:9px 16px;
+    border-radius:10px;
+    font-size:13px;
+    transition:.18s ease;
+  }
+  .tab:hover{background:var(--brass-wash);}
+  .tab .lbl{font-size:13px;}
+  .tab .ico,.tab .ico svg{width:18px;height:18px;}
+
+  /* modal บนคอมเป็น dialog กลางจอ ไม่ใช่ bottom sheet */
+  .overlay{
+    align-items:center;
+    padding:24px;
+  }
+  .sheet{
+    width:min(720px, 100%);
+    max-width:720px;
+    max-height:min(86vh,820px);
+    border-radius:20px;
+    border:1px solid var(--panel-line);
+    padding:26px 28px 28px;
+    box-shadow:0 24px 70px rgba(21,36,56,.22);
+  }
+  .sheet-handle{display:none;}
+  .sheet-title{font-size:19px;margin-bottom:20px;}
+  .field{margin-bottom:14px;}
+  .field label{font-size:12.5px;}
+  .btn-row{gap:12px;}
+  .btn{
+    min-height:46px;
+    padding:12px 18px;
+    font-size:14px;
+  }
+
+  /* login desktop ให้ดูเป็น application card */
+  .login-wrap{padding:40px;}
+  .login-badge{width:84px;height:84px;}
+  .login-title{font-size:22px;}
+  .login-sub{font-size:14px;}
+  #codeLoginBox{
+    max-width:380px !important;
+    padding:26px;
+    background:rgba(255,255,255,.82);
+    border:1px solid var(--panel-line);
+    border-radius:18px;
+    box-shadow:0 12px 32px rgba(21,36,56,.07);
+  }
+
+  /* print ยังคงทำงานตามเดิม */
+}
+
+@media (min-width: 900px) and (max-width: 1199px){
+  .page,.tabbar{width:calc(100vw - 40px);}
+  .topbar{padding-left:20px;padding-right:20px;}
+  .tab{min-width:105px;}
+}
+
+@media (min-width: 1200px){
+  .topbar{padding-left:max(32px, calc((100vw - 1240px)/2));padding-right:max(32px, calc((100vw - 1240px)/2));}
+  .page{width:min(1240px, calc(100vw - 80px));}
+  .tabbar{width:min(1240px, calc(100vw - 80px));}
+}
+
+/* ปรับจอคอมแนวตั้ง/พื้นที่แคบไม่ให้ dashboard เบียดกัน */
+@media (min-width:900px) and (max-width:1050px){
+  #view-dashboard{grid-template-columns:1fr;}
+  #view-dashboard > .chart-card{grid-column:1;}
+}
+
 </style>
 </head>
 <body>
