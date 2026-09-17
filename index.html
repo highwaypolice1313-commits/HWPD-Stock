@@ -7,14 +7,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
 /* =========================================================
-   DESIGN TOKENS
-   แนวคิด: ธีม "ขาว-กรมท่า" (white + navy) แบบเอกสารราชการ สะอาด เป็นทางการ
-   พื้นขาว การ์ดโค้งมนลอยเบาๆ, กรมท่า (--brass) เป็นสีหลักของปุ่ม/แท็บที่ใช้งาน
-   ทอง (--gold) ใช้เฉพาะจุดเน้น เช่น ตราสัญลักษณ์และป้ายแอดมิน ให้ความรู้สึกยศ/ตรา
-   ตัวเลข/หน่วยงานใช้ Inter (ตัวเลขเรียงชิด อ่านง่าย) ส่วนข้อความไทยใช้ Kanit
+   DESIGN TOKENS - ธีม "ขาว-กรมท่า" (white + navy) แบบเอกสารราชการ
    ========================================================= */
 :root{
   --bg-0:#eef1f6; --bg-1:#f7f8fb; --bg-2:#e4e9f1;
@@ -26,6 +23,7 @@
   --warn:#b9791a; --warn-wash:rgba(185,121,26,.12);
   --bad:#c73b4f; --bad-wash:rgba(199,59,79,.10);
   --off:#5c6c80; --off-wash:rgba(92,108,128,.10);
+  --info:#3f7fc1; --info-wash:rgba(63,127,193,.10);
   --r-lg:18px; --r-md:12px; --r-sm:10px; --r-tag:6px;
   --font-th:'Kanit',sans-serif; --font-num:'Inter','Kanit',sans-serif;
 }
@@ -65,7 +63,7 @@ svg{display:block;}
 .profile{display:flex; align-items:center; gap:9px;}
 .profile img{width:32px;height:32px;border-radius:50%; border:1.5px solid var(--panel-line); object-fit:cover;}
 
-/* ---------- tag / pill system (badges, chips, role pill share one language) ---------- */
+/* ---------- tag / pill / badge system ---------- */
 .tag{
   display:inline-flex; align-items:center; font-size:11px; padding:4px 10px 4px 9px;
   border-radius:var(--r-tag); font-weight:500; border-left:3px solid; line-height:1.5; white-space:nowrap;
@@ -80,12 +78,23 @@ svg{display:block;}
 .page{max-width:640px; margin:0 auto; padding:16px 16px 6px;}
 .section-title{font-size:16.5px; font-weight:600; margin:20px 2px 11px; display:flex; align-items:baseline; justify-content:space-between; gap:8px;}
 .section-title small{font-size:11.5px; color:var(--ink-dim); font-weight:300;}
+.section-actions{display:flex; gap:8px; align-items:center;}
 
 /* ---------- glass components ---------- */
 .glass{
   background:var(--panel); border:1px solid var(--panel-line); border-radius:var(--r-lg);
   box-shadow:0 1px 2px rgba(21,36,56,.04), 0 10px 24px rgba(21,36,56,.05);
 }
+
+/* ---------- notification banner ---------- */
+.alert-banner{
+  display:flex; align-items:center; gap:10px; padding:12px 14px; border-radius:var(--r-md);
+  margin-bottom:14px; font-size:13px; border-left:4px solid;
+}
+.alert-banner.bad{ background:var(--bad-wash); color:var(--bad); border-color:var(--bad); }
+.alert-banner.warn{ background:var(--warn-wash); color:var(--warn); border-color:var(--warn); }
+.alert-banner svg{width:18px;height:18px;flex:none;}
+.alert-banner .alert-link{ margin-left:auto; font-weight:600; cursor:pointer; text-decoration:underline; white-space:nowrap; }
 
 /* ---------- dashboard hero ---------- */
 .hero-card{padding:18px 20px;}
@@ -105,12 +114,13 @@ svg{display:block;}
 .stat-card.warn .stat-num{color:var(--warn);}
 .stat-card.bad .stat-num{color:var(--bad);}
 .stat-card.ok .stat-num{color:var(--ok);}
+.stat-card.info .stat-num{color:var(--info);}
 
 .chart-card{padding:16px; margin-bottom:12px;}
 .chart-card h4{margin:0 0 10px; font-size:13px; font-weight:500; color:var(--ink-dim);}
 .chart-wrap{position:relative; height:200px;}
 
-/* ---------- search / filter ---------- */
+/* ---------- search / filter / sort ---------- */
 .search-row{display:flex; gap:8px; margin-bottom:12px;}
 .input, select.input{
   width:100%; padding:11px 14px; border-radius:var(--r-sm); border:1px solid var(--panel-line);
@@ -118,6 +128,7 @@ svg{display:block;}
 }
 .input::placeholder{color:var(--ink-faint);}
 .input:focus{border-color:var(--brass-line);}
+.sort-select{flex:none; width:auto; min-width:126px;}
 .chip-row{display:flex; gap:7px; overflow-x:auto; padding-bottom:2px; margin-bottom:12px;}
 .chip{
   flex:none; padding:7px 13px; border-radius:var(--r-sm); font-size:12.5px; border:1px solid var(--panel-line);
@@ -135,6 +146,7 @@ svg{display:block;}
   background:var(--brass-wash); color:var(--brass);
 }
 .li-icon svg{width:19px;height:19px;}
+.li-icon img{width:100%;height:100%;object-fit:cover;border-radius:10px;}
 .li-body{flex:1; min-width:0;}
 .li-title{font-size:14px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 .li-sub{font-size:11.5px; color:var(--ink-dim); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
@@ -145,7 +157,14 @@ svg{display:block;}
 .status-disposed{background:var(--off-wash); color:var(--off); border-color:rgba(92,108,128,.35);}
 .status-overdue{background:rgba(199,59,79,.14); color:var(--bad); border-color:rgba(199,59,79,.5);}
 .status-returned{background:var(--off-wash); color:var(--off); border-color:rgba(92,108,128,.35);}
+.status-pending{background:var(--info-wash); color:var(--info); border-color:rgba(63,127,193,.45);}
+.status-rejected{background:var(--off-wash); color:var(--off); border-color:rgba(92,108,128,.35); text-decoration:line-through;}
 .empty-state{text-align:center; padding:40px 20px; color:var(--ink-dim); font-size:13px;}
+
+/* ---------- pagination ---------- */
+.pagination{display:flex; align-items:center; justify-content:center; gap:14px; padding:14px 0 4px; font-size:12.5px; color:var(--ink-dim);}
+.pagination button{padding:7px 14px; border-radius:var(--r-sm); border:1px solid var(--panel-line); background:#fff; color:var(--ink); cursor:pointer; font-size:12.5px;}
+.pagination button:disabled{opacity:.4; cursor:default;}
 
 /* ---------- fab ---------- */
 .fab{
@@ -158,18 +177,19 @@ svg{display:block;}
 /* ---------- bottom tab bar ---------- */
 .tabbar{
   position:fixed; bottom:0; left:0; right:0; z-index:50; display:flex; justify-content:space-around;
-  padding:8px 6px calc(8px + env(safe-area-inset-bottom));
+  padding:8px 4px calc(8px + env(safe-area-inset-bottom));
   background:linear-gradient(0deg, rgba(255,255,255,.97), rgba(255,255,255,.8));
   backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border-top:1px solid var(--panel-line);
 }
 .tab{
-  flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; padding:6px 2px;
-  color:var(--ink-dim); background:none; border:none; font-family:inherit; cursor:pointer;
+  flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; padding:6px 1px;
+  color:var(--ink-dim); background:none; border:none; font-family:inherit; cursor:pointer; min-width:0;
 }
-.tab .ico{width:19px;height:19px;}
+.tab .ico{width:19px;height:19px; position:relative;}
 .tab .ico svg{width:19px;height:19px;}
-.tab .lbl{font-size:10px; font-weight:400;}
+.tab .lbl{font-size:9.5px; font-weight:400; white-space:nowrap;}
 .tab.active{color:var(--brass);}
+.tab-dot{position:absolute; top:-3px; right:-5px; width:8px;height:8px;border-radius:50%; background:var(--bad); border:1.5px solid #fff;}
 
 /* ---------- sheet / modal ---------- */
 .overlay{
@@ -195,6 +215,7 @@ svg{display:block;}
 .btn-primary{background:linear-gradient(150deg, var(--brass), var(--brass-deep)); color:#fff;}
 .btn-ghost{background:#ffffff; color:var(--ink); border:1px solid var(--panel-line);}
 .btn-danger{background:var(--bad-wash); color:var(--bad); border:1px solid rgba(199,59,79,.3);}
+.btn-ok{background:var(--ok-wash); color:var(--ok); border:1px solid rgba(31,143,95,.3);}
 
 /* ---------- login screen ---------- */
 .login-wrap{min-height:100vh; display:flex; align-items:center; justify-content:center; flex-direction:column; padding:30px; text-align:center;}
@@ -220,11 +241,11 @@ svg{display:block;}
 .detail-row span:last-child{text-align:right;}
 .hint{font-size:11px; color:var(--ink-dim); margin-top:14px; line-height:1.6;}
 
-/* ---------- app entrance (single moment, not per-element) ---------- */
+/* ---------- app entrance ---------- */
 @keyframes appIn{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
 .app-in{animation:appIn .4s ease-out;}
 
-/* ---------- print form (official requisition document) ---------- */
+/* ---------- print form ---------- */
 #printArea{display:none;}
 @media print{
   html,body{background:#fff !important;}
@@ -242,14 +263,7 @@ svg{display:block;}
 .pf-line{display:flex; justify-content:space-between; font-size:14px; margin:4px 0;}
 .pf-signblock{width:46%; display:inline-block; vertical-align:top; font-size:14px; line-height:2.1; margin-top:26px;}
 
-/* =========================================================
-   UX IMPROVEMENTS V4
-   - ปุ่มรีเฟรชข้อมูล / สถานะการเชื่อมต่อ
-   - Loading overlay ระหว่างโหลด/บันทึก
-   - ป้องกันการกดบันทึกซ้ำ
-   - รายการยืมที่เลยกำหนดแสดงสถานะอัตโนมัติ
-   - desktop ใช้พื้นที่ได้ดีขึ้น แต่ mobile คงโครงเดิม
-   ========================================================= */
+/* ---------- refresh / connection / loading ---------- */
 .refresh-btn{
   display:inline-flex;align-items:center;justify-content:center;gap:7px;
   min-width:42px;height:38px;padding:0 11px;border:1px solid var(--panel-line);
@@ -271,6 +285,11 @@ svg{display:block;}
 .loading-card .spinner{margin:0 auto 10px;}
 .loading-text{font-size:13px;color:var(--ink-dim);}
 .last-sync{font-size:10.5px;color:var(--ink-faint);margin-left:4px;white-space:nowrap;}
+.icon-btn{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:10px;border:1px solid var(--panel-line);background:#fff;color:var(--ink);cursor:pointer;}
+.icon-btn svg{width:17px;height:17px;}
+#qrHolder{display:flex;justify-content:center;padding:14px 0;}
+#qrHolder canvas, #qrHolder img{border-radius:10px;}
+
 @media (min-width:900px){
   .topbar{min-height:66px;}
   .desktop-tools{display:flex !important;align-items:center;gap:9px;}
@@ -288,455 +307,129 @@ svg{display:block;}
 }
 
 /* =========================================================
-   DESKTOP REDESIGN V2
-   Mobile = original
-   Desktop >= 900px = full dashboard / left navigation
+   DESKTOP REDESIGN
    ========================================================= */
 @media (min-width:900px){
-
   body{
     padding-bottom:24px;
     background:
       radial-gradient(1000px 500px at 75% -10%, rgba(169,124,47,.10), transparent 65%),
       linear-gradient(180deg,#f5f7fa 0%,#e9eef4 100%);
   }
-
-  /* ----- LEFT NAVIGATION ----- */
   .tabbar{
-    position:fixed;
-    left:0;
-    top:0;
-    bottom:0;
-    width:236px;
-    height:100vh;
-    z-index:70;
-    display:flex;
-    flex-direction:column;
-    justify-content:flex-start;
-    align-items:stretch;
-    gap:6px;
-    padding:26px 14px 20px;
-    background:linear-gradient(180deg,#102b4b 0%,#0b2038 100%);
-    border:0;
-    border-right:1px solid rgba(255,255,255,.08);
-    border-radius:0;
+    position:fixed; left:0; top:0; bottom:0; width:236px; height:100vh; z-index:70;
+    display:flex; flex-direction:column; justify-content:flex-start; align-items:stretch; gap:6px;
+    padding:26px 14px 20px; background:linear-gradient(180deg,#102b4b 0%,#0b2038 100%);
+    border:0; border-right:1px solid rgba(255,255,255,.08); border-radius:0;
     box-shadow:8px 0 28px rgba(15,35,58,.12);
   }
-
   .tabbar::before{
-    content:"ระบบพัสดุครุภัณฑ์";
-    display:block;
-    color:#fff;
-    font-size:18px;
-    font-weight:600;
-    padding:4px 12px 2px;
+    content:"ระบบพัสดุครุภัณฑ์"; display:block; color:#fff; font-size:18px; font-weight:600; padding:4px 12px 2px;
   }
-
   .tabbar::after{
-    content:"ตำรวจทางหลวง";
-    display:block;
-    color:rgba(255,255,255,.62);
-    font-size:12px;
-    font-weight:300;
-    padding:0 12px 24px;
-    border-bottom:1px solid rgba(255,255,255,.10);
-    margin-bottom:10px;
+    content:"ตำรวจทางหลวง"; display:block; color:rgba(255,255,255,.62); font-size:12px; font-weight:300;
+    padding:0 12px 24px; border-bottom:1px solid rgba(255,255,255,.10); margin-bottom:10px;
   }
-
   .tab{
-    flex:0 0 auto;
-    width:100%;
-    min-width:0;
-    min-height:48px;
-    display:flex;
-    flex-direction:row;
-    align-items:center;
-    justify-content:flex-start;
-    gap:12px;
-    padding:12px 14px;
-    border-radius:11px;
-    color:rgba(255,255,255,.68);
-    background:transparent;
-    text-align:left;
-    transition:background .18s ease,color .18s ease,transform .18s ease;
+    flex:0 0 auto; width:100%; min-width:0; min-height:48px; display:flex; flex-direction:row; align-items:center;
+    justify-content:flex-start; gap:12px; padding:12px 14px; border-radius:11px; color:rgba(255,255,255,.68);
+    background:transparent; text-align:left; transition:background .18s ease,color .18s ease,transform .18s ease;
   }
+  .tab:hover{ background:rgba(255,255,255,.08); color:#fff; transform:translateX(2px); }
+  .tab.active{ color:#fff; background:linear-gradient(90deg,rgba(169,124,47,.28),rgba(169,124,47,.10)); box-shadow:inset 3px 0 0 #c99b4b; }
+  .tab .ico, .tab .ico svg{ width:20px; height:20px; }
+  .tab .lbl{ font-size:14px; font-weight:400; }
+  .tab-dot{top:2px; right:-2px;}
 
-  .tab:hover{
-    background:rgba(255,255,255,.08);
-    color:#fff;
-    transform:translateX(2px);
-  }
-
-  .tab.active{
-    color:#fff;
-    background:linear-gradient(90deg,rgba(169,124,47,.28),rgba(169,124,47,.10));
-    box-shadow:inset 3px 0 0 #c99b4b;
-  }
-
-  .tab .ico,
-  .tab .ico svg{
-    width:20px;
-    height:20px;
-  }
-
-  .tab .lbl{
-    font-size:14px;
-    font-weight:400;
-  }
-
-  /* ----- TOP HEADER ----- */
   .topbar{
-    margin-left:236px;
-    padding:14px 34px;
-    min-height:72px;
-    background:rgba(255,255,255,.92);
-    border-bottom:1px solid #dce3eb;
-    box-shadow:0 4px 18px rgba(21,36,56,.05);
-    backdrop-filter:blur(18px);
+    margin-left:236px; padding:14px 34px; min-height:72px; background:rgba(255,255,255,.92);
+    border-bottom:1px solid #dce3eb; box-shadow:0 4px 18px rgba(21,36,56,.05); backdrop-filter:blur(18px);
   }
+  .brand{ visibility:hidden; width:1px; overflow:hidden; }
+  .profile{ margin-left:auto; }
+  .profile img{ width:38px; height:38px; }
+  .role-pill{ font-size:12px; padding:6px 12px; }
 
-  .brand{
-    visibility:hidden;
-    width:1px;
-    overflow:hidden;
-  }
+  .page{ max-width:none; width:auto; margin-left:236px; margin-right:0; padding:30px 38px 70px; }
+  .section-title{ font-size:20px; margin:8px 0 16px; color:#142b45; }
+  .section-title small{ font-size:12px; }
 
-  .profile{
-    margin-left:auto;
-  }
-
-  .profile img{
-    width:38px;
-    height:38px;
-  }
-
-  .role-pill{
-    font-size:12px;
-    padding:6px 12px;
-  }
-
-  /* ----- MAIN WORKSPACE ----- */
-  .page{
-    max-width:none;
-    width:auto;
-    margin-left:236px;
-    margin-right:0;
-    padding:30px 38px 70px;
-  }
-
-  .section-title{
-    font-size:20px;
-    margin:8px 0 16px;
-    color:#142b45;
-  }
-
-  .section-title small{
-    font-size:12px;
-  }
-
-  /* ----- DASHBOARD ----- */
-  #view-dashboard{
-    display:grid;
-    grid-template-columns:minmax(0,1.65fr) minmax(340px,.85fr);
-    gap:20px;
-    align-items:start;
-  }
-
-  #view-dashboard > .section-title:nth-child(1){
-    grid-column:1 / -1;
-    margin-top:0;
-  }
-
+  #view-dashboard{ display:grid; grid-template-columns:minmax(0,1.65fr) minmax(340px,.85fr); gap:20px; align-items:start; }
+  #view-dashboard > .section-title:nth-of-type(1){ grid-column:1 / -1; margin-top:0; }
+  #view-dashboard .alert-banner{ grid-column:1 / -1; }
   #view-dashboard > .hero-card{
-    grid-column:1;
-    min-height:176px;
-    padding:28px 32px;
-    border-radius:20px;
-    background:linear-gradient(135deg,#ffffff 0%,#f9fbfd 100%);
-    box-shadow:0 12px 32px rgba(21,36,56,.08);
+    grid-column:1; min-height:176px; padding:28px 32px; border-radius:20px;
+    background:linear-gradient(135deg,#ffffff 0%,#f9fbfd 100%); box-shadow:0 12px 32px rgba(21,36,56,.08);
   }
-
-  .hero-row{
-    gap:32px;
-  }
-
-  .hero-label{
-    font-size:13px;
-  }
-
-  .hero-num{
-    font-size:42px;
-  }
-
-  .hero-num--sm{
-    font-size:30px;
-  }
-
-  .hero-unit{
-    font-size:13px;
-  }
-
-  #view-dashboard > .stat-grid{
-    grid-column:2;
-    grid-row:2;
-    grid-template-columns:1fr;
-    gap:12px;
-    margin:0;
-  }
-
+  .hero-row{ gap:32px; }
+  .hero-label{ font-size:13px; }
+  .hero-num{ font-size:42px; }
+  .hero-num--sm{ font-size:30px; }
+  .hero-unit{ font-size:13px; }
+  #view-dashboard > .stat-grid{ grid-column:2; grid-row:3; grid-template-columns:1fr; gap:12px; margin:0; }
   .stat-card{
-    min-height:50px;
-    padding:16px 20px;
-    text-align:left;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    border-radius:15px;
-    box-shadow:0 8px 24px rgba(21,36,56,.06);
+    min-height:50px; padding:16px 20px; text-align:left; display:flex; align-items:center; justify-content:space-between;
+    border-radius:15px; box-shadow:0 8px 24px rgba(21,36,56,.06);
   }
-
-  .stat-num{
-    font-size:28px;
-  }
-
-  .stat-label{
-    margin:0;
-    font-size:13px;
-  }
-
-  #view-dashboard > .section-title:nth-child(5){
-    grid-column:1 / -1;
-    margin-top:4px;
-  }
-
+  .stat-num{ font-size:28px; }
+  .stat-label{ margin:0; font-size:13px; }
+  #view-dashboard > .section-title:nth-of-type(2){ grid-column:1 / -1; margin-top:4px; }
   #view-dashboard > .chart-card{
-    grid-column:1 / -1;
-    padding:26px 28px;
-    margin-bottom:0;
-    border-radius:20px;
-    box-shadow:0 10px 28px rgba(21,36,56,.06);
+    grid-column:1 / -1; padding:26px 28px; margin-bottom:0; border-radius:20px; box-shadow:0 10px 28px rgba(21,36,56,.06);
   }
+  .chart-wrap{ height:330px; }
 
-  .chart-wrap{
-    height:330px;
-  }
+  #view-assets .search-row{ max-width:900px; }
+  .search-row{ gap:12px; margin-bottom:16px; }
+  .input, select.input{ min-height:46px; font-size:14px; border-radius:11px; background:#fff; }
+  .chip-row{ overflow:visible; flex-wrap:wrap; gap:8px; margin-bottom:18px; }
+  .chip{ padding:9px 16px; font-size:13px; border-radius:10px; transition:.18s ease; }
+  .chip:hover{ border-color:var(--brass-line); transform:translateY(-1px); }
+  .list-item{ min-height:78px; padding:16px 20px; margin-bottom:10px; border-radius:14px; transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease; }
+  .list-item:hover{ transform:translateY(-2px); border-color:rgba(22,52,90,.18); box-shadow:0 12px 28px rgba(21,36,56,.09); }
+  .li-icon{ width:46px; height:46px; border-radius:12px; }
+  .li-title{ font-size:15px; }
+  .li-sub{ font-size:12px; margin-top:4px; }
+  .status-badge{ font-size:12px; padding:6px 12px; }
 
-  /* ----- LIST / DATA PAGES ----- */
-  #view-assets .search-row{
-    max-width:900px;
-  }
+  #view-reports{ display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:start; }
+  #view-reports > .section-title{ grid-column:1 / -1; }
+  #view-reports > .chart-card{ margin:0; min-height:430px; padding:24px; border-radius:18px; }
+  #view-reports .chart-wrap{ height:340px; }
+  #view-reports .full-width{ grid-column:1 / -1; }
 
-  .search-row{
-    gap:12px;
-    margin-bottom:16px;
-  }
+  .fab{ right:34px; bottom:34px; width:58px; height:58px; box-shadow:0 14px 34px rgba(22,52,90,.28); }
 
-  .input,
-  select.input{
-    min-height:46px;
-    font-size:14px;
-    border-radius:11px;
-    background:#fff;
-  }
+  .overlay{ align-items:center; padding:28px; background:rgba(10,24,40,.50); }
+  .sheet{ width:min(760px,calc(100vw - 120px)); max-width:760px; max-height:88vh; overflow-y:auto; border-radius:20px; border:1px solid #dce3eb; padding:28px 32px 30px; box-shadow:0 28px 80px rgba(10,24,40,.28); }
+  .sheet-handle{ display:none; }
+  .sheet-title{ font-size:20px; margin-bottom:22px; }
+  .field{ margin-bottom:15px; }
+  .field label{ font-size:13px; margin-bottom:7px; }
+  .btn-row{ gap:12px; margin-top:20px; }
+  .btn{ min-height:46px; padding:12px 18px; font-size:14px; border-radius:11px; }
 
-  .chip-row{
-    overflow:visible;
-    flex-wrap:wrap;
-    gap:8px;
-    margin-bottom:18px;
-  }
-
-  .chip{
-    padding:9px 16px;
-    font-size:13px;
-    border-radius:10px;
-    transition:.18s ease;
-  }
-
-  .chip:hover{
-    border-color:var(--brass-line);
-    transform:translateY(-1px);
-  }
-
-  .list-item{
-    min-height:78px;
-    padding:16px 20px;
-    margin-bottom:10px;
-    border-radius:14px;
-    transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease;
-  }
-
-  .list-item:hover{
-    transform:translateY(-2px);
-    border-color:rgba(22,52,90,.18);
-    box-shadow:0 12px 28px rgba(21,36,56,.09);
-  }
-
-  .li-icon{
-    width:46px;
-    height:46px;
-    border-radius:12px;
-  }
-
-  .li-title{
-    font-size:15px;
-  }
-
-  .li-sub{
-    font-size:12px;
-    margin-top:4px;
-  }
-
-  .status-badge{
-    font-size:12px;
-    padding:6px 12px;
-  }
-
-  /* ----- REPORTS ----- */
-  #view-reports{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:20px;
-    align-items:start;
-  }
-
-  #view-reports > .section-title{
-    grid-column:1 / -1;
-  }
-
-  #view-reports > .chart-card{
-    margin:0;
-    min-height:430px;
-    padding:24px;
-    border-radius:18px;
-  }
-
-  #view-reports .chart-wrap{
-    height:340px;
-  }
-
-  /* ----- FAB ----- */
-  .fab{
-    right:34px;
-    bottom:34px;
-    width:58px;
-    height:58px;
-    box-shadow:0 14px 34px rgba(22,52,90,.28);
-  }
-
-  /* ----- MODAL: desktop dialog, not bottom sheet ----- */
-  .overlay{
-    align-items:center;
-    padding:28px;
-    background:rgba(10,24,40,.50);
-  }
-
-  .sheet{
-    width:min(760px,calc(100vw - 120px));
-    max-width:760px;
-    max-height:88vh;
-    overflow-y:auto;
-    border-radius:20px;
-    border:1px solid #dce3eb;
-    padding:28px 32px 30px;
-    box-shadow:0 28px 80px rgba(10,24,40,.28);
-  }
-
-  .sheet-handle{
-    display:none;
-  }
-
-  .sheet-title{
-    font-size:20px;
-    margin-bottom:22px;
-  }
-
-  .field{
-    margin-bottom:15px;
-  }
-
-  .field label{
-    font-size:13px;
-    margin-bottom:7px;
-  }
-
-  .btn-row{
-    gap:12px;
-    margin-top:20px;
-  }
-
-  .btn{
-    min-height:46px;
-    padding:12px 18px;
-    font-size:14px;
-    border-radius:11px;
-  }
-
-  /* ----- LOGIN DESKTOP ----- */
   .login-wrap{
-    background:
-      radial-gradient(900px 500px at 50% 10%,rgba(169,124,47,.15),transparent 65%),
-      linear-gradient(135deg,#0d2038,#16345a);
+    background: radial-gradient(900px 500px at 50% 10%,rgba(169,124,47,.15),transparent 65%), linear-gradient(135deg,#0d2038,#16345a);
     color:#fff;
   }
-
-  .login-title{
-    font-size:24px;
-  }
-
-  .login-sub{
-    font-size:14px;
-    color:rgba(255,255,255,.72);
-  }
-
-  .login-badge{
-    width:92px;
-    height:92px;
-    border-radius:24px;
-    margin-bottom:24px;
-  }
-
-  #codeLoginBox{
-    max-width:400px !important;
-    padding:28px;
-    background:rgba(255,255,255,.98);
-    border:0;
-    border-radius:18px;
-    box-shadow:0 24px 60px rgba(0,0,0,.20);
-    color:var(--ink);
-  }
-
-  #toggleLoginModeLink{
-    color:#fff !important;
-  }
+  .login-title{ font-size:24px; }
+  .login-sub{ font-size:14px; color:rgba(255,255,255,.72); }
+  .login-badge{ width:92px; height:92px; border-radius:24px; margin-bottom:24px; }
+  #codeLoginBox{ max-width:400px !important; padding:28px; background:rgba(255,255,255,.98); border:0; border-radius:18px; box-shadow:0 24px 60px rgba(0,0,0,.20); color:var(--ink); }
+  #toggleLoginModeLink{ color:#fff !important; }
 }
-
-/* medium desktop */
 @media (min-width:900px) and (max-width:1199px){
   .tabbar{width:210px;}
   .topbar,.page{margin-left:210px;}
-  #view-dashboard{
-    grid-template-columns:1fr;
-  }
-  #view-dashboard > .hero-card,
-  #view-dashboard > .stat-grid,
-  #view-dashboard > .chart-card{
-    grid-column:1;
-    grid-row:auto;
-  }
-  #view-dashboard > .stat-grid{
-    grid-template-columns:repeat(3,1fr);
-  }
+  #view-dashboard{ grid-template-columns:1fr; }
+  #view-dashboard > .hero-card, #view-dashboard > .stat-grid, #view-dashboard > .chart-card{ grid-column:1; grid-row:auto; }
+  #view-dashboard > .stat-grid{ grid-template-columns:repeat(4,1fr); }
 }
-
-/* large desktop */
 @media (min-width:1400px){
   .page{padding-left:54px;padding-right:54px;}
-  #view-dashboard{
-    grid-template-columns:minmax(0,1.75fr) minmax(380px,.75fr);
-  }
+  #view-dashboard{ grid-template-columns:minmax(0,1.75fr) minmax(380px,.75fr); }
 }
-
 </style>
 </head>
 <body>
@@ -799,6 +492,7 @@ svg{display:block;}
   <div class="page" id="view-assets" style="display:none;"></div>
   <div class="page" id="view-borrow" style="display:none;"></div>
   <div class="page" id="view-maint" style="display:none;"></div>
+  <div class="page" id="view-users" style="display:none;"></div>
   <div class="page" id="view-reports" style="display:none;"></div>
 
   <button class="fab" id="fabBtn" style="display:none;">
@@ -815,12 +509,19 @@ svg{display:block;}
       <span class="lbl">ครุภัณฑ์</span>
     </button>
     <button class="tab" data-tab="borrow">
-      <span class="ico"><svg viewBox="0 0 20 20" fill="none"><path d="M4 7h10.5M14.5 7l-2.5-2.5M14.5 7L12 9.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 13H5.5M5.5 13L8 10.5M5.5 13L8 15.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <span class="ico">
+        <svg viewBox="0 0 20 20" fill="none"><path d="M4 7h10.5M14.5 7l-2.5-2.5M14.5 7L12 9.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 13H5.5M5.5 13L8 10.5M5.5 13L8 15.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="tab-dot" id="borrowTabDot" style="display:none;"></span>
+      </span>
       <span class="lbl">ยืม-คืน</span>
     </button>
     <button class="tab" data-tab="maint">
       <span class="ico"><svg viewBox="0 0 20 20" fill="none"><path d="M12.4 5.1a3.4 3.4 0 00-4.4 4.4l-5 5a1.5 1.5 0 002.1 2.1l5-5a3.4 3.4 0 004.4-4.4l-2.2 2.2-1.9-.4-.4-1.9 2.4-2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></span>
       <span class="lbl">ซ่อมบำรุง</span>
+    </button>
+    <button class="tab" data-tab="users" id="usersTabBtn" style="display:none;">
+      <span class="ico"><svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="6.6" r="3" stroke="currentColor" stroke-width="1.4"/><path d="M3.8 16.2c1-3 3.4-4.6 6.2-4.6s5.2 1.6 6.2 4.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></span>
+      <span class="lbl">ผู้ใช้งาน</span>
     </button>
     <button class="tab" data-tab="reports">
       <span class="ico"><svg viewBox="0 0 20 20" fill="none"><path d="M4 16.5V11M10 16.5V6M16 16.5v-8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>
@@ -841,14 +542,13 @@ svg{display:block;}
 
 <script>
 /* =========================================================
-   CONFIG — แก้ 2 บรรทัดนี้ก่อนใช้งานจริง
+   CONFIG — แก้ 3 บรรทัดนี้ก่อนใช้งานจริง
    ========================================================= */
 const API_URL = 'https://script.google.com/macros/s/AKfycbw9mgyNR0My7CPuRRX1bRStNcuv1O6nTSivhZssA8svIOOul0VW9v32_rhGwJBDOkp37A/exec';
 const LIFF_ID = 'PUT_YOUR_LIFF_ID_HERE';
-const ORG_NAME = 'สถานีตำรวจทางหลวง 3 กองกำกับการ 1 กองบังคับการตำรวจทางหลวง';   // แก้เป็นชื่อหน่วยงานของท่าน
+const ORG_NAME = 'สถานีตำรวจทางหลวง 3 กองกำกับการ 1 กองบังคับการตำรวจทางหลวง';
 const GUN_CATEGORY = 'อาวุธปืน';
 
-/* ชุดไอคอน SVG (แทนอิโมจิเดิม เพื่อให้หน้าตาเหมือนกันทุกอุปกรณ์/ทุกระบบปฏิบัติการ) */
 const ICONS = {
   gun: '<svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.3" stroke="currentColor" stroke-width="1.4"/><circle cx="10" cy="10" r="3.1" stroke="currentColor" stroke-width="1.4"/><circle cx="10" cy="10" r="0.9" fill="currentColor"/></svg>',
   vehicle: '<svg viewBox="0 0 20 20" fill="none"><path d="M4 11l1.2-3.6A1.6 1.6 0 016.7 6.3h6.6c.7 0 1.3.4 1.5 1.1L16 11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><rect x="2.5" y="11" width="15" height="4.6" rx="1.6" stroke="currentColor" stroke-width="1.4"/><circle cx="6.3" cy="15.8" r="1.2" fill="currentColor"/><circle cx="13.7" cy="15.8" r="1.2" fill="currentColor"/></svg>',
@@ -857,26 +557,28 @@ const ICONS = {
   uniform: '<svg viewBox="0 0 20 20" fill="none"><path d="M7 3.5L10 5l3-1.5 3.2 3.2-2.4 2.2v7.1H6.2V8.9L3.8 6.7 7 3.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>',
   other: '<svg viewBox="0 0 20 20" fill="none"><rect x="2.5" y="2.5" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="11.5" y="2.5" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="11.5" y="11.5" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="2.5" y="11.5" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/></svg>',
   swap: '<svg viewBox="0 0 20 20" fill="none"><path d="M4 7h10.5M14.5 7l-2.5-2.5M14.5 7L12 9.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 13H5.5M5.5 13L8 10.5M5.5 13L8 15.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-  wrench: '<svg viewBox="0 0 20 20" fill="none"><path d="M12.4 5.1a3.4 3.4 0 00-4.4 4.4l-5 5a1.5 1.5 0 002.1 2.1l5-5a3.4 3.4 0 004.4-4.4l-2.2 2.2-1.9-.4-.4-1.9 2.4-2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>'
+  wrench: '<svg viewBox="0 0 20 20" fill="none"><path d="M12.4 5.1a3.4 3.4 0 00-4.4 4.4l-5 5a1.5 1.5 0 002.1 2.1l5-5a3.4 3.4 0 004.4-4.4l-2.2 2.2-1.9-.4-.4-1.9 2.4-2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>',
+  warn: '<svg viewBox="0 0 20 20" fill="none"><path d="M10 3.2l7.7 13.3a1 1 0 01-.9 1.5H3.2a1 1 0 01-.9-1.5L10 3.2z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M10 8.2v3.4M10 14.2v.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+  user: '<svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="6.6" r="3" stroke="currentColor" stroke-width="1.4"/><path d="M3.8 16.2c1-3 3.4-4.6 6.2-4.6s5.2 1.6 6.2 4.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
+  clock: '<svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.3" stroke="currentColor" stroke-width="1.4"/><path d="M10 6v4.2l3 1.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  download: '<svg viewBox="0 0 20 20" fill="none"><path d="M10 3v10m0 0l3.5-3.5M10 13l-3.5-3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 15.5h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+  qr: '<svg viewBox="0 0 20 20" fill="none"><rect x="3" y="3" width="5" height="5" stroke="currentColor" stroke-width="1.3"/><rect x="12" y="3" width="5" height="5" stroke="currentColor" stroke-width="1.3"/><rect x="3" y="12" width="5" height="5" stroke="currentColor" stroke-width="1.3"/><rect x="12.5" y="12.5" width="1.8" height="1.8" fill="currentColor"/><rect x="16" y="12.5" width="1" height="1" fill="currentColor"/><rect x="12.5" y="16" width="1" height="1" fill="currentColor"/><rect x="15" y="15" width="2" height="2" stroke="currentColor" stroke-width="1"/></svg>',
+  log: '<svg viewBox="0 0 20 20" fill="none"><path d="M4 3.5h9l3 3v10a1 1 0 01-1 1H4a1 1 0 01-1-1v-12a1 1 0 011-1z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M6.5 9h7M6.5 12h7M6.5 15h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>'
 };
 
 /* ========================================================= STATE */
 const state = {
   user: null, role: 'guest',
-  assets: [], borrow: [], maint: [], components: [], dashboard: null,
-  tab: 'dashboard', assetFilter: 'all', assetSearch: ''
+  assets: [], borrow: [], maint: [], components: [], users: [], activity: [], dashboard: null,
+  tab: 'dashboard', assetFilter: 'all', assetStatusFilter: 'all', assetSearch: '', assetSort: 'name_asc', assetPage: 1
 };
+const PAGE_SIZE = 12;
 const CATS = ['อาวุธปืน','ยานพาหนะ','สื่อสาร','คอมพิวเตอร์/IT','เครื่องแบบ/สนาม','อื่นๆ'];
 const COMPONENT_TYPES = ['ซองกระสุน/แม็กกาซีน','ศูนย์เล็ง/กล้อง','ไฟฉายติดปืน','สายสะพาย','ซองพกพา','อุปกรณ์ทำความสะอาด','อื่นๆ'];
+const ASSET_STATUSES = ['พร้อมใช้งาน','กำลังยืม','ซ่อมบำรุง','จำหน่ายแล้ว'];
 
-/* ========================================================= INIT / LOGIN
-   ผู้ใช้สามารถเข้าสู่ระบบได้ 2 ทาง:
-   1) ผ่าน LINE LIFF (อัตโนมัติ ถ้าตั้งค่า LIFF_ID และเปิดผ่านแอป/เบราว์เซอร์ที่ใช้ LINE ได้)
-   2) ด้วยชื่อผู้ใช้ + รหัสผ่าน (ตั้งค่าให้ผู้ใช้แต่ละคนได้จากฝั่ง Apps Script — ดูฟังก์ชัน
-      setPasswordForUser() ใน Code.gs) — ใช้กรณีเปิดนอกแอป LINE หรือยังไม่ได้ตั้งค่า LIFF_ID
-   ถ้า LIFF ใช้งานไม่ได้ ระบบจะสลับไปแสดงฟอร์มชื่อผู้ใช้/รหัสผ่านให้อัตโนมัติ
-   ========================================================= */
-let loginMode = 'liff'; // 'liff' | 'code'
+/* ========================================================= INIT / LOGIN */
+let loginMode = 'liff';
 
 async function init() {
   await tryLiffLogin();
@@ -890,7 +592,6 @@ async function tryLiffLogin() {
     const profile = await liff.getProfile();
     await completeLogin({ id: profile.userId, name: profile.displayName, picture: profile.pictureUrl });
   } catch (err) {
-    // LIFF ใช้งานไม่ได้ (ยังไม่ตั้งค่า LIFF_ID / เปิดนอกแอป LINE / ปัญหาการเชื่อมต่อ) — สลับไปใช้รหัสผ่านแทน
     document.getElementById('loginSpinner').style.display = 'none';
     document.getElementById('loginHint').textContent = '';
     showCodeLoginForm();
@@ -905,7 +606,6 @@ function setLoginUiForLiffAttempt() {
   document.getElementById('loginHint').textContent = '';
   document.getElementById('toggleLoginModeLink').textContent = 'เข้าสู่ระบบด้วยชื่อผู้ใช้และรหัสผ่านแทน';
 }
-
 function showCodeLoginForm() {
   loginMode = 'code';
   document.getElementById('loginSubText').innerHTML = 'ตำรวจทางหลวง<br>เข้าสู่ระบบด้วยชื่อผู้ใช้และรหัสผ่าน';
@@ -913,7 +613,6 @@ function showCodeLoginForm() {
   document.getElementById('codeLoginBox').style.display = 'block';
   document.getElementById('toggleLoginModeLink').textContent = 'เข้าสู่ระบบผ่าน LINE แทน';
 }
-
 document.getElementById('toggleLoginModeLink').addEventListener('click', () => {
   if (loginMode === 'liff') { showCodeLoginForm(); } else { tryLiffLogin(); }
 });
@@ -930,10 +629,7 @@ async function doCodeLogin() {
   const btn = document.getElementById('btnCodeLogin');
   btn.disabled = true; btn.textContent = 'กำลังเข้าสู่ระบบ...';
   try {
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'loginWithCode', payload: { username, password } })
-    });
+    const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'loginWithCode', payload: { username, password } }) });
     const j = await res.json();
     if (!j.ok) throw new Error(j.error);
     await completeLogin({ id: j.data.identifier, name: j.data.name, picture: '' }, j.data.role);
@@ -966,11 +662,12 @@ async function completeLogin(user, knownRole) {
   const pill = document.getElementById('rolePill');
   pill.textContent = state.role === 'admin' ? 'แอดมิน' : 'ดูอย่างเดียว';
   if (state.role !== 'admin') pill.classList.add('viewer');
+  document.getElementById('usersTabBtn').style.display = isAdmin() ? 'flex' : 'none';
 
   document.getElementById('loginScreen').style.display = 'none';
   const appEl = document.getElementById('app');
   appEl.style.display = 'block';
-  appEl.classList.add('app-in'); // แอนิเมชันเข้าแอปครั้งเดียวตอนล็อกอินสำเร็จ
+  appEl.classList.add('app-in');
   try {
     await loadAll(true);
     renderTab('dashboard');
@@ -989,14 +686,8 @@ function setLoading(show, text = 'กำลังโหลดข้อมูล.
   const overlay = document.getElementById('loadingOverlay');
   const label = document.getElementById('loadingText');
   if (!overlay) return;
-  if (show) {
-    busyCount++;
-    if (label) label.textContent = text;
-    overlay.classList.add('show');
-  } else {
-    busyCount = Math.max(0, busyCount - 1);
-    if (!busyCount) overlay.classList.remove('show');
-  }
+  if (show) { busyCount++; if (label) label.textContent = text; overlay.classList.add('show'); }
+  else { busyCount = Math.max(0, busyCount - 1); if (!busyCount) overlay.classList.remove('show'); }
 }
 function setConnection(ok) {
   const dot = document.getElementById('connectionDot');
@@ -1009,16 +700,8 @@ function updateSyncLabel() {
 }
 function setButtonBusy(btn, busy, textBusy = 'กำลังบันทึก...') {
   if (!btn) return;
-  if (busy) {
-    btn.dataset.originalText = btn.textContent;
-    btn.disabled = true;
-    btn.textContent = textBusy;
-    btn.setAttribute('aria-busy','true');
-  } else {
-    btn.disabled = false;
-    btn.textContent = btn.dataset.originalText || 'บันทึก';
-    btn.removeAttribute('aria-busy');
-  }
+  if (busy) { btn.dataset.originalText = btn.textContent; btn.disabled = true; btn.textContent = textBusy; btn.setAttribute('aria-busy','true'); }
+  else { btn.disabled = false; btn.textContent = btn.dataset.originalText || 'บันทึก'; btn.removeAttribute('aria-busy'); }
 }
 
 async function fetchJson(url, options = {}, timeout = 20000) {
@@ -1035,29 +718,27 @@ async function fetchJson(url, options = {}, timeout = 20000) {
     throw err;
   } finally { clearTimeout(timer); }
 }
-
 async function apiGet(action, params = {}) {
   const qs = new URLSearchParams({ action, ...params }).toString();
   return fetchJson(API_URL + '?' + qs);
 }
 async function apiPost(action, payload) {
-  return fetchJson(API_URL, {
-    method: 'POST',
-    body: JSON.stringify({ action, lineUserId: state.user?.id, payload })
-  });
+  return fetchJson(API_URL, { method: 'POST', body: JSON.stringify({ action, lineUserId: state.user?.id, payload }) });
 }
 
 async function loadAll(showLoader = false) {
   if (showLoader) setLoading(true, 'กำลังอัปเดตข้อมูล...');
   try {
-    const results = await Promise.allSettled([
+    const calls = [
       apiGet('getAssets', {}),
       apiGet('getBorrowLogs', {}),
       apiGet('getMaintLogs', {}),
       apiGet('getComponents', {}),
       apiGet('getDashboard', {})
-    ]);
+    ];
     const names = ['assets','borrow','maint','components','dashboard'];
+    if (isAdmin()) { calls.push(apiGet('getUsers', {})); names.push('users'); calls.push(apiGet('getActivityLog', {})); names.push('activity'); }
+    const results = await Promise.allSettled(calls);
     const errors = [];
     results.forEach((r, i) => {
       if (r.status === 'fulfilled') state[names[i]] = r.value;
@@ -1065,10 +746,8 @@ async function loadAll(showLoader = false) {
     });
     const successCount = results.filter(r => r.status === 'fulfilled').length;
     setConnection(successCount === results.length);
-    if (successCount) {
-      lastSyncAt = new Date();
-      updateSyncLabel();
-    }
+    if (successCount) { lastSyncAt = new Date(); updateSyncLabel(); }
+    updateBorrowDot();
     if (errors.length) {
       toast(successCount ? 'อัปเดตได้บางส่วน กรุณาลองรีเฟรชอีกครั้ง' : 'ไม่สามารถเชื่อมต่อฐานข้อมูลได้');
       if (!successCount) throw new Error(errors[0]);
@@ -1096,6 +775,10 @@ async function refreshData() {
 }
 
 function componentsOf(assetId) { return state.components.filter(c => c['รหัสครุภัณฑ์หลัก'] === assetId); }
+function updateBorrowDot() {
+  const pending = state.borrow.filter(b => b['สถานะ'] === 'รออนุมัติ').length;
+  document.getElementById('borrowTabDot').style.display = (isAdmin() && pending > 0) ? 'block' : 'none';
+}
 
 /* ========================================================= UTIL */
 function toast(msg) {
@@ -1110,28 +793,55 @@ function thaiDate(v) {
   const months = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
   return d.getDate() + ' ' + months[d.getMonth()] + ' ' + (d.getFullYear() + 543);
 }
+function thaiDateTime(v) {
+  if (!v) return '-';
+  const d = new Date(v);
+  if (isNaN(d)) return v;
+  return thaiDate(v) + ' ' + d.toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'});
+}
 function isoDate(v) {
   const d = v ? new Date(v) : new Date();
   return d.toISOString().slice(0, 10);
 }
 function statusClass(s) {
   return { 'พร้อมใช้งาน':'status-ready','กำลังยืม':'status-borrowed','ซ่อมบำรุง':'status-repair','จำหน่ายแล้ว':'status-disposed',
-           'เกินกำหนด':'status-overdue','คืนแล้ว':'status-returned','รอซ่อม':'status-repair','กำลังซ่อม':'status-borrowed','ซ่อมเสร็จ':'status-ready' }[s] || '';
+           'เกินกำหนด':'status-overdue','คืนแล้ว':'status-returned','รอซ่อม':'status-repair','กำลังซ่อม':'status-borrowed','ซ่อมเสร็จ':'status-ready',
+           'รออนุมัติ':'status-pending','ถูกปฏิเสธ':'status-rejected' }[s] || '';
 }
 function catIcon(c) {
-  // คืนค่าเป็น SVG (string) แทนอิโมจิเดิม ให้หน้าตาสม่ำเสมอทุกอุปกรณ์
   return { 'อาวุธปืน':ICONS.gun, 'ยานพาหนะ':ICONS.vehicle, 'สื่อสาร':ICONS.radio, 'คอมพิวเตอร์/IT':ICONS.computer, 'เครื่องแบบ/สนาม':ICONS.uniform }[c] || ICONS.other;
 }
 const isAdmin = () => state.role === 'admin';
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+/* ---------- CSV export ---------- */
+function exportCsv(filename, headers, rows) {
+  const escapeCell = (v) => {
+    const s = v == null ? '' : String(v);
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+  const lines = [headers.map(escapeCell).join(',')];
+  rows.forEach(r => lines.push(headers.map(h => escapeCell(r[h])).join(',')));
+  const csv = '\uFEFF' + lines.join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('ดาวน์โหลดไฟล์ CSV แล้ว');
+}
 
 /* ========================================================= TABS */
-document.querySelectorAll('.tab').forEach(btn => {
-  btn.addEventListener('click', () => renderTab(btn.dataset.tab));
-});
+document.querySelectorAll('.tab').forEach(btn => { btn.addEventListener('click', () => renderTab(btn.dataset.tab)); });
 document.getElementById('refreshBtn')?.addEventListener('click', refreshData);
 window.addEventListener('online', () => setConnection(true));
 window.addEventListener('offline', () => { setConnection(false); toast('ขณะนี้อุปกรณ์ออฟไลน์'); });
+
 function renderTab(name) {
+  if (name === 'users' && !isAdmin()) name = 'dashboard';
   state.tab = name;
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
   document.querySelectorAll('.page').forEach(p => { p.style.display = 'none'; });
@@ -1139,16 +849,17 @@ function renderTab(name) {
   if (activePage) activePage.style.display = 'block';
   window.scrollTo({top:0, behavior:'smooth'});
   const fab = document.getElementById('fabBtn');
-  fab.style.display = (isAdmin() && ['assets','borrow','maint'].includes(name)) ? 'flex' : 'none';
+  fab.style.display = (['assets','borrow','maint'].includes(name) && (isAdmin() || name === 'borrow')) ? 'flex' : 'none';
   fab.onclick = () => {
-    if (name === 'assets') openAssetForm();
+    if (name === 'assets' && isAdmin()) openAssetForm();
     if (name === 'borrow') openBorrowForm();
-    if (name === 'maint') openMaintForm();
+    if (name === 'maint' && isAdmin()) openMaintForm();
   };
   if (name === 'dashboard') renderDashboard();
   if (name === 'assets') renderAssets();
   if (name === 'borrow') renderBorrow();
   if (name === 'maint') renderMaint();
+  if (name === 'users') renderUsers();
   if (name === 'reports') renderReports();
 }
 
@@ -1156,8 +867,16 @@ function renderTab(name) {
 function renderDashboard() {
   const d = state.dashboard;
   const el = document.getElementById('view-dashboard');
+  let banners = '';
+  if (d.overdueCount > 0) {
+    banners += `<div class="alert-banner bad">${ICONS.warn}<span>มีครุภัณฑ์เกินกำหนดคืน ${d.overdueCount} รายการ</span><span class="alert-link" onclick="renderTab('borrow')">ดูรายการ</span></div>`;
+  }
+  if (isAdmin() && d.pendingCount > 0) {
+    banners += `<div class="alert-banner warn">${ICONS.clock}<span>มีคำขอยืมรออนุมัติ ${d.pendingCount} รายการ</span><span class="alert-link" onclick="renderTab('borrow')">ตรวจสอบ</span></div>`;
+  }
   el.innerHTML = `
     <div class="section-title">ภาพรวมระบบ <small>อัปเดตล่าสุดวันนี้</small></div>
+    ${banners}
     <div class="glass hero-card">
       <div class="hero-row">
         <div>
@@ -1176,15 +895,19 @@ function renderDashboard() {
       <div class="glass stat-card bad"><div class="stat-num">${d.overdueCount}</div><div class="stat-label">เกินกำหนดคืน</div></div>
       <div class="glass stat-card ok"><div class="stat-num">${d.repairCount}</div><div class="stat-label">อยู่ระหว่างซ่อม</div></div>
     </div>
+    <div class="section-title">แนวโน้มการยืมย้อนหลัง 6 เดือน</div>
+    <div class="glass chart-card"><div class="chart-wrap"><canvas id="trendChart"></canvas></div></div>
     <div class="section-title">สัดส่วนตามหมวดหมู่</div>
     <div class="glass chart-card"><div class="chart-wrap"><canvas id="catChart"></canvas></div></div>
   `;
   drawDoughnut('catChart', d.byCategory);
+  drawLine('trendChart', d.monthTrend);
 }
 
 let chartRefs = {};
 function drawDoughnut(id, dataObj) {
   const ctx = document.getElementById(id);
+  if (!ctx) return;
   if (chartRefs[id]) chartRefs[id].destroy();
   const labels = Object.keys(dataObj), values = Object.values(dataObj);
   chartRefs[id] = new Chart(ctx, {
@@ -1195,6 +918,7 @@ function drawDoughnut(id, dataObj) {
 }
 function drawBar(id, dataObj) {
   const ctx = document.getElementById(id);
+  if (!ctx) return;
   if (chartRefs[id]) chartRefs[id].destroy();
   const labels = Object.keys(dataObj), values = Object.values(dataObj);
   chartRefs[id] = new Chart(ctx, {
@@ -1205,35 +929,94 @@ function drawBar(id, dataObj) {
                y:{ ticks:{ color:'#5b6b7d', font:{ family:'Kanit', size:10.5 } }, grid:{ color:'rgba(22,52,90,.08)' } } } }
   });
 }
+function drawLine(id, dataObj) {
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  if (chartRefs[id]) chartRefs[id].destroy();
+  const monthNames = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const labels = Object.keys(dataObj).map(k => { const [y,m] = k.split('-'); return monthNames[parseInt(m,10)-1]; });
+  const values = Object.values(dataObj);
+  chartRefs[id] = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets: [{ data: values, borderColor:'#16345a', backgroundColor:'rgba(22,52,90,.08)', fill:true, tension:.35, pointBackgroundColor:'#a97c2f', pointRadius:4 }] },
+    options: { plugins:{ legend:{ display:false } },
+      scales:{ x:{ ticks:{ color:'#5b6b7d', font:{ family:'Kanit', size:11 } }, grid:{ display:false } },
+               y:{ beginAtZero:true, ticks:{ stepSize:1, color:'#5b6b7d', font:{ family:'Kanit', size:10.5 } }, grid:{ color:'rgba(22,52,90,.08)' } } } }
+  });
+}
 
 /* ========================================================= ASSETS */
+function sortAssets(list) {
+  const [field, dir] = state.assetSort.split('_');
+  const mul = dir === 'desc' ? -1 : 1;
+  return [...list].sort((a, b) => {
+    if (field === 'name') return mul * String(a['ชื่อครุภัณฑ์']||'').localeCompare(String(b['ชื่อครุภัณฑ์']||''), 'th');
+    if (field === 'value') return mul * ((Number(a['มูลค่า(บาท)'])||0) - (Number(b['มูลค่า(บาท)'])||0));
+    if (field === 'date') return mul * (new Date(a['วันที่รับเข้า']||0) - new Date(b['วันที่รับเข้า']||0));
+    return 0;
+  });
+}
 function renderAssets() {
   const el = document.getElementById('view-assets');
-  const filtered = state.assets.filter(a => {
+  let filtered = state.assets.filter(a => {
     const matchCat = state.assetFilter === 'all' || a['หมวดหมู่'] === state.assetFilter;
+    const matchStatus = state.assetStatusFilter === 'all' || a['สถานะ'] === state.assetStatusFilter;
     const matchSearch = !state.assetSearch || (a['ชื่อครุภัณฑ์']||'').toLowerCase().includes(state.assetSearch) || (a['รหัสครุภัณฑ์']||'').toLowerCase().includes(state.assetSearch);
-    return matchCat && matchSearch;
+    return matchCat && matchStatus && matchSearch;
   });
+  filtered = sortAssets(filtered);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  if (state.assetPage > totalPages) state.assetPage = totalPages;
+  const pageItems = filtered.slice((state.assetPage - 1) * PAGE_SIZE, state.assetPage * PAGE_SIZE);
+
   el.innerHTML = `
-    <div class="section-title">ทะเบียนครุภัณฑ์ <small>${state.assets.length} รายการ</small></div>
-    <div class="search-row"><input class="input" id="assetSearchInput" placeholder="ค้นหาชื่อหรือรหัสครุภัณฑ์..." value="${state.assetSearch}"></div>
+    <div class="section-title">
+      ทะเบียนครุภัณฑ์ <small>${filtered.length} / ${state.assets.length} รายการ</small>
+      <span class="section-actions">
+        <button class="icon-btn" id="btnExportAssets" title="ส่งออก CSV">${ICONS.download}</button>
+      </span>
+    </div>
+    <div class="search-row">
+      <input class="input" id="assetSearchInput" placeholder="ค้นหาชื่อหรือรหัสครุภัณฑ์..." value="${escapeHtml(state.assetSearch)}">
+      <select class="input sort-select" id="assetSortSelect">
+        <option value="name_asc" ${state.assetSort==='name_asc'?'selected':''}>ชื่อ ก-ฮ</option>
+        <option value="name_desc" ${state.assetSort==='name_desc'?'selected':''}>ชื่อ ฮ-ก</option>
+        <option value="date_desc" ${state.assetSort==='date_desc'?'selected':''}>รับเข้าล่าสุด</option>
+        <option value="date_asc" ${state.assetSort==='date_asc'?'selected':''}>รับเข้าเก่าสุด</option>
+        <option value="value_desc" ${state.assetSort==='value_desc'?'selected':''}>มูลค่ามาก-น้อย</option>
+      </select>
+    </div>
     <div class="chip-row">
-      <div class="chip ${state.assetFilter==='all'?'active':''}" data-cat="all">ทั้งหมด</div>
+      <div class="chip ${state.assetFilter==='all'?'active':''}" data-cat="all">ทุกหมวดหมู่</div>
       ${CATS.map(c => `<div class="chip ${state.assetFilter===c?'active':''}" data-cat="${c}">${c}</div>`).join('')}
     </div>
-    <div id="assetList">${filtered.length ? filtered.map(assetRow).join('') : emptyState('ไม่พบครุภัณฑ์ที่ค้นหา')}</div>
+    <div class="chip-row">
+      <div class="chip ${state.assetStatusFilter==='all'?'active':''}" data-status="all">ทุกสถานะ</div>
+      ${ASSET_STATUSES.map(s => `<div class="chip ${state.assetStatusFilter===s?'active':''}" data-status="${s}">${s}</div>`).join('')}
+    </div>
+    <div id="assetList">${pageItems.length ? pageItems.map(assetRow).join('') : emptyState('ไม่พบครุภัณฑ์ที่ค้นหา')}</div>
+    ${filtered.length ? `<div class="pagination">
+      <button id="assetPrevPage" ${state.assetPage<=1?'disabled':''}>ก่อนหน้า</button>
+      <span>หน้า ${state.assetPage} / ${totalPages}</span>
+      <button id="assetNextPage" ${state.assetPage>=totalPages?'disabled':''}>ถัดไป</button>
+    </div>` : ''}
   `;
-  document.getElementById('assetSearchInput').oninput = (e) => { state.assetSearch = e.target.value.toLowerCase(); renderAssets(); };
-  document.querySelectorAll('#view-assets .chip').forEach(c => c.onclick = () => { state.assetFilter = c.dataset.cat; renderAssets(); });
+  document.getElementById('assetSearchInput').oninput = (e) => { state.assetSearch = e.target.value.toLowerCase(); state.assetPage = 1; renderAssets(); };
+  document.getElementById('assetSortSelect').onchange = (e) => { state.assetSort = e.target.value; renderAssets(); };
+  document.getElementById('btnExportAssets').onclick = () => exportCsv('ครุภัณฑ์.csv', ['รหัสครุภัณฑ์','ชื่อครุภัณฑ์','หมวดหมู่','ยี่ห้อ/รุ่น','หมายเลขเครื่อง','วันที่รับเข้า','มูลค่า(บาท)','สถานะ','ผู้ครอบครอง/หน่วยงาน','หน่วยงาน','หมายเหตุ'], filtered);
+  document.querySelectorAll('#view-assets .chip[data-cat]').forEach(c => c.onclick = () => { state.assetFilter = c.dataset.cat; state.assetPage = 1; renderAssets(); });
+  document.querySelectorAll('#view-assets .chip[data-status]').forEach(c => c.onclick = () => { state.assetStatusFilter = c.dataset.status; state.assetPage = 1; renderAssets(); });
   document.querySelectorAll('.asset-item').forEach(it => it.onclick = () => openAssetDetail(it.dataset.id));
+  const prevBtn = document.getElementById('assetPrevPage'); if (prevBtn) prevBtn.onclick = () => { state.assetPage--; renderAssets(); };
+  const nextBtn = document.getElementById('assetNextPage'); if (nextBtn) nextBtn.onclick = () => { state.assetPage++; renderAssets(); };
 }
 function emptyState(msg) { return `<div class="glass empty-state">${msg}</div>`; }
 function assetRow(a) {
   return `<div class="glass list-item asset-item" data-id="${a['รหัสครุภัณฑ์']}">
     <div class="li-icon">${catIcon(a['หมวดหมู่'])}</div>
     <div class="li-body">
-      <div class="li-title">${a['ชื่อครุภัณฑ์']}</div>
-      <div class="li-sub">${a['รหัสครุภัณฑ์']} · ${a['ผู้ครอบครอง/หน่วยงาน'] || 'คลังพัสดุ'}</div>
+      <div class="li-title">${escapeHtml(a['ชื่อครุภัณฑ์'])}</div>
+      <div class="li-sub">${escapeHtml(a['รหัสครุภัณฑ์'])} · ${escapeHtml(a['ผู้ครอบครอง/หน่วยงาน'] || 'คลังพัสดุ')}</div>
     </div>
     <div class="status-badge ${statusClass(a['สถานะ'])}">${a['สถานะ']}</div>
   </div>`;
@@ -1243,19 +1026,21 @@ function openAssetDetail(id) {
   if (!a) return;
   const history = state.borrow.filter(b => b['รหัสครุภัณฑ์'] === id).slice(-5).reverse();
   showSheet(`
-    <div class="sheet-title">${a['ชื่อครุภัณฑ์']}</div>
+    <div class="sheet-title">${escapeHtml(a['ชื่อครุภัณฑ์'])}</div>
     <div class="detail-row"><span>รหัสครุภัณฑ์</span><span>${a['รหัสครุภัณฑ์']}</span></div>
     <div class="detail-row"><span>หมวดหมู่</span><span>${a['หมวดหมู่']}</span></div>
-    <div class="detail-row"><span>ยี่ห้อ/รุ่น</span><span>${a['ยี่ห้อ/รุ่น'] || '-'}</span></div>
-    <div class="detail-row"><span>หมายเลขเครื่อง</span><span>${a['หมายเลขเครื่อง'] || '-'}</span></div>
+    <div class="detail-row"><span>ยี่ห้อ/รุ่น</span><span>${escapeHtml(a['ยี่ห้อ/รุ่น']) || '-'}</span></div>
+    <div class="detail-row"><span>หมายเลขเครื่อง</span><span>${escapeHtml(a['หมายเลขเครื่อง']) || '-'}</span></div>
     <div class="detail-row"><span>วันที่รับเข้า</span><span>${thaiDate(a['วันที่รับเข้า'])}</span></div>
     <div class="detail-row"><span>มูลค่า</span><span>${a['มูลค่า(บาท)'] ? Number(a['มูลค่า(บาท)']).toLocaleString()+' บาท' : '-'}</span></div>
     <div class="detail-row"><span>สถานะ</span><span class="status-badge ${statusClass(a['สถานะ'])}">${a['สถานะ']}</span></div>
-    <div class="detail-row"><span>ผู้ครอบครอง</span><span>${a['ผู้ครอบครอง/หน่วยงาน'] || '-'}</span></div>
-    <div class="detail-row"><span>หมายเหตุ</span><span>${a['หมายเหตุ'] || '-'}</span></div>
+    <div class="detail-row"><span>ผู้ครอบครอง</span><span>${escapeHtml(a['ผู้ครอบครอง/หน่วยงาน']) || '-'}</span></div>
+    <div class="detail-row"><span>หน่วยงาน</span><span>${escapeHtml(a['หน่วยงาน']) || '-'}</span></div>
+    <div class="detail-row"><span>หมายเหตุ</span><span>${escapeHtml(a['หมายเหตุ']) || '-'}</span></div>
     ${a['หมวดหมู่'] === GUN_CATEGORY ? componentsSection(id) : ''}
-    ${history.length ? `<div class="hint" style="margin-top:16px; font-weight:500; color:var(--ink);">ประวัติการยืม-คืนล่าสุด</div>` + history.map(h => `<div class="detail-row"><span>${h['ผู้ยืม']}</span><span>${thaiDate(h['วันที่ยืม'])} · ${h['สถานะ']}</span></div>`).join('') : ''}
+    ${history.length ? `<div class="hint" style="margin-top:16px; font-weight:500; color:var(--ink);">ประวัติการยืม-คืนล่าสุด</div>` + history.map(h => `<div class="detail-row"><span>${escapeHtml(h['ผู้ยืม'])}</span><span>${thaiDate(h['วันที่ยืม'])} · ${h['สถานะ']}</span></div>`).join('') : ''}
     <div class="btn-row">
+      <button class="btn btn-ghost" id="btnShowQr">แสดง QR โค้ด</button>
       <button class="btn btn-ghost" id="btnPrintAssetForm">พิมพ์ใบเบิกเปล่า</button>
     </div>
     ${isAdmin() ? `<div class="btn-row">
@@ -1263,6 +1048,7 @@ function openAssetDetail(id) {
       <button class="btn btn-danger" id="btnDeleteAsset">ลบ</button>
     </div>` : ''}
   `);
+  document.getElementById('btnShowQr').onclick = () => openQrView(a);
   document.getElementById('btnPrintAssetForm').onclick = () => printRequisitionForm({ items: [a], components: componentsOf(id) });
   if (isAdmin()) {
     document.getElementById('btnEditAsset').onclick = () => { closeSheet(); openAssetForm(a); };
@@ -1274,6 +1060,16 @@ function openAssetDetail(id) {
     document.querySelectorAll('.comp-item').forEach(it => it.onclick = () => openComponentForm(id, componentsOf(id).find(c => c['รหัสส่วนควบ'] === it.dataset.id)));
   }
 }
+function openQrView(a) {
+  showSheet(`
+    <div class="sheet-title">QR โค้ดครุภัณฑ์</div>
+    <div id="qrHolder"></div>
+    <div class="hint" style="text-align:center;">${escapeHtml(a['ชื่อครุภัณฑ์'])} · ${a['รหัสครุภัณฑ์']}</div>
+    <div class="btn-row"><button class="btn btn-primary" id="btnPrintQr">พิมพ์ป้าย QR</button></div>
+  `);
+  new QRCode(document.getElementById('qrHolder'), { text: a['รหัสครุภัณฑ์'], width:180, height:180, colorDark:'#16345a', colorLight:'#ffffff' });
+  document.getElementById('btnPrintQr').onclick = () => window.print();
+}
 function componentsSection(assetId) {
   const comps = componentsOf(assetId);
   return `
@@ -1283,7 +1079,7 @@ function componentsSection(assetId) {
     </div>
     ${comps.length ? comps.map(c => `
       <div class="detail-row comp-item" data-id="${c['รหัสส่วนควบ']}" style="cursor:${isAdmin() ? 'pointer' : 'default'};">
-        <span>${c['ชื่อส่วนควบ']} <span style="color:var(--ink-dim); font-size:11px;">(${c['ประเภท'] || '-'})</span></span>
+        <span>${escapeHtml(c['ชื่อส่วนควบ'])} <span style="color:var(--ink-dim); font-size:11px;">(${c['ประเภท'] || '-'})</span></span>
         <span class="status-badge ${statusClass(c['สถานะ'])}">${c['สถานะ']}</span>
       </div>`).join('') : `<div class="hint">ยังไม่มีข้อมูลส่วนควบ</div>`}
   `;
@@ -1292,16 +1088,17 @@ function openAssetForm(a) {
   const editing = !!a;
   showSheet(`
     <div class="sheet-title">${editing ? 'แก้ไขครุภัณฑ์' : 'เพิ่มครุภัณฑ์ใหม่'}</div>
-    <div class="field"><label>ชื่อครุภัณฑ์</label><input class="input" id="f_name" value="${a ? a['ชื่อครุภัณฑ์'] : ''}"></div>
+    <div class="field"><label>ชื่อครุภัณฑ์</label><input class="input" id="f_name" value="${a ? escapeHtml(a['ชื่อครุภัณฑ์']) : ''}"></div>
     <div class="field"><label>หมวดหมู่</label>
       <select class="input" id="f_cat">${CATS.map(c => `<option ${a && a['หมวดหมู่']===c?'selected':''}>${c}</option>`).join('')}</select>
     </div>
-    <div class="field"><label>ยี่ห้อ/รุ่น</label><input class="input" id="f_brand" value="${a ? a['ยี่ห้อ/รุ่น']||'' : ''}"></div>
-    <div class="field"><label>หมายเลขเครื่อง/serial</label><input class="input" id="f_serial" value="${a ? a['หมายเลขเครื่อง']||'' : ''}"></div>
+    <div class="field"><label>ยี่ห้อ/รุ่น</label><input class="input" id="f_brand" value="${a ? escapeHtml(a['ยี่ห้อ/รุ่น'])||'' : ''}"></div>
+    <div class="field"><label>หมายเลขเครื่อง/serial</label><input class="input" id="f_serial" value="${a ? escapeHtml(a['หมายเลขเครื่อง'])||'' : ''}"></div>
     <div class="field"><label>วันที่รับเข้า</label><input class="input" type="date" id="f_date" value="${a && a['วันที่รับเข้า'] ? isoDate(a['วันที่รับเข้า']) : isoDate()}"></div>
     <div class="field"><label>มูลค่า (บาท)</label><input class="input" type="number" id="f_value" value="${a ? a['มูลค่า(บาท)']||'' : ''}"></div>
-    <div class="field"><label>ผู้ครอบครอง/หน่วยงาน</label><input class="input" id="f_holder" value="${a ? a['ผู้ครอบครอง/หน่วยงาน']||'' : ''}"></div>
-    <div class="field"><label>หมายเหตุ</label><input class="input" id="f_note" value="${a ? a['หมายเหตุ']||'' : ''}"></div>
+    <div class="field"><label>ผู้ครอบครอง/หน่วยงาน</label><input class="input" id="f_holder" value="${a ? escapeHtml(a['ผู้ครอบครอง/หน่วยงาน'])||'' : ''}"></div>
+    <div class="field"><label>หน่วยงานเจ้าของ</label><input class="input" id="f_unit" value="${a ? escapeHtml(a['หน่วยงาน'])||'' : ''}"></div>
+    <div class="field"><label>หมายเหตุ</label><input class="input" id="f_note" value="${a ? escapeHtml(a['หมายเหตุ'])||'' : ''}"></div>
     <div class="btn-row">
       <button class="btn btn-ghost" id="btnCancel">ยกเลิก</button>
       <button class="btn btn-primary" id="btnSave">บันทึก</button>
@@ -1312,7 +1109,7 @@ function openAssetForm(a) {
     const payload = {
       id: a ? a['รหัสครุภัณฑ์'] : undefined,
       name: val('f_name'), category: val('f_cat'), brand: val('f_brand'), serial: val('f_serial'),
-      receivedDate: val('f_date'), value: val('f_value'), holder: val('f_holder'), note: val('f_note')
+      receivedDate: val('f_date'), value: val('f_value'), holder: val('f_holder'), unit: val('f_unit'), note: val('f_note')
     };
     if (!payload.name) { toast('กรุณากรอกชื่อครุภัณฑ์'); return; }
     const saveBtn = document.getElementById('btnSave'); if (saveBtn.disabled) return; setButtonBusy(saveBtn,true); setLoading(true,'กำลังบันทึกข้อมูล...');
@@ -1322,17 +1119,16 @@ function openAssetForm(a) {
     } catch(err) { toast(err.message || 'บันทึกไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(saveBtn,false); }
   };
 }
-
 function openComponentForm(parentId, c) {
   const editing = !!c;
   showSheet(`
     <div class="sheet-title">${editing ? 'แก้ไขส่วนควบ' : 'เพิ่มส่วนควบ'}</div>
-    <div class="field"><label>ชื่อส่วนควบ</label><input class="input" id="c_name" value="${c ? c['ชื่อส่วนควบ'] : ''}"></div>
+    <div class="field"><label>ชื่อส่วนควบ</label><input class="input" id="c_name" value="${c ? escapeHtml(c['ชื่อส่วนควบ']) : ''}"></div>
     <div class="field"><label>ประเภท</label>
       <select class="input" id="c_type">${COMPONENT_TYPES.map(t => `<option ${c && c['ประเภท']===t?'selected':''}>${t}</option>`).join('')}</select>
     </div>
-    <div class="field"><label>หมายเลข/ซีเรียล</label><input class="input" id="c_serial" value="${c ? c['หมายเลข/ซีเรียล']||'' : ''}"></div>
-    <div class="field"><label>หมายเหตุ</label><input class="input" id="c_note" value="${c ? c['หมายเหตุ']||'' : ''}"></div>
+    <div class="field"><label>หมายเลข/ซีเรียล</label><input class="input" id="c_serial" value="${c ? escapeHtml(c['หมายเลข/ซีเรียล'])||'' : ''}"></div>
+    <div class="field"><label>หมายเหตุ</label><input class="input" id="c_note" value="${c ? escapeHtml(c['หมายเหตุ'])||'' : ''}"></div>
     <div class="btn-row">
       <button class="btn btn-ghost" id="btnCancel">ยกเลิก</button>
       <button class="btn btn-primary" id="btnSave">บันทึก</button>
@@ -1361,18 +1157,26 @@ function openComponentForm(parentId, c) {
 /* ========================================================= BORROW */
 function renderBorrow() {
   const el = document.getElementById('view-borrow');
-  const active = state.borrow.filter(b => b['สถานะ'] !== 'คืนแล้ว');
-  const history = state.borrow.filter(b => b['สถานะ'] === 'คืนแล้ว').slice(-15).reverse();
+  const pending = state.borrow.filter(b => b['สถานะ'] === 'รออนุมัติ');
+  const active = state.borrow.filter(b => b['สถานะ'] !== 'คืนแล้ว' && b['สถานะ'] !== 'รออนุมัติ' && b['สถานะ'] !== 'ถูกปฏิเสธ');
+  const history = state.borrow.filter(b => b['สถานะ'] === 'คืนแล้ว' || b['สถานะ'] === 'ถูกปฏิเสธ').slice(-15).reverse();
   el.innerHTML = `
-    <div class="section-title">รายการยืม-คืน <small>${active.length} รายการค้างคืน</small></div>
+    <div class="section-title">
+      รายการยืม-คืน <small>${active.length} รายการค้างคืน</small>
+      <span class="section-actions"><button class="icon-btn" id="btnExportBorrow" title="ส่งออก CSV">${ICONS.download}</button></span>
+    </div>
+    ${pending.length ? `<div class="section-title" style="margin-top:0;">คำขอรออนุมัติ <small>${pending.length} รายการ</small></div>
+    <div id="borrowPending">${pending.map(borrowRow).join('')}</div>` : ''}
+    <div class="section-title">รายการค้างคืน</div>
     <div id="borrowActive">${active.length ? active.map(borrowRow).join('') : emptyState('ไม่มีรายการค้างคืน')}</div>
-    <div class="section-title">ประวัติที่คืนแล้ว</div>
+    <div class="section-title">ประวัติ</div>
     <div>${history.length ? history.map(borrowRow).join('') : emptyState('ยังไม่มีประวัติ')}</div>
   `;
   document.querySelectorAll('.borrow-item').forEach(it => it.onclick = () => openBorrowDetail(it.dataset.id));
+  document.getElementById('btnExportBorrow').onclick = () => exportCsv('ยืมคืน.csv', ['รหัสรายการ','รหัสครุภัณฑ์','ชื่อครุภัณฑ์','ผู้ยืม','วันที่ยืม','กำหนดคืน','วันที่คืนจริง','สถานะ','ผู้อนุมัติ','หมายเหตุ'], state.borrow);
 }
 function effectiveBorrowStatus(b) {
-  if (b['สถานะ'] === 'คืนแล้ว') return 'คืนแล้ว';
+  if (b['สถานะ'] === 'คืนแล้ว' || b['สถานะ'] === 'รออนุมัติ' || b['สถานะ'] === 'ถูกปฏิเสธ') return b['สถานะ'];
   const due = new Date(b['กำหนดคืน']);
   if (!isNaN(due) && due.getTime() < new Date().setHours(0,0,0,0)) return 'เกินกำหนด';
   return b['สถานะ'] || 'กำลังยืม';
@@ -1381,59 +1185,77 @@ function borrowRow(b) {
   return `<div class="glass list-item borrow-item" data-id="${b['รหัสรายการ']}">
     <div class="li-icon">${ICONS.swap}</div>
     <div class="li-body">
-      <div class="li-title">${b['ชื่อครุภัณฑ์']}</div>
-      <div class="li-sub">ผู้ยืม: ${b['ผู้ยืม']} · กำหนดคืน ${thaiDate(b['กำหนดคืน'])}</div>
+      <div class="li-title">${escapeHtml(b['ชื่อครุภัณฑ์'])}</div>
+      <div class="li-sub">ผู้ยืม: ${escapeHtml(b['ผู้ยืม'])} · กำหนดคืน ${thaiDate(b['กำหนดคืน'])}</div>
     </div>
     <div class="status-badge ${statusClass(effectiveBorrowStatus(b))}">${effectiveBorrowStatus(b)}</div>
   </div>`;
 }
-function borrowedComponentIds(b) {
-  return String(b['รหัสส่วนควบที่ยืม'] || '').split(',').map(s => s.trim()).filter(Boolean);
-}
+function borrowedComponentIds(b) { return String(b['รหัสส่วนควบที่ยืม'] || '').split(',').map(s => s.trim()).filter(Boolean); }
 function openBorrowDetail(id) {
   const b = state.borrow.find(x => x['รหัสรายการ'] === id);
   if (!b) return;
   const compIds = borrowedComponentIds(b);
   const compNames = compIds.map(cid => { const c = state.components.find(x => x['รหัสส่วนควบ'] === cid); return c ? c['ชื่อส่วนควบ'] : cid; });
+  const status = b['สถานะ'];
   showSheet(`
-    <div class="sheet-title">${b['ชื่อครุภัณฑ์']}</div>
-    <div class="detail-row"><span>ผู้ยืม</span><span>${b['ผู้ยืม']}</span></div>
+    <div class="sheet-title">${escapeHtml(b['ชื่อครุภัณฑ์'])}</div>
+    <div class="detail-row"><span>ผู้ยืม</span><span>${escapeHtml(b['ผู้ยืม'])}</span></div>
     <div class="detail-row"><span>วันที่ยืม</span><span>${thaiDate(b['วันที่ยืม'])}</span></div>
     <div class="detail-row"><span>กำหนดคืน</span><span>${thaiDate(b['กำหนดคืน'])}</span></div>
-    <div class="detail-row"><span>สถานะ</span><span class="status-badge ${statusClass(b['สถานะ'])}">${b['สถานะ']}</span></div>
+    <div class="detail-row"><span>สถานะ</span><span class="status-badge ${statusClass(effectiveBorrowStatus(b))}">${effectiveBorrowStatus(b)}</span></div>
+    ${b['ผู้อนุมัติ'] ? `<div class="detail-row"><span>ผู้อนุมัติ</span><span>${escapeHtml(b['ผู้อนุมัติ'])}</span></div>` : ''}
     ${b['วันที่คืนจริง'] ? `<div class="detail-row"><span>วันที่คืนจริง</span><span>${thaiDate(b['วันที่คืนจริง'])}</span></div>` : ''}
-    ${compNames.length ? `<div class="detail-row"><span>ส่วนควบที่ยืมด้วย</span><span>${compNames.join(', ')}</span></div>` : ''}
-    <div class="detail-row"><span>หมายเหตุ</span><span>${b['หมายเหตุ'] || '-'}</span></div>
+    ${compNames.length ? `<div class="detail-row"><span>ส่วนควบที่ยืมด้วย</span><span>${compNames.map(escapeHtml).join(', ')}</span></div>` : ''}
+    <div class="detail-row"><span>หมายเหตุ</span><span>${escapeHtml(b['หมายเหตุ']) || '-'}</span></div>
     <div class="btn-row"><button class="btn btn-ghost" id="btnPrintForm">พิมพ์ใบเบิก/ยืมพัสดุ</button></div>
-    ${isAdmin() && b['สถานะ'] !== 'คืนแล้ว' ? `<div class="btn-row"><button class="btn btn-primary" id="btnReturn">บันทึกการคืน</button></div>` : ''}
+    ${isAdmin() && status === 'รออนุมัติ' ? `<div class="btn-row">
+      <button class="btn btn-danger" id="btnReject">ปฏิเสธ</button>
+      <button class="btn btn-ok" id="btnApprove">อนุมัติ</button>
+    </div>` : ''}
+    ${isAdmin() && (status === 'กำลังยืม' || status === 'เกินกำหนด' || effectiveBorrowStatus(b) === 'เกินกำหนด') ? `<div class="btn-row"><button class="btn btn-primary" id="btnReturn">บันทึกการคืน</button></div>` : ''}
   `);
   document.getElementById('btnPrintForm').onclick = () => printRequisitionForm({ borrow: b, componentNames: compNames });
-  if (isAdmin() && b['สถานะ'] !== 'คืนแล้ว') {
-    document.getElementById('btnReturn').onclick = async () => {
+  if (isAdmin() && status === 'รออนุมัติ') {
+    document.getElementById('btnApprove').onclick = async () => {
+      const btn = document.getElementById('btnApprove'); if (btn.disabled) return; setButtonBusy(btn,true,'กำลังอนุมัติ...'); setLoading(true,'กำลังอนุมัติคำขอ...');
+      try { await apiPost('approveBorrowRequest', { borrowId: id }); closeSheet(); toast('อนุมัติการยืมแล้ว'); await loadAll(); renderBorrow(); }
+      catch(err) { toast(err.message || 'อนุมัติไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(btn,false); }
+    };
+    document.getElementById('btnReject').onclick = async () => {
+      if (!confirm('ยืนยันการปฏิเสธคำขอยืมนี้?')) return;
+      const btn = document.getElementById('btnReject'); if (btn.disabled) return; setButtonBusy(btn,true,'กำลังปฏิเสธ...'); setLoading(true,'กำลังปฏิเสธคำขอ...');
+      try { await apiPost('rejectBorrowRequest', { borrowId: id }); closeSheet(); toast('ปฏิเสธคำขอแล้ว'); await loadAll(); renderBorrow(); }
+      catch(err) { toast(err.message || 'ปฏิเสธไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(btn,false); }
+    };
+  }
+  const returnBtn = document.getElementById('btnReturn');
+  if (returnBtn) {
+    returnBtn.onclick = async () => {
       const btn = document.getElementById('btnReturn'); if (btn.disabled) return; setButtonBusy(btn,true,'กำลังบันทึกการคืน...'); setLoading(true,'กำลังบันทึกการคืน...');
-      try {
-        await apiPost('returnAsset', { borrowId: id, returnDate: isoDate() });
-        closeSheet(); toast('บันทึกการคืนแล้ว'); await loadAll(); renderBorrow();
-      } catch(err) { toast(err.message || 'บันทึกการคืนไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(btn,false); }
+      try { await apiPost('returnAsset', { borrowId: id, returnDate: isoDate() }); closeSheet(); toast('บันทึกการคืนแล้ว'); await loadAll(); renderBorrow(); }
+      catch(err) { toast(err.message || 'บันทึกการคืนไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(btn,false); }
     };
   }
 }
 function openBorrowForm() {
   const available = state.assets.filter(a => a['สถานะ'] === 'พร้อมใช้งาน');
+  const admin = isAdmin();
   showSheet(`
-    <div class="sheet-title">บันทึกการยืม</div>
+    <div class="sheet-title">${admin ? 'บันทึกการยืม' : 'ขอยืมครุภัณฑ์'}</div>
+    ${!admin ? `<div class="hint" style="margin-top:0;margin-bottom:12px;">คำขอของท่านจะถูกส่งให้แอดมินตรวจสอบและอนุมัติก่อนจึงจะยืมได้จริง</div>` : ''}
     <div class="field"><label>ครุภัณฑ์</label>
-      <select class="input" id="f_asset">${available.map(a => `<option value="${a['รหัสครุภัณฑ์']}">${a['ชื่อครุภัณฑ์']} (${a['รหัสครุภัณฑ์']})</option>`).join('')}</select>
+      <select class="input" id="f_asset">${available.map(a => `<option value="${a['รหัสครุภัณฑ์']}">${escapeHtml(a['ชื่อครุภัณฑ์'])} (${a['รหัสครุภัณฑ์']})</option>`).join('')}</select>
     </div>
     <div class="field" id="f_compWrap"></div>
-    <div class="field"><label>ผู้ยืม (ชื่อ-สกุล)</label><input class="input" id="f_borrower"></div>
+    <div class="field"><label>ผู้ยืม (ชื่อ-สกุล)</label><input class="input" id="f_borrower" value="${admin ? '' : escapeHtml(state.user.name || '')}"></div>
     <div class="field"><label>วันที่ยืม</label><input class="input" type="date" id="f_borrowdate" value="${isoDate()}"></div>
     <div class="field"><label>กำหนดคืน</label><input class="input" type="date" id="f_duedate" value="${isoDate(new Date(Date.now()+7*86400000))}"></div>
-    <div class="field"><label>ผู้อนุมัติ</label><input class="input" id="f_approver" value="${state.user.name}"></div>
+    ${admin ? `<div class="field"><label>ผู้อนุมัติ</label><input class="input" id="f_approver" value="${escapeHtml(state.user.name || '')}"></div>` : ''}
     <div class="field"><label>หมายเหตุ</label><input class="input" id="f_bnote"></div>
     <div class="btn-row">
       <button class="btn btn-ghost" id="btnCancel">ยกเลิก</button>
-      <button class="btn btn-primary" id="btnSave">บันทึก</button>
+      <button class="btn btn-primary" id="btnSave">${admin ? 'บันทึก' : 'ส่งคำขอ'}</button>
     </div>
   `);
   if (!available.length) { toast('ไม่มีครุภัณฑ์ที่พร้อมให้ยืมในขณะนี้'); }
@@ -1444,7 +1266,7 @@ function openBorrowForm() {
     const comps = componentsOf(asset['รหัสครุภัณฑ์']).filter(c => c['สถานะ'] === 'พร้อมใช้งาน');
     wrap.innerHTML = `<label>ส่วนควบที่ยืมไปด้วย</label>` + (comps.length
       ? comps.map(c => `<label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:400; margin-bottom:7px; color:var(--ink);">
-          <input type="checkbox" class="f_comp_chk" value="${c['รหัสส่วนควบ']}" style="width:16px;height:16px;"> ${c['ชื่อส่วนควบ']} <span style="color:var(--ink-dim); font-size:11px;">(${c['ประเภท']||'-'})</span>
+          <input type="checkbox" class="f_comp_chk" value="${c['รหัสส่วนควบ']}" style="width:16px;height:16px;"> ${escapeHtml(c['ชื่อส่วนควบ'])} <span style="color:var(--ink-dim); font-size:11px;">(${c['ประเภท']||'-'})</span>
         </label>`).join('')
       : `<div class="hint">ยังไม่มีส่วนควบที่พร้อมใช้งานสำหรับอาวุธปืนนี้</div>`);
   }
@@ -1462,15 +1284,17 @@ function openBorrowForm() {
     const saveBtn = document.getElementById('btnSave');
     if (saveBtn.disabled) return;
     setButtonBusy(saveBtn, true);
-    setLoading(true, 'กำลังบันทึกการยืม...');
+    setLoading(true, admin ? 'กำลังบันทึกการยืม...' : 'กำลังส่งคำขอ...');
     try {
-    await apiPost('borrowAsset', {
-      assetId, assetName: asset ? asset['ชื่อครุภัณฑ์'] : '', borrower: val('f_borrower'),
-      borrowDate: val('f_borrowdate'), dueDate: val('f_duedate'), approver: val('f_approver'), note: val('f_bnote'),
-      componentIds
-    });
-    closeSheet(); toast('บันทึกการยืมแล้ว'); await loadAll(); renderBorrow();
-    } catch (err) { toast(err.message || 'บันทึกการยืมไม่สำเร็จ'); }
+      const payload = {
+        assetId, assetName: asset ? asset['ชื่อครุภัณฑ์'] : '', borrower: val('f_borrower'),
+        borrowerLineId: !admin ? (state.user.id || '') : '',
+        borrowDate: val('f_borrowdate'), dueDate: val('f_duedate'),
+        approver: admin ? val('f_approver') : '', note: val('f_bnote'), componentIds
+      };
+      await apiPost(admin ? 'borrowAsset' : 'requestBorrow', payload);
+      closeSheet(); toast(admin ? 'บันทึกการยืมแล้ว' : 'ส่งคำขอยืมแล้ว รอแอดมินอนุมัติ'); await loadAll(); renderBorrow();
+    } catch (err) { toast(err.message || 'ทำรายการไม่สำเร็จ'); }
     finally { setLoading(false); setButtonBusy(saveBtn, false); }
   };
 }
@@ -1481,19 +1305,23 @@ function renderMaint() {
   const open = state.maint.filter(m => m['สถานะ'] !== 'ซ่อมเสร็จ');
   const done = state.maint.filter(m => m['สถานะ'] === 'ซ่อมเสร็จ').slice(-15).reverse();
   el.innerHTML = `
-    <div class="section-title">งานซ่อมบำรุง <small>${open.length} รายการค้าง</small></div>
+    <div class="section-title">
+      งานซ่อมบำรุง <small>${open.length} รายการค้าง</small>
+      <span class="section-actions"><button class="icon-btn" id="btnExportMaint" title="ส่งออก CSV">${ICONS.download}</button></span>
+    </div>
     <div>${open.length ? open.map(maintRow).join('') : emptyState('ไม่มีงานซ่อมค้าง')}</div>
     <div class="section-title">ประวัติซ่อมเสร็จแล้ว</div>
     <div>${done.length ? done.map(maintRow).join('') : emptyState('ยังไม่มีประวัติ')}</div>
   `;
   document.querySelectorAll('.maint-item').forEach(it => it.onclick = () => openMaintDetail(it.dataset.id));
+  document.getElementById('btnExportMaint').onclick = () => exportCsv('ซ่อมบำรุง.csv', ['รหัสรายการ','รหัสครุภัณฑ์','ชื่อครุภัณฑ์','วันที่แจ้ง','อาการ/ปัญหา','ผู้แจ้ง','สถานะ','วันที่ซ่อมเสร็จ','ค่าใช้จ่าย(บาท)','ผู้รับผิดชอบ','หมายเหตุ'], state.maint);
 }
 function maintRow(m) {
   return `<div class="glass list-item maint-item" data-id="${m['รหัสรายการ']}">
     <div class="li-icon">${ICONS.wrench}</div>
     <div class="li-body">
-      <div class="li-title">${m['ชื่อครุภัณฑ์']}</div>
-      <div class="li-sub">${m['อาการ/ปัญหา']}</div>
+      <div class="li-title">${escapeHtml(m['ชื่อครุภัณฑ์'])}</div>
+      <div class="li-sub">${escapeHtml(m['อาการ/ปัญหา'])}</div>
     </div>
     <div class="status-badge ${statusClass(m['สถานะ'])}">${m['สถานะ']}</div>
   </div>`;
@@ -1502,13 +1330,13 @@ function openMaintDetail(id) {
   const m = state.maint.find(x => x['รหัสรายการ'] === id);
   if (!m) return;
   showSheet(`
-    <div class="sheet-title">${m['ชื่อครุภัณฑ์']}</div>
+    <div class="sheet-title">${escapeHtml(m['ชื่อครุภัณฑ์'])}</div>
     <div class="detail-row"><span>วันที่แจ้ง</span><span>${thaiDate(m['วันที่แจ้ง'])}</span></div>
-    <div class="detail-row"><span>อาการ/ปัญหา</span><span>${m['อาการ/ปัญหา']}</span></div>
-    <div class="detail-row"><span>ผู้แจ้ง</span><span>${m['ผู้แจ้ง'] || '-'}</span></div>
+    <div class="detail-row"><span>อาการ/ปัญหา</span><span>${escapeHtml(m['อาการ/ปัญหา'])}</span></div>
+    <div class="detail-row"><span>ผู้แจ้ง</span><span>${escapeHtml(m['ผู้แจ้ง']) || '-'}</span></div>
     <div class="detail-row"><span>สถานะ</span><span class="status-badge ${statusClass(m['สถานะ'])}">${m['สถานะ']}</span></div>
     <div class="detail-row"><span>ค่าใช้จ่าย</span><span>${m['ค่าใช้จ่าย(บาท)'] ? Number(m['ค่าใช้จ่าย(บาท)']).toLocaleString()+' บาท' : '-'}</span></div>
-    <div class="detail-row"><span>ผู้รับผิดชอบ</span><span>${m['ผู้รับผิดชอบ'] || '-'}</span></div>
+    <div class="detail-row"><span>ผู้รับผิดชอบ</span><span>${escapeHtml(m['ผู้รับผิดชอบ']) || '-'}</span></div>
     ${isAdmin() && m['สถานะ'] !== 'ซ่อมเสร็จ' ? `
     <div class="field" style="margin-top:14px;"><label>อัปเดตสถานะ</label>
       <select class="input" id="f_mstatus">
@@ -1517,7 +1345,7 @@ function openMaintDetail(id) {
         <option>ซ่อมเสร็จ</option>
       </select>
     </div>
-    <div class="field"><label>ผู้รับผิดชอบ/ร้านซ่อม</label><input class="input" id="f_mresp" value="${m['ผู้รับผิดชอบ']||''}"></div>
+    <div class="field"><label>ผู้รับผิดชอบ/ร้านซ่อม</label><input class="input" id="f_mresp" value="${escapeHtml(m['ผู้รับผิดชอบ'])||''}"></div>
     <div class="field"><label>ค่าใช้จ่าย (บาท)</label><input class="input" type="number" id="f_mcost" value="${m['ค่าใช้จ่าย(บาท)']||''}"></div>
     <div class="btn-row"><button class="btn btn-primary" id="btnUpdateMaint">บันทึก</button></div>
     ` : ''}
@@ -1527,10 +1355,7 @@ function openMaintDetail(id) {
       const status = val('f_mstatus');
       const saveBtn = document.getElementById('btnUpdateMaint'); if (saveBtn.disabled) return; setButtonBusy(saveBtn,true); setLoading(true,'กำลังอัปเดตงานซ่อม...');
       try {
-        await apiPost('updateMaint', {
-          id, status, responsible: val('f_mresp'), cost: val('f_mcost'),
-          finishDate: status === 'ซ่อมเสร็จ' ? isoDate() : ''
-        });
+        await apiPost('updateMaint', { id, status, responsible: val('f_mresp'), cost: val('f_mcost'), finishDate: status === 'ซ่อมเสร็จ' ? isoDate() : '' });
         closeSheet(); toast('อัปเดตสถานะแล้ว'); await loadAll(); renderMaint();
       } catch(err) { toast(err.message || 'อัปเดตไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(saveBtn,false); }
     };
@@ -1540,10 +1365,10 @@ function openMaintForm() {
   showSheet(`
     <div class="sheet-title">แจ้งซ่อมบำรุง</div>
     <div class="field"><label>ครุภัณฑ์</label>
-      <select class="input" id="f_asset">${state.assets.map(a => `<option value="${a['รหัสครุภัณฑ์']}">${a['ชื่อครุภัณฑ์']} (${a['รหัสครุภัณฑ์']})</option>`).join('')}</select>
+      <select class="input" id="f_asset">${state.assets.map(a => `<option value="${a['รหัสครุภัณฑ์']}">${escapeHtml(a['ชื่อครุภัณฑ์'])} (${a['รหัสครุภัณฑ์']})</option>`).join('')}</select>
     </div>
     <div class="field"><label>อาการ/ปัญหา</label><input class="input" id="f_issue"></div>
-    <div class="field"><label>ผู้แจ้ง</label><input class="input" id="f_reporter" value="${state.user.name}"></div>
+    <div class="field"><label>ผู้แจ้ง</label><input class="input" id="f_reporter" value="${escapeHtml(state.user.name || '')}"></div>
     <div class="field"><label>วันที่แจ้ง</label><input class="input" type="date" id="f_rdate" value="${isoDate()}"></div>
     <div class="btn-row">
       <button class="btn btn-ghost" id="btnCancel">ยกเลิก</button>
@@ -1563,17 +1388,116 @@ function openMaintForm() {
   };
 }
 
+/* ========================================================= USERS (admin only) */
+function renderUsers() {
+  if (!isAdmin()) return;
+  const el = document.getElementById('view-users');
+  el.innerHTML = `
+    <div class="section-title">
+      ผู้ใช้งานระบบ <small>${state.users.length} คน</small>
+      <span class="section-actions">
+        <button class="icon-btn" id="btnAddUser" title="เพิ่มผู้ใช้">
+          <svg viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </button>
+      </span>
+    </div>
+    <div id="userList">${state.users.length ? state.users.map(userRow).join('') : emptyState('ยังไม่มีผู้ใช้งานในระบบ')}</div>
+    <div class="section-title">บันทึกกิจกรรมล่าสุด</div>
+    <div>${state.activity.length ? state.activity.slice(0,40).map(activityRow).join('') : emptyState('ยังไม่มีบันทึกกิจกรรม')}</div>
+  `;
+  document.getElementById('btnAddUser').onclick = () => openUserForm();
+  document.querySelectorAll('.user-item').forEach(it => it.onclick = () => openUserForm(state.users.find(u => (u['LINEUserId']||u['ชื่อผู้ใช้']) === it.dataset.id)));
+}
+function userRow(u) {
+  const idf = u['LINEUserId'] || u['ชื่อผู้ใช้'] || '';
+  return `<div class="glass list-item user-item" data-id="${escapeHtml(idf)}">
+    <div class="li-icon">${ICONS.user}</div>
+    <div class="li-body">
+      <div class="li-title">${escapeHtml(u['ชื่อ-สกุล'])}</div>
+      <div class="li-sub">${escapeHtml(u['ตำแหน่ง']) || 'ไม่ระบุตำแหน่ง'} ${u['ชื่อผู้ใช้'] ? '· @' + escapeHtml(u['ชื่อผู้ใช้']) : ''}</div>
+    </div>
+    <span class="role-pill ${u['สิทธิ์']==='admin'?'':'viewer'}">${u['สิทธิ์']==='admin'?'แอดมิน':'ดูอย่างเดียว'}</span>
+  </div>`;
+}
+function activityRow(a) {
+  return `<div class="glass list-item" style="cursor:default;">
+    <div class="li-icon">${ICONS.log}</div>
+    <div class="li-body">
+      <div class="li-title">${escapeHtml(a['การกระทำ'])}${a['รายละเอียด'] ? ' · ' + escapeHtml(a['รายละเอียด']) : ''}</div>
+      <div class="li-sub">${escapeHtml(a['ผู้ทำรายการ'])} · ${thaiDateTime(a['วันที่-เวลา'])}</div>
+    </div>
+  </div>`;
+}
+function openUserForm(u) {
+  const editing = !!u;
+  showSheet(`
+    <div class="sheet-title">${editing ? 'แก้ไขผู้ใช้งาน' : 'เพิ่มผู้ใช้งานใหม่'}</div>
+    <div class="field"><label>ชื่อ-สกุล</label><input class="input" id="u_name" value="${editing ? escapeHtml(u['ชื่อ-สกุล']) : ''}"></div>
+    <div class="field"><label>ตำแหน่ง</label><input class="input" id="u_position" value="${editing ? escapeHtml(u['ตำแหน่ง'])||'' : ''}"></div>
+    <div class="field"><label>หน่วยงาน</label><input class="input" id="u_unit" value="${editing ? escapeHtml(u['หน่วยงาน'])||'' : ''}"></div>
+    <div class="field"><label>สิทธิ์การใช้งาน</label>
+      <select class="input" id="u_role"><option value="viewer" ${editing && u['สิทธิ์']==='viewer'?'selected':''}>ดูอย่างเดียว</option><option value="admin" ${editing && u['สิทธิ์']==='admin'?'selected':''}>แอดมิน</option></select>
+    </div>
+    <div class="field"><label>LINE UserId (ถ้ามี)</label><input class="input" id="u_lineid" value="${editing ? escapeHtml(u['LINEUserId'])||'' : ''}" placeholder="เว้นว่างได้ถ้าใช้ username/password"></div>
+    <div class="field"><label>ชื่อผู้ใช้ (สำหรับ login ด้วยรหัสผ่าน)</label><input class="input" id="u_username" value="${editing ? escapeHtml(u['ชื่อผู้ใช้'])||'' : ''}"></div>
+    <div class="field"><label>${editing ? 'ตั้งรหัสผ่านใหม่ (เว้นว่าง = ไม่เปลี่ยน)' : 'รหัสผ่าน'}</label><input class="input" type="password" id="u_password"></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="btnCancel">ยกเลิก</button>
+      <button class="btn btn-primary" id="btnSave">บันทึก</button>
+    </div>
+    ${editing ? `<div class="btn-row"><button class="btn btn-danger" id="btnDeleteUser">ลบผู้ใช้งานนี้</button></div>` : ''}
+  `);
+  document.getElementById('btnCancel').onclick = closeSheet;
+  document.getElementById('btnSave').onclick = async () => {
+    if (!val('u_name').trim()) { toast('กรุณากรอกชื่อ-สกุล'); return; }
+    const saveBtn = document.getElementById('btnSave'); if (saveBtn.disabled) return; setButtonBusy(saveBtn,true); setLoading(true,'กำลังบันทึกผู้ใช้งาน...');
+    try {
+      if (!editing) {
+        await apiPost('addUser', { name: val('u_name'), position: val('u_position'), unit: val('u_unit'), role: val('u_role'), lineUserId: val('u_lineid'), username: val('u_username'), password: val('u_password') });
+      } else {
+        await apiPost('updateUserRole', { lineUserId: u['LINEUserId'] || undefined, username: u['ชื่อผู้ใช้'] || undefined, name: val('u_name'), position: val('u_position'), unit: val('u_unit'), role: val('u_role') });
+        if (val('u_username') || val('u_password')) {
+          await apiPost('setUserCredentials', { lineUserId: u['LINEUserId'] || undefined, currentUsername: u['ชื่อผู้ใช้'] || undefined, username: val('u_username'), password: val('u_password') });
+        }
+      }
+      closeSheet(); toast('บันทึกผู้ใช้งานแล้ว'); await loadAll(); renderUsers();
+    } catch(err) { toast(err.message || 'บันทึกไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(saveBtn,false); }
+  };
+  if (editing) {
+    document.getElementById('btnDeleteUser').onclick = async () => {
+      if (!confirm('ยืนยันการลบผู้ใช้งานนี้?')) return;
+      const identifier = u['LINEUserId'] || u['ชื่อผู้ใช้'];
+      try { await apiPost('deleteUser', { identifier }); closeSheet(); toast('ลบผู้ใช้งานแล้ว'); await loadAll(); renderUsers(); }
+      catch(err) { toast(err.message || 'ลบไม่สำเร็จ'); }
+    };
+  }
+}
+
 /* ========================================================= REPORTS */
 function renderReports() {
   const el = document.getElementById('view-reports');
   const d = state.dashboard;
   el.innerHTML = `
-    <div class="section-title">รายงานสรุป</div>
+    <div class="section-title full-width">รายงานสรุป</div>
     <div class="glass chart-card"><h4>จำนวนครุภัณฑ์ตามสถานะ</h4><div class="chart-wrap"><canvas id="statusChart"></canvas></div></div>
     <div class="glass chart-card"><h4>จำนวนครุภัณฑ์ตามหมวดหมู่</h4><div class="chart-wrap"><canvas id="catChart2"></canvas></div></div>
+    <div class="glass chart-card full-width"><h4>แนวโน้มการยืมย้อนหลัง 6 เดือน</h4><div class="chart-wrap"><canvas id="trendChart2"></canvas></div></div>
+    <div class="glass chart-card full-width">
+      <h4>ค่าใช้จ่ายซ่อมบำรุงสะสม</h4>
+      <div class="hero-num hero-num--sm" style="margin-bottom:10px;">${Number(d.maintCostTotal||0).toLocaleString()}<span class="hero-unit">บาท</span></div>
+      <div class="btn-row" style="margin-top:0;">
+        <button class="btn btn-ghost" id="btnExportAssetsRpt">ส่งออกครุภัณฑ์ (CSV)</button>
+        <button class="btn btn-ghost" id="btnExportBorrowRpt">ส่งออกยืม-คืน (CSV)</button>
+        <button class="btn btn-ghost" id="btnExportMaintRpt">ส่งออกซ่อมบำรุง (CSV)</button>
+      </div>
+    </div>
   `;
   drawBar('statusChart', d.byStatus);
   drawDoughnut('catChart2', d.byCategory);
+  drawLine('trendChart2', d.monthTrend);
+  document.getElementById('btnExportAssetsRpt').onclick = () => exportCsv('ครุภัณฑ์.csv', ['รหัสครุภัณฑ์','ชื่อครุภัณฑ์','หมวดหมู่','ยี่ห้อ/รุ่น','หมายเลขเครื่อง','วันที่รับเข้า','มูลค่า(บาท)','สถานะ','ผู้ครอบครอง/หน่วยงาน','หน่วยงาน','หมายเหตุ'], state.assets);
+  document.getElementById('btnExportBorrowRpt').onclick = () => exportCsv('ยืมคืน.csv', ['รหัสรายการ','รหัสครุภัณฑ์','ชื่อครุภัณฑ์','ผู้ยืม','วันที่ยืม','กำหนดคืน','วันที่คืนจริง','สถานะ','ผู้อนุมัติ','หมายเหตุ'], state.borrow);
+  document.getElementById('btnExportMaintRpt').onclick = () => exportCsv('ซ่อมบำรุง.csv', ['รหัสรายการ','รหัสครุภัณฑ์','ชื่อครุภัณฑ์','วันที่แจ้ง','อาการ/ปัญหา','ผู้แจ้ง','สถานะ','วันที่ซ่อมเสร็จ','ค่าใช้จ่าย(บาท)','ผู้รับผิดชอบ','หมายเหตุ'], state.maint);
 }
 
 /* ========================================================= SHEET/MODAL */
@@ -1584,7 +1508,7 @@ function showSheet(html) {
 function closeSheet() { document.getElementById('modalRoot').innerHTML = ''; }
 function val(id) { return document.getElementById(id).value; }
 
-/* ========================================================= PRINT: ใบเบิก/ยืมพัสดุ (ฟอร์มราชการ) */
+/* ========================================================= PRINT: ใบเบิก/ยืมพัสดุ */
 function printRequisitionForm(opts) {
   let rows = [];
   let borrowerName = '', dueDateText = '', noteText = '';
@@ -1594,15 +1518,9 @@ function printRequisitionForm(opts) {
     borrowerName = b['ผู้ยืม'] || '';
     dueDateText = thaiDate(b['กำหนดคืน']);
     noteText = b['หมายเหตุ'] || '';
-    rows.push({
-      name: b['ชื่อครุภัณฑ์'], code: b['รหัสครุภัณฑ์'], qty: 1,
-      comp: (opts.componentNames || []).join(', ') || '-'
-    });
+    rows.push({ name: b['ชื่อครุภัณฑ์'], code: b['รหัสครุภัณฑ์'], qty: 1, comp: (opts.componentNames || []).join(', ') || '-' });
   } else if (opts.items) {
-    rows = opts.items.map(a => ({
-      name: a['ชื่อครุภัณฑ์'], code: a['รหัสครุภัณฑ์'], qty: 1,
-      comp: (opts.components || []).map(c => c['ชื่อส่วนควบ']).join(', ') || '-'
-    }));
+    rows = opts.items.map(a => ({ name: a['ชื่อครุภัณฑ์'], code: a['รหัสครุภัณฑ์'], qty: 1, comp: (opts.components || []).map(c => c['ชื่อส่วนควบ']).join(', ') || '-' }));
   }
 
   const today = thaiDate(new Date());
@@ -1629,7 +1547,6 @@ function printRequisitionForm(opts) {
     <div style="font-size:14px;">กำหนดส่งคืนภายในวันที่ &nbsp; <b>${dueDateText || '...................................'}</b></div>
     <div style="font-size:14px; margin-top:4px;">หมายเหตุ &nbsp; ${noteText || '-'}</div>
     <div style="font-size:14px; margin-top:16px;">จึงเรียนมาเพื่อโปรดพิจารณาอนุมัติ</div>
-
     <div style="margin-top:10px;">
       <div class="pf-signblock" style="text-align:center;">
         ลงชื่อ ..................................................... ผู้เบิก/ผู้ยืม<br>
