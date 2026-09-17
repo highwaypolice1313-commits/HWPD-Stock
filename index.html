@@ -518,12 +518,16 @@ input[type="date"]::-webkit-date-and-time-value{ text-align:left; }
 
   <div class="role-login-form" id="roleLoginForm" style="display:none;">
     <div class="field">
-      <label>ชื่อ-สกุลผู้ปฏิบัติงาน</label>
-      <input class="input" id="rl_name" placeholder="เช่น ร.ต.อ. สมชาย ใจดี">
+      <label>ระดับผู้ใช้งาน</label>
+      <div class="input" id="rl_roleDisplay"
+           style="background:rgba(255,255,255,.95);font-weight:600;display:flex;align-items:center;justify-content:center;">
+        <span id="rl_roleLabel"></span>
+      </div>
     </div>
     <div class="field">
-      <label>รหัสผ่านสำหรับ <span id="rl_roleLabel"></span></label>
-      <input class="input" id="rl_password" type="password" placeholder="รหัสผ่าน">
+      <label>รหัสผ่าน</label>
+      <input class="input" id="rl_password" type="password" inputmode="text"
+             autocomplete="current-password" placeholder="กรอกรหัสผ่าน">
     </div>
     <button class="btn btn-primary" style="width:100%;" id="btnRoleLogin">เข้าสู่ระบบ</button>
     <div class="hint" id="roleLoginError" style="color:#ffb4bd;"></div>
@@ -705,12 +709,11 @@ document.querySelectorAll('.role-select-card').forEach(card => {
     document.getElementById('rl_roleLabel').textContent = selectedRole === 'admin' ? 'แอดมิน' : 'ผู้ดูอย่างเดียว';
     document.getElementById('rl_password').value = '';
     document.getElementById('roleLoginError').textContent = '';
-    setTimeout(() => document.getElementById('rl_name').focus(), 50);
+    setTimeout(() => document.getElementById('rl_password').focus(), 50);
   });
 });
 document.getElementById('btnBackToRoles').addEventListener('click', showRoleSelect);
 document.getElementById('rl_password').addEventListener('keydown', (e) => { if (e.key === 'Enter') doRoleLogin(); });
-document.getElementById('rl_name').addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('rl_password').focus(); });
 document.getElementById('btnRoleLogin').addEventListener('click', doRoleLogin);
 document.getElementById('btnLogout').addEventListener('click', () => {
   if (!confirm('ยืนยันการออกจากระบบ?')) return;
@@ -719,37 +722,61 @@ document.getElementById('btnLogout').addEventListener('click', () => {
 });
 
 async function doRoleLogin() {
-  const name = val('rl_name').trim();
   const password = val('rl_password');
   const errEl = document.getElementById('roleLoginError');
   errEl.textContent = '';
   if (!selectedRole) { errEl.textContent = 'กรุณาเลือกระดับผู้ใช้งาน'; return; }
-  if (!name) { errEl.textContent = 'กรุณากรอกชื่อ-สกุลผู้ปฏิบัติงาน'; return; }
   if (!password) { errEl.textContent = 'กรุณากรอกรหัสผ่าน'; return; }
+
   const btn = document.getElementById('btnRoleLogin');
-  btn.disabled = true; btn.textContent = 'กำลังเข้าสู่ระบบ...';
+  btn.disabled = true;
+  btn.textContent = 'กำลังเข้าสู่ระบบ...';
+
   try {
-    const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'loginWithRole', payload: { role: selectedRole, password } }) });
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'loginWithRole',
+        payload: { role: selectedRole, password }
+      })
+    });
+
     const j = await res.json();
-    if (!j.ok) throw new Error(j.error);
-    saveSession({ role: j.data.role, token: j.data.token, name });
-    await completeLogin({ role: j.data.role, name, token: j.data.token });
+    if (!j.ok) throw new Error(j.error || 'เข้าสู่ระบบไม่สำเร็จ');
+
+    const displayName = j.data.displayName ||
+      (j.data.role === 'admin' ? 'แอดมิน' : 'ผู้ดูอย่างเดียว');
+
+    saveSession({
+      role: j.data.role,
+      token: j.data.token,
+      name: displayName
+    });
+
+    await completeLogin({
+      role: j.data.role,
+      name: displayName,
+      token: j.data.token
+    });
   } catch (err) {
-    errEl.textContent = err.message;
+    errEl.textContent = err.message || 'เข้าสู่ระบบไม่สำเร็จ';
+    document.getElementById('rl_password').focus();
   } finally {
-    btn.disabled = false; btn.textContent = 'เข้าสู่ระบบ';
+    btn.disabled = false;
+    btn.textContent = 'เข้าสู่ระบบ';
   }
 }
 
 async function completeLogin({ role, name, token }) {
   state.role = role;
   state.sessionToken = token;
-  state.user = { name: name || '' };
+  state.user = { name: name || (role === 'admin' ? 'แอดมิน' : 'ผู้ดูอย่างเดียว') };
 
   const pill = document.getElementById('rolePill');
   pill.textContent = role === 'admin' ? 'แอดมิน' : 'ดูอย่างเดียว';
   pill.classList.toggle('viewer', role !== 'admin');
-  document.getElementById('profileName').textContent = name || '';
+  document.getElementById('profileName').textContent = state.user.name;
   document.getElementById('usersTabBtn').style.display = isAdmin() ? 'flex' : 'none';
 
   document.getElementById('loginScreen').style.display = 'none';
