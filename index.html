@@ -72,7 +72,7 @@ input,select,button,textarea{max-width:100%;}
 .brand-title{font-size:14.5px; font-weight:600; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 .brand-sub{font-size:11px; color:var(--ink-dim); font-weight:300;}
 .profile{display:flex; align-items:center; gap:9px; flex-wrap:wrap; justify-content:flex-end; min-width:0;}
-.profile img{width:34px;height:34px;border-radius:50%; border:2px solid #fff; box-shadow:0 2px 8px rgba(32,48,63,.15); object-fit:cover; flex:none;}
+.profile-name{font-size:12px; color:var(--ink-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:120px;}
 
 /* ---------- tag / pill / badge system ---------- */
 .tag{
@@ -146,7 +146,7 @@ input,select,button,textarea{max-width:100%;}
 .search-row{display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;}
 .input, select.input{
   width:100%; padding:12px 15px; border-radius:var(--r-sm); border:1px solid var(--panel-line);
-  background:var(--panel-soft); color:var(--ink); font-family:inherit; font-size:14px; outline:none; min-width:0;
+  background:var(--panel-soft); color:var(--ink); font-family:inherit; font-size:16px; outline:none; min-width:0;
 }
 .input::placeholder{color:var(--ink-faint);}
 .input:focus{border-color:var(--navy-line); background:#fff;}
@@ -158,6 +158,13 @@ input,select,button,textarea{max-width:100%;}
   background:#fff; color:var(--ink-dim); cursor:pointer; white-space:nowrap;
 }
 .chip.active{background:var(--navy); color:#fff; border-color:var(--navy);}
+
+/* ---------- date inputs: Safari/iOS friendly sizing ---------- */
+input[type="date"]{
+  width:100%; max-width:100%; min-width:0; box-sizing:border-box;
+  -webkit-appearance:none; appearance:none;
+}
+input[type="date"]::-webkit-date-and-time-value{ text-align:left; }
 
 /* ---------- list items ---------- */
 .list-item{
@@ -260,7 +267,7 @@ input,select,button,textarea{max-width:100%;}
 .login-badge svg{width:36px;height:36px;}
 @keyframes badgeIn{from{opacity:0; transform:scale(.85);} to{opacity:1; transform:scale(1);}}
 .login-title{font-size:20px; font-weight:600; margin-bottom:6px; font-family:var(--font-disp);}
-.login-sub{font-size:13px; color:rgba(255,255,255,.72); margin-bottom:28px; max-width:280px; line-height:1.65; font-weight:300;}
+.login-sub{font-size:13px; color:rgba(255,255,255,.72); margin-bottom:28px; max-width:300px; line-height:1.65; font-weight:300;}
 .spinner{width:26px;height:26px;border-radius:50%; border:3px solid rgba(255,255,255,.25); border-top-color:var(--gold); animation:spin 0.8s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
 .toast{
@@ -273,6 +280,25 @@ input,select,button,textarea{max-width:100%;}
 .detail-row span:first-child{color:var(--ink-dim); flex:none;}
 .detail-row span:last-child{text-align:right; word-break:break-word; overflow-wrap:anywhere; min-width:0; flex:1;}
 .hint{font-size:11px; color:var(--ink-dim); margin-top:14px; line-height:1.6;}
+
+/* ---------- role select login ---------- */
+.role-select-box{width:100%; max-width:300px;}
+.role-select-card{
+  display:flex; align-items:center; gap:14px; padding:16px 18px; margin-bottom:12px; border-radius:18px;
+  background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.18); cursor:pointer; text-align:left;
+  transition:.18s ease;
+}
+.role-select-card:hover, .role-select-card:active{ background:rgba(255,255,255,.16); transform:translateY(-1px); }
+.rsc-icon{width:42px;height:42px;border-radius:13px; display:flex;align-items:center;justify-content:center; flex:none;
+  background:linear-gradient(150deg, var(--gold), var(--gold-deep)); color:#fff;}
+.rsc-icon svg{width:19px;height:19px;}
+.rsc-body{flex:1; min-width:0;}
+.rsc-title{font-size:14.5px; font-weight:600; color:#fff;}
+.rsc-sub{font-size:11.5px; color:rgba(255,255,255,.65); margin-top:2px;}
+.role-login-form{width:100%; max-width:300px; text-align:left;}
+.role-login-form .field label{color:rgba(255,255,255,.72);}
+.role-login-form .field input{background:rgba(255,255,255,.95);}
+.link-btn{color:var(--gold); font-size:12.5px; cursor:pointer; text-decoration:underline;}
 
 /* ---------- app entrance ---------- */
 @keyframes appIn{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
@@ -333,6 +359,7 @@ input,select,button,textarea{max-width:100%;}
   .sheet{max-width:700px;border-radius:24px;max-height:90vh;border-bottom:1px solid var(--panel-line);margin:20px;padding:26px;}
   .overlay{align-items:center;}
   .sheet-handle{display:none;}
+  .input, select.input{ font-size:14px; }
 }
 @media (max-width:899px){
   .desktop-tools{display:flex !important;align-items:center;gap:7px;}
@@ -342,6 +369,7 @@ input,select,button,textarea{max-width:100%;}
   .search-row .input, .sort-select{flex-basis:100%;}
   .stat-grid{grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px;}
   .hero-num{font-size:26px;}
+  input[type="date"]{padding-left:10px; padding-right:8px;}
 }
 
 /* =========================================================
@@ -387,7 +415,6 @@ input,select,button,textarea{max-width:100%;}
   }
   .brand{ visibility:hidden; width:1px; overflow:hidden; }
   .profile{ margin-left:auto; }
-  .profile img{ width:38px; height:38px; }
   .role-pill{ font-size:12px; padding:6px 13px; }
 
   .page{ max-width:none; width:auto; margin-left:268px; margin-right:0; padding:30px 38px 70px; }
@@ -448,8 +475,6 @@ input,select,button,textarea{max-width:100%;}
   .btn{ min-height:46px; padding:12px 18px; font-size:14px; border-radius:14px; }
 
   .login-badge{ width:92px; height:92px; border-radius:28px; margin-bottom:24px; }
-  #codeLoginBox{ max-width:400px !important; padding:28px; background:rgba(255,255,255,.98); border:0; border-radius:22px; box-shadow:0 24px 60px rgba(0,0,0,.20); color:var(--ink); }
-  #toggleLoginModeLink{ color:#fff !important; }
 }
 @media (min-width:900px) and (max-width:1199px){
   .tabbar{width:210px;}
@@ -471,27 +496,40 @@ input,select,button,textarea{max-width:100%;}
     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l8 4v6c0 5-3.5 9-8 10-4.5-1-8-5-8-10V6l8-4z"/></svg>
   </div>
   <div class="login-title">ระบบพัสดุครุภัณฑ์</div>
-  <div class="login-sub" id="loginSubText">ตำรวจทางหลวง<br>กำลังเข้าสู่ระบบผ่าน LINE...</div>
-  <div class="spinner" id="loginSpinner"></div>
-  <div class="hint" id="loginHint" style="color:rgba(255,255,255,.75);"></div>
+  <div class="login-sub" id="loginSubText">ตำรวจทางหลวง<br>กรุณาเลือกระดับผู้ใช้งานเพื่อเข้าสู่ระบบ</div>
+  <div class="spinner" id="loginSpinner" style="display:none;"></div>
 
-  <div id="codeLoginBox" style="display:none; width:100%; max-width:280px; margin-top:6px;">
-    <div class="field" style="text-align:left;">
-      <label>ชื่อผู้ใช้</label>
-      <input class="input" id="cl_username" autocomplete="username" placeholder="ชื่อผู้ใช้">
+  <div class="role-select-box" id="roleSelectBox">
+    <div class="role-select-card" data-role="admin">
+      <div class="rsc-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M10 2.5l6.5 3v5c0 4.2-2.8 7.4-6.5 8-3.7-.6-6.5-3.8-6.5-8v-5l6.5-3z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M7.3 10l1.9 1.9 3.5-3.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="rsc-body">
+        <div class="rsc-title">แอดมิน</div>
+        <div class="rsc-sub">จัดการข้อมูล เพิ่ม/แก้ไข/อนุมัติได้เต็มรูปแบบ</div>
+      </div>
     </div>
-    <div class="field" style="text-align:left;">
-      <label>รหัสผ่าน</label>
-      <input class="input" id="cl_password" type="password" autocomplete="current-password" placeholder="รหัสผ่าน">
+    <div class="role-select-card" data-role="viewer">
+      <div class="rsc-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M2 10s3-5.5 8-5.5S18 10 18 10s-3 5.5-8 5.5S2 10 2 10z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.3" stroke="currentColor" stroke-width="1.4"/></svg></div>
+      <div class="rsc-body">
+        <div class="rsc-title">ดูอย่างเดียว</div>
+        <div class="rsc-sub">ดูข้อมูลและขอยืมครุภัณฑ์ได้</div>
+      </div>
     </div>
-    <button class="btn btn-primary" style="width:100%;" id="btnCodeLogin">เข้าสู่ระบบ</button>
-    <div class="hint" id="codeLoginError" style="color:#ffb4bd;"></div>
   </div>
 
-  <div style="margin-top:18px;">
-    <span id="toggleLoginModeLink" style="color:var(--gold); font-size:12.5px; cursor:pointer; text-decoration:underline;">
-      เข้าสู่ระบบด้วยชื่อผู้ใช้และรหัสผ่านแทน
-    </span>
+  <div class="role-login-form" id="roleLoginForm" style="display:none;">
+    <div class="field">
+      <label>ชื่อ-สกุลผู้ปฏิบัติงาน</label>
+      <input class="input" id="rl_name" placeholder="เช่น ร.ต.อ. สมชาย ใจดี">
+    </div>
+    <div class="field">
+      <label>รหัสผ่านสำหรับ <span id="rl_roleLabel"></span></label>
+      <input class="input" id="rl_password" type="password" placeholder="รหัสผ่าน">
+    </div>
+    <button class="btn btn-primary" style="width:100%;" id="btnRoleLogin">เข้าสู่ระบบ</button>
+    <div class="hint" id="roleLoginError" style="color:#ffb4bd;"></div>
+    <div style="margin-top:14px; text-align:center;">
+      <span class="link-btn" id="btnBackToRoles">เปลี่ยนระดับผู้ใช้งาน</span>
+    </div>
   </div>
 </div>
 
@@ -516,7 +554,10 @@ input,select,button,textarea{max-width:100%;}
         </button>
       </div>
       <span class="role-pill" id="rolePill">…</span>
-      <img id="profileImg" src="" alt="">
+      <span class="profile-name" id="profileName"></span>
+      <button class="icon-btn" id="btnLogout" title="ออกจากระบบ" aria-label="ออกจากระบบ">
+        <svg viewBox="0 0 20 20" fill="none"><path d="M8 3.5H5.5a1.5 1.5 0 00-1.5 1.5v10a1.5 1.5 0 001.5 1.5H8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M12.5 13.5L16.5 10l-4-3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M16.2 10H8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      </button>
     </div>
   </div>
 
@@ -574,12 +615,12 @@ input,select,button,textarea{max-width:100%;}
 
 <script>
 /* =========================================================
-   CONFIG — แก้ 3 บรรทัดนี้ก่อนใช้งานจริง
+   CONFIG — แก้บรรทัดนี้ก่อนใช้งานจริง
    ========================================================= */
 const API_URL = 'https://script.google.com/macros/s/AKfycbw9mgyNR0My7CPuRRX1bRStNcuv1O6nTSivhZssA8svIOOul0VW9v32_rhGwJBDOkp37A/exec';
-const LIFF_ID = 'PUT_YOUR_LIFF_ID_HERE';
 const ORG_NAME = 'สถานีตำรวจทางหลวง 3 กองกำกับการ 1 กองบังคับการตำรวจทางหลวง';
 const GUN_CATEGORY = 'อาวุธปืน';
+const SESSION_KEY = 'hpAssetSession_v2';
 
 const ICONS = {
   gun: '<svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.3" stroke="currentColor" stroke-width="1.4"/><circle cx="10" cy="10" r="3.1" stroke="currentColor" stroke-width="1.4"/><circle cx="10" cy="10" r="0.9" fill="currentColor"/></svg>',
@@ -600,7 +641,7 @@ const ICONS = {
 
 /* ========================================================= STATE */
 const state = {
-  user: null, role: 'guest',
+  user: null, role: 'guest', sessionToken: null,
   assets: [], borrow: [], maint: [], components: [], users: [], activity: [], dashboard: null,
   tab: 'dashboard', assetFilter: 'all', assetStatusFilter: 'all', assetSearch: '', assetSort: 'name_asc', assetPage: 1
 };
@@ -609,62 +650,90 @@ const CATS = ['อาวุธปืน','ยานพาหนะ','สื่�
 const COMPONENT_TYPES = ['ซองกระสุน/แม็กกาซีน','ศูนย์เล็ง/กล้อง','ไฟฉายติดปืน','สายสะพาย','ซองพกพา','อุปกรณ์ทำความสะอาด','อื่นๆ'];
 const ASSET_STATUSES = ['พร้อมใช้งาน','กำลังยืม','ซ่อมบำรุง','จำหน่ายแล้ว'];
 
+/* ========================================================= SESSION (localStorage) */
+function loadSession() {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    if (!raw) return null;
+    const sess = JSON.parse(raw);
+    if (!sess || !sess.token || !sess.role) return null;
+    return sess;
+  } catch (e) { return null; }
+}
+function saveSession(sess) {
+  try { localStorage.setItem(SESSION_KEY, JSON.stringify(sess)); } catch (e) {}
+}
+function clearSession() {
+  try { localStorage.removeItem(SESSION_KEY); } catch (e) {}
+}
+
 /* ========================================================= INIT / LOGIN */
-let loginMode = 'liff';
+let selectedRole = null;
 
 async function init() {
-  await tryLiffLogin();
-}
-
-async function tryLiffLogin() {
-  setLoginUiForLiffAttempt();
-  try {
-    await liff.init({ liffId: LIFF_ID });
-    if (!liff.isLoggedIn()) { liff.login(); return; }
-    const profile = await liff.getProfile();
-    await completeLogin({ id: profile.userId, name: profile.displayName, picture: profile.pictureUrl });
-  } catch (err) {
-    document.getElementById('loginSpinner').style.display = 'none';
-    document.getElementById('loginHint').textContent = '';
-    showCodeLoginForm();
+  const sess = loadSession();
+  if (sess) {
+    document.getElementById('roleSelectBox').style.display = 'none';
+    document.getElementById('roleLoginForm').style.display = 'none';
+    document.getElementById('loginSpinner').style.display = 'block';
+    document.getElementById('loginSubText').innerHTML = 'ตำรวจทางหลวง<br>กำลังตรวจสอบเซสชันของท่าน...';
+    try {
+      const check = await apiGet('validateSession', { token: sess.token });
+      if (check && check.valid) {
+        await completeLogin({ role: check.role, name: sess.name, token: sess.token });
+        return;
+      }
+    } catch (err) { /* fall through to login screen */ }
+    clearSession();
   }
+  showRoleSelect();
 }
 
-function setLoginUiForLiffAttempt() {
-  loginMode = 'liff';
-  document.getElementById('loginSubText').innerHTML = 'ตำรวจทางหลวง<br>กำลังเข้าสู่ระบบผ่าน LINE...';
-  document.getElementById('loginSpinner').style.display = 'block';
-  document.getElementById('codeLoginBox').style.display = 'none';
-  document.getElementById('loginHint').textContent = '';
-  document.getElementById('toggleLoginModeLink').textContent = 'เข้าสู่ระบบด้วยชื่อผู้ใช้และรหัสผ่านแทน';
-}
-function showCodeLoginForm() {
-  loginMode = 'code';
-  document.getElementById('loginSubText').innerHTML = 'ตำรวจทางหลวง<br>เข้าสู่ระบบด้วยชื่อผู้ใช้และรหัสผ่าน';
+function showRoleSelect() {
+  selectedRole = null;
   document.getElementById('loginSpinner').style.display = 'none';
-  document.getElementById('codeLoginBox').style.display = 'block';
-  document.getElementById('toggleLoginModeLink').textContent = 'เข้าสู่ระบบผ่าน LINE แทน';
+  document.getElementById('loginSubText').innerHTML = 'ตำรวจทางหลวง<br>กรุณาเลือกระดับผู้ใช้งานเพื่อเข้าสู่ระบบ';
+  document.getElementById('roleSelectBox').style.display = 'block';
+  document.getElementById('roleLoginForm').style.display = 'none';
 }
-document.getElementById('toggleLoginModeLink').addEventListener('click', () => {
-  if (loginMode === 'liff') { showCodeLoginForm(); } else { tryLiffLogin(); }
-});
-document.getElementById('btnCodeLogin').addEventListener('click', doCodeLogin);
-document.getElementById('cl_password').addEventListener('keydown', (e) => { if (e.key === 'Enter') doCodeLogin(); });
-document.getElementById('cl_username').addEventListener('keydown', (e) => { if (e.key === 'Enter') doCodeLogin(); });
 
-async function doCodeLogin() {
-  const username = val('cl_username').trim();
-  const password = val('cl_password');
-  const errEl = document.getElementById('codeLoginError');
+document.querySelectorAll('.role-select-card').forEach(card => {
+  card.addEventListener('click', () => {
+    selectedRole = card.dataset.role;
+    document.getElementById('roleSelectBox').style.display = 'none';
+    document.getElementById('roleLoginForm').style.display = 'block';
+    document.getElementById('rl_roleLabel').textContent = selectedRole === 'admin' ? 'แอดมิน' : 'ผู้ดูอย่างเดียว';
+    document.getElementById('rl_password').value = '';
+    document.getElementById('roleLoginError').textContent = '';
+    setTimeout(() => document.getElementById('rl_name').focus(), 50);
+  });
+});
+document.getElementById('btnBackToRoles').addEventListener('click', showRoleSelect);
+document.getElementById('rl_password').addEventListener('keydown', (e) => { if (e.key === 'Enter') doRoleLogin(); });
+document.getElementById('rl_name').addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('rl_password').focus(); });
+document.getElementById('btnRoleLogin').addEventListener('click', doRoleLogin);
+document.getElementById('btnLogout').addEventListener('click', () => {
+  if (!confirm('ยืนยันการออกจากระบบ?')) return;
+  clearSession();
+  location.reload();
+});
+
+async function doRoleLogin() {
+  const name = val('rl_name').trim();
+  const password = val('rl_password');
+  const errEl = document.getElementById('roleLoginError');
   errEl.textContent = '';
-  if (!username || !password) { errEl.textContent = 'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน'; return; }
-  const btn = document.getElementById('btnCodeLogin');
+  if (!selectedRole) { errEl.textContent = 'กรุณาเลือกระดับผู้ใช้งาน'; return; }
+  if (!name) { errEl.textContent = 'กรุณากรอกชื่อ-สกุลผู้ปฏิบัติงาน'; return; }
+  if (!password) { errEl.textContent = 'กรุณากรอกรหัสผ่าน'; return; }
+  const btn = document.getElementById('btnRoleLogin');
   btn.disabled = true; btn.textContent = 'กำลังเข้าสู่ระบบ...';
   try {
-    const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'loginWithCode', payload: { username, password } }) });
+    const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'loginWithRole', payload: { role: selectedRole, password } }) });
     const j = await res.json();
     if (!j.ok) throw new Error(j.error);
-    await completeLogin({ id: j.data.identifier, name: j.data.name, picture: '' }, j.data.role);
+    saveSession({ role: j.data.role, token: j.data.token, name });
+    await completeLogin({ role: j.data.role, name, token: j.data.token });
   } catch (err) {
     errEl.textContent = err.message;
   } finally {
@@ -672,28 +741,15 @@ async function doCodeLogin() {
   }
 }
 
-async function completeLogin(user, knownRole) {
-  state.user = user;
-  if (knownRole) {
-    state.role = knownRole;
-  } else {
-    const check = await apiGet('checkUser', { lineUserId: user.id });
-    state.role = check.found ? check.role : 'unknown';
-  }
-  if (state.role === 'unknown') {
-    document.getElementById('loginSpinner').style.display = 'none';
-    document.getElementById('loginHint').textContent = 'บัญชีนี้ยังไม่ได้รับสิทธิ์ใช้งาน กรุณาติดต่อแอดมินเพื่อเพิ่มชื่อในระบบ (รหัสผู้ใช้: ' + user.id + ')';
-    return;
-  }
-  if (user.picture) {
-    document.getElementById('profileImg').src = user.picture;
-    document.getElementById('profileImg').style.display = 'inline-block';
-  } else {
-    document.getElementById('profileImg').style.display = 'none';
-  }
+async function completeLogin({ role, name, token }) {
+  state.role = role;
+  state.sessionToken = token;
+  state.user = { name: name || '' };
+
   const pill = document.getElementById('rolePill');
-  pill.textContent = state.role === 'admin' ? 'แอดมิน' : 'ดูอย่างเดียว';
-  if (state.role !== 'admin') pill.classList.add('viewer');
+  pill.textContent = role === 'admin' ? 'แอดมิน' : 'ดูอย่างเดียว';
+  pill.classList.toggle('viewer', role !== 'admin');
+  document.getElementById('profileName').textContent = name || '';
   document.getElementById('usersTabBtn').style.display = isAdmin() ? 'flex' : 'none';
 
   document.getElementById('loginScreen').style.display = 'none';
@@ -755,7 +811,7 @@ async function apiGet(action, params = {}) {
   return fetchJson(API_URL + '?' + qs);
 }
 async function apiPost(action, payload) {
-  return fetchJson(API_URL, { method: 'POST', body: JSON.stringify({ action, lineUserId: state.user?.id, payload }) });
+  return fetchJson(API_URL, { method: 'POST', body: JSON.stringify({ action, sessionToken: state.sessionToken, actorName: state.user?.name, payload }) });
 }
 
 async function loadAll(showLoader = false) {
@@ -1319,7 +1375,7 @@ function openBorrowForm() {
     try {
       const payload = {
         assetId, assetName: asset ? asset['ชื่อครุภัณฑ์'] : '', borrower: val('f_borrower'),
-        borrowerLineId: !admin ? (state.user.id || '') : '',
+        borrowerLineId: '',
         borrowDate: val('f_borrowdate'), dueDate: val('f_duedate'),
         approver: admin ? val('f_approver') : '', note: val('f_bnote'), componentIds
       };
@@ -1432,6 +1488,7 @@ function renderUsers() {
         </button>
       </span>
     </div>
+    <div class="hint" style="margin-top:0;">รายชื่อนี้ใช้สำหรับบันทึกทำเนียบผู้ปฏิบัติงานเท่านั้น ไม่ได้ผูกกับการเข้าสู่ระบบ (ระบบใช้รหัสผ่านตามระดับผู้ใช้งานแทน)</div>
     <div id="userList">${state.users.length ? state.users.map(userRow).join('') : emptyState('ยังไม่มีผู้ใช้งานในระบบ')}</div>
     <div class="section-title">บันทึกกิจกรรมล่าสุด</div>
     <div>${state.activity.length ? state.activity.slice(0,40).map(activityRow).join('') : emptyState('ยังไม่มีบันทึกกิจกรรม')}</div>
@@ -1445,7 +1502,7 @@ function userRow(u) {
     <div class="li-icon">${ICONS.user}</div>
     <div class="li-body">
       <div class="li-title">${escapeHtml(u['ชื่อ-สกุล'])}</div>
-      <div class="li-sub">${escapeHtml(u['ตำแหน่ง']) || 'ไม่ระบุตำแหน่ง'} ${u['ชื่อผู้ใช้'] ? '· @' + escapeHtml(u['ชื่อผู้ใช้']) : ''}</div>
+      <div class="li-sub">${escapeHtml(u['ตำแหน่ง']) || 'ไม่ระบุตำแหน่ง'}${u['หน่วยงาน'] ? ' · ' + escapeHtml(u['หน่วยงาน']) : ''}</div>
     </div>
     <span class="role-pill ${u['สิทธิ์']==='admin'?'':'viewer'}">${u['สิทธิ์']==='admin'?'แอดมิน':'ดูอย่างเดียว'}</span>
   </div>`;
@@ -1466,12 +1523,9 @@ function openUserForm(u) {
     <div class="field"><label>ชื่อ-สกุล</label><input class="input" id="u_name" value="${editing ? escapeHtml(u['ชื่อ-สกุล']) : ''}"></div>
     <div class="field"><label>ตำแหน่ง</label><input class="input" id="u_position" value="${editing ? escapeHtml(u['ตำแหน่ง'])||'' : ''}"></div>
     <div class="field"><label>หน่วยงาน</label><input class="input" id="u_unit" value="${editing ? escapeHtml(u['หน่วยงาน'])||'' : ''}"></div>
-    <div class="field"><label>สิทธิ์การใช้งาน</label>
+    <div class="field"><label>ระดับผู้ใช้งาน (สำหรับอ้างอิง)</label>
       <select class="input" id="u_role"><option value="viewer" ${editing && u['สิทธิ์']==='viewer'?'selected':''}>ดูอย่างเดียว</option><option value="admin" ${editing && u['สิทธิ์']==='admin'?'selected':''}>แอดมิน</option></select>
     </div>
-    <div class="field"><label>LINE UserId (ถ้ามี)</label><input class="input" id="u_lineid" value="${editing ? escapeHtml(u['LINEUserId'])||'' : ''}" placeholder="เว้นว่างได้ถ้าใช้ username/password"></div>
-    <div class="field"><label>ชื่อผู้ใช้ (สำหรับ login ด้วยรหัสผ่าน)</label><input class="input" id="u_username" value="${editing ? escapeHtml(u['ชื่อผู้ใช้'])||'' : ''}"></div>
-    <div class="field"><label>${editing ? 'ตั้งรหัสผ่านใหม่ (เว้นว่าง = ไม่เปลี่ยน)' : 'รหัสผ่าน'}</label><input class="input" type="password" id="u_password"></div>
     <div class="btn-row">
       <button class="btn btn-ghost" id="btnCancel">ยกเลิก</button>
       <button class="btn btn-primary" id="btnSave">บันทึก</button>
@@ -1484,12 +1538,9 @@ function openUserForm(u) {
     const saveBtn = document.getElementById('btnSave'); if (saveBtn.disabled) return; setButtonBusy(saveBtn,true); setLoading(true,'กำลังบันทึกผู้ใช้งาน...');
     try {
       if (!editing) {
-        await apiPost('addUser', { name: val('u_name'), position: val('u_position'), unit: val('u_unit'), role: val('u_role'), lineUserId: val('u_lineid'), username: val('u_username'), password: val('u_password') });
+        await apiPost('addUser', { name: val('u_name'), position: val('u_position'), unit: val('u_unit'), role: val('u_role') });
       } else {
         await apiPost('updateUserRole', { lineUserId: u['LINEUserId'] || undefined, username: u['ชื่อผู้ใช้'] || undefined, name: val('u_name'), position: val('u_position'), unit: val('u_unit'), role: val('u_role') });
-        if (val('u_username') || val('u_password')) {
-          await apiPost('setUserCredentials', { lineUserId: u['LINEUserId'] || undefined, currentUsername: u['ชื่อผู้ใช้'] || undefined, username: val('u_username'), password: val('u_password') });
-        }
       }
       closeSheet(); toast('บันทึกผู้ใช้งานแล้ว'); await loadAll(); renderUsers();
     } catch(err) { toast(err.message || 'บันทึกไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(saveBtn,false); }
@@ -1497,7 +1548,7 @@ function openUserForm(u) {
   if (editing) {
     document.getElementById('btnDeleteUser').onclick = async () => {
       if (!confirm('ยืนยันการลบผู้ใช้งานนี้?')) return;
-      const identifier = u['LINEUserId'] || u['ชื่อผู้ใช้'];
+      const identifier = u['LINEUserId'] || u['ชื่อผู้ใช้'] || u['ชื่อ-สกุล'];
       try { await apiPost('deleteUser', { identifier }); closeSheet(); toast('ลบผู้ใช้งานแล้ว'); await loadAll(); renderUsers(); }
       catch(err) { toast(err.message || 'ลบไม่สำเร็จ'); }
     };
