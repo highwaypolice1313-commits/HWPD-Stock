@@ -498,6 +498,9 @@ input[type="date"]::-webkit-date-and-time-value{ text-align:left; }
   <div class="login-title">ระบบพัสดุครุภัณฑ์</div>
   <div class="login-sub" id="loginSubText">ตำรวจทางหลวง<br>กรุณาเลือกระดับผู้ใช้งานเพื่อเข้าสู่ระบบ</div>
   <div class="spinner" id="loginSpinner" style="display:none;"></div>
+<div id="sessionRetryBox" style="display:none; margin-top:6px;">
+  <button class="btn btn-primary" id="btnRetrySession" style="width:auto;padding:11px 26px;">ลองเชื่อมต่อใหม่</button>
+</div>
 
   <div class="role-select-box" id="roleSelectBox">
     <div class="role-select-card" data-role="admin">
@@ -676,22 +679,39 @@ let selectedRole = null;
 
 async function init() {
   const sess = loadSession();
-  if (sess) {
-    document.getElementById('roleSelectBox').style.display = 'none';
-    document.getElementById('roleLoginForm').style.display = 'none';
-    document.getElementById('loginSpinner').style.display = 'block';
-    document.getElementById('loginSubText').innerHTML = 'ตำรวจทางหลวง<br>กำลังตรวจสอบเซสชันของท่าน...';
-    try {
-      const check = await apiGet('validateSession', { token: sess.token });
-      if (check && check.valid) {
-        await completeLogin({ role: check.role, name: sess.name, token: sess.token });
-        return;
-      }
-    } catch (err) { /* fall through to login screen */ }
+  if (!sess) { showRoleSelect(); return; }
+
+  document.getElementById('roleSelectBox').style.display = 'none';
+  document.getElementById('roleLoginForm').style.display = 'none';
+  document.getElementById('sessionRetryBox').style.display = 'none';
+  document.getElementById('loginSpinner').style.display = 'block';
+  document.getElementById('loginSubText').innerHTML = 'ตำรวจทางหลวง<br>กำลังตรวจสอบเซสชันของท่าน...';
+
+  try {
+    const check = await apiGet('validateSession', { token: sess.token });
+    if (check && check.valid) {
+      await completeLogin({ role: check.role, name: sess.name, token: sess.token });
+      return;
+    }
+    // เซิร์ฟเวอร์ตอบกลับมาชัดเจนว่า token ไม่ถูกต้อง/หมดอายุจริง -> ค่อย logout
     clearSession();
+    showRoleSelect();
+  } catch (err) {
+    // เชื่อมต่อไม่สำเร็จ (ปัญหาชั่วคราว) — เก็บ session ไว้ ไม่ logout ผู้ใช้
+    showSessionCheckError();
   }
-  showRoleSelect();
 }
+
+function showSessionCheckError() {
+  document.getElementById('loginSpinner').style.display = 'none';
+  document.getElementById('loginSubText').innerHTML = 'ตำรวจทางหลวง<br>เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง';
+  document.getElementById('sessionRetryBox').style.display = 'block';
+}
+
+document.getElementById('btnRetrySession').addEventListener('click', () => {
+  document.getElementById('sessionRetryBox').style.display = 'none';
+  init();
+});
 
 function showRoleSelect() {
   selectedRole = null;
