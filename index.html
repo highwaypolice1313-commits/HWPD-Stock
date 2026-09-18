@@ -696,16 +696,23 @@ async function init() {
     // เซิร์ฟเวอร์ตอบกลับมาชัดเจนว่า token ไม่ถูกต้อง/หมดอายุจริง -> ค่อย logout
     clearSession();
     showRoleSelect();
-  } catch (err) {
-    // เชื่อมต่อไม่สำเร็จ (ปัญหาชั่วคราว) — เก็บ session ไว้ ไม่ logout ผู้ใช้
-    showSessionCheckError();
+    } catch (err) {
+    console.error('validateSession failed:', err); // จะได้เห็นใน Console
+    showSessionCheckError(err.message || String(err));
   }
 }
 
-function showSessionCheckError() {
+function showSessionCheckError(errMsg) {
   document.getElementById('loginSpinner').style.display = 'none';
-  document.getElementById('loginSubText').innerHTML = 'ตำรวจทางหลวง<br>เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง';
+  document.getElementById('loginSubText').innerHTML =
+    'ตำรวจทางหลวง<br>เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ<br><span style="font-size:11px;opacity:.7;">' +
+    (errMsg ? escapeHtmlSafe(errMsg) : '') + '</span>';
   document.getElementById('sessionRetryBox').style.display = 'block';
+}
+function escapeHtmlSafe(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
 }
 
 document.getElementById('btnRetrySession').addEventListener('click', () => {
