@@ -819,26 +819,39 @@ function setButtonBusy(btn, busy, textBusy = 'กำลังบันทึก.
   else { btn.disabled = false; btn.textContent = btn.dataset.originalText || 'บันทึก'; btn.removeAttribute('aria-busy'); }
 }
 
-async function fetchJson(url, options = {}, timeout = 20000) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeout);
-  try {
-    const res = await fetch(url, {...options, signal: controller.signal, cache:'no-store'});
-    if (!res.ok) throw new Error('เซิร์ฟเวอร์ตอบกลับผิดพลาด (' + res.status + ')');
-    const j = await res.json();
-    if (!j.ok) throw new Error(j.error || 'ไม่สามารถดำเนินการได้');
-    return j.data;
-  } catch (err) {
-    if (err.name === 'AbortError') throw new Error('การเชื่อมต่อใช้เวลานานเกินไป กรุณาลองใหม่');
-    throw err;
-  } finally { clearTimeout(timer); }
-}
-async function apiGet(action, params = {}) {
-  const qs = new URLSearchParams({ action, ...params }).toString();
-  return fetchJson(API_URL + '?' + qs);
-}
-async function apiPost(action, payload) {
-  return fetchJson(API_URL, { method: 'POST', body: JSON.stringify({ action, sessionToken: state.sessionToken, actorName: state.user?.name, payload }) });
+async function fetchJson(url, options = {}, timeout = 20000, retries = 2) {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeout);
+    try {
+      const res = await fetch(url, {...options, signal: controller.signal, cache:'no-store'});
+      const text = await res.text();
+
+      // ถ้า Google ส่ง HTML (หน้า error/redirect ที่หลุด) กลับมาแทน JSON ให้ถือว่าล้มเหลวแบบ retry ได้
+      const looksLikeHtml = text.trim().startsWith('<');
+      if (!res.ok || looksLikeHtml) {
+        if (attempt < retries) {
+          await new Promise(r => setTimeout(r, 600 * (attempt + 1))); // รอสั้นๆ แล้วลองใหม่
+          continue;
+        }
+        throw new Error(looksLikeHtml
+          ? 'เซิร์ฟเวอร์ตอบกลับไม่ถูกต้อง (ลองใหม่อีกครั้ง)'
+          : 'เซิร์ฟเวอร์ตอบกลับผิดพลาด (' + res.status + ')');
+      }
+
+      const j = JSON.parse(text);
+      if (!j.ok) throw new Error(j.error || 'ไม่สามารถดำเนินการได้');
+      return j.data;
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        if (attempt < retries) { continue; }
+        throw new Error('การเชื่อมต่อใช้เวลานานเกินไป กรุณาลองใหม่');
+      }
+      if (attempt >= retries) throw err;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
 }
 
 async function loadAll(showLoader = false) {
