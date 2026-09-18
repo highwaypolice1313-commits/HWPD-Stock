@@ -798,15 +798,17 @@ async function doRoleLogin() {
   btn.textContent = 'กำลังเข้าสู่ระบบ...';
 
   try {
-    const data = await fetchJson(API_URL, {
+    const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({
         action: 'loginWithRole',
         payload: { role: selectedRole, password }
       })
-    }, 20000, 0);
-    const j = { ok: true, data };
+    });
+
+    const j = await res.json();
+    if (!j.ok) throw new Error(j.error || 'เข้าสู่ระบบไม่สำเร็จ');
 
     const displayName = j.data.displayName ||
       (j.data.role === 'admin' ? 'แอดมิน' : 'ผู้ดูอย่างเดียว');
@@ -852,10 +854,7 @@ async function completeLogin({ role, name, token }) {
   } catch (err) {
     document.getElementById('app').style.display = 'block';
     renderTab('dashboard');
-    setConnection(false);
-    // Login สำเร็จแล้ว แต่ข้อมูลยังไม่มา: ไม่ retry วนและไม่เด้งกลับหน้า login
-    console.warn('เข้าสู่ระบบสำเร็จ แต่โหลดข้อมูลครั้งแรกยังไม่สำเร็จ:', err.message);
-    toast('เข้าสู่ระบบแล้ว — ข้อมูลยังโหลดไม่สำเร็จ กดรีเฟรชเมื่อพร้อม');
+    toast('เข้าสู่ระบบแล้ว แต่โหลดข้อมูลไม่สำเร็จ: ' + (err.message || 'กรุณารีเฟรช'));
   }
 }
 
@@ -908,124 +907,75 @@ function setButtonBusy(btn, busy, textBusy = 'กำลังบันทึก.
   else { btn.disabled = false; btn.textContent = btn.dataset.originalText || 'บันทึก'; btn.removeAttribute('aria-busy'); }
 }
 
-let activeGetAllPromise = null;
-let lastGoodDataAt = 0;
-
-function sleep_(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
-
-async function fetchJson(url, options = {}, timeout = 25000, retries = 1) {
-  const method = String(options.method || 'GET').toUpperCase();
-  // POST ที่เขียนข้อมูล "ห้าม retry อัตโนมัติ" เพราะ request อาจสำเร็จที่ server แล้ว
-  // แต่ response กลับมาช้า ซึ่งการยิงซ้ำอาจทำให้เกิดรายการซ้ำ
-  const safeRetries = method === 'GET' ? Math.max(0, retries) : 0;
-
-  for (let attempt = 0; attempt <= safeRetries; attempt++) {
+async function fetchJson(url, options = {}, timeout = 20000, retries = 1) {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    if (attempt > 0) {
+      const label = document.getElementById('loadingText');
+      if (label) label.textContent = 'เชื่อมต่อไม่สำเร็จ กำลังลองใหม่ (ครั้งที่ ' + (attempt + 1) + ')...';
+    }
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeout);
     try {
-      const res = await fetch(url, {
-        ...options,
-        signal: controller.signal,
-        cache: 'no-store'
-      });
-      const raw = await res.text();
-      let j;
-      try {
-        j = JSON.parse(raw);
-      } catch (parseErr) {
-        const looksLikeHtml = raw.trim().startsWith('<');
-        const msg = looksLikeHtml
-          ? 'เซิร์ฟเวอร์ตอบกลับเป็นหน้าเว็บแทนข้อมูล'
-          : 'เซิร์ฟเวอร์ตอบกลับข้อมูลที่อ่านไม่ได้';
-        if (attempt < safeRetries) {
-          await sleep_(500);
+      const res = await fetch(url, {...options, signal: controller.signal, cache:'no-store'});
+      const text = await res.text();
+      const looksLikeHtml = text.trim().startsWith('<');
+      if (!res.ok || looksLikeHtml) {
+        if (attempt < retries) {
+          await new Promise(r => setTimeout(r, 600 * (attempt + 1)));
           continue;
         }
-        throw new Error(msg);
+        throw new Error(looksLikeHtml
+          ? 'เซิร์ฟเวอร์ตอบกลับไม่ถูกต้อง (ลองใหม่อีกครั้ง)'
+          : 'เซิร์ฟเวอร์ตอบกลับผิดพลาด (' + res.status + ')');
       }
-
-      if (!res.ok) {
-        // 5xx มีโอกาสเป็นปัญหาชั่วคราว จึง retry เฉพาะ GET
-        if (res.status >= 500 && attempt < safeRetries) {
-          await sleep_(500);
-          continue;
-        }
-        throw new Error(j.error || 'เซิร์ฟเวอร์ตอบกลับผิดพลาด (' + res.status + ')');
-      }
-      if (!j || !j.ok) throw new Error((j && j.error) || 'ไม่สามารถดำเนินการได้');
+      const j = JSON.parse(text);
+      if (!j.ok) throw new Error(j.error || 'ไม่สามารถดำเนินการได้');
       return j.data;
     } catch (err) {
-      const retryable = err.name === 'AbortError' || err instanceof TypeError;
-      if (retryable && attempt < safeRetries) {
-        await sleep_(500);
-        continue;
+      if (err.name === 'AbortError') {
+        if (attempt < retries) { continue; }
+        throw new Error('การเชื่อมต่อใช้เวลานานเกินไป กรุณาลองใหม่');
       }
-      if (err.name === 'AbortError') throw new Error('เซิร์ฟเวอร์ใช้เวลาตอบกลับนานเกินไป');
-      throw err;
+      if (attempt >= retries) throw err;
     } finally {
       clearTimeout(timer);
     }
   }
-  throw new Error('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
 }
 
 async function apiGet(action, params = {}) {
   const qs = new URLSearchParams({ action, ...params }).toString();
-  return fetchJson(API_URL + '?' + qs, {}, 25000, 1);
+  return fetchJson(API_URL + '?' + qs);
 }
-
 async function apiPost(action, payload) {
-  return fetchJson(API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({
-      action,
-      sessionToken: state.sessionToken,
-      actorName: state.user?.name,
-      payload
-    })
-  }, 25000, 0);
+  return fetchJson(API_URL, { method: 'POST', body: JSON.stringify({ action, sessionToken: state.sessionToken, actorName: state.user?.name, payload }) });
 }
-
+   
 async function loadAll(showLoader = false) {
-  // กันการกด/เรียก loadAll ซ้อนกันหลายครั้งพร้อมกัน
-  if (activeGetAllPromise) return activeGetAllPromise;
-
-  const hadData = state.assets.length || state.borrow.length || state.maint.length || state.components.length;
-  if (showLoader && !hadData) setLoading(true, 'กำลังโหลดข้อมูล...');
-  else if (showLoader) setLoading(true, 'กำลังอัปเดตข้อมูล...');
-
-  activeGetAllPromise = (async () => {
-    try {
-      const data = await apiGet('getAll', { token: state.sessionToken });
-      state.assets = data.assets || [];
-      state.borrow = data.borrow || [];
-      state.maint = data.maint || [];
-      state.components = data.components || [];
-      state.dashboard = data.dashboard || null;
+  if (showLoader) setLoading(true, 'กำลังอัปเดตข้อมูล...');
+  try {
+    const data = await apiGet('getAll', { token: state.sessionToken });
+    state.assets = data.assets || [];
+    state.borrow = data.borrow || [];
+    state.maint = data.maint || [];
+    state.components = data.components || [];
+    state.dashboard = data.dashboard || null;
+    if (isAdmin()) {
       state.users = data.users || [];
-      if (isAdmin()) state.activity = data.activity || [];
-
-      setConnection(true);
-      lastSyncAt = new Date();
-      lastGoodDataAt = Date.now();
-      updateSyncLabel();
-      updateBorrowDot();
-      return { successCount: 1, errors: [] };
-    } catch (err) {
-      setConnection(false);
-      // ถ้ามีข้อมูลเก่าอยู่แล้ว ให้ผู้ใช้ทำงานต่อได้ ไม่ล้างหน้าจอ
-      // และไม่ขึ้น Toast ซ้ำจากทุกจุดของระบบ
-      if (!hadData) throw err;
-      console.warn('อัปเดตข้อมูลล่าสุดไม่สำเร็จ:', err.message);
-      return { successCount: 0, errors: [err] };
-    } finally {
-      activeGetAllPromise = null;
-      if (showLoader) setLoading(false);
+      state.activity = data.activity || [];
     }
-  })();
-
-  return activeGetAllPromise;
+    setConnection(true);
+    lastSyncAt = new Date();
+    updateSyncLabel();
+    updateBorrowDot();
+    return { successCount: 1, errors: [] };
+  } catch (err) {
+    setConnection(false);
+    toast('ไม่สามารถเชื่อมต่อฐานข้อมูลได้: ' + (err.message || ''));
+    throw err;
+  } finally {
+    if (showLoader) setLoading(false);
+  }
 }
 
 async function refreshData() {
@@ -1033,13 +983,12 @@ async function refreshData() {
   if (btn?.disabled) return;
   if (btn) { btn.disabled = true; btn.classList.add('loading'); }
   try {
-    const result = await loadAll(true);
+    await loadAll(true);
     renderTab(state.tab || 'dashboard');
-    if (result.successCount) toast('อัปเดตข้อมูลล่าสุดแล้ว');
-    else toast('ยังใช้ข้อมูลเดิม เนื่องจากเซิร์ฟเวอร์ยังไม่ตอบกลับ');
+    toast('อัปเดตข้อมูลล่าสุดแล้ว');
   } catch (err) {
     setConnection(false);
-    toast('ยังเชื่อมต่อฐานข้อมูลไม่ได้ — กดรีเฟรชอีกครั้งเมื่อพร้อม');
+    toast(err.message || 'รีเฟรชข้อมูลไม่สำเร็จ');
   } finally {
     if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
   }
@@ -1822,15 +1771,45 @@ function openUserForm(u) {
       } else {
         await apiPost('updateUserRole', { lineUserId: u['LINEUserId'] || undefined, username: u['ชื่อผู้ใช้'] || undefined, name: val('u_name'), rank: val('u_rank'), position: val('u_position'), unit: val('u_unit'), role: val('u_role'), memoRole: val('u_memorole') });
       }
-      closeSheet(); toast('บันทึกรายชื่อ จนท. แล้ว'); await loadAll(); renderUsers();
-    } catch(err) { toast(err.message || 'บันทึกไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(saveBtn,false); }
+      closeSheet();
+      toast(editing ? 'แก้ไขรายชื่อและยศเรียบร้อยแล้ว' : 'บันทึกรายชื่อและยศเรียบร้อยแล้ว');
+      try {
+        await loadAll();
+        renderUsers();
+      } catch(refreshErr) {
+        toast('บันทึกสำเร็จแล้ว แต่รีเฟรชรายการไม่ทัน — กดรีเฟรชข้อมูลอีกครั้งได้');
+      }
+    } catch(err) {
+      toast('บันทึกไม่สำเร็จ: ' + (err.message || 'เกิดข้อผิดพลาด'));
+    } finally {
+      setLoading(false);
+      setButtonBusy(saveBtn,false);
+    }
   };
   if (editing) {
     document.getElementById('btnDeleteUser').onclick = async () => {
       if (!confirm('ยืนยันการลบรายชื่อนี้?')) return;
       const identifier = u['LINEUserId'] || u['ชื่อผู้ใช้'] || u['ชื่อ-สกุล'];
-      try { await apiPost('deleteUser', { identifier }); closeSheet(); toast('ลบรายชื่อแล้ว'); await loadAll(); renderUsers(); }
-      catch(err) { toast(err.message || 'ลบไม่สำเร็จ'); }
+      const deleteBtn = document.getElementById('btnDeleteUser');
+      if (deleteBtn?.disabled) return;
+      setButtonBusy(deleteBtn, true, 'กำลังลบ...');
+      setLoading(true, 'กำลังลบรายชื่อ จนท....');
+      try {
+        await apiPost('deleteUser', { identifier });
+        closeSheet();
+        toast('ลบรายชื่อ "' + (u['ชื่อ-สกุล'] || '') + '" เรียบร้อยแล้ว');
+        try {
+          await loadAll();
+          renderUsers();
+        } catch(refreshErr) {
+          toast('ลบสำเร็จแล้ว แต่รีเฟรชรายการไม่ทัน — กดรีเฟรชข้อมูลอีกครั้งได้');
+        }
+      } catch(err) {
+        toast('ลบไม่สำเร็จ: ' + (err.message || 'เกิดข้อผิดพลาด'));
+      } finally {
+        setLoading(false);
+        setButtonBusy(deleteBtn, false, 'ลบรายชื่อนี้');
+      }
     };
   }
 }
