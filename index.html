@@ -892,30 +892,25 @@ async function apiPost(action, payload) {
 async function loadAll(showLoader = false) {
   if (showLoader) setLoading(true, 'กำลังอัปเดตข้อมูล...');
   try {
-    const calls = [
-      apiGet('getAssets', {}),
-      apiGet('getBorrowLogs', {}),
-      apiGet('getMaintLogs', {}),
-      apiGet('getComponents', {}),
-      apiGet('getDashboard', {})
-    ];
-    const names = ['assets','borrow','maint','components','dashboard'];
-    if (isAdmin()) { calls.push(apiGet('getUsers', {})); names.push('users'); calls.push(apiGet('getActivityLog', {})); names.push('activity'); }
-    const results = await Promise.allSettled(calls);
-    const errors = [];
-    results.forEach((r, i) => {
-      if (r.status === 'fulfilled') state[names[i]] = r.value;
-      else errors.push(r.reason?.message || 'ไม่สามารถโหลดข้อมูลบางส่วนได้');
-    });
-    const successCount = results.filter(r => r.status === 'fulfilled').length;
-    setConnection(successCount === results.length);
-    if (successCount) { lastSyncAt = new Date(); updateSyncLabel(); }
-    updateBorrowDot();
-    if (errors.length) {
-      toast(successCount ? 'อัปเดตได้บางส่วน กรุณาลองรีเฟรชอีกครั้ง' : 'ไม่สามารถเชื่อมต่อฐานข้อมูลได้');
-      if (!successCount) throw new Error(errors[0]);
+    const data = await apiGet('getAll', { token: state.sessionToken });
+    state.assets = data.assets || [];
+    state.borrow = data.borrow || [];
+    state.maint = data.maint || [];
+    state.components = data.components || [];
+    state.dashboard = data.dashboard || null;
+    if (isAdmin()) {
+      state.users = data.users || [];
+      state.activity = data.activity || [];
     }
-    return { successCount, errors };
+    setConnection(true);
+    lastSyncAt = new Date();
+    updateSyncLabel();
+    updateBorrowDot();
+    return { successCount: 1, errors: [] };
+  } catch (err) {
+    setConnection(false);
+    toast('ไม่สามารถเชื่อมต่อฐานข้อมูลได้: ' + (err.message || ''));
+    throw err;
   } finally {
     if (showLoader) setLoading(false);
   }
