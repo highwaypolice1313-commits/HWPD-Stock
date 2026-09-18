@@ -343,6 +343,7 @@ input[type="date"]::-webkit-date-and-time-value{ text-align:left; }
 .loading-card{min-width:180px;padding:22px 26px;border-radius:var(--r-lg);background:#fff;border:1px solid var(--panel-line);box-shadow:var(--shadow-lg);text-align:center;}
 .loading-card .spinner{margin:0 auto 10px; border:3px solid var(--panel-line); border-top-color:var(--navy);}
 .loading-text{font-size:13px;color:var(--ink-dim);}
+.loading-timer{font-size:11px;color:var(--ink-faint);margin-top:4px;}
 .last-sync{font-size:10.5px;color:var(--ink-faint);margin-left:4px;white-space:nowrap;}
 .icon-btn{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:var(--r-sm);border:1px solid var(--panel-line);background:#fff;color:var(--ink);cursor:pointer; flex:none;}
 .icon-btn svg{width:17px;height:17px;}
@@ -617,6 +618,7 @@ input[type="date"]::-webkit-date-and-time-value{ text-align:left; }
   <div class="loading-card">
     <div class="spinner"></div>
     <div class="loading-text" id="loadingText">กำลังโหลดข้อมูล...</div>
+    <div class="loading-timer" id="loadingTimer"></div>
   </div>
 </div>
 
@@ -827,12 +829,35 @@ async function completeLogin({ role, name, token }) {
 let busyCount = 0;
 let lastSyncAt = null;
 
+let loadingTimerInterval = null;
+let loadingStartedAt = null;
+
 function setLoading(show, text = 'กำลังโหลดข้อมูล...') {
   const overlay = document.getElementById('loadingOverlay');
   const label = document.getElementById('loadingText');
   if (!overlay) return;
-  if (show) { busyCount++; if (label) label.textContent = text; overlay.classList.add('show'); }
-  else { busyCount = Math.max(0, busyCount - 1); if (!busyCount) overlay.classList.remove('show'); }
+  if (show) {
+    busyCount++;
+    if (label) label.textContent = text;
+    overlay.classList.add('show');
+    if (!loadingTimerInterval) {
+      loadingStartedAt = Date.now();
+      const timerEl = document.getElementById('loadingTimer');
+      loadingTimerInterval = setInterval(() => {
+        const sec = Math.floor((Date.now() - loadingStartedAt) / 1000);
+        if (timerEl) {
+          timerEl.textContent = sec + ' วินาที';
+          if (sec >= 8) timerEl.textContent += ' (เซิร์ฟเวอร์กำลังเริ่มทำงาน อาจใช้เวลาสักครู่ในการโหลดครั้งแรก)';
+        }
+      }, 1000);
+    }
+  } else {
+    busyCount = Math.max(0, busyCount - 1);
+    if (!busyCount) {
+      overlay.classList.remove('show');
+      if (loadingTimerInterval) { clearInterval(loadingTimerInterval); loadingTimerInterval = null; }
+    }
+  }
 }
 function setConnection(ok) {
   const dot = document.getElementById('connectionDot');
@@ -851,24 +876,25 @@ function setButtonBusy(btn, busy, textBusy = 'กำลังบันทึก.
 
 async function fetchJson(url, options = {}, timeout = 20000, retries = 2) {
   for (let attempt = 0; attempt <= retries; attempt++) {
+    if (attempt > 0) {
+      const label = document.getElementById('loadingText');
+      if (label) label.textContent = 'เชื่อมต่อไม่สำเร็จ กำลังลองใหม่ (ครั้งที่ ' + (attempt + 1) + ')...';
+    }
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeout);
     try {
       const res = await fetch(url, {...options, signal: controller.signal, cache:'no-store'});
       const text = await res.text();
-
-      // ถ้า Google ส่ง HTML (หน้า error/redirect ที่หลุด) กลับมาแทน JSON ให้ถือว่าล้มเหลวแบบ retry ได้
       const looksLikeHtml = text.trim().startsWith('<');
       if (!res.ok || looksLikeHtml) {
         if (attempt < retries) {
-          await new Promise(r => setTimeout(r, 600 * (attempt + 1))); // รอสั้นๆ แล้วลองใหม่
+          await new Promise(r => setTimeout(r, 600 * (attempt + 1)));
           continue;
         }
         throw new Error(looksLikeHtml
           ? 'เซิร์ฟเวอร์ตอบกลับไม่ถูกต้อง (ลองใหม่อีกครั้ง)'
           : 'เซิร์ฟเวอร์ตอบกลับผิดพลาด (' + res.status + ')');
       }
-
       const j = JSON.parse(text);
       if (!j.ok) throw new Error(j.error || 'ไม่สามารถดำเนินการได้');
       return j.data;
