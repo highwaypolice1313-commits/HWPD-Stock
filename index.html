@@ -321,9 +321,10 @@ input[type="date"]::-webkit-date-and-time-value{ text-align:left; }
 }
 .pf-topline{display:flex; align-items:flex-start; gap:10px; margin-bottom:2px;}
 .pf-emblem{
-  width:64px; flex:none; font-size:10px; color:#8a641f; border:1px dashed #bb8a3f; border-radius:6px;
-  text-align:center; padding:14px 4px; line-height:1.4;
+  width:64px; flex:none; font-size:10px; color:#8a641f; text-align:center; padding:0; line-height:1.4;
 }
+.pf-emblem img{width:56px; height:auto; display:block; margin:0 auto;}
+.pf-emblem-placeholder{border:1px dashed #bb8a3f; border-radius:6px; padding:14px 4px;}
 .pf-title-wrap{flex:1; text-align:center;}
 .pf-title{font-size:22px; font-weight:700; margin:6px 0 2px;}
 .pf-spacer{width:64px; flex:none;}
@@ -334,7 +335,7 @@ input[type="date"]::-webkit-date-and-time-value{ text-align:left; }
 .pf-sign .pf-sign-gap{height:34px;}
 .pf-note{font-size:16px; margin:4px 0 4px 0;}
 @media print{
-  .pf-emblem{border:none;}
+  .pf-emblem-placeholder{border:none;}
 }
 
 /* ---------- print form (print helper form fields inside sheet) ---------- */
@@ -342,6 +343,8 @@ input[type="date"]::-webkit-date-and-time-value{ text-align:left; }
 .memo-two-col > .field{flex:1 1 160px;}
 .memo-section-label{font-size:12.5px; font-weight:600; color:var(--navy); margin:14px 0 8px; padding-top:10px; border-top:1px solid var(--panel-line);}
 .memo-section-label:first-of-type{border-top:none; margin-top:0; padding-top:0;}
+.memo-signer-pick{display:flex; gap:8px; margin-bottom:8px;}
+.memo-signer-pick select{flex:1;}
 
 /* ---------- refresh / connection / loading ---------- */
 .refresh-btn{
@@ -623,7 +626,7 @@ input[type="date"]::-webkit-date-and-time-value{ text-align:left; }
     </button>
     <button class="tab" data-tab="users" id="usersTabBtn" style="display:none;">
       <span class="ico"><svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="6.6" r="3" stroke="currentColor" stroke-width="1.4"/><path d="M3.8 16.2c1-3 3.4-4.6 6.2-4.6s5.2 1.6 6.2 4.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></span>
-      <span class="lbl">ผู้ใช้งาน</span>
+      <span class="lbl">จนท.ในสังกัด</span>
     </button>
     <button class="tab" data-tab="reports">
       <span class="ico"><svg viewBox="0 0 20 20" fill="none"><path d="M4 16.5V11M10 16.5V6M16 16.5v-8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>
@@ -652,6 +655,9 @@ const ORG_NAME = 'สถานีตำรวจทางหลวง 3 กอ�
 const ORG_PHONE = '[ใส่เบอร์โทรศัพท์หน่วยงานที่นี่]'; // TODO: แก้เป็นเบอร์โทรจริงของหน่วยงาน
 const GUN_CATEGORY = 'อาวุธปืน';
 const SESSION_KEY = 'hpAssetSession_v2';
+// TODO: วางรูปตราครุฑแบบ base64 ที่นี่ เช่น 'data:image/png;base64,iVBORw0...'
+// ถ้าเว้นว่างไว้ ระบบจะพิมพ์กรอบ [ ตราครุฑ ] แทนแบบเดิม
+const GARUDA_LOGO_DATA_URI = '';
 
 const ICONS = {
   gun: '<svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.3" stroke="currentColor" stroke-width="1.4"/><circle cx="10" cy="10" r="3.1" stroke="currentColor" stroke-width="1.4"/><circle cx="10" cy="10" r="0.9" fill="currentColor"/></svg>',
@@ -684,6 +690,7 @@ const ASSET_STATUSES = ['พร้อมใช้งาน','กำลังย�
 const TH_MONTHS_FULL = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 const TH_MONTHS_ABBR = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 const RANK_OPTIONS = ['พ.ต.อ.','พ.ต.ท.','พ.ต.ต.','ร.ต.อ.','ร.ต.ท.','ร.ต.ต.','ด.ต.','จ.ส.ต.','ส.ต.อ.','ส.ต.ท.','ส.ต.ต.'];
+const MEMO_ROLES = ['ไม่ระบุ (เลือกเองตอนพิมพ์)','ผู้ขอเบิก/ยืม (ค่าเริ่มต้น)','ผู้อนุมัติ ลำดับที่ 1','ผู้อนุมัติ ลำดับที่ 2','ผู้อนุมัติ ลำดับที่ 3','ผู้จ่ายพัสดุ'];
 
 /* ========================================================= SESSION (localStorage) */
 function loadSession() {
@@ -1025,6 +1032,14 @@ function isoDate(v) {
   const d = v ? new Date(v) : new Date();
   return d.toISOString().slice(0, 10);
 }
+function daysUntil(v) {
+  if (!v) return null;
+  const d = new Date(v);
+  if (isNaN(d)) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  d.setHours(0,0,0,0);
+  return Math.round((d - today) / 86400000);
+}
 function statusClass(s) {
   return { 'พร้อมใช้งาน':'status-ready','กำลังยืม':'status-borrowed','ซ่อมบำรุง':'status-repair','จำหน่ายแล้ว':'status-disposed',
            'เกินกำหนด':'status-overdue','คืนแล้ว':'status-returned','รอซ่อม':'status-repair','กำลังซ่อม':'status-borrowed','ซ่อมเสร็จ':'status-ready',
@@ -1036,6 +1051,36 @@ function catIcon(c) {
 const isAdmin = () => state.role === 'admin';
 function escapeHtml(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+/* ---------- officer roster (จนท.ในสังกัด) helpers — ใช้ทำ dropdown เลือกชื่อแทนการพิมพ์ ---------- */
+function officerLabel(u) {
+  const rank = u['ยศ'] ? u['ยศ'] + ' ' : '';
+  const pos = u['ตำแหน่ง'] ? ' — ' + u['ตำแหน่ง'] : '';
+  return rank + (u['ชื่อ-สกุล'] || '') + pos;
+}
+function officerFullName(u) {
+  return (u['ยศ'] ? u['ยศ'] + ' ' : '') + (u['ชื่อ-สกุล'] || '');
+}
+function officersByMemoRole(role) {
+  return (state.users || []).filter(u => u['บทบาทเบิก-ยืม'] === role);
+}
+// สร้าง <select> รายชื่อ จนท.ในสังกัด + ตัวเลือก "อื่นๆ / พิมพ์เอง" กันกดผิดคน แต่ยังยืดหยุ่นกรณีคนนอกทำเนียบ
+function officerSelectOptions(selectedIdx) {
+  const list = state.users || [];
+  let opts = `<option value="">-- เลือกรายชื่อ --</option>`;
+  opts += list.map((u, i) => `<option value="${i}" ${String(selectedIdx)===String(i)?'selected':''}>${escapeHtml(officerLabel(u))}</option>`).join('');
+  opts += `<option value="__other__" ${selectedIdx==='__other__'?'selected':''}>อื่นๆ / พิมพ์ชื่อเอง</option>`;
+  return opts;
+}
+function findOfficerIndexByName(name) {
+  if (!name) return '';
+  const list = state.users || [];
+  const idx = list.findIndex(u => eqCiJs_(officerFullName(u), name) || eqCiJs_(u['ชื่อ-สกุล'], name));
+  return idx === -1 ? '' : String(idx);
+}
+function eqCiJs_(a, b) {
+  return String(a||'').trim().toLowerCase() === String(b||'').trim().toLowerCase();
 }
 
 /* ---------- CSV export ---------- */
@@ -1095,6 +1140,9 @@ function renderDashboard() {
   }
   if (isAdmin() && d.pendingCount > 0) {
     banners += `<div class="alert-banner warn">${ICONS.clock}<span>มีคำขอยืมรออนุมัติ ${d.pendingCount} รายการ</span><span class="alert-link" onclick="renderTab('borrow')">ตรวจสอบ</span></div>`;
+  }
+  if (d.dueRenewalCount > 0) {
+    banners += `<div class="alert-banner warn">${ICONS.warn}<span>มีครุภัณฑ์ใกล้ครบกำหนดตรวจสภาพ/ต่อทะเบียน ${d.dueRenewalCount} รายการ (ภายใน 30 วัน หรือเลยกำหนดแล้ว)</span><span class="alert-link" onclick="renderTab('assets')">ดูรายการ</span></div>`;
   }
   el.innerHTML = `
     <div class="section-title">ภาพรวมระบบ <small>อัปเดตล่าสุดวันนี้</small></div>
@@ -1224,7 +1272,7 @@ function renderAssets() {
   `;
   document.getElementById('assetSearchInput').oninput = (e) => { state.assetSearch = e.target.value.toLowerCase(); state.assetPage = 1; renderAssets(); };
   document.getElementById('assetSortSelect').onchange = (e) => { state.assetSort = e.target.value; renderAssets(); };
-  document.getElementById('btnExportAssets').onclick = () => exportCsv('ครุภัณฑ์.csv', ['รหัสครุภัณฑ์','ชื่อครุภัณฑ์','หมวดหมู่','ยี่ห้อ/รุ่น','หมายเลขเครื่อง','วันที่รับเข้า','มูลค่า(บาท)','สถานะ','ผู้ครอบครอง/หน่วยงาน','หน่วยงาน','หมายเหตุ'], filtered);
+  document.getElementById('btnExportAssets').onclick = () => exportCsv('ครุภัณฑ์.csv', ['รหัสครุภัณฑ์','ชื่อครุภัณฑ์','หมวดหมู่','ยี่ห้อ/รุ่น','หมายเลขเครื่อง','วันที่รับเข้า','มูลค่า(บาท)','สถานะ','ผู้ครอบครอง/หน่วยงาน','หน่วยงาน','วันครบกำหนดตรวจสภาพ/ต่อทะเบียน','หมายเหตุ'], filtered);
   document.querySelectorAll('#view-assets .chip[data-cat]').forEach(c => c.onclick = () => { state.assetFilter = c.dataset.cat; state.assetPage = 1; renderAssets(); });
   document.querySelectorAll('#view-assets .chip[data-status]').forEach(c => c.onclick = () => { state.assetStatusFilter = c.dataset.status; state.assetPage = 1; renderAssets(); });
   document.querySelectorAll('.asset-item').forEach(it => it.onclick = () => openAssetDetail(it.dataset.id));
@@ -1233,13 +1281,19 @@ function renderAssets() {
 }
 function emptyState(msg) { return `<div class="glass empty-state">${msg}</div>`; }
 function assetRow(a) {
+  const dleft = daysUntil(a['วันครบกำหนดตรวจสภาพ/ต่อทะเบียน']);
+  const renewalTag = (dleft !== null && dleft <= 30 && a['สถานะ'] !== 'จำหน่ายแล้ว')
+    ? `<div class="status-badge ${dleft < 0 ? 'status-overdue' : 'status-borrowed'}" style="margin-top:4px;">${dleft < 0 ? 'เลยกำหนดตรวจสภาพ' : 'ใกล้ครบกำหนด ' + dleft + ' วัน'}</div>` : '';
   return `<div class="glass list-item asset-item" data-id="${a['รหัสครุภัณฑ์']}">
     <div class="li-icon">${catIcon(a['หมวดหมู่'])}</div>
     <div class="li-body">
       <div class="li-title">${escapeHtml(a['ชื่อครุภัณฑ์'])}</div>
       <div class="li-sub">${escapeHtml(a['รหัสครุภัณฑ์'])} · ${escapeHtml(a['ผู้ครอบครอง/หน่วยงาน'] || 'คลังพัสดุ')}</div>
     </div>
-    <div class="status-badge ${statusClass(a['สถานะ'])}">${a['สถานะ']}</div>
+    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
+      <div class="status-badge ${statusClass(a['สถานะ'])}">${a['สถานะ']}</div>
+      ${renewalTag}
+    </div>
   </div>`;
 }
 function openAssetDetail(id) {
@@ -1257,6 +1311,7 @@ function openAssetDetail(id) {
     <div class="detail-row"><span>สถานะ</span><span class="status-badge ${statusClass(a['สถานะ'])}">${a['สถานะ']}</span></div>
     <div class="detail-row"><span>ผู้ครอบครอง</span><span>${escapeHtml(a['ผู้ครอบครอง/หน่วยงาน']) || '-'}</span></div>
     <div class="detail-row"><span>หน่วยงาน</span><span>${escapeHtml(a['หน่วยงาน']) || '-'}</span></div>
+    <div class="detail-row"><span>ครบกำหนดตรวจสภาพ/ต่อทะเบียน</span><span>${thaiDate(a['วันครบกำหนดตรวจสภาพ/ต่อทะเบียน'])}</span></div>
     <div class="detail-row"><span>หมายเหตุ</span><span>${escapeHtml(a['หมายเหตุ']) || '-'}</span></div>
     ${a['หมวดหมู่'] === GUN_CATEGORY ? componentsSection(id) : ''}
     ${history.length ? `<div class="hint" style="margin-top:16px; font-weight:500; color:var(--ink);">ประวัติการยืม-คืนล่าสุด</div>` + history.map(h => `<div class="detail-row"><span>${escapeHtml(h['ผู้ยืม'])}</span><span>${thaiDate(h['วันที่ยืม'])} · ${h['สถานะ']}</span></div>`).join('') : ''}
@@ -1319,6 +1374,7 @@ function openAssetForm(a) {
     <div class="field"><label>มูลค่า (บาท)</label><input class="input" type="number" id="f_value" value="${a ? a['มูลค่า(บาท)']||'' : ''}"></div>
     <div class="field"><label>ผู้ครอบครอง/หน่วยงาน</label><input class="input" id="f_holder" value="${a ? escapeHtml(a['ผู้ครอบครอง/หน่วยงาน'])||'' : ''}"></div>
     <div class="field"><label>หน่วยงานเจ้าของ</label><input class="input" id="f_unit" value="${a ? escapeHtml(a['หน่วยงาน'])||'' : ''}"></div>
+    <div class="field"><label>วันครบกำหนดตรวจสภาพ/ต่อทะเบียน (ถ้ามี — เช่น รถยนต์ต้องตรวจสภาพ/ต่อภาษี, ปืนต้องต่อใบอนุญาต)</label><input class="input" type="date" id="f_renewal" value="${a && a['วันครบกำหนดตรวจสภาพ/ต่อทะเบียน'] ? isoDate(a['วันครบกำหนดตรวจสภาพ/ต่อทะเบียน']) : ''}"></div>
     <div class="field"><label>หมายเหตุ</label><input class="input" id="f_note" value="${a ? escapeHtml(a['หมายเหตุ'])||'' : ''}"></div>
     <div class="btn-row">
       <button class="btn btn-ghost" id="btnCancel">ยกเลิก</button>
@@ -1330,7 +1386,8 @@ function openAssetForm(a) {
     const payload = {
       id: a ? a['รหัสครุภัณฑ์'] : undefined,
       name: val('f_name'), category: val('f_cat'), brand: val('f_brand'), serial: val('f_serial'),
-      receivedDate: val('f_date'), value: val('f_value'), holder: val('f_holder'), unit: val('f_unit'), note: val('f_note')
+      receivedDate: val('f_date'), value: val('f_value'), holder: val('f_holder'), unit: val('f_unit'),
+      renewalDue: val('f_renewal'), note: val('f_note')
     };
     if (!payload.name) { toast('กรุณากรอกชื่อครุภัณฑ์'); return; }
     const saveBtn = document.getElementById('btnSave'); if (saveBtn.disabled) return; setButtonBusy(saveBtn,true); setLoading(true,'กำลังบันทึกข้อมูล...');
@@ -1462,6 +1519,7 @@ function openBorrowDetail(id) {
 function openBorrowForm() {
   const available = state.assets.filter(a => a['สถานะ'] === 'พร้อมใช้งาน');
   const admin = isAdmin();
+  const defaultApproverIdx = (() => { const list = officersByMemoRole('ผู้อนุมัติ ลำดับที่ 1'); return list.length ? state.users.indexOf(list[0]) : ''; })();
   showSheet(`
     <div class="sheet-title">${admin ? 'บันทึกการยืม' : 'ขอยืมครุภัณฑ์'}</div>
     ${!admin ? `<div class="hint" style="margin-top:0;margin-bottom:12px;">คำขอของท่านจะถูกส่งให้แอดมินตรวจสอบและอนุมัติก่อนจึงจะยืมได้จริง</div>` : ''}
@@ -1469,10 +1527,18 @@ function openBorrowForm() {
       <select class="input" id="f_asset">${available.map(a => `<option value="${a['รหัสครุภัณฑ์']}">${escapeHtml(a['ชื่อครุภัณฑ์'])} (${a['รหัสครุภัณฑ์']})</option>`).join('')}</select>
     </div>
     <div class="field" id="f_compWrap"></div>
-    <div class="field"><label>ผู้ยืม (ชื่อ-สกุล)</label><input class="input" id="f_borrower" value="${admin ? '' : escapeHtml(state.user.name || '')}"></div>
+    <div class="field">
+      <label>ผู้ยืม (เลือกจากทำเนียบ จนท.ในสังกัด กันเลือกผิดคน)</label>
+      <select class="input" id="f_borrowerPick">${officerSelectOptions('')}</select>
+      <input class="input" id="f_borrower" placeholder="พิมพ์ชื่อ-สกุลผู้ยืม" style="margin-top:8px; display:none;">
+    </div>
     <div class="field"><label>วันที่ยืม</label><input class="input" type="date" id="f_borrowdate" value="${isoDate()}"></div>
     <div class="field"><label>กำหนดคืน</label><input class="input" type="date" id="f_duedate" value="${isoDate(new Date(Date.now()+7*86400000))}"></div>
-    ${admin ? `<div class="field"><label>ผู้อนุมัติ</label><input class="input" id="f_approver" value="${escapeHtml(state.user.name || '')}"></div>` : ''}
+    ${admin ? `<div class="field">
+      <label>ผู้อนุมัติ</label>
+      <select class="input" id="f_approverPick">${officerSelectOptions(defaultApproverIdx)}</select>
+      <input class="input" id="f_approver" placeholder="พิมพ์ชื่อผู้อนุมัติ" style="margin-top:8px; display:none;">
+    </div>` : ''}
     <div class="field"><label>หมายเหตุ</label><input class="input" id="f_bnote"></div>
     <div class="btn-row">
       <button class="btn btn-ghost" id="btnCancel">ยกเลิก</button>
@@ -1480,6 +1546,19 @@ function openBorrowForm() {
     </div>
   `);
   if (!available.length) { toast('ไม่มีครุภัณฑ์ที่พร้อมให้ยืมในขณะนี้'); }
+
+  function wirePicker(pickId, textId) {
+    const pick = document.getElementById(pickId), text = document.getElementById(textId);
+    pick.onchange = () => {
+      if (pick.value === '__other__') { text.style.display = 'block'; text.value=''; text.focus(); }
+      else if (pick.value === '') { text.style.display = 'none'; text.value = ''; }
+      else { text.style.display = 'none'; text.value = officerFullName(state.users[Number(pick.value)]); }
+    };
+    if (pick.value && pick.value !== '__other__' && pick.value !== '') pick.onchange();
+  }
+  wirePicker('f_borrowerPick', 'f_borrower');
+  if (admin) wirePicker('f_approverPick', 'f_approver');
+
   function refreshComponentPicker() {
     const asset = state.assets.find(a => a['รหัสครุภัณฑ์'] === val('f_asset'));
     const wrap = document.getElementById('f_compWrap');
@@ -1497,7 +1576,7 @@ function openBorrowForm() {
   document.getElementById('btnSave').onclick = async () => {
     const assetId = val('f_asset');
     const asset = state.assets.find(a => a['รหัสครุภัณฑ์'] === assetId);
-    if (!val('f_borrower').trim()) { toast('กรุณากรอกชื่อผู้ยืม'); return; }
+    if (!val('f_borrower').trim()) { toast('กรุณาเลือกหรือกรอกชื่อผู้ยืม'); return; }
     if (!val('f_asset')) { toast('ไม่พบครุภัณฑ์ที่พร้อมให้ยืม'); return; }
     if (!val('f_borrowdate') || !val('f_duedate')) { toast('กรุณาระบุวันที่ยืมและกำหนดคืน'); return; }
     if (val('f_duedate') < val('f_borrowdate')) { toast('กำหนดคืนต้องไม่ก่อนวันที่ยืม'); return; }
@@ -1609,36 +1688,41 @@ function openMaintForm() {
   };
 }
 
-/* ========================================================= USERS (admin only) */
+/* ========================================================= USERS / OFFICERS (จนท.ในสังกัด — admin only) */
 function renderUsers() {
   if (!isAdmin()) return;
   const el = document.getElementById('view-users');
   el.innerHTML = `
     <div class="section-title">
-      ผู้ใช้งานระบบ <small>${state.users.length} คน</small>
+      รายชื่อข้าราชการตำรวจในสังกัด <small>${state.users.length} คน</small>
       <span class="section-actions">
-        <button class="icon-btn" id="btnAddUser" title="เพิ่มผู้ใช้">
+        <button class="icon-btn" id="btnAddUser" title="เพิ่มรายชื่อ">
           <svg viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
         </button>
       </span>
     </div>
-    <div class="hint" style="margin-top:0;">รายชื่อนี้ใช้สำหรับบันทึกทำเนียบผู้ปฏิบัติงานเท่านั้น ไม่ได้ผูกกับการเข้าสู่ระบบ (ระบบใช้รหัสผ่านตามระดับผู้ใช้งานแทน)</div>
-    <div id="userList">${state.users.length ? state.users.map(userRow).join('') : emptyState('ยังไม่มีผู้ใช้งานในระบบ')}</div>
+    <div class="hint" style="margin-top:0;">ทำเนียบนี้ใช้สำหรับเลือกชื่อแบบดรอปดาวน์ในหน้าเบิก-ยืม และบันทึกขอเบิกพัสดุ (กันพิมพ์ชื่อผิด) ไม่ได้ผูกกับการเข้าสู่ระบบ (ระบบใช้รหัสผ่านตามระดับผู้ใช้งานแทน) — กำหนด "บทบาทในบันทึกเบิก-ยืม" ให้แต่ละคนเพื่อให้ระบบเลือกผู้อนุมัติ/ผู้จ่ายพัสดุให้อัตโนมัติตอนพิมพ์บันทึกข้อความ</div>
+    <div id="userList">${state.users.length ? state.users.map(userRow).join('') : emptyState('ยังไม่มีรายชื่อ จนท.ในสังกัด')}</div>
     <div class="section-title">บันทึกกิจกรรมล่าสุด</div>
     <div>${state.activity.length ? state.activity.slice(0,40).map(activityRow).join('') : emptyState('ยังไม่มีบันทึกกิจกรรม')}</div>
   `;
   document.getElementById('btnAddUser').onclick = () => openUserForm();
-  document.querySelectorAll('.user-item').forEach(it => it.onclick = () => openUserForm(state.users.find(u => (u['LINEUserId']||u['ชื่อผู้ใช้']) === it.dataset.id)));
+  document.querySelectorAll('.user-item').forEach(it => it.onclick = () => openUserForm(state.users.find(u => (u['LINEUserId']||u['ชื่อผู้ใช้']||u['ชื่อ-สกุล']) === it.dataset.id)));
 }
 function userRow(u) {
-  const idf = u['LINEUserId'] || u['ชื่อผู้ใช้'] || '';
+  const idf = u['LINEUserId'] || u['ชื่อผู้ใช้'] || u['ชื่อ-สกุล'] || '';
+  const memoRole = u['บทบาทเบิก-ยืม'];
+  const roleTag = memoRole && memoRole !== 'ไม่ระบุ (เลือกเองตอนพิมพ์)' ? `<span class="tag tag-brass" style="margin-top:4px;">${escapeHtml(memoRole)}</span>` : '';
   return `<div class="glass list-item user-item" data-id="${escapeHtml(idf)}">
     <div class="li-icon">${ICONS.user}</div>
     <div class="li-body">
-      <div class="li-title">${escapeHtml(u['ชื่อ-สกุล'])}</div>
+      <div class="li-title">${escapeHtml(officerFullName(u))}</div>
       <div class="li-sub">${escapeHtml(u['ตำแหน่ง']) || 'ไม่ระบุตำแหน่ง'}${u['หน่วยงาน'] ? ' · ' + escapeHtml(u['หน่วยงาน']) : ''}</div>
     </div>
-    <span class="role-pill ${u['สิทธิ์']==='admin'?'':'viewer'}">${u['สิทธิ์']==='admin'?'แอดมิน':'ดูอย่างเดียว'}</span>
+    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
+      <span class="role-pill ${u['สิทธิ์']==='admin'?'':'viewer'}">${u['สิทธิ์']==='admin'?'แอดมิน':'ดูอย่างเดียว'}</span>
+      ${roleTag}
+    </div>
   </div>`;
 }
 function activityRow(a) {
@@ -1653,37 +1737,48 @@ function activityRow(a) {
 function openUserForm(u) {
   const editing = !!u;
   showSheet(`
-    <div class="sheet-title">${editing ? 'แก้ไขผู้ใช้งาน' : 'เพิ่มผู้ใช้งานใหม่'}</div>
-    <div class="field"><label>ชื่อ-สกุล</label><input class="input" id="u_name" value="${editing ? escapeHtml(u['ชื่อ-สกุล']) : ''}"></div>
-    <div class="field"><label>ตำแหน่ง</label><input class="input" id="u_position" value="${editing ? escapeHtml(u['ตำแหน่ง'])||'' : ''}"></div>
+    <div class="sheet-title">${editing ? 'แก้ไขรายชื่อ จนท.' : 'เพิ่มรายชื่อ จนท.ในสังกัด'}</div>
+    <div class="memo-two-col">
+      <div class="field" style="max-width:140px;"><label>ยศ</label>
+        <select class="input" id="u_rank">
+          <option value="">-</option>
+          ${RANK_OPTIONS.map(r => `<option ${editing && u['ยศ']===r?'selected':''}>${r}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field"><label>ชื่อ-สกุล</label><input class="input" id="u_name" value="${editing ? escapeHtml(u['ชื่อ-สกุล']) : ''}"></div>
+    </div>
+    <div class="field"><label>ตำแหน่ง</label><input class="input" id="u_position" value="${editing ? escapeHtml(u['ตำแหน่ง'])||'' : ''}" placeholder="เช่น ผบ.หมู่ ส.ทล.3 กก.1 บก.ทล."></div>
     <div class="field"><label>หน่วยงาน</label><input class="input" id="u_unit" value="${editing ? escapeHtml(u['หน่วยงาน'])||'' : ''}"></div>
-    <div class="field"><label>ระดับผู้ใช้งาน (สำหรับอ้างอิง)</label>
+    <div class="field"><label>บทบาทในบันทึกเบิก-ยืม (ใช้เลือกผู้อนุมัติ/ผู้จ่ายพัสดุอัตโนมัติตอนพิมพ์)</label>
+      <select class="input" id="u_memorole">${MEMO_ROLES.map(r => `<option ${editing && u['บทบาทเบิก-ยืม']===r?'selected':''}>${r}</option>`).join('')}</select>
+    </div>
+    <div class="field"><label>ระดับผู้ใช้งาน (สำหรับอ้างอิงเท่านั้น ไม่ผูกกับรหัสผ่านเข้าระบบ)</label>
       <select class="input" id="u_role"><option value="viewer" ${editing && u['สิทธิ์']==='viewer'?'selected':''}>ดูอย่างเดียว</option><option value="admin" ${editing && u['สิทธิ์']==='admin'?'selected':''}>แอดมิน</option></select>
     </div>
     <div class="btn-row">
       <button class="btn btn-ghost" id="btnCancel">ยกเลิก</button>
       <button class="btn btn-primary" id="btnSave">บันทึก</button>
     </div>
-    ${editing ? `<div class="btn-row"><button class="btn btn-danger" id="btnDeleteUser">ลบผู้ใช้งานนี้</button></div>` : ''}
+    ${editing ? `<div class="btn-row"><button class="btn btn-danger" id="btnDeleteUser">ลบรายชื่อนี้</button></div>` : ''}
   `);
   document.getElementById('btnCancel').onclick = closeSheet;
   document.getElementById('btnSave').onclick = async () => {
     if (!val('u_name').trim()) { toast('กรุณากรอกชื่อ-สกุล'); return; }
-    const saveBtn = document.getElementById('btnSave'); if (saveBtn.disabled) return; setButtonBusy(saveBtn,true); setLoading(true,'กำลังบันทึกผู้ใช้งาน...');
+    const saveBtn = document.getElementById('btnSave'); if (saveBtn.disabled) return; setButtonBusy(saveBtn,true); setLoading(true,'กำลังบันทึกรายชื่อ จนท....');
     try {
       if (!editing) {
-        await apiPost('addUser', { name: val('u_name'), position: val('u_position'), unit: val('u_unit'), role: val('u_role') });
+        await apiPost('addUser', { name: val('u_name'), rank: val('u_rank'), position: val('u_position'), unit: val('u_unit'), role: val('u_role'), memoRole: val('u_memorole') });
       } else {
-        await apiPost('updateUserRole', { lineUserId: u['LINEUserId'] || undefined, username: u['ชื่อผู้ใช้'] || undefined, name: val('u_name'), position: val('u_position'), unit: val('u_unit'), role: val('u_role') });
+        await apiPost('updateUserRole', { lineUserId: u['LINEUserId'] || undefined, username: u['ชื่อผู้ใช้'] || undefined, name: val('u_name'), rank: val('u_rank'), position: val('u_position'), unit: val('u_unit'), role: val('u_role'), memoRole: val('u_memorole') });
       }
-      closeSheet(); toast('บันทึกผู้ใช้งานแล้ว'); await loadAll(); renderUsers();
+      closeSheet(); toast('บันทึกรายชื่อ จนท. แล้ว'); await loadAll(); renderUsers();
     } catch(err) { toast(err.message || 'บันทึกไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(saveBtn,false); }
   };
   if (editing) {
     document.getElementById('btnDeleteUser').onclick = async () => {
-      if (!confirm('ยืนยันการลบผู้ใช้งานนี้?')) return;
+      if (!confirm('ยืนยันการลบรายชื่อนี้?')) return;
       const identifier = u['LINEUserId'] || u['ชื่อผู้ใช้'] || u['ชื่อ-สกุล'];
-      try { await apiPost('deleteUser', { identifier }); closeSheet(); toast('ลบผู้ใช้งานแล้ว'); await loadAll(); renderUsers(); }
+      try { await apiPost('deleteUser', { identifier }); closeSheet(); toast('ลบรายชื่อแล้ว'); await loadAll(); renderUsers(); }
       catch(err) { toast(err.message || 'ลบไม่สำเร็จ'); }
     };
   }
@@ -1711,7 +1806,7 @@ function renderReports() {
   drawBar('statusChart', d.byStatus);
   drawDoughnut('catChart2', d.byCategory);
   drawLine('trendChart2', d.monthTrend);
-  document.getElementById('btnExportAssetsRpt').onclick = () => exportCsv('ครุภัณฑ์.csv', ['รหัสครุภัณฑ์','ชื่อครุภัณฑ์','หมวดหมู่','ยี่ห้อ/รุ่น','หมายเลขเครื่อง','วันที่รับเข้า','มูลค่า(บาท)','สถานะ','ผู้ครอบครอง/หน่วยงาน','หน่วยงาน','หมายเหตุ'], state.assets);
+  document.getElementById('btnExportAssetsRpt').onclick = () => exportCsv('ครุภัณฑ์.csv', ['รหัสครุภัณฑ์','ชื่อครุภัณฑ์','หมวดหมู่','ยี่ห้อ/รุ่น','หมายเลขเครื่อง','วันที่รับเข้า','มูลค่า(บาท)','สถานะ','ผู้ครอบครอง/หน่วยงาน','หน่วยงาน','วันครบกำหนดตรวจสภาพ/ต่อทะเบียน','หมายเหตุ'], state.assets);
   document.getElementById('btnExportBorrowRpt').onclick = () => exportCsv('ยืมคืน.csv', ['รหัสรายการ','รหัสครุภัณฑ์','ชื่อครุภัณฑ์','ผู้ยืม','วันที่ยืม','กำหนดคืน','วันที่คืนจริง','สถานะ','ผู้อนุมัติ','หมายเหตุ'], state.borrow);
   document.getElementById('btnExportMaintRpt').onclick = () => exportCsv('ซ่อมบำรุง.csv', ['รหัสรายการ','รหัสครุภัณฑ์','ชื่อครุภัณฑ์','วันที่แจ้ง','อาการ/ปัญหา','ผู้แจ้ง','สถานะ','วันที่ซ่อมเสร็จ','ค่าใช้จ่าย(บาท)','ผู้รับผิดชอบ','หมายเหตุ'], state.maint);
 }
@@ -1740,6 +1835,31 @@ function buildMemoItemList(opts) {
   return [{ name: '', brand: '', serial: '', qty: 1 }];
 }
 
+// ช่องเลือกผู้ลงนามแบบดรอปดาวน์ (กันพิมพ์/เลือกชื่อผิด) — เลือกแล้วเติม ยศ/ตำแหน่ง ให้อัตโนมัติ แต่ยังแก้ไขได้
+function signerPickerHtml(prefix, defaultIdx, rankVal, nameVal, positionVal) {
+  return `
+    <div class="memo-signer-pick">
+      <select class="input" id="${prefix}Pick">${officerSelectOptions(defaultIdx)}</select>
+    </div>
+    <div class="memo-two-col">
+      <div class="field" style="max-width:130px;"><label>ยศ</label><input class="input" id="${prefix}Rank" value="${escapeHtml(rankVal||'')}"></div>
+      <div class="field"><label>ชื่อ-สกุล</label><input class="input" id="${prefix}Name" value="${escapeHtml(nameVal||'')}"></div>
+    </div>
+    <div class="field"><label>ตำแหน่ง</label><input class="input" id="${prefix}Position" value="${escapeHtml(positionVal||'')}"></div>
+  `;
+}
+function wireSignerPicker(prefix) {
+  const pick = document.getElementById(prefix + 'Pick');
+  pick.onchange = () => {
+    if (pick.value === '' || pick.value === '__other__') return;
+    const u = state.users[Number(pick.value)];
+    if (!u) return;
+    document.getElementById(prefix + 'Rank').value = u['ยศ'] || '';
+    document.getElementById(prefix + 'Name').value = u['ชื่อ-สกุล'] || '';
+    document.getElementById(prefix + 'Position').value = u['ตำแหน่ง'] || '';
+  };
+}
+
 function openPrintMemoForm(opts) {
   const items = buildMemoItemList(opts);
   const borrow = opts.borrow || null;
@@ -1747,6 +1867,20 @@ function openPrintMemoForm(opts) {
   const defaultSubject = 'ขอเบิก' + (items[0] && items[0].name ? items[0].name : 'พัสดุครุภัณฑ์');
   const requesterNameDefault = borrow ? (borrow['ผู้ยืม'] || '') : (state.user && state.user.name) || '';
   const approverNameDefault = borrow ? (borrow['ผู้อนุมัติ'] || '') : '';
+
+  const reqIdx = findOfficerIndexByName(requesterNameDefault);
+  const reqOfficer = reqIdx !== '' ? state.users[Number(reqIdx)] : null;
+
+  let apvIdx = findOfficerIndexByName(approverNameDefault);
+  if (apvIdx === '') {
+    const apv1 = officersByMemoRole('ผู้อนุมัติ ลำดับที่ 1')[0];
+    if (apv1) apvIdx = String(state.users.indexOf(apv1));
+  }
+  const apvOfficer = apvIdx !== '' && apvIdx !== undefined ? state.users[Number(apvIdx)] : null;
+
+  const issuer1 = officersByMemoRole('ผู้จ่ายพัสดุ')[0];
+  const issIdx = issuer1 ? String(state.users.indexOf(issuer1)) : '';
+  const issOfficer = issuer1 || null;
 
   const itemFieldsHtml = items.map((it, i) => `
     <div class="memo-two-col">
@@ -1761,7 +1895,7 @@ function openPrintMemoForm(opts) {
 
   showSheet(`
     <div class="sheet-title">ข้อมูลสำหรับพิมพ์บันทึกข้อความ</div>
-    <div class="hint" style="margin-top:0;">กรอกรายละเอียดให้ครบก่อนพิมพ์ ระบบจะจัดรูปแบบเป็นบันทึกข้อความทางราชการให้อัตโนมัติ</div>
+    <div class="hint" style="margin-top:0;">กรอกรายละเอียดให้ครบก่อนพิมพ์ ระบบจะจัดรูปแบบเป็นบันทึกข้อความทางราชการให้อัตโนมัติ — เลือกชื่อผู้ลงนามจากดรอปดาวน์เพื่อกันเลือกผิดคน</div>
 
     <div class="memo-section-label">ส่วนหัวหนังสือ</div>
     <div class="field"><label>ส่วนราชการ</label><input class="input" id="m_org" value="${escapeHtml(ORG_NAME + ' โทร. ' + ORG_PHONE)}"></div>
@@ -1777,27 +1911,16 @@ function openPrintMemoForm(opts) {
     ${dueDateText ? `<div class="field"><label>กำหนดส่งคืนภายในวันที่</label><input class="input" id="m_duedate" value="${escapeHtml(dueDateText)}"></div>` : ''}
 
     <div class="memo-section-label">ผู้ขอเบิก/ยืม (ผู้ลงชื่อครั้งที่ 1 และ 3)</div>
-    <div class="memo-two-col">
-      <div class="field" style="max-width:130px;"><label>ยศ</label><input class="input" id="m_reqRank" placeholder="เช่น จ.ส.ต."></div>
-      <div class="field"><label>ชื่อ-สกุล</label><input class="input" id="m_reqName" value="${escapeHtml(requesterNameDefault)}"></div>
-    </div>
-    <div class="field"><label>ตำแหน่ง</label><input class="input" id="m_reqPosition" placeholder="เช่น ผบ.หมู่ ส.ทล.3 กก.1 บก.ทล."></div>
+    ${signerPickerHtml('m_req', reqIdx, reqOfficer ? reqOfficer['ยศ'] : '', requesterNameDefault, reqOfficer ? reqOfficer['ตำแหน่ง'] : '')}
     <div class="field"><label>วันที่ลงนาม</label><input class="input" id="m_reqDate" value="${escapeHtml(thaiDateAbbr())}"></div>
 
     <div class="memo-section-label">ผู้อนุมัติ (ผู้ลงชื่อครั้งที่ 2)</div>
-    <div class="memo-two-col">
-      <div class="field" style="max-width:130px;"><label>ยศ</label><input class="input" id="m_apvRank" placeholder="เช่น พ.ต.ต."></div>
-      <div class="field"><label>ชื่อ-สกุล</label><input class="input" id="m_apvName" value="${escapeHtml(approverNameDefault)}"></div>
-    </div>
-    <div class="field"><label>ตำแหน่ง</label><input class="input" id="m_apvPosition" placeholder="เช่น สว.ส.ทล.3 กก.1 บก.ทล."></div>
+    ${signerPickerHtml('m_apv', apvIdx, apvOfficer ? apvOfficer['ยศ'] : '', apvOfficer ? apvOfficer['ชื่อ-สกุล'] : approverNameDefault, apvOfficer ? apvOfficer['ตำแหน่ง'] : '')}
+    <div class="hint" style="margin-top:0;">มีผู้อนุมัติลำดับสำรองในทำเนียบ ${['ผู้อนุมัติ ลำดับที่ 1','ผู้อนุมัติ ลำดับที่ 2','ผู้อนุมัติ ลำดับที่ 3'].map(r=>officersByMemoRole(r).length).reduce((a,b)=>a+b,0)} คน — เลือกจากดรอปดาวน์ด้านบนเพื่อสลับผู้ลงนามได้ทันที</div>
     <div class="field"><label>วันที่ลงนาม</label><input class="input" id="m_apvDate" value="${escapeHtml(thaiDateAbbr())}"></div>
 
     <div class="memo-section-label">ผู้จ่ายพัสดุ (ผู้ลงชื่อครั้งที่ 4)</div>
-    <div class="memo-two-col">
-      <div class="field" style="max-width:130px;"><label>ยศ</label><input class="input" id="m_issRank" placeholder="เช่น ด.ต."></div>
-      <div class="field"><label>ชื่อ-สกุล</label><input class="input" id="m_issName" placeholder="ชื่อผู้จ่ายพัสดุ"></div>
-    </div>
-    <div class="field"><label>ตำแหน่ง</label><input class="input" id="m_issPosition" placeholder="เช่น ผบ.หมู่ ส.ทล.3 กก.1 บก.ทล./ผู้จ่าย"></div>
+    ${signerPickerHtml('m_iss', issIdx, issOfficer ? issOfficer['ยศ'] : '', issOfficer ? issOfficer['ชื่อ-สกุล'] : '', issOfficer ? issOfficer['ตำแหน่ง'] : '')}
     <div class="field"><label>วันที่ลงนาม</label><input class="input" id="m_issDate" value="${escapeHtml(thaiDateAbbr())}"></div>
 
     <div class="btn-row">
@@ -1805,6 +1928,10 @@ function openPrintMemoForm(opts) {
       <button class="btn btn-primary" id="btnGenerate">พิมพ์บันทึกข้อความ</button>
     </div>
   `);
+
+  wireSignerPicker('m_req');
+  wireSignerPicker('m_apv');
+  wireSignerPicker('m_iss');
 
   document.getElementById('btnCancel').onclick = closeSheet;
   document.getElementById('btnGenerate').onclick = () => {
@@ -1816,7 +1943,7 @@ function openPrintMemoForm(opts) {
       name: el.value.trim(), brand: itemBrands[i].value.trim(), serial: itemSerials[i].value.trim(), qty: itemQtys[i].value || 1
     })).filter(it => it.name);
     if (!finalItems.length) { toast('กรุณากรอกชื่อพัสดุอย่างน้อย 1 รายการ'); return; }
-    if (!val('m_reqName').trim()) { toast('กรุณากรอกชื่อผู้ขอเบิก/ยืม'); return; }
+    if (!val('m_reqName').trim()) { toast('กรุณาเลือกหรือกรอกชื่อผู้ขอเบิก/ยืม'); return; }
 
     const memo = {
       org: val('m_org'), docNo: val('m_docno'), docDate: val('m_docdate'),
@@ -1858,10 +1985,13 @@ function renderAndPrintMemo(m) {
   const itemsText = itemPhraseList(m.items);
   const requesterFull = (m.requester.rank ? escapeHtml(m.requester.rank) : '') + escapeHtml(m.requester.name);
   const requesterPositionText = m.requester.position ? escapeHtml(m.requester.position) : '';
+  const emblemHtml = GARUDA_LOGO_DATA_URI
+    ? `<img src="${GARUDA_LOGO_DATA_URI}" alt="ตราครุฑ">`
+    : `<div class="pf-emblem-placeholder">[ ตราครุฑ ]</div>`;
 
   const html = `
     <div class="pf-topline">
-      <div class="pf-emblem">[ ตราครุฑ ]</div>
+      <div class="pf-emblem">${emblemHtml}</div>
       <div class="pf-title-wrap"><div class="pf-title">บันทึกข้อความ</div></div>
       <div class="pf-spacer"></div>
     </div>
