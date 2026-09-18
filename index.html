@@ -681,24 +681,27 @@ async function init() {
   const sess = loadSession();
   if (!sess) { showRoleSelect(); return; }
 
-  document.getElementById('roleSelectBox').style.display = 'none';
-  document.getElementById('roleLoginForm').style.display = 'none';
-  document.getElementById('sessionRetryBox').style.display = 'none';
-  document.getElementById('loginSpinner').style.display = 'block';
-  document.getElementById('loginSubText').innerHTML = 'ตำรวจทางหลวง<br>กำลังตรวจสอบเซสชันของท่าน...';
+  // เข้าแอปทันทีด้วย session ที่มีอยู่ ไม่ต้องรอ server ยืนยันก่อน
+  // (ลด perceived wait time จาก cold start ของ Apps Script ไปเกือบหมด)
+  await completeLogin({ role: sess.role, name: sess.name, token: sess.token });
 
+  // ตรวจสอบ token กับ server แบบเงียบๆ อยู่เบื้องหลัง
+  // ถ้า token หมดอายุ/ไม่ถูกต้องจริง ค่อยเด้งออก — ไม่บล็อกการใช้งาน
+  validateSessionInBackground(sess);
+}
+
+async function validateSessionInBackground(sess) {
   try {
     const check = await apiGet('validateSession', { token: sess.token });
-    if (check && check.valid) {
-      await completeLogin({ role: check.role, name: sess.name, token: sess.token });
-      return;
+    if (!check || !check.valid) {
+      clearSession();
+      toast('เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่');
+      setTimeout(() => location.reload(), 1500);
     }
-    // เซิร์ฟเวอร์ตอบกลับมาชัดเจนว่า token ไม่ถูกต้อง/หมดอายุจริง -> ค่อย logout
-    clearSession();
-    showRoleSelect();
-    } catch (err) {
-    console.error('validateSession failed:', err); // จะได้เห็นใน Console
-    showSessionCheckError(err.message || String(err));
+    // ถ้า valid ก็ไม่ต้องทำอะไร ผู้ใช้ใช้งานอยู่แล้ว
+  } catch (err) {
+    // เชื่อมต่อไม่สำเร็จชั่วคราว — ไม่ต้องทำอะไร ปล่อยให้ใช้งานต่อด้วย session เดิม
+    console.warn('ตรวจสอบเซสชันเบื้องหลังไม่สำเร็จ (จะลองใหม่รอบหน้า):', err.message);
   }
 }
 
