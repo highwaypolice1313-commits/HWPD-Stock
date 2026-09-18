@@ -881,6 +881,14 @@ async function fetchJson(url, options = {}, timeout = 20000, retries = 2) {
   }
 }
 
+async function apiGet(action, params = {}) {
+  const qs = new URLSearchParams({ action, ...params }).toString();
+  return fetchJson(API_URL + '?' + qs);
+}
+async function apiPost(action, payload) {
+  return fetchJson(API_URL, { method: 'POST', body: JSON.stringify({ action, sessionToken: state.sessionToken, actorName: state.user?.name, payload }) });
+}
+   
 async function loadAll(showLoader = false) {
   if (showLoader) setLoading(true, 'กำลังอัปเดตข้อมูล...');
   try {
