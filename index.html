@@ -512,6 +512,17 @@ input[type="date"]::-webkit-date-and-time-value{ text-align:left; }
   .page{padding-left:54px;padding-right:54px;}
   #view-dashboard{ grid-template-columns:minmax(0,1.75fr) minmax(380px,.75fr); }
 }
+
+/* ---------- ใบเบิก-ยืม: เอกสารแบบแก้ไขได้โดยตรง (live document editor) ---------- */
+.memo-editor-sheet{ max-width:820px; }
+#memoDocWrap{
+  border:1px solid var(--panel-line); border-radius:14px; padding:16mm 12mm; background:#fff;
+  max-height:56vh; overflow:auto; box-shadow:inset 0 0 0 1px rgba(23,50,79,.03);
+}
+.pf-doc[contenteditable="true"]{ cursor:text; }
+.pf-doc[contenteditable="true"] span:hover{ background:rgba(187,138,63,.14); border-radius:3px; }
+.pf-doc[contenteditable="true"]:focus{ outline:none; }
+@media (min-width:900px){ #memoDocWrap{ max-height:60vh; } }
 </style>
 </head>
 <body>
@@ -539,7 +550,7 @@ input[type="date"]::-webkit-date-and-time-value{ text-align:left; }
       <div class="rsc-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M2 10s3-5.5 8-5.5S18 10 18 10s-3 5.5-8 5.5S2 10 2 10z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.3" stroke="currentColor" stroke-width="1.4"/></svg></div>
       <div class="rsc-body">
         <div class="rsc-title">ดูอย่างเดียว</div>
-        <div class="rsc-sub">ดูข้อมูลและขอยืมครุภัณฑ์ได้</div>
+        <div class="rsc-sub">เข้าดูได้ทันที ไม่ต้องใช้รหัสผ่าน</div>
       </div>
     </div>
   </div>
@@ -597,6 +608,7 @@ input[type="date"]::-webkit-date-and-time-value{ text-align:left; }
   <div class="page" id="view-assets" style="display:none;"></div>
   <div class="page" id="view-borrow" style="display:none;"></div>
   <div class="page" id="view-maint" style="display:none;"></div>
+  <div class="page" id="view-memos" style="display:none;"></div>
   <div class="page" id="view-users" style="display:none;"></div>
   <div class="page" id="view-reports" style="display:none;"></div>
 
@@ -623,6 +635,10 @@ input[type="date"]::-webkit-date-and-time-value{ text-align:left; }
     <button class="tab" data-tab="maint">
       <span class="ico"><svg viewBox="0 0 20 20" fill="none"><path d="M12.4 5.1a3.4 3.4 0 00-4.4 4.4l-5 5a1.5 1.5 0 002.1 2.1l5-5a3.4 3.4 0 004.4-4.4l-2.2 2.2-1.9-.4-.4-1.9 2.4-2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></span>
       <span class="lbl">ซ่อมบำรุง</span>
+    </button>
+    <button class="tab" data-tab="memos">
+      <span class="ico"><svg viewBox="0 0 20 20" fill="none"><path d="M4 3.5h9l3 3v10a1 1 0 01-1 1H4a1 1 0 01-1-1v-12a1 1 0 011-1z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M6.5 9h7M6.5 12h7M6.5 15h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></span>
+      <span class="lbl">เอกสารใบเบิก</span>
     </button>
     <button class="tab" data-tab="users" id="usersTabBtn" style="display:none;">
       <span class="ico"><svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="6.6" r="3" stroke="currentColor" stroke-width="1.4"/><path d="M3.8 16.2c1-3 3.4-4.6 6.2-4.6s5.2 1.6 6.2 4.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></span>
@@ -680,7 +696,7 @@ const ICONS = {
 /* ========================================================= STATE */
 const state = {
   user: null, role: 'guest', sessionToken: null,
-  assets: [], borrow: [], maint: [], components: [], users: [], activity: [], dashboard: null,
+  assets: [], borrow: [], maint: [], components: [], users: [], activity: [], memos: [], dashboard: null,
   tab: 'dashboard', assetFilter: 'all', assetStatusFilter: 'all', assetSearch: '', assetSort: 'name_asc', assetPage: 1
 };
 const PAGE_SIZE = 12;
@@ -767,11 +783,34 @@ function showRoleSelect() {
 }
 
 document.querySelectorAll('.role-select-card').forEach(card => {
-  card.addEventListener('click', () => {
+  card.addEventListener('click', async () => {
     selectedRole = card.dataset.role;
+
+    // ดูอย่างเดียว: เข้าใช้งานได้ทันทีโดยไม่ต้องกรอกรหัสผ่าน เพื่อความรวดเร็ว
+    if (selectedRole === 'viewer') {
+      document.getElementById('roleSelectBox').style.display = 'none';
+      document.getElementById('loginSpinner').style.display = 'block';
+      document.getElementById('loginSubText').innerHTML = 'ตำรวจทางหลวง<br>กำลังเข้าสู่ระบบ...';
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'loginAsViewer', payload: {} })
+        });
+        const j = await res.json();
+        if (!j.ok) throw new Error(j.error || 'เข้าสู่ระบบไม่สำเร็จ');
+        saveSession({ role: j.data.role, token: j.data.token, name: j.data.displayName });
+        await completeLogin({ role: j.data.role, name: j.data.displayName, token: j.data.token });
+      } catch (err) {
+        toast(err.message || 'เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่');
+        showRoleSelect();
+      }
+      return;
+    }
+
     document.getElementById('roleSelectBox').style.display = 'none';
     document.getElementById('roleLoginForm').style.display = 'block';
-    document.getElementById('rl_roleLabel').textContent = selectedRole === 'admin' ? 'แอดมิน' : 'ผู้ดูอย่างเดียว';
+    document.getElementById('rl_roleLabel').textContent = 'แอดมิน';
     document.getElementById('rl_password').value = '';
     document.getElementById('roleLoginError').textContent = '';
     setTimeout(() => document.getElementById('rl_password').focus(), 50);
@@ -960,6 +999,7 @@ async function loadAll(showLoader = false) {
     state.maint = data.maint || [];
     state.components = data.components || [];
     state.dashboard = data.dashboard || null;
+    state.memos = data.memos || [];
     if (isAdmin()) {
       state.users = data.users || [];
       state.activity = data.activity || [];
@@ -1065,6 +1105,8 @@ function officerFullName(u) {
 function officersByMemoRole(role) {
   return (state.users || []).filter(u => u['บทบาทเบิก-ยืม'] === role);
 }
+// รหัสระบุตัวจนท.ที่นิ่งและไม่ซ้ำกัน ใช้แทนการจับคู่ด้วยชื่อ (กันปัญหาชื่อซ้ำ/แก้ไข-ลบไม่ได้)
+function officerId(u) { return u ? (u['รหัสจนท.'] || '') : ''; }
 // สร้าง <select> รายชื่อ จนท.ในสังกัด + ตัวเลือก "อื่นๆ / พิมพ์เอง" กันกดผิดคน แต่ยังยืดหยุ่นกรณีคนนอกทำเนียบ
 function officerSelectOptions(selectedIdx) {
   const list = state.users || [];
@@ -1116,16 +1158,18 @@ function renderTab(name) {
   if (activePage) activePage.style.display = 'block';
   window.scrollTo({top:0, behavior:'smooth'});
   const fab = document.getElementById('fabBtn');
-  fab.style.display = (['assets','borrow','maint'].includes(name) && (isAdmin() || name === 'borrow')) ? 'flex' : 'none';
+  fab.style.display = (['assets','borrow','maint','memos'].includes(name) && (isAdmin() || name === 'borrow' || name === 'memos')) ? 'flex' : 'none';
   fab.onclick = () => {
     if (name === 'assets' && isAdmin()) openAssetForm();
     if (name === 'borrow') openBorrowForm();
     if (name === 'maint' && isAdmin()) openMaintForm();
+    if (name === 'memos') openPrintMemoForm({});
   };
   if (name === 'dashboard') renderDashboard();
   if (name === 'assets') renderAssets();
   if (name === 'borrow') renderBorrow();
   if (name === 'maint') renderMaint();
+  if (name === 'memos') renderMemos();
   if (name === 'users') renderUsers();
   if (name === 'reports') renderReports();
 }
@@ -1707,10 +1751,10 @@ function renderUsers() {
     <div>${state.activity.length ? state.activity.slice(0,40).map(activityRow).join('') : emptyState('ยังไม่มีบันทึกกิจกรรม')}</div>
   `;
   document.getElementById('btnAddUser').onclick = () => openUserForm();
-  document.querySelectorAll('.user-item').forEach(it => it.onclick = () => openUserForm(state.users.find(u => (u['LINEUserId']||u['ชื่อผู้ใช้']||u['ชื่อ-สกุล']) === it.dataset.id)));
+  document.querySelectorAll('.user-item').forEach(it => it.onclick = () => openUserForm(state.users.find(u => officerId(u) === it.dataset.id || (!officerId(u) && (u['LINEUserId']||u['ชื่อผู้ใช้']||u['ชื่อ-สกุล']) === it.dataset.id))));
 }
 function userRow(u) {
-  const idf = u['LINEUserId'] || u['ชื่อผู้ใช้'] || u['ชื่อ-สกุล'] || '';
+  const idf = officerId(u) || u['LINEUserId'] || u['ชื่อผู้ใช้'] || u['ชื่อ-สกุล'] || '';
   const memoRole = u['บทบาทเบิก-ยืม'];
   const roleTag = memoRole && memoRole !== 'ไม่ระบุ (เลือกเองตอนพิมพ์)' ? `<span class="tag tag-brass" style="margin-top:4px;">${escapeHtml(memoRole)}</span>` : '';
   return `<div class="glass list-item user-item" data-id="${escapeHtml(idf)}">
@@ -1769,7 +1813,7 @@ function openUserForm(u) {
       if (!editing) {
         await apiPost('addUser', { name: val('u_name'), rank: val('u_rank'), position: val('u_position'), unit: val('u_unit'), role: val('u_role'), memoRole: val('u_memorole') });
       } else {
-        await apiPost('updateUserRole', { lineUserId: u['LINEUserId'] || undefined, username: u['ชื่อผู้ใช้'] || undefined, name: val('u_name'), rank: val('u_rank'), position: val('u_position'), unit: val('u_unit'), role: val('u_role'), memoRole: val('u_memorole') });
+        await apiPost('updateUserRole', { officerId: officerId(u) || undefined, lineUserId: (!officerId(u) && u['LINEUserId']) || undefined, username: (!officerId(u) && u['ชื่อผู้ใช้']) || undefined, name: val('u_name'), rank: val('u_rank'), position: val('u_position'), unit: val('u_unit'), role: val('u_role'), memoRole: val('u_memorole') });
       }
       closeSheet();
       toast(editing ? 'แก้ไขรายชื่อและยศเรียบร้อยแล้ว' : 'บันทึกรายชื่อและยศเรียบร้อยแล้ว');
@@ -1789,13 +1833,14 @@ function openUserForm(u) {
   if (editing) {
     document.getElementById('btnDeleteUser').onclick = async () => {
       if (!confirm('ยืนยันการลบรายชื่อนี้?')) return;
+      const oid = officerId(u);
       const identifier = u['LINEUserId'] || u['ชื่อผู้ใช้'] || u['ชื่อ-สกุล'];
       const deleteBtn = document.getElementById('btnDeleteUser');
       if (deleteBtn?.disabled) return;
       setButtonBusy(deleteBtn, true, 'กำลังลบ...');
       setLoading(true, 'กำลังลบรายชื่อ จนท....');
       try {
-        await apiPost('deleteUser', { identifier });
+        await apiPost('deleteUser', oid ? { officerId: oid } : { identifier });
         closeSheet();
         toast('ลบรายชื่อ "' + (u['ชื่อ-สกุล'] || '') + '" เรียบร้อยแล้ว');
         try {
@@ -1810,6 +1855,156 @@ function openUserForm(u) {
         setLoading(false);
         setButtonBusy(deleteBtn, false, 'ลบรายชื่อนี้');
       }
+    };
+  }
+}
+
+/* ========================================================= ใบเบิก-ยืม (เอกสารบันทึกข้อความ) — จัดการ/แก้ไข/พิมพ์ */
+function renderMemos() {
+  const el = document.getElementById('view-memos');
+  const list = [...state.memos];
+  el.innerHTML = `
+    <div class="section-title">เอกสารใบเบิก-ยืม <small>${list.length} ฉบับ</small></div>
+    <div class="hint" style="margin-top:0;">คลิกที่เอกสารเพื่อเปิดดู/แก้ไขได้โดยตรงบนหน้าเอกสารจริง แล้วค่อยบันทึกหรือพิมพ์</div>
+    <div id="memoList">${list.length ? list.map(memoRow).join('') : emptyState('ยังไม่มีเอกสารที่บันทึกไว้ — กดปุ่ม + เพื่อสร้างเอกสารใหม่')}</div>
+  `;
+  document.querySelectorAll('.memo-item').forEach(it => it.onclick = () => {
+    const m = state.memos.find(x => x['รหัสใบเบิก'] === it.dataset.id);
+    if (m) openMemoEditor({ id: m['รหัสใบเบิก'], html: m['เนื้อหาเอกสาร(HTML)'], borrowId: m['รหัสรายการยืม'] });
+  });
+}
+function memoRow(m) {
+  return `<div class="glass list-item memo-item" data-id="${m['รหัสใบเบิก']}">
+    <div class="li-icon">${ICONS.log}</div>
+    <div class="li-body">
+      <div class="li-title">${escapeHtml(m['เรื่อง']) || 'ไม่ระบุเรื่อง'}</div>
+      <div class="li-sub">${escapeHtml(m['ผู้ขอเบิก']) || ''} ${m['ผู้ขอเบิก'] ? '·' : ''} ${thaiDate(m['วันที่สร้าง'])}</div>
+    </div>
+    <div class="status-badge status-ready">${escapeHtml(m['สถานะ']) || 'บันทึกแล้ว'}</div>
+  </div>`;
+}
+
+// สร้าง HTML ของเอกสารบันทึกข้อความ — ใช้ทั้งตอนแสดงผลแบบแก้ไขได้ (contenteditable) และตอนพิมพ์
+function buildMemoBodyHtml(m, editable) {
+  const req = m.requester || {}, apv = m.approver || {}, iss = m.issuer || {};
+  const itemsText = m.itemsText !== undefined ? m.itemsText : itemPhraseList(m.items || []);
+  const editAttr = editable ? 'contenteditable="true" spellcheck="false"' : '';
+  const emblemHtml = GARUDA_LOGO_DATA_URI
+    ? `<img src="${GARUDA_LOGO_DATA_URI}" alt="ตราครุฑ">`
+    : `<div class="pf-emblem-placeholder">[ ตราครุฑ ]</div>`;
+  return `
+  <div class="pf-doc" ${editAttr} id="memoDocBody">
+    <div class="pf-topline">
+      <div class="pf-emblem">${emblemHtml}</div>
+      <div class="pf-title-wrap"><div class="pf-title">บันทึกข้อความ</div></div>
+      <div class="pf-spacer"></div>
+    </div>
+    <div class="pf-field-line"><b>ส่วนราชการ</b>&nbsp; <span id="ed_org">${escapeHtml(m.org || '')}</span></div>
+    <div class="pf-two-col">
+      <span><b>ที่</b>&nbsp; <span id="ed_docno">${escapeHtml(m.docNo) || '........................................'}</span></span>
+      <span><b>วันที่</b>&nbsp; <span id="ed_docdate">${escapeHtml(m.docDate)}</span></span>
+    </div>
+    <div class="pf-field-line"><b>เรื่อง</b>&nbsp; <span id="ed_subject">${escapeHtml(m.subject)}</span></div>
+    <div class="pf-field-line" style="margin-top:10px;"><b>เรียน</b>&nbsp; <span id="ed_addressee">${escapeHtml(m.addressee) || '........................................'}</span></div>
+
+    <p class="pf-body">ด้วยข้าฯ <span id="ed_reqfull">${escapeHtml((req.rank||'') + (req.name||''))}</span> <span id="ed_reqposition">${escapeHtml(req.position||'')}</span> มีความประสงค์ขอเบิก<span id="ed_items">${itemsText}</span>
+    เพื่อใช้ในการปฏิบัติหน้าที่ราชการ</p>
+
+    <p class="pf-body">จึงเรียนมาเพื่อโปรดพิจารณา</p>
+    <div class="pf-sign"><div class="pf-sign-gap"></div>
+      <span id="ed_reqrank">${escapeHtml(req.rank) || '&nbsp;'}</span><br>
+      ( <span id="ed_reqname">${escapeHtml(req.name) || '.....................................'}</span> )<br>
+      <span id="ed_reqposition2">${escapeHtml(req.position) || '&nbsp;'}</span><br>
+      <span id="ed_reqdate">${escapeHtml(req.date) || '&nbsp;'}</span>
+    </div>
+
+    <p class="pf-note">- อนุมัติให้เบิก-จ่ายได้</p>
+    <div class="pf-sign"><div class="pf-sign-gap"></div>
+      <span id="ed_apvrank">${escapeHtml(apv.rank) || '&nbsp;'}</span><br>
+      ( <span id="ed_apvname">${escapeHtml(apv.name) || '.....................................'}</span> )<br>
+      <span id="ed_apvposition">${escapeHtml(apv.position) || '&nbsp;'}</span><br>
+      <span id="ed_apvdate">${escapeHtml(apv.date) || '&nbsp;'}</span>
+    </div>
+
+    <p class="pf-body">- ได้รับ<span id="ed_items2">${itemsText}</span>
+    เพื่อใช้ในการปฏิบัติหน้าที่ราชการต่อไป</p>
+    <div class="pf-sign"><div class="pf-sign-gap"></div>
+      <span id="ed_reqrank2">${escapeHtml(req.rank) || '&nbsp;'}</span><br>
+      ( <span id="ed_reqname2">${escapeHtml(req.name) || '.....................................'}</span> )<br>
+      <span id="ed_reqposition3">${escapeHtml(req.position) || '&nbsp;'}</span><br>
+      <span id="ed_reqdate2">${escapeHtml(req.date) || '&nbsp;'}</span>
+    </div>
+
+    <div class="pf-sign"><div class="pf-sign-gap"></div>
+      <span id="ed_issrank">${escapeHtml(iss.rank) || '&nbsp;'}</span><br>
+      ( <span id="ed_issname">${escapeHtml(iss.name) || '.....................................'}</span> )<br>
+      <span id="ed_issposition">${escapeHtml(iss.position) || '&nbsp;'}</span><br>
+      <span id="ed_issdate">${escapeHtml(iss.date) || '&nbsp;'}</span>
+    </div>
+    ${m.dueDateText ? `<div class="pf-field-line" style="margin-top:8px;"><b>กำหนดส่งคืนภายในวันที่</b>&nbsp; <span id="ed_duedate">${escapeHtml(m.dueDateText)}</span></div>` : ''}
+  </div>`;
+}
+
+// เปิดหน้าเอกสารแบบแก้ไขได้โดยตรง (คลิกที่ข้อความในเอกสารเพื่อพิมพ์ทับได้เลย) — เห็นหน้าเอกสารจริงระหว่างแก้ไข
+function openMemoEditor(opts) {
+  const isNew = !opts.id;
+  document.getElementById('modalRoot').innerHTML = `<div class="overlay" id="memoOverlay" style="align-items:flex-start; padding-top:20px;">
+    <div class="sheet memo-editor-sheet">
+      <button class="sheet-close" id="memoCloseBtn" type="button" title="ปิด" aria-label="ปิด">${ICONS.close}</button>
+      <div class="sheet-handle"></div>
+      <div class="sheet-title" style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+        <span>เอกสารบันทึกข้อความ</span>
+      </div>
+      <div class="hint" style="margin-top:0;">คลิกตรงข้อความในเอกสารด้านล่างเพื่อแก้ไขได้โดยตรง เหมือนพิมพ์ทับในเอกสารจริง</div>
+      <div id="memoDocWrap">${opts.html}</div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" id="btnMemoClose">ปิด</button>
+        ${!isNew && isAdmin() ? `<button class="btn btn-danger" id="btnMemoDelete">ลบเอกสาร</button>` : ''}
+        <button class="btn btn-ghost" id="btnMemoPrint">พิมพ์</button>
+        <button class="btn btn-primary" id="btnMemoSave">บันทึกเอกสาร</button>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById('memoOverlay').addEventListener('click', (e) => { if (e.target.id === 'memoOverlay') closeSheet(); });
+  document.getElementById('memoCloseBtn').onclick = closeSheet;
+  document.getElementById('btnMemoClose').onclick = closeSheet;
+  document.getElementById('btnMemoPrint').onclick = () => {
+    const body = document.getElementById('memoDocBody');
+    if (body) document.getElementById('printArea').innerHTML = body.innerHTML;
+    setTimeout(() => window.print(), 80);
+  };
+  document.getElementById('btnMemoSave').onclick = async () => {
+    const body = document.getElementById('memoDocBody');
+    if (!body) { toast('ไม่พบเนื้อหาเอกสาร'); return; }
+    const g = (id) => { const elx = document.getElementById(id); return elx ? elx.textContent.trim() : ''; };
+    const payload = {
+      id: opts.id || undefined,
+      subject: g('ed_subject') || 'ไม่ระบุเรื่อง',
+      docNo: g('ed_docno'),
+      docDate: g('ed_docdate'),
+      requesterName: g('ed_reqname') || g('ed_reqname2'),
+      html: body.innerHTML,
+      borrowId: opts.borrowId || '',
+      status: 'บันทึกแล้ว'
+    };
+    const btn = document.getElementById('btnMemoSave'); if (btn.disabled) return; setButtonBusy(btn,true,'กำลังบันทึก...'); setLoading(true,'กำลังบันทึกเอกสาร...');
+    try {
+      const res = await apiPost(isNew ? 'addMemo' : 'updateMemo', payload);
+      if (isNew && res && res.id) opts.id = res.id;
+      toast('บันทึกเอกสารแล้ว');
+      await loadAll();
+      if (state.tab === 'memos') renderMemos();
+    } catch (err) {
+      toast(err.message || 'บันทึกเอกสารไม่สำเร็จ');
+    } finally { setLoading(false); setButtonBusy(btn,false); }
+  };
+  if (!isNew && isAdmin()) {
+    document.getElementById('btnMemoDelete').onclick = async () => {
+      if (!confirm('ยืนยันการลบเอกสารนี้?')) return;
+      try {
+        await apiPost('deleteMemo', { id: opts.id });
+        closeSheet(); toast('ลบเอกสารแล้ว'); await loadAll(); if (state.tab === 'memos') renderMemos();
+      } catch (err) { toast(err.message || 'ลบไม่สำเร็จ'); }
     };
   }
 }
@@ -1852,7 +2047,7 @@ function showSheet(html) {
 function closeSheet() { document.getElementById('modalRoot').innerHTML = ''; }
 function val(id) { return document.getElementById(id).value; }
 
-/* ========================================================= PRINT: บันทึกข้อความ (ขอเบิก-ยืมพัสดุ) ทางราชการ */
+/* ========================================================= สร้างข้อมูลเริ่มต้นสำหรับเอกสารใบเบิก-ยืม แล้วเปิดหน้าแก้ไขจริง */
 function buildMemoItemList(opts) {
   // สร้างรายการสิ่งของจาก opts.items (หน้ารายละเอียดครุภัณฑ์) หรือ opts.borrow (รายการยืม)
   if (opts.borrow) {
@@ -1924,8 +2119,8 @@ function openPrintMemoForm(opts) {
   `).join('');
 
   showSheet(`
-    <div class="sheet-title">ข้อมูลสำหรับพิมพ์บันทึกข้อความ</div>
-    <div class="hint" style="margin-top:0;">กรอกรายละเอียดให้ครบก่อนพิมพ์ ระบบจะจัดรูปแบบเป็นบันทึกข้อความทางราชการให้อัตโนมัติ — เลือกชื่อผู้ลงนามจากดรอปดาวน์เพื่อกันเลือกผิดคน</div>
+    <div class="sheet-title">ข้อมูลเริ่มต้นสำหรับเอกสาร</div>
+    <div class="hint" style="margin-top:0;">กรอกข้อมูลคร่าวๆ ก่อน ระบบจะจัดเป็นเอกสารบันทึกข้อความให้ แล้วเปิดหน้าเอกสารให้แก้ไขต่อได้โดยตรงในขั้นถัดไป — เลือกชื่อผู้ลงนามจากดรอปดาวน์เพื่อกันเลือกผิดคน</div>
 
     <div class="memo-section-label">ส่วนหัวหนังสือ</div>
     <div class="field"><label>ส่วนราชการ</label><input class="input" id="m_org" value="${escapeHtml(ORG_NAME + ' โทร. ' + ORG_PHONE)}"></div>
@@ -1955,7 +2150,7 @@ function openPrintMemoForm(opts) {
 
     <div class="btn-row">
       <button class="btn btn-ghost" id="btnCancel">ยกเลิก</button>
-      <button class="btn btn-primary" id="btnGenerate">พิมพ์บันทึกข้อความ</button>
+      <button class="btn btn-primary" id="btnGenerate">สร้างเอกสาร →</button>
     </div>
   `);
 
@@ -1985,11 +2180,12 @@ function openPrintMemoForm(opts) {
       issuer: { rank: val('m_issRank'), name: val('m_issName'), position: val('m_issPosition'), date: val('m_issDate') }
     };
     closeSheet();
-    renderAndPrintMemo(memo);
+    const html = buildMemoBodyHtml(memo, true);
+    openMemoEditor({ id: null, html, borrowId: borrow ? borrow['รหัสรายการ'] : '' });
   };
 }
 
-function itemPhraseList(items, short) {
+function itemPhraseList(items) {
   const phrases = items.map(it => {
     let p = escapeHtml(it.name);
     if (it.brand) p += ' ยี่ห้อ ' + escapeHtml(it.brand);
@@ -1999,58 +2195,6 @@ function itemPhraseList(items, short) {
   });
   if (phrases.length === 1) return phrases[0];
   return phrases.slice(0, -1).join(', ') + ' และ' + phrases[phrases.length - 1];
-}
-
-function memoSignBlock(p) {
-  return `<div class="pf-sign">
-    <div class="pf-sign-gap"></div>
-    ${escapeHtml(p.rank) || '&nbsp;'}<br>
-    ( ${escapeHtml(p.name) || '.....................................'} )<br>
-    ${escapeHtml(p.position) || '&nbsp;'}<br>
-    ${escapeHtml(p.date) || '&nbsp;'}
-  </div>`;
-}
-
-function renderAndPrintMemo(m) {
-  const itemsText = itemPhraseList(m.items);
-  const requesterFull = (m.requester.rank ? escapeHtml(m.requester.rank) : '') + escapeHtml(m.requester.name);
-  const requesterPositionText = m.requester.position ? escapeHtml(m.requester.position) : '';
-  const emblemHtml = GARUDA_LOGO_DATA_URI
-    ? `<img src="${GARUDA_LOGO_DATA_URI}" alt="ตราครุฑ">`
-    : `<div class="pf-emblem-placeholder">[ ตราครุฑ ]</div>`;
-
-  const html = `
-    <div class="pf-topline">
-      <div class="pf-emblem">${emblemHtml}</div>
-      <div class="pf-title-wrap"><div class="pf-title">บันทึกข้อความ</div></div>
-      <div class="pf-spacer"></div>
-    </div>
-    <div class="pf-field-line"><b>ส่วนราชการ</b>&nbsp; ${escapeHtml(m.org)}</div>
-    <div class="pf-two-col">
-      <span><b>ที่</b>&nbsp; ${escapeHtml(m.docNo) || '........................................'}</span>
-      <span><b>วันที่</b>&nbsp; ${escapeHtml(m.docDate)}</span>
-    </div>
-    <div class="pf-field-line"><b>เรื่อง</b>&nbsp; ${escapeHtml(m.subject)}</div>
-    <div class="pf-field-line" style="margin-top:10px;"><b>เรียน</b>&nbsp; ${escapeHtml(m.addressee) || '........................................'}</div>
-
-    <p class="pf-body">ด้วยข้าฯ ${requesterFull} ${requesterPositionText} มีความประสงค์ขอเบิก${itemsText}
-    เพื่อใช้ในการปฏิบัติหน้าที่ราชการ</p>
-
-    <p class="pf-body">จึงเรียนมาเพื่อโปรดพิจารณา</p>
-    ${memoSignBlock(m.requester)}
-
-    <p class="pf-note">- อนุมัติให้เบิก-จ่ายได้</p>
-    ${memoSignBlock(m.approver)}
-
-    <p class="pf-body">- ได้รับ${itemsText}
-    เพื่อใช้ในการปฏิบัติหน้าที่ราชการต่อไป</p>
-    ${memoSignBlock(m.requester)}
-
-    ${memoSignBlock(m.issuer)}
-    ${m.dueDateText ? `<div class="pf-field-line" style="margin-top:8px;"><b>กำหนดส่งคืนภายในวันที่</b>&nbsp; ${escapeHtml(m.dueDateText)}</div>` : ''}
-  `;
-  document.getElementById('printArea').innerHTML = html;
-  setTimeout(() => window.print(), 80);
 }
 
 init();
