@@ -2434,49 +2434,58 @@ function renderReports() {
 /* =========================================================
    เพิ่มรายงานพัสดุแบบราชการในหน้ารายงาน (Reports)
    ========================================================= */
+/* =========================================================
+   รายงานพัสดุแบบราชการ (ปรับปรุงระยะขอบ และผู้จ่ายพัสดุ)
+   ========================================================= */
 function renderOfficialAssetReport() {
   const assets = state.assets || [];
   const orgName = (state.settings && state.settings.orgName) || ORG_NAME;
   const currentDate = thaiDateLong(new Date());
 
+  // ค้นหาเจ้าหน้าที่ผู้จ่ายพัสดุจากทำเนียบ
+  const issuerList = officersByMemoRole('ผู้จ่ายพัสดุ');
+  const issuer = issuerList.length > 0 ? issuerList[0] : null;
+  const issuerRankName = issuer ? (issuer['ยศ'] ? issuer['ยศ'] + ' ' : '') + (issuer['ชื่อ-สกุล'] || '') : '......................................................';
+  const issuerPosition = issuer && issuer['ตำแหน่ง'] ? issuer['ตำแหน่ง'] : 'เจ้าหน้าที่พัสดุ';
+
   const rowsHtml = assets.map((a, i) => `
     <tr>
-      <td style="text-align:center; padding:6px; border:1px solid #000;">${i + 1}</td>
-      <td style="padding:6px; border:1px solid #000;">${escapeHtml(a['รหัสครุภัณฑ์'] || '')}</td>
-      <td style="padding:6px; border:1px solid #000;">${escapeHtml(a['ชื่อครุภัณฑ์'] || '')} ${a['ยี่ห้อ/รุ่น'] ? '(' + escapeHtml(a['ยี่ห้อ/รุ่น']) + ')' : ''}</td>
-      <td style="padding:6px; border:1px solid #000; text-align:center;">${thaiDate(a['วันที่รับเข้า']) || '-'}</td>
-      <td style="padding:6px; border:1px solid #000; text-align:right;">${a['มูลค่า(บาท)'] ? Number(a['มูลค่า(บาท)']).toLocaleString() + ' .- บาท' : '-'}</td>
-      <td style="padding:6px; border:1px solid #000; text-align:center;">${escapeHtml(a['สถานะ'] || '')}</td>
-      <td style="padding:6px; border:1px solid #000;">${escapeHtml(a['ผู้ครอบครอง/หน่วยงาน'] || '')}</td>
+      <td style="text-align:center; padding:8px 6px; border:1px solid #000; vertical-align:middle;">${i + 1}</td>
+      <td style="padding:8px 6px; border:1px solid #000; vertical-align:middle;">${escapeHtml(a['รหัสครุภัณฑ์'] || '')}</td>
+      <td style="padding:8px 6px; border:1px solid #000; vertical-align:middle;">${escapeHtml(a['ชื่อครุภัณฑ์'] || '')} ${a['ยี่ห้อ/รุ่น'] ? '(' + escapeHtml(a['ยี่ห้อ/รุ่น']) + ')' : ''}</td>
+      <td style="padding:8px 6px; border:1px solid #000; text-align:center; vertical-align:middle;">${thaiDate(a['วันที่รับเข้า']) || '-'}</td>
+      <td style="padding:8px 6px; border:1px solid #000; text-align:right; vertical-align:middle;">${a['มูลค่า(บาท)'] ? Number(a['มูลค่า(บาท)']).toLocaleString() + ' .-' : '-'}</td>
+      <td style="padding:8px 6px; border:1px solid #000; text-align:center; vertical-align:middle;">${escapeHtml(a['สถานะ'] || '')}</td>
+      <td style="padding:8px 6px; border:1px solid #000; vertical-align:middle;">${escapeHtml(a['ผู้ครอบครอง/หน่วยงาน'] || '-')}</td>
     </tr>
   `).join('');
 
   const reportHtml = `
-    <div class="a4-page" style="font-family:'TH Sarabun New','Sarabun','Kanit',sans-serif; font-size:14pt; line-height:1.4; color:#000;">
-      <div style="text-align:center; font-weight:700; font-size:16pt; margin-bottom:4mm;">บัญชีควบคุมครุภัณฑ์และพัสดุราชการ</div>
-      <div style="text-align:center; font-size:14pt; margin-bottom:6mm;">หน่วยงาน: ${escapeHtml(orgName)} (ณ วันที่ ${currentDate})</div>
+    <div class="a4-page" style="padding: 20mm 20mm 20mm 20mm; font-family:'TH Sarabun New','Sarabun','Kanit',sans-serif; font-size:15pt; line-height:1.5; color:#000; box-sizing:border-box;">
+      <div style="text-align:center; font-weight:700; font-size:18pt; margin-bottom:2mm;">บัญชีควบคุมครุภัณฑ์และพัสดุราชการ</div>
+      <div style="text-align:center; font-size:15pt; margin-bottom:6mm;">หน่วยงาน: ${escapeHtml(orgName)} (ณ วันที่ ${currentDate})</div>
       
-      <table style="width:100%; border-collapse:collapse; font-size:13pt; margin-bottom:10mm;">
+      <table style="width:100%; border-collapse:collapse; font-size:14pt; margin-bottom:12mm;">
         <thead>
-          <tr style="background:#f2f2f2; text-align:center;">
-            <th style="padding:6px; border:1px solid #000; width:8%;">ที่</th>
-            <th style="padding:6px; border:1px solid #000; width:15%;">รหัสครุภัณฑ์</th>
-            <th style="padding:6px; border:1px solid #000; width:27%;">รายการ / ลักษณะ</th>
-            <th style="padding:6px; border:1px solid #000; width:12%;">วันที่รับเข้า</th>
-            <th style="padding:6px; border:1px solid #000; width:13%;">มูลค่า</th>
-            <th style="padding:6px; border:1px solid #000; width:10%;">สถานะ</th>
-            <th style="padding:6px; border:1px solid #000; width:15%;">ผู้ครอบครอง</th>
+          <tr style="background:#f2f2f2; text-align:center; font-weight:700;">
+            <th style="padding:8px 6px; border:1px solid #000; width:7%;">ที่</th>
+            <th style="padding:8px 6px; border:1px solid #000; width:16%;">รหัสครุภัณฑ์</th>
+            <th style="padding:8px 6px; border:1px solid #000; width:28%;">รายการ / ลักษณะ</th>
+            <th style="padding:8px 6px; border:1px solid #000; width:11%;">วันที่รับเข้า</th>
+            <th style="padding:8px 6px; border:1px solid #000; width:11%;">มูลค่า (บาท)</th>
+            <th style="padding:8px 6px; border:1px solid #000; width:12%;">สถานะ</th>
+            <th style="padding:8px 6px; border:1px solid #000; width:15%;">ผู้ครอบครอง</th>
           </tr>
         </thead>
         <tbody>
-          ${rowsHtml || '<tr><td colspan="7" style="text-align:center; padding:15px; border:1px solid #000;">ไม่มีข้อมูลครุภัณฑ์</td></tr>'}
+          ${rowsHtml || '<tr><td colspan="7" style="text-align:center; padding:20px; border:1px solid #000;">ไม่มีข้อมูลครุภัณฑ์</td></tr>'}
         </tbody>
       </table>
 
-      <div style="float:right; width:7cm; text-align:center; margin-top:15mm; page-break-inside:avoid;">
-        <div style="margin-bottom:12pt;">ลงชื่อ......................................................เจ้าหน้าที่พัสดุ</div>
-        <div>(......................................................)</div>
-        <div style="margin-top:4pt;">ตำแหน่ง......................................................</div>
+      <div style="float:right; width:8cm; text-align:center; margin-top:10mm; page-break-inside:avoid;">
+        <div style="margin-bottom:14pt;">ลงชื่อ......................................................ผู้จ่ายพัสดุ</div>
+        <div style="margin-bottom:4pt;">( ${escapeHtml(issuerRankName)} )</div>
+        <div>ตำแหน่ง ${escapeHtml(issuerPosition)}</div>
       </div>
     </div>
   `;
@@ -2487,7 +2496,7 @@ function renderOfficialAssetReport() {
     window.print();
     pa.innerHTML = '';
   }, 80);
-}   
+}
 
 /* ========================================================= ตั้งค่าระบบ */
 function renderSettings() {
