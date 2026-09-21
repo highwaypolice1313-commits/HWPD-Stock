@@ -2432,7 +2432,7 @@ function renderReports() {
 }
 
 /* =========================================================
-   รายงานพัสดุแบบราชการ (ปรับระยะขอบพิมพ์และเอาคำว่าผู้จ่ายพัสดุออก)
+   รายงานพัสดุแบบราชการ (แยกประเภท และแสดงผลรวมจำนวน/มูลค่า)
    ========================================================= */
 function renderOfficialAssetReport() {
   const assets = state.assets || [];
@@ -2445,44 +2445,88 @@ function renderOfficialAssetReport() {
   const issuerRankName = issuer ? (issuer['ยศ'] ? issuer['ยศ'] + ' ' : '') + (issuer['ชื่อ-สกุล'] || '') : '......................................................';
   const issuerPosition = issuer && issuer['ตำแหน่ง'] ? issuer['ตำแหน่ง'] : 'เจ้าหน้าที่พัสดุ';
 
-  const rowsHtml = assets.map((a, i) => `
-    <tr>
-      <td style="text-align:center; padding:7px 6px; border:1px solid #000; vertical-align:middle;">${i + 1}</td>
-      <td style="padding:7px 6px; border:1px solid #000; vertical-align:middle;">${escapeHtml(a['รหัสครุภัณฑ์'] || '')}</td>
-      <td style="padding:7px 6px; border:1px solid #000; vertical-align:middle;">${escapeHtml(a['ชื่อครุภัณฑ์'] || '')} ${a['ยี่ห้อ/รุ่น'] ? '(' + escapeHtml(a['ยี่ห้อ/รุ่น']) + ')' : ''}</td>
-      <td style="padding:7px 6px; border:1px solid #000; text-align:center; vertical-align:middle;">${thaiDate(a['วันที่รับเข้า']) || '-'}</td>
-      <td style="padding:7px 6px; border:1px solid #000; text-align:right; vertical-align:middle;">${a['มูลค่า(บาท)'] ? Number(a['มูลค่า(บาท)']).toLocaleString() + ' .-' : '-'}</td>
-      <td style="padding:7px 6px; border:1px solid #000; text-align:center; vertical-align:middle;">${escapeHtml(a['สถานะ'] || '')}</td>
-      <td style="padding:7px 6px; border:1px solid #000; vertical-align:middle;">${escapeHtml(a['ผู้ครอบครอง/หน่วยงาน'] || '-')}</td>
-    </tr>
-  `).join('');
+  // จัดกลุ่มข้อมูลตามหมวดหมู่ (Category)
+  const grouped = {};
+  assets.forEach(a => {
+    const cat = a['หมวดหมู่'] || 'อื่นๆ';
+    if (!grouped[cat]) grouped[cat] = [];
+    grouped[cat].push(a);
+  });
+
+  let globalIndex = 1;
+  let grandTotalValue = 0;
+  let grandTotalCount = assets.length;
+
+  let categoriesHtml = '';
+
+  for (const catName in grouped) {
+    const catItems = grouped[catName];
+    let catTotalValue = 0;
+
+    const rowsHtml = catItems.map(a => {
+      const valNum = Number(a['มูลค่า(บาท)']) || 0;
+      catTotalValue += valNum;
+      grandTotalValue += valNum;
+      const currentIndex = globalIndex++;
+
+      return `
+        <tr>
+          <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;">${currentIndex}</td>
+          <td style="padding:6px; border:1px solid #000; vertical-align:middle;">${escapeHtml(a['รหัสครุภัณฑ์'] || '')}</td>
+          <td style="padding:6px; border:1px solid #000; vertical-align:middle;">${escapeHtml(a['ชื่อครุภัณฑ์'] || '')} ${a['ยี่ห้อ/รุ่น'] ? '(' + escapeHtml(a['ยี่ห้อ/รุ่น']) + ')' : ''}</td>
+          <td style="padding:6px; border:1px solid #000; text-align:center; vertical-align:middle;">${thaiDate(a['วันที่รับเข้า']) || '-'}</td>
+          <td style="padding:6px; border:1px solid #000; text-align:right; vertical-align:middle;">${a['มูลค่า(บาท)'] ? Number(a['มูลค่า(บาท)']).toLocaleString() + ' .-' : '-'}</td>
+          <td style="padding:6px; border:1px solid #000; text-align:center; vertical-align:middle;">${escapeHtml(a['สถานะ'] || '')}</td>
+          <td style="padding:6px; border:1px solid #000; vertical-align:middle;">${escapeHtml(a['ผู้ครอบครอง/หน่วยงาน'] || '-')}</td>
+        </tr>
+      `;
+    }).join('');
+
+    categoriesHtml += `
+      <div style="font-weight:700; font-size:14pt; margin-top:10mm; margin-bottom:2mm; background:#eef1f0; padding:4px 8px; border:1px solid #000; border-bottom:none;">
+        หมวดหมู่: ${escapeHtml(catName)} (จำนวน ${catItems.length} รายการ)
+      </div>
+      <table style="width:100%; border-collapse:collapse; font-size:13pt; margin-bottom:4mm;">
+        <thead>
+          <tr style="background:#f2f2f2; text-align:center; font-weight:700;">
+            <th style="padding:6px; border:1px solid #000; width:7%;">ที่</th>
+            <th style="padding:6px; border:1px solid #000; width:16%;">รหัสครุภัณฑ์</th>
+            <th style="padding:6px; border:1px solid #000; width:28%;">รายการ / ลักษณะ</th>
+            <th style="padding:6px; border:1px solid #000; width:11%;">วันที่รับเข้า</th>
+            <th style="padding:6px; border:1px solid #000; width:11%;">มูลค่า (บาท)</th>
+            <th style="padding:6px; border:1px solid #000; width:12%;">สถานะ</th>
+            <th style="padding:6px; border:1px solid #000; width:15%;">ผู้ครอบครอง</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml}
+        </tbody>
+        <tfoot>
+          <tr style="font-weight:700; background:#fafafa;">
+            <td colspan="4" style="text-align:right; padding:6px; border:1px solid #000;">รวมมูลค่าหมวด ${escapeHtml(catName)}:</td>
+            <td style="text-align:right; padding:6px; border:1px solid #000;">${catTotalValue > 0 ? catTotalValue.toLocaleString() + ' .-' : '-'}</td>
+            <td colspan="2" style="border:1px solid #000;"></td>
+          </tr>
+        </tfoot>
+      </table>
+    `;
+  }
 
   const reportHtml = `
     <style>
       @page { size: A4; margin: 15mm; }
     </style>
-    <div style="font-family:'TH Sarabun New','Sarabun','Kanit',sans-serif; font-size:15pt; line-height:1.4; color:#000; width:100%; box-sizing:border-box;">
-      <div style="text-align:center; font-weight:700; font-size:18pt; margin-bottom:2mm;">บัญชีควบคุมครุภัณฑ์และพัสดุราชการ</div>
-      <div style="text-align:center; font-size:15pt; margin-bottom:6mm;">หน่วยงาน: ${escapeHtml(orgName)} (ณ วันที่ ${currentDate})</div>
+    <div style="font-family:'TH Sarabun New','Sarabun','Kanit',sans-serif; font-size:14pt; line-height:1.4; color:#000; width:100%; box-sizing:border-box;">
+      <div style="text-align:center; font-weight:700; font-size:18pt; margin-bottom:2mm;">บัญชีควบคุมครุภัณฑ์และพัสดุราชการ (แยกตามหมวดหมู่)</div>
+      <div style="text-align:center; font-size:14pt; margin-bottom:6mm;">หน่วยงาน: ${escapeHtml(orgName)} (ณ วันที่ ${currentDate})</div>
       
-      <table style="width:100%; border-collapse:collapse; font-size:14pt; margin-bottom:12mm;">
-        <thead>
-          <tr style="background:#f2f2f2; text-align:center; font-weight:700;">
-            <th style="padding:8px 6px; border:1px solid #000; width:7%;">ที่</th>
-            <th style="padding:8px 6px; border:1px solid #000; width:16%;">รหัสครุภัณฑ์</th>
-            <th style="padding:8px 6px; border:1px solid #000; width:28%;">รายการ / ลักษณะ</th>
-            <th style="padding:8px 6px; border:1px solid #000; width:11%;">วันที่รับเข้า</th>
-            <th style="padding:8px 6px; border:1px solid #000; width:11%;">มูลค่า (บาท)</th>
-            <th style="padding:8px 6px; border:1px solid #000; width:12%;">สถานะ</th>
-            <th style="padding:8px 6px; border:1px solid #000; width:15%;">ผู้ครอบครอง</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${rowsHtml || '<tr><td colspan="7" style="text-align:center; padding:20px; border:1px solid #000;">ไม่มีข้อมูลครุภัณฑ์</td></tr>'}
-        </tbody>
-      </table>
+      ${categoriesHtml || '<div style="text-align:center; padding:20px;">ไม่มีข้อมูลครุภัณฑ์</div>'}
 
-      <div style="float:right; width:8cm; text-align:center; margin-top:10mm; page-break-inside:avoid;">
+      <div style="margin-top:6mm; font-weight:700; font-size:14pt; border:1px solid #000; padding:6px; background:#f9f9f9;">
+        สรุปภาพรวมทั้งหมด: จำนวนครุภัณฑ์ทั้งสิ้น ${grandTotalCount} รายการ | มูลค่ารวมทั้งสิ้น ${grandTotalValue > 0 ? grandTotalValue.toLocaleString() + ' บาท' : '-'}
+      </div>
+
+      <div style="float:right; width:8cm; text-align:center; margin-top:12mm; page-break-inside:avoid;">
         <div style="margin-bottom:14pt;">ลงชื่อ......................................................</div>
         <div style="margin-bottom:4pt;">( ${escapeHtml(issuerRankName)} )</div>
         <div>ตำแหน่ง ${escapeHtml(issuerPosition)}</div>
