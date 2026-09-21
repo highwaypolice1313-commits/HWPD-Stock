@@ -611,6 +611,7 @@ input[type="date"]::-webkit-date-and-time-value{ text-align:left; }
   <div class="page" id="view-memos" style="display:none;"></div>
   <div class="page" id="view-users" style="display:none;"></div>
   <div class="page" id="view-reports" style="display:none;"></div>
+  <div class="page" id="view-settings" style="display:none;"></div>
 
   <button class="fab" id="fabBtn" style="display:none;">
     <svg viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
@@ -647,6 +648,10 @@ input[type="date"]::-webkit-date-and-time-value{ text-align:left; }
     <button class="tab" data-tab="reports">
       <span class="ico"><svg viewBox="0 0 20 20" fill="none"><path d="M4 16.5V11M10 16.5V6M16 16.5v-8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>
       <span class="lbl">รายงาน</span>
+    </button>
+    <button class="tab" data-tab="settings" id="settingsTabBtn" style="display:none;">
+      <span class="ico"><svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="2.6" stroke="currentColor" stroke-width="1.4"/><path d="M10 2.8v2M10 15.2v2M17.2 10h-2M4.8 10h-2M15.1 4.9l-1.4 1.4M6.3 13.7l-1.4 1.4M15.1 15.1l-1.4-1.4M6.3 6.3L4.9 4.9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></span>
+      <span class="lbl">ตั้งค่าระบบ</span>
     </button>
   </div>
 </div>
@@ -696,7 +701,7 @@ const ICONS = {
 /* ========================================================= STATE */
 const state = {
   user: null, role: 'guest', sessionToken: null,
-  assets: [], borrow: [], maint: [], components: [], users: [], activity: [], memos: [], dashboard: null,
+  assets: [], borrow: [], maint: [], components: [], users: [], activity: [], memos: [], dashboard: null, settings: {},
   tab: 'dashboard', assetFilter: 'all', assetStatusFilter: 'all', assetSearch: '', assetSort: 'name_asc', assetPage: 1
 };
 const PAGE_SIZE = 12;
@@ -707,7 +712,8 @@ const TH_MONTHS_FULL = ['มกราคม','กุมภาพันธ์','�
 const TH_MONTHS_ABBR = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 const RANK_OPTIONS = ['พ.ต.อ.','พ.ต.ท.','พ.ต.ต.','ร.ต.อ.','ร.ต.ท.','ร.ต.ต.','ด.ต.','จ.ส.ต.','ส.ต.อ.','ส.ต.ท.','ส.ต.ต.'];
 const MEMO_ROLES = ['ไม่ระบุ (เลือกเองตอนพิมพ์)','ผู้ขอเบิก/ยืม (ค่าเริ่มต้น)','ผู้อนุมัติ ลำดับที่ 1','ผู้อนุมัติ ลำดับที่ 2','ผู้อนุมัติ ลำดับที่ 3','ผู้จ่ายพัสดุ'];
-
+</script>
+<script>
 /* ========================================================= SESSION (localStorage) */
 function loadSession() {
   try {
@@ -882,6 +888,7 @@ async function completeLogin({ role, name, token }) {
   pill.classList.toggle('viewer', role !== 'admin');
   document.getElementById('profileName').textContent = state.user.name;
   document.getElementById('usersTabBtn').style.display = isAdmin() ? 'flex' : 'none';
+  document.getElementById('settingsTabBtn').style.display = isAdmin() ? 'flex' : 'none';
 
   document.getElementById('loginScreen').style.display = 'none';
   const appEl = document.getElementById('app');
@@ -1000,6 +1007,7 @@ async function loadAll(showLoader = false) {
     state.components = data.components || [];
     state.dashboard = data.dashboard || null;
     state.memos = data.memos || [];
+    state.settings = data.settings || {};
     if (isAdmin()) {
       state.users = data.users || [];
       state.activity = data.activity || [];
@@ -1150,7 +1158,7 @@ window.addEventListener('online', () => setConnection(true));
 window.addEventListener('offline', () => { setConnection(false); toast('ขณะนี้อุปกรณ์ออฟไลน์'); });
 
 function renderTab(name) {
-  if (name === 'users' && !isAdmin()) name = 'dashboard';
+  if ((name === 'users' || name === 'settings') && !isAdmin()) name = 'dashboard';
   state.tab = name;
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
   document.querySelectorAll('.page').forEach(p => { p.style.display = 'none'; });
@@ -1172,6 +1180,7 @@ function renderTab(name) {
   if (name === 'memos') renderMemos();
   if (name === 'users') renderUsers();
   if (name === 'reports') renderReports();
+  if (name === 'settings') renderSettings();
 }
 
 /* ========================================================= DASHBOARD */
@@ -1364,6 +1373,7 @@ function openAssetDetail(id) {
       <button class="btn btn-ghost" id="btnPrintAssetForm">พิมพ์บันทึกขอเบิก</button>
     </div>
     ${isAdmin() ? `<div class="btn-row">
+      <button class="btn btn-ghost" id="btnQuickStatus">เปลี่ยนสถานะด่วน</button>
       <button class="btn btn-ghost" id="btnEditAsset">แก้ไข</button>
       <button class="btn btn-danger" id="btnDeleteAsset">ลบ</button>
     </div>` : ''}
@@ -1371,6 +1381,7 @@ function openAssetDetail(id) {
   document.getElementById('btnShowQr').onclick = () => openQrView(a);
   document.getElementById('btnPrintAssetForm').onclick = () => openPrintMemoForm({ items: [a], components: componentsOf(id) });
   if (isAdmin()) {
+    document.getElementById('btnQuickStatus').onclick = () => openQuickStatusForm(a);
     document.getElementById('btnEditAsset').onclick = () => { closeSheet(); openAssetForm(a); };
     document.getElementById('btnDeleteAsset').onclick = async () => {
       if (!confirm('ยืนยันการลบครุภัณฑ์นี้?')) return;
@@ -1379,6 +1390,31 @@ function openAssetDetail(id) {
     document.querySelectorAll('.btnAddComponent').forEach(b => b.onclick = () => openComponentForm(id));
     document.querySelectorAll('.comp-item').forEach(it => it.onclick = () => openComponentForm(id, componentsOf(id).find(c => c['รหัสส่วนควบ'] === it.dataset.id)));
   }
+}
+// เปลี่ยนสถานะครุภัณฑ์แบบด่วน (เช่น ปลดจำหน่าย / คืนเป็นพร้อมใช้งาน) โดยไม่ต้องเปิดฟอร์มแก้ไขทั้งหมด
+function openQuickStatusForm(a) {
+  showSheet(`
+    <div class="sheet-title">เปลี่ยนสถานะ — ${escapeHtml(a['ชื่อครุภัณฑ์'])}</div>
+    <div class="field"><label>สถานะปัจจุบัน</label>
+      <div class="status-badge ${statusClass(a['สถานะ'])}" style="display:inline-flex;">${a['สถานะ']}</div>
+    </div>
+    <div class="field"><label>สถานะใหม่</label>
+      <select class="input" id="qs_status">${ASSET_STATUSES.map(s => `<option ${a['สถานะ']===s?'selected':''}>${s}</option>`).join('')}</select>
+    </div>
+    <div class="hint" style="margin-top:0;">การเปลี่ยนสถานะด่วนนี้ไม่กระทบรายการยืม-คืนหรืองานซ่อมที่เชื่อมกับครุภัณฑ์นี้อยู่ ใช้สำหรับกรณี เช่น ปลดจำหน่าย หรือดึงกลับมาพร้อมใช้งานเอง</div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="btnCancel">ยกเลิก</button>
+      <button class="btn btn-primary" id="btnSaveStatus">บันทึกสถานะ</button>
+    </div>
+  `);
+  document.getElementById('btnCancel').onclick = closeSheet;
+  document.getElementById('btnSaveStatus').onclick = async () => {
+    const btn = document.getElementById('btnSaveStatus'); if (btn.disabled) return; setButtonBusy(btn,true); setLoading(true,'กำลังบันทึกสถานะ...');
+    try {
+      await apiPost('updateAsset', { id: a['รหัสครุภัณฑ์'], status: val('qs_status') });
+      closeSheet(); toast('เปลี่ยนสถานะแล้ว'); await loadAll(); renderAssets();
+    } catch(err) { toast(err.message || 'เปลี่ยนสถานะไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(btn,false); }
+  };
 }
 function openQrView(a) {
   showSheet(`
@@ -1416,6 +1452,9 @@ function openAssetForm(a) {
     <div class="field"><label>หมายเลขเครื่อง/serial</label><input class="input" id="f_serial" value="${a ? escapeHtml(a['หมายเลขเครื่อง'])||'' : ''}"></div>
     <div class="field"><label>วันที่รับเข้า</label><input class="input" type="date" id="f_date" value="${a && a['วันที่รับเข้า'] ? isoDate(a['วันที่รับเข้า']) : isoDate()}"></div>
     <div class="field"><label>มูลค่า (บาท)</label><input class="input" type="number" id="f_value" value="${a ? a['มูลค่า(บาท)']||'' : ''}"></div>
+    <div class="field"><label>สถานะ</label>
+      <select class="input" id="f_status">${ASSET_STATUSES.map(s => `<option ${a && a['สถานะ']===s?'selected':''}>${s}</option>`).join('')}</select>
+    </div>
     <div class="field"><label>ผู้ครอบครอง/หน่วยงาน</label><input class="input" id="f_holder" value="${a ? escapeHtml(a['ผู้ครอบครอง/หน่วยงาน'])||'' : ''}"></div>
     <div class="field"><label>หน่วยงานเจ้าของ</label><input class="input" id="f_unit" value="${a ? escapeHtml(a['หน่วยงาน'])||'' : ''}"></div>
     <div class="field"><label>วันครบกำหนดตรวจสภาพ/ต่อทะเบียน (ถ้ามี — เช่น รถยนต์ต้องตรวจสภาพ/ต่อภาษี, ปืนต้องต่อใบอนุญาต)</label><input class="input" type="date" id="f_renewal" value="${a && a['วันครบกำหนดตรวจสภาพ/ต่อทะเบียน'] ? isoDate(a['วันครบกำหนดตรวจสภาพ/ต่อทะเบียน']) : ''}"></div>
@@ -1430,7 +1469,7 @@ function openAssetForm(a) {
     const payload = {
       id: a ? a['รหัสครุภัณฑ์'] : undefined,
       name: val('f_name'), category: val('f_cat'), brand: val('f_brand'), serial: val('f_serial'),
-      receivedDate: val('f_date'), value: val('f_value'), holder: val('f_holder'), unit: val('f_unit'),
+      receivedDate: val('f_date'), value: val('f_value'), status: val('f_status'), holder: val('f_holder'), unit: val('f_unit'),
       renewalDue: val('f_renewal'), note: val('f_note')
     };
     if (!payload.name) { toast('กรุณากรอกชื่อครุภัณฑ์'); return; }
@@ -1865,22 +1904,23 @@ function renderMemos() {
   const list = [...state.memos];
   el.innerHTML = `
     <div class="section-title">เอกสารใบเบิก-ยืม <small>${list.length} ฉบับ</small></div>
-    <div class="hint" style="margin-top:0;">คลิกที่เอกสารเพื่อเปิดดู/แก้ไขได้โดยตรงบนหน้าเอกสารจริง แล้วค่อยบันทึกหรือพิมพ์</div>
-    <div id="memoList">${list.length ? list.map(memoRow).join('') : emptyState('ยังไม่มีเอกสารที่บันทึกไว้ — กดปุ่ม + เพื่อสร้างเอกสารใหม่')}</div>
+    <div class="hint" style="margin-top:0;">คลิกที่เอกสารเพื่อเปิดดู/แก้ไขได้โดยตรงบนหน้าเอกสารจริง แบบเห็นหน้าตาเอกสารเหมือนโปรแกรมเวิร์ด แล้วค่อยบันทึกหรือพิมพ์</div>
+    <div id="memoGrid" class="memo-grid">${list.length ? list.map(memoCard).join('') : emptyState('ยังไม่มีเอกสารที่บันทึกไว้ — กดปุ่ม + เพื่อสร้างเอกสารใหม่')}</div>
   `;
-  document.querySelectorAll('.memo-item').forEach(it => it.onclick = () => {
+  document.querySelectorAll('.memo-card').forEach(it => it.onclick = () => {
     const m = state.memos.find(x => x['รหัสใบเบิก'] === it.dataset.id);
     if (m) openMemoEditor({ id: m['รหัสใบเบิก'], html: m['เนื้อหาเอกสาร(HTML)'], borrowId: m['รหัสรายการยืม'] });
   });
 }
-function memoRow(m) {
-  return `<div class="glass list-item memo-item" data-id="${m['รหัสใบเบิก']}">
-    <div class="li-icon">${ICONS.log}</div>
-    <div class="li-body">
+// การ์ดเอกสารแบบย่อหน้ากระดาษ (thumbnail) ให้เห็นหน้าตาเอกสารจริงคร่าวๆ เหมือนเบราว์เซอร์ไฟล์ของเวิร์ด
+function memoCard(m) {
+  return `<div class="glass memo-card" data-id="${m['รหัสใบเบิก']}">
+    <div class="memo-thumb"><div class="memo-thumb-inner">${m['เนื้อหาเอกสาร(HTML)'] || ''}</div></div>
+    <div class="memo-card-body">
       <div class="li-title">${escapeHtml(m['เรื่อง']) || 'ไม่ระบุเรื่อง'}</div>
       <div class="li-sub">${escapeHtml(m['ผู้ขอเบิก']) || ''} ${m['ผู้ขอเบิก'] ? '·' : ''} ${thaiDate(m['วันที่สร้าง'])}</div>
+      <div class="status-badge status-ready" style="margin-top:6px;">${escapeHtml(m['สถานะ']) || 'บันทึกแล้ว'}</div>
     </div>
-    <div class="status-badge status-ready">${escapeHtml(m['สถานะ']) || 'บันทึกแล้ว'}</div>
   </div>`;
 }
 
@@ -1965,7 +2005,7 @@ function openMemoEditor(opts) {
       </div>
     </div>
   </div>`;
-  document.getElementById('memoOverlay').addEventListener('click', (e) => { if (e.target.id === 'memoOverlay') closeSheet(); });
+  // ไม่ปิดเมื่อคลิกนอกจอ กันข้อมูลที่กำลังพิมพ์หายโดยไม่ตั้งใจ — ต้องกดปิด/ยกเลิกอย่างชัดเจนเท่านั้น
   document.getElementById('memoCloseBtn').onclick = closeSheet;
   document.getElementById('btnMemoClose').onclick = closeSheet;
   document.getElementById('btnMemoPrint').onclick = () => {
@@ -2036,12 +2076,118 @@ function renderReports() {
   document.getElementById('btnExportMaintRpt').onclick = () => exportCsv('ซ่อมบำรุง.csv', ['รหัสรายการ','รหัสครุภัณฑ์','ชื่อครุภัณฑ์','วันที่แจ้ง','อาการ/ปัญหา','ผู้แจ้ง','สถานะ','วันที่ซ่อมเสร็จ','ค่าใช้จ่าย(บาท)','ผู้รับผิดชอบ','หมายเหตุ'], state.maint);
 }
 
+/* ========================================================= ตั้งค่าระบบ (Settings) — ธีม / ข้อมูลหน่วยงาน / เลขหนังสือ / รหัสผ่าน / สำรองข้อมูล */
+const THEME_KEY = 'hpAssetThemeV1';
+const THEMES = [
+  { id:'dawn',  name:'รุ่งอรุณ ทางหลวง', swatches:['#17324f','#bb8a3f','#fdf2e4'] },
+  { id:'night', name:'ราตรีตรวจการณ์',   swatches:['#0c1e33','#3d7bd6','#0a1420'] },
+  { id:'forest',name:'มรกตพงไพร',        swatches:['#1f3d33','#3fae7a','#eef6f0'] },
+  { id:'ember', name:'อัคคีสัญญาณ',      swatches:['#3a1f22','#d9704a','#fbeee4'] }
+];
+function applyTheme(id) {
+  document.documentElement.setAttribute('data-theme', id);
+  try { localStorage.setItem(THEME_KEY, id); } catch(e) {}
+}
+function currentTheme() {
+  try { return localStorage.getItem(THEME_KEY) || 'dawn'; } catch(e) { return 'dawn'; }
+}
+applyTheme(currentTheme()); // ใช้ธีมที่เคยเลือกไว้ทันทีตั้งแต่โหลดหน้า
+
+function renderSettings() {
+  if (!isAdmin()) return;
+  const el = document.getElementById('view-settings');
+  const s = state.settings || {};
+  const active = currentTheme();
+  el.innerHTML = `
+    <div class="section-title">ตั้งค่าระบบ</div>
+
+    <div class="section-title" style="margin-top:6px; font-size:14px;">ธีมเว็บ</div>
+    <div class="glass" style="padding:16px; margin-bottom:6px;">
+      <div class="hint" style="margin-top:0;">เลือกธีมสีของหน้าจอ — บันทึกไว้เฉพาะเครื่อง/เบราว์เซอร์นี้</div>
+      <div id="themeSwatchRow" style="display:flex; gap:12px; flex-wrap:wrap; margin-top:10px;">
+        ${THEMES.map(t => `
+          <div class="theme-swatch-card ${active===t.id?'active':''}" data-theme-id="${t.id}" style="cursor:pointer; border:2px solid ${active===t.id?'var(--gold)':'var(--panel-line)'}; border-radius:14px; padding:10px; width:120px; text-align:center;">
+            <div style="display:flex; height:34px; border-radius:8px; overflow:hidden; margin-bottom:8px;">
+              ${t.swatches.map(c => `<div style="flex:1; background:${c};"></div>`).join('')}
+            </div>
+            <div style="font-size:12px;">${t.name}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <div class="section-title" style="margin-top:20px; font-size:14px;">ข้อมูลหน่วยงาน &amp; เลขหนังสือ</div>
+    <div class="glass" style="padding:16px; margin-bottom:6px;">
+      <div class="field"><label>ส่วนราชการ (แสดงในหัวบันทึกข้อความ)</label><input class="input" id="st_org" value="${escapeHtml(s.orgName || ORG_NAME)}"></div>
+      <div class="field"><label>เบอร์โทรศัพท์หน่วยงาน</label><input class="input" id="st_phone" value="${escapeHtml(s.orgPhone || '')}"></div>
+      <div class="field"><label>เลขที่หนังสือ (ส่วนคงที่ — กำหนดครั้งเดียว แก้ไขได้ภายหลังกรณีเปลี่ยนหน่วยงาน)</label>
+        <input class="input" id="st_docprefix" placeholder="เช่น 0026.313/" value="${escapeHtml(s.docNoPrefix || '')}">
+        <div class="hint" style="margin-top:6px;">เวลาพิมพ์บันทึกข้อความแต่ละครั้ง ระบบจะให้กรอกเฉพาะ "เลขที่" ท้ายส่วนนี้ใหม่ทุกครั้ง เช่น ถ้าตั้งไว้ว่า 0026.313/ ตอนพิมพ์แต่ละฉบับจะกรอกแค่ 45, 46, ... ต่อท้าย</div>
+      </div>
+      <div class="field"><label>แจ้งเตือนล่วงหน้าก่อนครบกำหนดตรวจสภาพ/ต่อทะเบียน (วัน)</label><input class="input" type="number" id="st_renewaldays" value="${s.renewalAlertDays || 30}"></div>
+      <div class="btn-row" style="margin-top:14px;"><button class="btn btn-primary" id="btnSaveSettings">บันทึกการตั้งค่า</button></div>
+    </div>
+
+    <div class="section-title" style="margin-top:20px; font-size:14px;">รหัสผ่านเข้าระบบ</div>
+    <div class="glass" style="padding:16px; margin-bottom:6px;">
+      <div class="hint" style="margin-top:0;">เปลี่ยนรหัสผ่านของแต่ละระดับผู้ใช้งาน (ผู้ใช้ที่ล็อกอินค้างไว้จะไม่หลุด แต่ล็อกอินใหม่ต้องใช้รหัสผ่านใหม่)</div>
+      <div class="memo-two-col" style="margin-top:10px;">
+        <div class="field"><label>ระดับผู้ใช้งาน</label>
+          <select class="input" id="st_pwrole"><option value="admin">แอดมิน</option><option value="viewer">ดูอย่างเดียว</option></select>
+        </div>
+        <div class="field"><label>รหัสผ่านใหม่</label><input class="input" type="password" id="st_pwnew" placeholder="กรอกรหัสผ่านใหม่"></div>
+      </div>
+      <div class="btn-row" style="margin-top:6px;"><button class="btn btn-primary" id="btnChangePw">เปลี่ยนรหัสผ่าน</button></div>
+    </div>
+
+    <div class="section-title" style="margin-top:20px; font-size:14px;">สำรองข้อมูล</div>
+    <div class="glass" style="padding:16px;">
+      <div class="hint" style="margin-top:0;">ดาวน์โหลดข้อมูลทั้งหมดในระบบ (ครุภัณฑ์ / ยืม-คืน / ซ่อมบำรุง / เอกสาร) เป็นไฟล์ JSON ไว้สำรองหรือย้ายระบบ</div>
+      <div class="btn-row" style="margin-top:10px;"><button class="btn btn-ghost" id="btnExportAll">ดาวน์โหลดข้อมูลทั้งหมด (JSON)</button></div>
+    </div>
+  `;
+  document.querySelectorAll('.theme-swatch-card').forEach(card => {
+    card.onclick = () => { applyTheme(card.dataset.themeId); renderSettings(); };
+  });
+  document.getElementById('btnSaveSettings').onclick = async () => {
+    const btn = document.getElementById('btnSaveSettings'); if (btn.disabled) return; setButtonBusy(btn,true); setLoading(true,'กำลังบันทึกการตั้งค่า...');
+    try {
+      await apiPost('updateSystemSettings', {
+        orgName: val('st_org'), orgPhone: val('st_phone'),
+        docNoPrefix: val('st_docprefix'), renewalAlertDays: val('st_renewaldays')
+      });
+      toast('บันทึกการตั้งค่าแล้ว'); await loadAll(); renderSettings();
+    } catch(err) { toast(err.message || 'บันทึกการตั้งค่าไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(btn,false); }
+  };
+  document.getElementById('btnChangePw').onclick = async () => {
+    const role = val('st_pwrole'), pw = val('st_pwnew');
+    if (!pw || pw.length < 4) { toast('กรุณากรอกรหัสผ่านใหม่อย่างน้อย 4 ตัวอักษร'); return; }
+    if (!confirm('ยืนยันเปลี่ยนรหัสผ่านระดับ "' + (role === 'admin' ? 'แอดมิน' : 'ดูอย่างเดียว') + '" ?')) return;
+    const btn = document.getElementById('btnChangePw'); if (btn.disabled) return; setButtonBusy(btn,true); setLoading(true,'กำลังเปลี่ยนรหัสผ่าน...');
+    try {
+      await apiPost('changeRolePassword', { role, newPassword: pw });
+      document.getElementById('st_pwnew').value = '';
+      toast('เปลี่ยนรหัสผ่านแล้ว');
+    } catch(err) { toast(err.message || 'เปลี่ยนรหัสผ่านไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(btn,false); }
+  };
+  document.getElementById('btnExportAll').onclick = () => {
+    const data = { assets: state.assets, borrow: state.borrow, maint: state.maint, components: state.components, memos: state.memos, exportedAt: new Date().toISOString() };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'สำรองข้อมูลระบบพัสดุ.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+    toast('ดาวน์โหลดไฟล์สำรองข้อมูลแล้ว');
+  };
+}
+
 /* ========================================================= SHEET/MODAL */
 function showSheet(html) {
   document.getElementById('modalRoot').innerHTML = `<div class="overlay" id="overlayEl"><div class="sheet">
     <button class="sheet-close" id="sheetCloseBtn" type="button" title="ปิด" aria-label="ปิด">${ICONS.close}</button>
     <div class="sheet-handle"></div>${html}</div></div>`;
-  document.getElementById('overlayEl').addEventListener('click', (e) => { if (e.target.id === 'overlayEl') closeSheet(); });
+  // หมายเหตุ: จงใจไม่ปิดชีตเมื่อคลิกพื้นหลังนอกจอ (overlay) แล้ว
+  // เพราะระหว่างกรอกฟอร์มถ้าคลิกพลาดไปโดนพื้นหลัง ข้อมูลที่พิมพ์ไว้จะหายทันที
+  // ต้องกดปุ่มปิด (X) หรือปุ่มยกเลิกในฟอร์มเท่านั้นจึงจะปิด
   document.getElementById('sheetCloseBtn').addEventListener('click', closeSheet);
 }
 function closeSheet() { document.getElementById('modalRoot').innerHTML = ''; }
@@ -2085,6 +2231,34 @@ function wireSignerPicker(prefix) {
   };
 }
 
+// อ่านค่าปัจจุบันจากทุกช่องในฟอร์ม รวมเป็น object ของเอกสาร ใช้ทั้งตอนพรีวิวสดและตอนกดสร้างเอกสารจริง
+function collectMemoFormData() {
+  const itemNames = document.querySelectorAll('.memo-item-name');
+  const itemBrands = document.querySelectorAll('.memo-item-brand');
+  const itemSerials = document.querySelectorAll('.memo-item-serial');
+  const itemQtys = document.querySelectorAll('.memo-item-qty');
+  const finalItems = Array.from(itemNames).map((el, i) => ({
+    name: el.value.trim(), brand: itemBrands[i] ? itemBrands[i].value.trim() : '', serial: itemSerials[i] ? itemSerials[i].value.trim() : '', qty: (itemQtys[i] && itemQtys[i].value) || 1
+  })).filter(it => it.name);
+  const prefix = (state.settings && state.settings.docNoPrefix) || '';
+  const docNoSuffix = document.getElementById('m_docno_suffix') ? val('m_docno_suffix') : '';
+  return {
+    org: val('m_org'), docNo: prefix + docNoSuffix, docDate: val('m_docdate'),
+    subject: val('m_subject'), addressee: val('m_addressee'),
+    items: finalItems,
+    dueDateText: document.getElementById('m_duedate') ? val('m_duedate') : '',
+    requester: { rank: val('m_reqRank'), name: val('m_reqName'), position: val('m_reqPosition'), date: val('m_reqDate') },
+    approver: { rank: val('m_apvRank'), name: val('m_apvName'), position: val('m_apvPosition'), date: val('m_apvDate') },
+    issuer: { rank: val('m_issRank'), name: val('m_issName'), position: val('m_issPosition'), date: val('m_issDate') }
+  };
+}
+function refreshMemoLivePreview() {
+  const target = document.getElementById('memoLivePreview');
+  if (!target) return;
+  const memo = collectMemoFormData();
+  target.innerHTML = buildMemoBodyHtml(memo, false);
+}
+
 function openPrintMemoForm(opts) {
   const items = buildMemoItemList(opts);
   const borrow = opts.borrow || null;
@@ -2118,67 +2292,77 @@ function openPrintMemoForm(opts) {
     </div>
   `).join('');
 
-  showSheet(`
-    <div class="sheet-title">ข้อมูลเริ่มต้นสำหรับเอกสาร</div>
-    <div class="hint" style="margin-top:0;">กรอกข้อมูลคร่าวๆ ก่อน ระบบจะจัดเป็นเอกสารบันทึกข้อความให้ แล้วเปิดหน้าเอกสารให้แก้ไขต่อได้โดยตรงในขั้นถัดไป — เลือกชื่อผู้ลงนามจากดรอปดาวน์เพื่อกันเลือกผิดคน</div>
+  const orgLine = ORG_NAME + ((state.settings && state.settings.orgPhone) ? (' โทร. ' + state.settings.orgPhone) : (' โทร. ' + ORG_PHONE));
+  const docPrefix = (state.settings && state.settings.docNoPrefix) || '';
 
-    <div class="memo-section-label">ส่วนหัวหนังสือ</div>
-    <div class="field"><label>ส่วนราชการ</label><input class="input" id="m_org" value="${escapeHtml(ORG_NAME + ' โทร. ' + ORG_PHONE)}"></div>
-    <div class="memo-two-col">
-      <div class="field"><label>ที่ (เลขที่หนังสือ)</label><input class="input" id="m_docno" placeholder="เช่น 0026.313/-"></div>
-      <div class="field"><label>วันที่</label><input class="input" id="m_docdate" value="${escapeHtml(thaiDateLong())}"></div>
+  document.getElementById('modalRoot').innerHTML = `<div class="overlay" id="overlayEl">
+    <div class="sheet memo-editor-sheet">
+      <button class="sheet-close" id="sheetCloseBtn" type="button" title="ปิด" aria-label="ปิด">${ICONS.close}</button>
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">สร้างเอกสารบันทึกข้อความ</div>
+      <div class="hint" style="margin-top:0;">กรอกข้อมูลด้านล่าง — ตัวอย่างเอกสารหน้าตาเหมือนของจริง (แบบเวิร์ด) จะอัปเดตให้เห็นทันทีทางขวา/ด้านล่าง เลือกชื่อผู้ลงนามจากดรอปดาวน์เพื่อกันเลือกผิดคน</div>
+      <div class="mf-grid" id="mfGrid">
+        <div class="mf-fields" id="mfFields">
+
+          <div class="memo-section-label">ส่วนหัวหนังสือ</div>
+          <div class="field"><label>ส่วนราชการ</label><input class="input" id="m_org" value="${escapeHtml(orgLine)}"></div>
+          <div class="memo-two-col">
+            <div class="field"><label>ที่ (เลขที่หนังสือ)</label>
+              <div style="display:flex; gap:6px; align-items:center;">
+                <span class="tag tag-off" style="flex:none;">${escapeHtml(docPrefix) || 'ยังไม่ตั้งค่าเลขที่คงที่'}</span>
+                <input class="input" id="m_docno_suffix" placeholder="กรอกเลขที่ครั้งนี้ เช่น 45" style="flex:1;">
+              </div>
+              ${!docPrefix ? `<div class="hint" style="margin-top:4px;">ยังไม่ได้ตั้งเลขที่หนังสือส่วนคงที่ — ไปตั้งค่าได้ที่เมนู "ตั้งค่าระบบ"</div>` : ''}
+            </div>
+            <div class="field"><label>วันที่</label><input class="input" id="m_docdate" value="${escapeHtml(thaiDateLong())}"></div>
+          </div>
+          <div class="field"><label>เรื่อง</label><input class="input" id="m_subject" value="${escapeHtml(defaultSubject)}"></div>
+          <div class="field"><label>เรียน (ผู้บังคับบัญชา)</label><input class="input" id="m_addressee" placeholder="เช่น สว.ส.ทล.3 กก.1 บก.ทล."></div>
+
+          <div class="memo-section-label">รายการพัสดุที่ขอเบิก/ยืม</div>
+          <div id="m_itemsWrap">${itemFieldsHtml}</div>
+          ${dueDateText ? `<div class="field"><label>กำหนดส่งคืนภายในวันที่</label><input class="input" id="m_duedate" value="${escapeHtml(dueDateText)}"></div>` : ''}
+
+          <div class="memo-section-label">ผู้ขอเบิก/ยืม (ผู้ลงชื่อครั้งที่ 1 และ 3)</div>
+          ${signerPickerHtml('m_req', reqIdx, reqOfficer ? reqOfficer['ยศ'] : '', requesterNameDefault, reqOfficer ? reqOfficer['ตำแหน่ง'] : '')}
+          <div class="field"><label>วันที่ลงนาม</label><input class="input" id="m_reqDate" value="${escapeHtml(thaiDateAbbr())}"></div>
+
+          <div class="memo-section-label">ผู้อนุมัติ (ผู้ลงชื่อครั้งที่ 2)</div>
+          ${signerPickerHtml('m_apv', apvIdx, apvOfficer ? apvOfficer['ยศ'] : '', apvOfficer ? apvOfficer['ชื่อ-สกุล'] : approverNameDefault, apvOfficer ? apvOfficer['ตำแหน่ง'] : '')}
+          <div class="hint" style="margin-top:0;">มีผู้อนุมัติลำดับสำรองในทำเนียบ ${['ผู้อนุมัติ ลำดับที่ 1','ผู้อนุมัติ ลำดับที่ 2','ผู้อนุมัติ ลำดับที่ 3'].map(r=>officersByMemoRole(r).length).reduce((a,b)=>a+b,0)} คน — เลือกจากดรอปดาวน์ด้านบนเพื่อสลับผู้ลงนามได้ทันที</div>
+          <div class="field"><label>วันที่ลงนาม</label><input class="input" id="m_apvDate" value="${escapeHtml(thaiDateAbbr())}"></div>
+
+          <div class="memo-section-label">ผู้จ่ายพัสดุ (ผู้ลงชื่อครั้งที่ 4)</div>
+          ${signerPickerHtml('m_iss', issIdx, issOfficer ? issOfficer['ยศ'] : '', issOfficer ? issOfficer['ชื่อ-สกุล'] : '', issOfficer ? issOfficer['ตำแหน่ง'] : '')}
+          <div class="field"><label>วันที่ลงนาม</label><input class="input" id="m_issDate" value="${escapeHtml(thaiDateAbbr())}"></div>
+
+        </div>
+        <div class="mf-preview">
+          <div class="mf-preview-label">ตัวอย่างเอกสาร (หน้าตาจริงเมื่อพิมพ์)</div>
+          <div id="memoLivePreviewWrap"><div id="memoLivePreview"></div></div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" id="btnCancel">ยกเลิก</button>
+        <button class="btn btn-primary" id="btnGenerate">เปิดเอกสารเพื่อแก้ไข/พิมพ์ →</button>
+      </div>
     </div>
-    <div class="field"><label>เรื่อง</label><input class="input" id="m_subject" value="${escapeHtml(defaultSubject)}"></div>
-    <div class="field"><label>เรียน (ผู้บังคับบัญชา)</label><input class="input" id="m_addressee" placeholder="เช่น สว.ส.ทล.3 กก.1 บก.ทล."></div>
-
-    <div class="memo-section-label">รายการพัสดุที่ขอเบิก/ยืม</div>
-    <div id="m_itemsWrap">${itemFieldsHtml}</div>
-    ${dueDateText ? `<div class="field"><label>กำหนดส่งคืนภายในวันที่</label><input class="input" id="m_duedate" value="${escapeHtml(dueDateText)}"></div>` : ''}
-
-    <div class="memo-section-label">ผู้ขอเบิก/ยืม (ผู้ลงชื่อครั้งที่ 1 และ 3)</div>
-    ${signerPickerHtml('m_req', reqIdx, reqOfficer ? reqOfficer['ยศ'] : '', requesterNameDefault, reqOfficer ? reqOfficer['ตำแหน่ง'] : '')}
-    <div class="field"><label>วันที่ลงนาม</label><input class="input" id="m_reqDate" value="${escapeHtml(thaiDateAbbr())}"></div>
-
-    <div class="memo-section-label">ผู้อนุมัติ (ผู้ลงชื่อครั้งที่ 2)</div>
-    ${signerPickerHtml('m_apv', apvIdx, apvOfficer ? apvOfficer['ยศ'] : '', apvOfficer ? apvOfficer['ชื่อ-สกุล'] : approverNameDefault, apvOfficer ? apvOfficer['ตำแหน่ง'] : '')}
-    <div class="hint" style="margin-top:0;">มีผู้อนุมัติลำดับสำรองในทำเนียบ ${['ผู้อนุมัติ ลำดับที่ 1','ผู้อนุมัติ ลำดับที่ 2','ผู้อนุมัติ ลำดับที่ 3'].map(r=>officersByMemoRole(r).length).reduce((a,b)=>a+b,0)} คน — เลือกจากดรอปดาวน์ด้านบนเพื่อสลับผู้ลงนามได้ทันที</div>
-    <div class="field"><label>วันที่ลงนาม</label><input class="input" id="m_apvDate" value="${escapeHtml(thaiDateAbbr())}"></div>
-
-    <div class="memo-section-label">ผู้จ่ายพัสดุ (ผู้ลงชื่อครั้งที่ 4)</div>
-    ${signerPickerHtml('m_iss', issIdx, issOfficer ? issOfficer['ยศ'] : '', issOfficer ? issOfficer['ชื่อ-สกุล'] : '', issOfficer ? issOfficer['ตำแหน่ง'] : '')}
-    <div class="field"><label>วันที่ลงนาม</label><input class="input" id="m_issDate" value="${escapeHtml(thaiDateAbbr())}"></div>
-
-    <div class="btn-row">
-      <button class="btn btn-ghost" id="btnCancel">ยกเลิก</button>
-      <button class="btn btn-primary" id="btnGenerate">สร้างเอกสาร →</button>
-    </div>
-  `);
+  </div>`;
+  // ไม่ปิดเมื่อคลิกนอกจอ — ป้องกันข้อมูลที่กำลังกรอกหายโดยไม่ตั้งใจ
+  document.getElementById('sheetCloseBtn').addEventListener('click', closeSheet);
 
   wireSignerPicker('m_req');
   wireSignerPicker('m_apv');
   wireSignerPicker('m_iss');
+  document.getElementById('mfFields').addEventListener('input', refreshMemoLivePreview);
+  document.getElementById('mfFields').addEventListener('change', refreshMemoLivePreview);
+  refreshMemoLivePreview();
 
   document.getElementById('btnCancel').onclick = closeSheet;
   document.getElementById('btnGenerate').onclick = () => {
-    const itemNames = document.querySelectorAll('.memo-item-name');
-    const itemBrands = document.querySelectorAll('.memo-item-brand');
-    const itemSerials = document.querySelectorAll('.memo-item-serial');
-    const itemQtys = document.querySelectorAll('.memo-item-qty');
-    const finalItems = Array.from(itemNames).map((el, i) => ({
-      name: el.value.trim(), brand: itemBrands[i].value.trim(), serial: itemSerials[i].value.trim(), qty: itemQtys[i].value || 1
-    })).filter(it => it.name);
-    if (!finalItems.length) { toast('กรุณากรอกชื่อพัสดุอย่างน้อย 1 รายการ'); return; }
-    if (!val('m_reqName').trim()) { toast('กรุณาเลือกหรือกรอกชื่อผู้ขอเบิก/ยืม'); return; }
-
-    const memo = {
-      org: val('m_org'), docNo: val('m_docno'), docDate: val('m_docdate'),
-      subject: val('m_subject'), addressee: val('m_addressee'),
-      items: finalItems,
-      dueDateText: document.getElementById('m_duedate') ? val('m_duedate') : '',
-      requester: { rank: val('m_reqRank'), name: val('m_reqName'), position: val('m_reqPosition'), date: val('m_reqDate') },
-      approver: { rank: val('m_apvRank'), name: val('m_apvName'), position: val('m_apvPosition'), date: val('m_apvDate') },
-      issuer: { rank: val('m_issRank'), name: val('m_issName'), position: val('m_issPosition'), date: val('m_issDate') }
-    };
+    const memo = collectMemoFormData();
+    if (!memo.items.length) { toast('กรุณากรอกชื่อพัสดุอย่างน้อย 1 รายการ'); return; }
+    if (!memo.requester.name.trim()) { toast('กรุณาเลือกหรือกรอกชื่อผู้ขอเบิก/ยืม'); return; }
     closeSheet();
     const html = buildMemoBodyHtml(memo, true);
     openMemoEditor({ id: null, html, borrowId: borrow ? borrow['รหัสรายการ'] : '' });
