@@ -2243,22 +2243,22 @@ function collectMemoFormData() {
   const items = Array.from(names).map((el, i) => ({
     name: el.value.trim(), 
     brand: brands[i] ? brands[i].value.trim() : '', 
-    // แปลงเลขอารบิกของ Serial Number เป็นเลขไทยตรงนี้
     serial: serials[i] ? toThaiNumber(serials[i].value.trim()) : '', 
-    // แปลงจำนวนเป็นเลขไทย
     qty: toThaiNumber((qtys[i] && qtys[i].value) || 1)
   })).filter(it => it.name);
 
   const prefix = (state.settings && state.settings.docNoPrefix) || '';
   const suffix = document.getElementById('m_docno_suffix') ? val('m_docno_suffix') : '';
-  
-  // แปลงเลขที่หนังสือและส่วนราชการเป็นเลขไทยอัตโนมัติ
   const fullDocNo = prefix + suffix;
 
   return {
+    // ครอบ toThaiNumber ที่ช่องส่วนราชการ เพื่อให้เบอร์โทรเปลี่ยนเป็นเลขไทยด้วย
     org: toThaiNumber(val('m_org')), 
     docNo: toThaiNumber(fullDocNo), 
-    docDate: val('m_docdate'), // วันที่ปล่อยให้ฟังก์ชันจัดการแปลงตามรูปแบบ
+    
+    // **จุดที่ต้องแก้**: ครอบ toThaiNumber ที่ช่องวันที่ เพื่อแปลง 21 และ 2569 เป็นเลขไทยอัตโนมัติ
+    docDate: toThaiNumber(val('m_docdate')), 
+    
     subject: val('m_subject'), 
     addressee: val('m_addressee'),
     items, 
@@ -2267,23 +2267,24 @@ function collectMemoFormData() {
     requester: { 
       rank: val('m_reqRank'), 
       name: val('m_reqName'), 
-      position: toThaiNumber(val('m_reqPosition')), // แปลงตำแหน่งเป็นเลขไทย (เผื่อมีตัวเลข เช่น ส.ทล.3)
-      date: val('m_reqDate') 
+      position: toThaiNumber(val('m_reqPosition')), 
+      date: toThaiNumber(val('m_reqDate')) // แปลงวันที่ลงนามข้างล่างด้วย
     },
     approver: { 
       rank: val('m_apvRank'), 
       name: val('m_apvName'), 
       position: toThaiNumber(val('m_apvPosition')), 
-      date: val('m_apvDate') 
+      date: toThaiNumber(val('m_apvDate')) 
     },
     issuer: { 
       rank: val('m_issRank'), 
       name: val('m_issName'), 
       position: toThaiNumber(val('m_issPosition')), 
-      date: val('m_issDate') 
+      date: toThaiNumber(val('m_issDate')) 
     }
   };
 }
+   
 let memoPreviewDesk = null;
 function refreshMemoLivePreview() {
   if (!memoPreviewDesk) return;
