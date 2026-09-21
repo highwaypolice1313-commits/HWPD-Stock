@@ -2388,6 +2388,7 @@ function openPrintMemoForm(opts) {
 }
 
 /* ========================================================= REPORTS */
+/* ========================================================= REPORTS */
 function renderReports() {
   const el = document.getElementById('view-reports');
   const d = state.dashboard;
@@ -2397,6 +2398,16 @@ function renderReports() {
     <div class="glass chart-card"><h4>จำนวนครุภัณฑ์ตามสถานะ</h4><div class="chart-wrap"><canvas id="statusChart"></canvas></div></div>
     <div class="glass chart-card"><h4>จำนวนครุภัณฑ์ตามหมวดหมู่</h4><div class="chart-wrap"><canvas id="catChart2"></canvas></div></div>
     <div class="glass chart-card full-width"><h4>แนวโน้มการยืมย้อนหลัง 6 เดือน</h4><div class="chart-wrap"><canvas id="trendChart2"></canvas></div></div>
+    
+    <!-- เพิ่มการ์ดสำหรับรายงานรูปแบบราชการ ตรงนี้ -->
+    <div class="glass chart-card full-width">
+      <h4>รายงานรูปแบบราชการ</h4>
+      <div class="hint" style="margin-top:0; margin-bottom:12px;">พิมพ์บัญชีครุภัณฑ์ประจำปีตามแบบฟอร์มทางราชการสำหรับตรวจสอบพัสดุประจำปี</div>
+      <div class="btn-row" style="margin-top:0;">
+        <button class="btn btn-primary" id="btnPrintOfficialAssetReport">พิมพ์บัญชีครุภัณฑ์ประจำปี (รูปแบบราชการ)</button>
+      </div>
+    </div>
+
     <div class="glass chart-card full-width">
       <h4>ค่าใช้จ่ายซ่อมบำรุงสะสม</h4>
       <div class="hero-num hero-num--sm" style="margin-bottom:10px; color:var(--gold-deep);">${Number(d.maintCostTotal||0).toLocaleString()}<span class="hero-unit" style="color:var(--ink-dim);">บาท</span></div>
@@ -2407,13 +2418,76 @@ function renderReports() {
       </div>
     </div>
   `;
+  
   drawBar('statusChart', d.byStatus || {});
   drawDoughnut('catChart2', d.byCategory || {});
   drawLine('trendChart2', d.monthTrend || {});
+  
   document.getElementById('btnExportAssetsRpt').onclick = () => exportCsv('ครุภัณฑ์.csv', ['รหัสครุภัณฑ์','ชื่อครุภัณฑ์','หมวดหมู่','ยี่ห้อ/รุ่น','หมายเลขเครื่อง','วันที่รับเข้า','มูลค่า(บาท)','สถานะ','ผู้ครอบครอง/หน่วยงาน','หน่วยงาน','วันครบกำหนดตรวจสภาพ/ต่อทะเบียน','หมายเหตุ'], state.assets);
   document.getElementById('btnExportBorrowRpt').onclick = () => exportCsv('ยืมคืน.csv', ['รหัสรายการ','รหัสครุภัณฑ์','ชื่อครุภัณฑ์','ผู้ยืม','วันที่ยืม','กำหนดคืน','วันที่คืนจริง','สถานะ','ผู้อนุมัติ','หมายเหตุ'], state.borrow);
   document.getElementById('btnExportMaintRpt').onclick = () => exportCsv('ซ่อมบำรุง.csv', ['รหัสรายการ','รหัสครุภัณฑ์','ชื่อครุภัณฑ์','วันที่แจ้ง','อาการ/ปัญหา','ผู้แจ้ง','สถานะ','วันที่ซ่อมเสร็จ','ค่าใช้จ่าย(บาท)','ผู้รับผิดชอบ','หมายเหตุ'], state.maint);
+
+  // นำคำสั่งผูกปุ่มมาวางไว้บรรทัดสุดท้ายในฟังก์ชัน renderReports() ตรงนี้ครับ
+  document.getElementById('btnPrintOfficialAssetReport').onclick = renderOfficialAssetReport;
 }
+
+/* =========================================================
+   เพิ่มรายงานพัสดุแบบราชการในหน้ารายงาน (Reports)
+   ========================================================= */
+function renderOfficialAssetReport() {
+  const assets = state.assets || [];
+  const orgName = (state.settings && state.settings.orgName) || ORG_NAME;
+  const currentDate = thaiDateLong(new Date());
+
+  const rowsHtml = assets.map((a, i) => `
+    <tr>
+      <td style="text-align:center; padding:6px; border:1px solid #000;">${i + 1}</td>
+      <td style="padding:6px; border:1px solid #000;">${escapeHtml(a['รหัสครุภัณฑ์'] || '')}</td>
+      <td style="padding:6px; border:1px solid #000;">${escapeHtml(a['ชื่อครุภัณฑ์'] || '')} ${a['ยี่ห้อ/รุ่น'] ? '(' + escapeHtml(a['ยี่ห้อ/รุ่น']) + ')' : ''}</td>
+      <td style="padding:6px; border:1px solid #000; text-align:center;">${thaiDate(a['วันที่รับเข้า']) || '-'}</td>
+      <td style="padding:6px; border:1px solid #000; text-align:right;">${a['มูลค่า(บาท)'] ? Number(a['มูลค่า(บาท)']).toLocaleString() + ' .- บาท' : '-'}</td>
+      <td style="padding:6px; border:1px solid #000; text-align:center;">${escapeHtml(a['สถานะ'] || '')}</td>
+      <td style="padding:6px; border:1px solid #000;">${escapeHtml(a['ผู้ครอบครอง/หน่วยงาน'] || '')}</td>
+    </tr>
+  `).join('');
+
+  const reportHtml = `
+    <div class="a4-page" style="font-family:'TH Sarabun New','Sarabun','Kanit',sans-serif; font-size:14pt; line-height:1.4; color:#000;">
+      <div style="text-align:center; font-weight:700; font-size:16pt; margin-bottom:4mm;">บัญชีควบคุมครุภัณฑ์และพัสดุราชการ</div>
+      <div style="text-align:center; font-size:14pt; margin-bottom:6mm;">หน่วยงาน: ${escapeHtml(orgName)} (ณ วันที่ ${currentDate})</div>
+      
+      <table style="width:100%; border-collapse:collapse; font-size:13pt; margin-bottom:10mm;">
+        <thead>
+          <tr style="background:#f2f2f2; text-align:center;">
+            <th style="padding:6px; border:1px solid #000; width:8%;">ที่</th>
+            <th style="padding:6px; border:1px solid #000; width:15%;">รหัสครุภัณฑ์</th>
+            <th style="padding:6px; border:1px solid #000; width:27%;">รายการ / ลักษณะ</th>
+            <th style="padding:6px; border:1px solid #000; width:12%;">วันที่รับเข้า</th>
+            <th style="padding:6px; border:1px solid #000; width:13%;">มูลค่า</th>
+            <th style="padding:6px; border:1px solid #000; width:10%;">สถานะ</th>
+            <th style="padding:6px; border:1px solid #000; width:15%;">ผู้ครอบครอง</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml || '<tr><td colspan="7" style="text-align:center; padding:15px; border:1px solid #000;">ไม่มีข้อมูลครุภัณฑ์</td></tr>'}
+        </tbody>
+      </table>
+
+      <div style="float:right; width:7cm; text-align:center; margin-top:15mm; page-break-inside:avoid;">
+        <div style="margin-bottom:12pt;">ลงชื่อ......................................................เจ้าหน้าที่พัสดุ</div>
+        <div>(......................................................)</div>
+        <div style="margin-top:4pt;">ตำแหน่ง......................................................</div>
+      </div>
+    </div>
+  `;
+
+  const pa = document.getElementById('printArea');
+  pa.innerHTML = reportHtml;
+  setTimeout(() => {
+    window.print();
+    pa.innerHTML = '';
+  }, 80);
+}   
 
 /* ========================================================= ตั้งค่าระบบ */
 function renderSettings() {
