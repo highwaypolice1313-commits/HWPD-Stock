@@ -2239,19 +2239,49 @@ function collectMemoFormData() {
   const brands = document.querySelectorAll('.memo-item-brand');
   const serials = document.querySelectorAll('.memo-item-serial');
   const qtys = document.querySelectorAll('.memo-item-qty');
+  
   const items = Array.from(names).map((el, i) => ({
-    name: el.value.trim(), brand: brands[i] ? brands[i].value.trim() : '', serial: serials[i] ? serials[i].value.trim() : '', qty: (qtys[i] && qtys[i].value) || 1
+    name: el.value.trim(), 
+    brand: brands[i] ? brands[i].value.trim() : '', 
+    // แปลงเลขอารบิกของ Serial Number เป็นเลขไทยตรงนี้
+    serial: serials[i] ? toThaiNumber(serials[i].value.trim()) : '', 
+    // แปลงจำนวนเป็นเลขไทย
+    qty: toThaiNumber((qtys[i] && qtys[i].value) || 1)
   })).filter(it => it.name);
+
   const prefix = (state.settings && state.settings.docNoPrefix) || '';
   const suffix = document.getElementById('m_docno_suffix') ? val('m_docno_suffix') : '';
+  
+  // แปลงเลขที่หนังสือและส่วนราชการเป็นเลขไทยอัตโนมัติ
+  const fullDocNo = prefix + suffix;
+
   return {
-    org: val('m_org'), docNo: prefix + suffix, docDate: val('m_docdate'),
-    subject: val('m_subject'), addressee: val('m_addressee'),
-    items, itemsText: itemPhraseList(items),
-    dueDateText: document.getElementById('m_duedate') ? val('m_duedate') : '',
-    requester: { rank: val('m_reqRank'), name: val('m_reqName'), position: val('m_reqPosition'), date: val('m_reqDate') },
-    approver: { rank: val('m_apvRank'), name: val('m_apvName'), position: val('m_apvPosition'), date: val('m_apvDate') },
-    issuer: { rank: val('m_issRank'), name: val('m_issName'), position: val('m_issPosition'), date: val('m_issDate') }
+    org: toThaiNumber(val('m_org')), 
+    docNo: toThaiNumber(fullDocNo), 
+    docDate: val('m_docdate'), // วันที่ปล่อยให้ฟังก์ชันจัดการแปลงตามรูปแบบ
+    subject: val('m_subject'), 
+    addressee: val('m_addressee'),
+    items, 
+    itemsText: itemPhraseList(items),
+    dueDateText: document.getElementById('m_duedate') ? toThaiNumber(val('m_duedate')) : '',
+    requester: { 
+      rank: val('m_reqRank'), 
+      name: val('m_reqName'), 
+      position: toThaiNumber(val('m_reqPosition')), // แปลงตำแหน่งเป็นเลขไทย (เผื่อมีตัวเลข เช่น ส.ทล.3)
+      date: val('m_reqDate') 
+    },
+    approver: { 
+      rank: val('m_apvRank'), 
+      name: val('m_apvName'), 
+      position: toThaiNumber(val('m_apvPosition')), 
+      date: val('m_apvDate') 
+    },
+    issuer: { 
+      rank: val('m_issRank'), 
+      name: val('m_issName'), 
+      position: toThaiNumber(val('m_issPosition')), 
+      date: val('m_issDate') 
+    }
   };
 }
 let memoPreviewDesk = null;
