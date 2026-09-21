@@ -1159,6 +1159,12 @@ function toDate(v) {
   if (m) return new Date(+m[1], +m[2] - 1, +m[3]);
   return new Date(v);
 }
+function toThaiNumber(input) {
+  if (input === null || input === undefined) return '';
+  const arabicNumbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+  const thaiNumbers = ['๐', '๑', '๒', '๓', '๔', '๕', '๖', '๗', '๘', '๙'];
+  return String(input).replace(/[0-9]/g, (match) => thaiNumbers[parseInt(match, 10)]);
+}
 function thaiDate(v) {
   if (!v) return '-';
   const d = toDate(v);
@@ -1177,12 +1183,18 @@ function thaiDateTime(v) {
 function thaiDateLong(v) {
   const d = v ? toDate(v) : new Date();
   if (isNaN(d)) return '';
-  return d.getDate() + ' ' + TH_MONTHS_FULL[d.getMonth()] + ' ' + (d.getFullYear() + 543);
+  // แปลงทั้งวันและปี พ.ศ. ให้เป็นเลขไทย
+  const day = toThaiNumber(d.getDate());
+  const year = toThaiNumber(d.getFullYear() + 543);
+  return day + ' ' + TH_MONTHS_FULL[d.getMonth()] + ' ' + year;
 }
+
 function thaiDateAbbr(v) {
   const d = v ? toDate(v) : new Date();
   if (isNaN(d)) return '';
-  return d.getDate() + ' ' + TH_MONTHS_ABBR[d.getMonth()] + ' ' + (d.getFullYear() + 543);
+  const day = toThaiNumber(d.getDate());
+  const year = toThaiNumber(d.getFullYear() + 543);
+  return day + ' ' + TH_MONTHS_ABBR[d.getMonth()] + ' ' + year;
 }
 function toThaiNumber(input) {
   if (input === null || input === undefined) return '';
@@ -2186,8 +2198,8 @@ function itemPhraseList(items) {
   const phrases = items.map(it => {
     let p = escapeHtml(it.name);
     if (it.brand) p += ' ยี่ห้อ ' + escapeHtml(it.brand);
-    p += ' จำนวน ' + toThaiNumber(it.qty || 1) + ' เครื่อง'; // แปลงจำนวนเป็นเลขไทย
-    if (it.serial) p += ' หมายเลข SN ' + toThaiNumber(it.serial); // แปลงเลข SN เป็นเลขไทย (ถ้าต้องการ)
+    p += ' จำนวน ' + toThaiNumber(it.qty || 1) + ' เครื่อง';
+    if (it.serial) p += ' หมายเลข SN ' + toThaiNumber(it.serial); // แปลง Serial เป็นเลขไทย
     return p;
   });
   if (!phrases.length) return '';
