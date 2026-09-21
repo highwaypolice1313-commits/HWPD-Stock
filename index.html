@@ -2432,10 +2432,7 @@ function renderReports() {
 }
 
 /* =========================================================
-   เพิ่มรายงานพัสดุแบบราชการในหน้ารายงาน (Reports)
-   ========================================================= */
-/* =========================================================
-   รายงานพัสดุแบบราชการ (ปรับปรุงระยะขอบ และผู้จ่ายพัสดุ)
+   รายงานพัสดุแบบราชการ (ปรับระยะขอบพิมพ์และเอาคำว่าผู้จ่ายพัสดุออก)
    ========================================================= */
 function renderOfficialAssetReport() {
   const assets = state.assets || [];
@@ -2450,18 +2447,21 @@ function renderOfficialAssetReport() {
 
   const rowsHtml = assets.map((a, i) => `
     <tr>
-      <td style="text-align:center; padding:8px 6px; border:1px solid #000; vertical-align:middle;">${i + 1}</td>
-      <td style="padding:8px 6px; border:1px solid #000; vertical-align:middle;">${escapeHtml(a['รหัสครุภัณฑ์'] || '')}</td>
-      <td style="padding:8px 6px; border:1px solid #000; vertical-align:middle;">${escapeHtml(a['ชื่อครุภัณฑ์'] || '')} ${a['ยี่ห้อ/รุ่น'] ? '(' + escapeHtml(a['ยี่ห้อ/รุ่น']) + ')' : ''}</td>
-      <td style="padding:8px 6px; border:1px solid #000; text-align:center; vertical-align:middle;">${thaiDate(a['วันที่รับเข้า']) || '-'}</td>
-      <td style="padding:8px 6px; border:1px solid #000; text-align:right; vertical-align:middle;">${a['มูลค่า(บาท)'] ? Number(a['มูลค่า(บาท)']).toLocaleString() + ' .-' : '-'}</td>
-      <td style="padding:8px 6px; border:1px solid #000; text-align:center; vertical-align:middle;">${escapeHtml(a['สถานะ'] || '')}</td>
-      <td style="padding:8px 6px; border:1px solid #000; vertical-align:middle;">${escapeHtml(a['ผู้ครอบครอง/หน่วยงาน'] || '-')}</td>
+      <td style="text-align:center; padding:7px 6px; border:1px solid #000; vertical-align:middle;">${i + 1}</td>
+      <td style="padding:7px 6px; border:1px solid #000; vertical-align:middle;">${escapeHtml(a['รหัสครุภัณฑ์'] || '')}</td>
+      <td style="padding:7px 6px; border:1px solid #000; vertical-align:middle;">${escapeHtml(a['ชื่อครุภัณฑ์'] || '')} ${a['ยี่ห้อ/รุ่น'] ? '(' + escapeHtml(a['ยี่ห้อ/รุ่น']) + ')' : ''}</td>
+      <td style="padding:7px 6px; border:1px solid #000; text-align:center; vertical-align:middle;">${thaiDate(a['วันที่รับเข้า']) || '-'}</td>
+      <td style="padding:7px 6px; border:1px solid #000; text-align:right; vertical-align:middle;">${a['มูลค่า(บาท)'] ? Number(a['มูลค่า(บาท)']).toLocaleString() + ' .-' : '-'}</td>
+      <td style="padding:7px 6px; border:1px solid #000; text-align:center; vertical-align:middle;">${escapeHtml(a['สถานะ'] || '')}</td>
+      <td style="padding:7px 6px; border:1px solid #000; vertical-align:middle;">${escapeHtml(a['ผู้ครอบครอง/หน่วยงาน'] || '-')}</td>
     </tr>
   `).join('');
 
   const reportHtml = `
-    <div class="a4-page" style="padding: 20mm 20mm 20mm 20mm; font-family:'TH Sarabun New','Sarabun','Kanit',sans-serif; font-size:15pt; line-height:1.5; color:#000; box-sizing:border-box;">
+    <style>
+      @page { size: A4; margin: 15mm; }
+    </style>
+    <div style="font-family:'TH Sarabun New','Sarabun','Kanit',sans-serif; font-size:15pt; line-height:1.4; color:#000; width:100%; box-sizing:border-box;">
       <div style="text-align:center; font-weight:700; font-size:18pt; margin-bottom:2mm;">บัญชีควบคุมครุภัณฑ์และพัสดุราชการ</div>
       <div style="text-align:center; font-size:15pt; margin-bottom:6mm;">หน่วยงาน: ${escapeHtml(orgName)} (ณ วันที่ ${currentDate})</div>
       
@@ -2483,7 +2483,7 @@ function renderOfficialAssetReport() {
       </table>
 
       <div style="float:right; width:8cm; text-align:center; margin-top:10mm; page-break-inside:avoid;">
-        <div style="margin-bottom:14pt;">ลงชื่อ......................................................ผู้จ่ายพัสดุ</div>
+        <div style="margin-bottom:14pt;">ลงชื่อ......................................................</div>
         <div style="margin-bottom:4pt;">( ${escapeHtml(issuerRankName)} )</div>
         <div>ตำแหน่ง ${escapeHtml(issuerPosition)}</div>
       </div>
