@@ -1162,8 +1162,11 @@ function toDate(v) {
 function thaiDate(v) {
   if (!v) return '-';
   const d = toDate(v);
-  if (isNaN(d)) return v;
-  return d.getDate() + '/' + (d.getMonth() + 1) + '/' + (d.getFullYear() + 543);
+  if (isNaN(d)) return toThaiNumber(v);
+  const day = toThaiNumber(d.getDate());
+  const month = toThaiNumber(d.getMonth() + 1);
+  const year = toThaiNumber(d.getFullYear() + 543);
+  return `${day}/${month}/${year}`;
 }
 function thaiDateTime(v) {
   if (!v) return '-';
@@ -1180,6 +1183,13 @@ function thaiDateAbbr(v) {
   const d = v ? toDate(v) : new Date();
   if (isNaN(d)) return '';
   return d.getDate() + ' ' + TH_MONTHS_ABBR[d.getMonth()] + ' ' + (d.getFullYear() + 543);
+}
+function toThaiNumber(input) {
+  if (input === null || input === undefined) return '';
+  const arabicNumbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+  const thaiNumbers = ['๐', '๑', '๒', '๓', '๔', '๕', '๖', '๗', '๘', '๙'];
+  const str = String(input);
+  return str.replace(/[0-9]/g, (match) => thaiNumbers[parseInt(match, 10)]);
 }
 function isoDate(v) {
   const d = v ? toDate(v) : new Date();
@@ -2176,8 +2186,8 @@ function itemPhraseList(items) {
   const phrases = items.map(it => {
     let p = escapeHtml(it.name);
     if (it.brand) p += ' ยี่ห้อ ' + escapeHtml(it.brand);
-    p += ' จำนวน ' + escapeHtml(String(it.qty || 1)) + ' เครื่อง';
-    if (it.serial) p += ' หมายเลข SN ' + escapeHtml(it.serial);
+    p += ' จำนวน ' + toThaiNumber(it.qty || 1) + ' เครื่อง'; // แปลงจำนวนเป็นเลขไทย
+    if (it.serial) p += ' หมายเลข SN ' + toThaiNumber(it.serial); // แปลงเลข SN เป็นเลขไทย (ถ้าต้องการ)
     return p;
   });
   if (!phrases.length) return '';
