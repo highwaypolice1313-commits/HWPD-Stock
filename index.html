@@ -2021,14 +2021,20 @@ function buildMemoBodyHtml(m) {
   const emblemHtml = (logo && logo.indexOf('data:image') === 0)
     ? `<img src="${logo}" alt="ตราครุฑ">`
     : `<div class="pf-emblem-placeholder">[ ตราครุฑ ]</div>`;
+
+  // แปลงเบอร์โทรและหน่วยงานให้เป็นเลขไทย
+  const rawOrg = m.org || '';
+  const thaiOrg = toThaiNumber(rawOrg); 
+  const thaiDocNo = toThaiNumber(m.docNo || '');
+
   return `
     <div class="pf-topline">
       <div class="pf-emblem">${emblemHtml}</div>
       <div class="pf-title-wrap"><div class="pf-title">บันทึกข้อความ</div></div>
     </div>
-    <div class="pf-field-line"><span class="pf-label">ส่วนราชการ</span><span id="ed_org">${escapeHtml(m.org || '')}</span></div>
+    <div class="pf-field-line"><span class="pf-label">ส่วนราชการ</span><span id="ed_org">${escapeHtml(thaiOrg)}</span></div>
     <div class="pf-two-col">
-      <span><span class="pf-label">ที่</span><span id="ed_docno">${escapeHtml(m.docNo) || '........................................'}</span></span>
+      <span><span class="pf-label">ที่</span><span id="ed_docno">${escapeHtml(thaiDocNo) || '........................................'}</span></span>
       <span><span class="pf-label">วันที่</span><span id="ed_docdate">${escapeHtml(m.docDate)}</span></span>
     </div>
     <div class="pf-field-line"><span class="pf-label">เรื่อง</span><span id="ed_subject">${escapeHtml(m.subject)}</span></div>
@@ -2045,23 +2051,23 @@ function buildMemoBodyHtml(m) {
     <div class="pf-sign">
       <div class="pf-sign-rank" id="ed_apvrank">${escapeHtml(apv.rank) || '&nbsp;'}</div>
       <div>( <span id="ed_apvname">${escapeHtml(apv.name) || '.....................................'}</span> )</div>
-      <div id="ed_apvposition">${escapeHtml(apv.position) || '&nbsp;'}</div>
+      <div id="ed_apvposition">${escapeHtml(toThaiNumber(apv.position)) || '&nbsp;'}</div>
       <div id="ed_apvdate">${escapeHtml(apv.date) || '&nbsp;'}</div>
     </div>
     <p class="pf-body pf-receipt">- ได้รับ<span id="ed_items2">${itemsText}</span> เพื่อใช้ในการปฏิบัติหน้าที่ราชการต่อไป</p>
     <div class="pf-sign">
       <div class="pf-sign-rank" id="ed_reqrank2">${escapeHtml(req.rank) || '&nbsp;'}</div>
       <div>( <span id="ed_reqname2">${escapeHtml(req.name) || '.....................................'}</span> )</div>
-      <div id="ed_reqposition3">${escapeHtml(req.position) || '&nbsp;'}</div>
+      <div id="ed_reqposition3">${escapeHtml(toThaiNumber(req.position)) || '&nbsp;'}</div>
       <div id="ed_reqdate2">${escapeHtml(req.date) || '&nbsp;'}</div>
     </div>
     <div class="pf-sign">
       <div class="pf-sign-rank" id="ed_issrank">${escapeHtml(iss.rank) || '&nbsp;'}</div>
       <div>( <span id="ed_issname">${escapeHtml(iss.name) || '.....................................'}</span> )</div>
-      <div id="ed_issposition">${escapeHtml(iss.position) || '&nbsp;'}</div>
+      <div id="ed_issposition">${escapeHtml(toThaiNumber(iss.position)) || '&nbsp;'}</div>
       <div id="ed_issdate">${escapeHtml(iss.date) || '&nbsp;'}</div>
     </div>
-    ${m.dueDateText ? `<div class="pf-field-line" style="margin-top:8pt;"><span class="pf-label">กำหนดส่งคืนภายในวันที่</span><span id="ed_duedate">${escapeHtml(m.dueDateText)}</span></div>` : ''}
+    ${m.dueDateText ? `<div class="pf-field-line" style="margin-top:8pt;"><span class="pf-label">กำหนดส่งคืนภายในวันที่</span><span id="ed_duedate">${escapeHtml(toThaiNumber(m.dueDateText))}</span></div>` : ''}
   `;
 }
 
