@@ -162,7 +162,7 @@ input,select,button,textarea{max-width:100%;}
 .hero-unit{font-family:var(--font-th); font-size:12.5px; color:rgba(255,255,255,.6); font-weight:400;}
 
 .stat-grid{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px;}
-.stat-card{padding:15px 8px; border-radius:var(--r-md); text-align:center;}
+.stat-card{padding:15px 12px; border-radius:var(--r-md); text-align:center;}
 .stat-num{font-family:var(--font-num); font-size:22px; font-weight:700; line-height:1.1; font-variant-numeric:tabular-nums;}
 .stat-label{font-size:11px; color:var(--ink-dim); margin-top:5px; font-weight:300; overflow-wrap:break-word;}
 .stat-card.warn .stat-num{color:var(--warn);}
@@ -497,6 +497,11 @@ html:not(.has-thsarabun) .pf-title{ font-size:26pt; line-height:30pt; }
   .sheet{max-width:700px;border-radius:24px;max-height:90vh;border-bottom:1px solid var(--panel-line);margin:20px;padding:26px;}
   .overlay{align-items:center;}
   .sheet-handle{display:none;}
+  .sheet-title{font-size:21px; margin-bottom:22px;}
+  .field{margin-bottom:15px;}
+  .field label{font-size:13px; margin-bottom:7px;}
+  .btn-row{gap:12px; margin-top:20px;}
+  .btn{min-height:46px; padding:12px 18px; font-size:14px; border-radius:14px;}
   .input, select.input{ font-size:14px; }
 }
 @media (max-width:899px){
@@ -552,22 +557,31 @@ html:not(.has-thsarabun) .pf-title{ font-size:26pt; line-height:30pt; }
   .section-title{ font-size:21px; margin:8px 0 16px; color:var(--navy-deep); }
   .section-title small{ font-size:12px; }
 
-  #view-dashboard{ display:grid; grid-template-columns:minmax(0,1.65fr) minmax(340px,.85fr); gap:20px; align-items:start; }
-  #view-dashboard > .section-title:nth-of-type(1){ grid-column:1 / -1; margin-top:0; }
-  #view-dashboard .alert-banner{ grid-column:1 / -1; }
-  #view-dashboard > .hero-card{ grid-column:1; min-height:176px; padding:30px 34px; border-radius:26px; }
-  .hero-row{ gap:32px; }
-  .hero-label{ font-size:13px; }
-  .hero-num{ font-size:44px; }
-  .hero-num--sm{ font-size:30px; }
-  .hero-unit{ font-size:13px; }
-  #view-dashboard > .stat-grid{ grid-column:2; grid-row:3; grid-template-columns:1fr; gap:12px; margin:0; }
-  .stat-card{ min-height:50px; padding:16px 20px; text-align:left; display:flex; align-items:center; justify-content:space-between; border-radius:18px; box-shadow:var(--shadow-sm); }
+  /* ปรับปรุงเลย์เอาต์หน้าแดชบอร์ดใหม่ให้ไม่ติดกัน */
+  #view-dashboard{ display:grid; grid-template-columns:minmax(0,1.5fr) minmax(320px,.9fr); gap:24px; align-items:start; }
+  #view-dashboard > .section-title:nth-of-type(1){ grid-column:1 / -1; margin-top:0; margin-bottom:14px; }
+  #view-dashboard .alert-banner{ grid-column:1 / -1; margin-bottom:16px; }
+  
+  /* ฝั่งซ้าย: ฮีโร่การ์ด + กราฟแนวโน้ม */
+  .dashboard-left{ grid-column:1; display:flex; flex-direction:column; gap:20px; }
+  #view-dashboard > .hero-card{ border-radius:24px; padding:28px 32px; box-shadow:var(--shadow-md); margin-bottom:0; }
+  #view-dashboard > .chart-card.trend-card{ grid-column:1; margin-bottom:0; border-radius:24px; padding:24px; box-shadow:var(--shadow-sm); }
+
+  /* ฝั่งขวา: สถิติย่อยแบบการ์ดแนวตั้ง + กราฟหมวดหมู่ */
+  .dashboard-right{ grid-column:2; display:flex; flex-direction:column; gap:20px; }
+  #view-dashboard > .stat-grid{ display:flex; flex-direction:column; gap:12px; margin:0; }
+  .stat-card{ padding:18px 22px; text-align:left; display:flex; align-items:center; justify-content:space-between; border-radius:20px; box-shadow:var(--shadow-sm); background:var(--panel); border:1px solid var(--panel-line); }
   .stat-num{ font-size:28px; }
-  .stat-label{ margin:0; font-size:13px; }
-  #view-dashboard > .section-title:nth-of-type(2){ grid-column:1 / -1; margin-top:4px; }
-  #view-dashboard > .chart-card{ grid-column:1 / -1; padding:26px 28px; margin-bottom:0; border-radius:24px; box-shadow:var(--shadow-sm); }
-  .chart-wrap{ height:330px; }
+  .stat-label{ margin:0; font-size:13.5px; font-weight:500; }
+  
+  #view-dashboard > .chart-card.cat-card{ grid-column:2; margin-bottom:0; border-radius:24px; padding:24px; box-shadow:var(--shadow-sm); }
+
+  .hero-row{ gap:24px; }
+  .hero-label{ font-size:13px; }
+  .hero-num{ font-size:42px; }
+  .hero-num--sm{ font-size:28px; }
+  .hero-unit{ font-size:13px; }
+  .chart-wrap{ height:260px; }
 
   #view-assets .search-row{ max-width:900px; }
   .search-row{ gap:12px; margin-bottom:16px; }
@@ -592,24 +606,20 @@ html:not(.has-thsarabun) .pf-title{ font-size:26pt; line-height:30pt; }
   .overlay{ align-items:center; padding:28px; background:rgba(10,20,32,.5); }
   .sheet{ width:min(760px,calc(100vw - 120px)); max-width:760px; max-height:88vh; overflow-y:auto; border-radius:24px; border:1px solid var(--panel-line); padding:28px 32px 30px; box-shadow:var(--shadow-lg); margin:0; }
   .sheet-handle{ display:none; }
-  .sheet-title{ font-size:21px; margin-bottom:22px; }
-  .field{ margin-bottom:15px; }
-  .field label{ font-size:13px; margin-bottom:7px; }
-  .btn-row{ gap:12px; margin-top:20px; }
-  .btn{ min-height:46px; padding:12px 18px; font-size:14px; border-radius:14px; }
 
   .login-badge{ width:92px; height:92px; border-radius:28px; margin-bottom:24px; }
 }
+
 @media (min-width:900px) and (max-width:1199px){
   .tabbar{width:210px;}
   .topbar,.page{margin-left:242px;}
   #view-dashboard{ grid-template-columns:1fr; }
   #view-dashboard > .hero-card, #view-dashboard > .stat-grid, #view-dashboard > .chart-card{ grid-column:1; grid-row:auto; }
-  #view-dashboard > .stat-grid{ grid-template-columns:repeat(4,1fr); }
+  #view-dashboard > .stat-grid{ display:grid; grid-template-columns:repeat(3,1fr); }
 }
+
 @media (min-width:1400px){
   .page{padding-left:54px;padding-right:54px;}
-  #view-dashboard{ grid-template-columns:minmax(0,1.75fr) minmax(380px,.75fr); }
 }
 
 .memo-editor-sheet{ max-width:none; }
@@ -1307,22 +1317,39 @@ function renderDashboard() {
   el.innerHTML = `
     <div class="section-title">ภาพรวมระบบ <small>อัปเดตล่าสุดวันนี้</small></div>
     ${banners}
-    <div class="glass hero-card">
-      <div class="hero-row">
-        <div><div class="hero-label">ครุภัณฑ์ทั้งหมด</div><div class="hero-num">${d.totalAssets}<span class="hero-unit">รายการ</span></div></div>
-        <div class="hero-divider"></div>
-        <div><div class="hero-label">มูลค่ารวม</div><div class="hero-num hero-num--sm">${Number(d.totalValue).toLocaleString()}<span class="hero-unit">บาท</span></div></div>
+    
+    <div class="dashboard-left">
+      <div class="glass hero-card">
+        <div class="hero-row">
+          <div><div class="hero-label">ครุภัณฑ์ทั้งหมด</div><div class="hero-num">${d.totalAssets}<span class="hero-unit">รายการ</span></div></div>
+          <div class="hero-divider"></div>
+          <div><div class="hero-label">มูลค่ารวม</div><div class="hero-num hero-num--sm">${Number(d.totalValue).toLocaleString()}<span class="hero-unit">บาท</span></div></div>
+        </div>
       </div>
+      
+      <div class="section-title" style="margin:4px 0 10px;">แนวโน้มการยืมย้อนหลัง 6 เดือน</div>
+      <div class="glass chart-card trend-card"><div class="chart-wrap"><canvas id="trendChart"></canvas></div></div>
     </div>
-    <div class="stat-grid">
-      <div class="glass stat-card warn"><div class="stat-num">${d.borrowedCount}</div><div class="stat-label">กำลังถูกยืม</div></div>
-      <div class="glass stat-card bad"><div class="stat-num">${d.overdueCount}</div><div class="stat-label">เกินกำหนดคืน</div></div>
-      <div class="glass stat-card ok"><div class="stat-num">${d.repairCount}</div><div class="stat-label">อยู่ระหว่างซ่อม</div></div>
+
+    <div class="dashboard-right">
+      <div class="stat-grid">
+        <div class="stat-card warn">
+          <div><div class="stat-num">${d.borrowedCount}</div><div class="stat-label">กำลังถูกยืม</div></div>
+          <div style="color:var(--warn);">${ICONS.clock}</div>
+        </div>
+        <div class="stat-card bad">
+          <div><div class="stat-num">${d.overdueCount}</div><div class="stat-label">เกินกำหนดคืน</div></div>
+          <div style="color:var(--bad);">${ICONS.warn}</div>
+        </div>
+        <div class="stat-card ok">
+          <div><div class="stat-num">${d.repairCount}</div><div class="stat-label">อยู่ระหว่างซ่อม</div></div>
+          <div style="color:var(--ok);">${ICONS.wrench}</div>
+        </div>
+      </div>
+
+      <div class="section-title" style="margin:4px 0 10px;">สัดส่วนตามหมวดหมู่</div>
+      <div class="glass chart-card cat-card"><div class="chart-wrap"><canvas id="catChart"></canvas></div></div>
     </div>
-    <div class="section-title">แนวโน้มการยืมย้อนหลัง 6 เดือน</div>
-    <div class="glass chart-card"><div class="chart-wrap"><canvas id="trendChart"></canvas></div></div>
-    <div class="section-title">สัดส่วนตามหมวดหมู่</div>
-    <div class="glass chart-card"><div class="chart-wrap"><canvas id="catChart"></canvas></div></div>
   `;
   drawDoughnut('catChart', d.byCategory || {});
   drawLine('trendChart', d.monthTrend || {});
@@ -1341,7 +1368,7 @@ function drawDoughnut(id, dataObj) {
   chartRefs[id] = new Chart(ctx, {
     type: 'doughnut',
     data: { labels, datasets: [{ data: values, backgroundColor: ['#17324f','#2a8f68','#4a86b4','#bb8a3f','#c1495a','#8b98a3'], borderWidth: 2, borderColor: cssVar('--panel', '#ffffff') }] },
-    options: { plugins: { legend: { position: 'bottom', labels: { color: cssVar('--ink-dim', '#4a5a63'), font: { family: 'Kanit', size: 11 }, padding: 12 } } }, cutout: '62%' }
+    options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: cssVar('--ink-dim', '#4a5a63'), font: { family: 'Kanit', size: 11 }, padding: 10 } } }, cutout: '62%' }
   });
 }
 function drawBar(id, dataObj) {
@@ -1353,7 +1380,7 @@ function drawBar(id, dataObj) {
   chartRefs[id] = new Chart(ctx, {
     type: 'bar',
     data: { labels, datasets: [{ data: values, backgroundColor: '#4a86b4', borderRadius: 8, maxBarThickness: 34 }] },
-    options: { plugins: { legend: { display: false } }, scales: { x: { ticks: ax.ticks, grid: { display: false } }, y: { ticks: ax.ticks, grid: ax.grid } } }
+    options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: ax.ticks, grid: { display: false } }, y: { ticks: ax.ticks, grid: ax.grid } } }
   });
 }
 function drawLine(id, dataObj) {
@@ -1366,7 +1393,7 @@ function drawLine(id, dataObj) {
   chartRefs[id] = new Chart(ctx, {
     type: 'line',
     data: { labels, datasets: [{ data: values, borderColor: '#bb8a3f', backgroundColor: 'rgba(187,138,63,.12)', fill: true, tension: .35, pointBackgroundColor: '#4a86b4', pointRadius: 4 }] },
-    options: { plugins: { legend: { display: false } },
+    options: { maintainAspectRatio: false, plugins: { legend: { display: false } },
       scales: { x: { ticks: ax.ticks, grid: { display: false } },
                 y: { beginAtZero: true, ticks: { stepSize: 1, color: ax.ticks.color, font: ax.ticks.font }, grid: ax.grid } } }
   });
