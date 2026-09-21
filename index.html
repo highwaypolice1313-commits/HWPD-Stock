@@ -2252,15 +2252,14 @@ function collectMemoFormData() {
   const fullDocNo = prefix + suffix;
 
   return {
-    // ครอบ toThaiNumber ที่ช่องส่วนราชการ เพื่อให้เบอร์โทรเปลี่ยนเป็นเลขไทยด้วย
     org: toThaiNumber(val('m_org')), 
     docNo: toThaiNumber(fullDocNo), 
-    
-    // **จุดที่ต้องแก้**: ครอบ toThaiNumber ที่ช่องวันที่ เพื่อแปลง 21 และ 2569 เป็นเลขไทยอัตโนมัติ
     docDate: toThaiNumber(val('m_docdate')), 
-    
     subject: val('m_subject'), 
-    addressee: val('m_addressee'),
+    
+    // **จุดที่แก้ไข**: ครอบ toThaiNumber ที่ช่องเรียน เพื่อแปลงตัวเลข เช่น ส.ทล.3 เป็น ส.ทล.๓
+    addressee: toThaiNumber(val('m_addressee')), 
+    
     items, 
     itemsText: itemPhraseList(items),
     dueDateText: document.getElementById('m_duedate') ? toThaiNumber(val('m_duedate')) : '',
@@ -2268,7 +2267,7 @@ function collectMemoFormData() {
       rank: val('m_reqRank'), 
       name: val('m_reqName'), 
       position: toThaiNumber(val('m_reqPosition')), 
-      date: toThaiNumber(val('m_reqDate')) // แปลงวันที่ลงนามข้างล่างด้วย
+      date: toThaiNumber(val('m_reqDate')) 
     },
     approver: { 
       rank: val('m_apvRank'), 
