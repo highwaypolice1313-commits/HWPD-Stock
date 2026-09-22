@@ -2243,10 +2243,25 @@ function openUserForm(u) {
     if (!val('u_name').trim()) { toast('กรุณากรอกชื่อ-สกุล'); return; }
     const saveBtn = document.getElementById('btnSave'); if (saveBtn.disabled) return; setButtonBusy(saveBtn, true); setLoading(true, 'กำลังบันทึกรายชื่อ จนท....');
     try {
-      let userPhoto = val('u_photo');
-      if (isInlineImage(userPhoto)) userPhoto = await uploadImageToDrive(userPhoto, 'user-' + (officerId(u) || Date.now()));
-      if (!editing) await apiPost('addUser', { name: val('u_name'), rank: val('u_rank'), position: val('u_position'), unit: val('u_unit'), role: val('u_role'), memoRole: val('u_memorole'), photo: userPhoto });
-      else await apiPost('updateUserRole', { officerId: officerId(u) || undefined, lineUserId: (!officerId(u) && u['LINEUserId']) || undefined, username: (!officerId(u) && u['ชื่อผู้ใช้']) || undefined, name: val('u_name'), rank: val('u_rank'), position: val('u_position'), unit: val('u_unit'), role: val('u_role'), memoRole: val('u_memorole'), photo: userPhoto });
+      const userPhoto = val('u_photo');
+      // สำคัญ: ตอนแก้ไขรายชื่อ จะไม่เรียก uploadImage แยกอีกต่อไป
+      // ถ้าไม่เปลี่ยนรูป -> ส่ง URL เดิมกลับไป
+      // ถ้าเปลี่ยนรูป -> ส่ง photoData ให้ backend อัปโหลด+แก้แถวเดิมใน transaction เดียว
+      const photoPayload = isInlineImage(userPhoto) ? { photoData: userPhoto } : { photo: userPhoto };
+      if (!editing) {
+        await apiPost('addUser', {
+          name: val('u_name'), rank: val('u_rank'), position: val('u_position'), unit: val('u_unit'),
+          role: val('u_role'), memoRole: val('u_memorole'), ...photoPayload
+        });
+      } else {
+        await apiPost('updateUserRole', {
+          officerId: officerId(u) || undefined,
+          lineUserId: (!officerId(u) && u['LINEUserId']) || undefined,
+          username: (!officerId(u) && u['ชื่อผู้ใช้']) || undefined,
+          name: val('u_name'), rank: val('u_rank'), position: val('u_position'), unit: val('u_unit'),
+          role: val('u_role'), memoRole: val('u_memorole'), ...photoPayload
+        });
+      }
       closeSheet();
       toast(editing ? 'แก้ไขรายชื่อและยศเรียบร้อยแล้ว' : 'บันทึกรายชื่อและยศเรียบร้อยแล้ว');
       await reloadThen(renderUsers);
