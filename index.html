@@ -1845,6 +1845,7 @@ function openBorrowDetail(id) {
       catch (err) { toast(err.message || 'บันทึกการคืนไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(btn, false); }
     };
   }
+}
 function openBorrowForm() {
   const available = state.assets.filter(a => a['สถานะ'] === 'พร้อมใช้งาน');
   const admin = isAdmin();
