@@ -905,7 +905,6 @@ async function init() {
   const sess = loadSession();
   if (!sess) { showRoleSelect(); return; }
   await completeLogin({ role: sess.role, name: sess.name, token: sess.token });
-  validateSessionInBackground(sess);
 }
 
 function sessionExpired() {
@@ -1038,6 +1037,15 @@ async function completeLogin({ role, name, token }) {
   }
 }
 
+/* ========================================================= IMAGE UPLOAD — Drive URL, never Base64 in Sheets */
+async function uploadImageToDrive(dataUrl, fileName) {
+  if (!dataUrl) return '';
+  if (!String(dataUrl).startsWith('data:image/')) return dataUrl;
+  const result = await apiPost('uploadImage', { dataUrl: dataUrl, fileName: fileName || 'image' });
+  return result && result.url ? result.url : '';
+}
+function isInlineImage(v) { return typeof v === 'string' && v.indexOf('data:image/') === 0; }
+
 /* ========================================================= API */
 let busyCount = 0;
 let lastSyncAt = null;
@@ -1087,7 +1095,7 @@ function setButtonBusy(btn, busy, textBusy = 'กำลังบันทึก.
   else { btn.disabled = false; btn.textContent = btn.dataset.originalText || 'บันทึก'; btn.removeAttribute('aria-busy'); }
 }
 
-async function fetchJson(url, options = {}, timeout = 20000, retries = 1) {
+async function fetchJson(url, options = {}, timeout = 15000, retries = 0) {
   for (let attempt = 0; attempt <= retries; attempt++) {
     if (attempt > 0) {
       const label = document.getElementById('loadingText');
@@ -1123,7 +1131,7 @@ async function apiGet(action, params = {}) {
   return fetchJson(API_URL + '?' + qs);
 }
 async function apiPost(action, payload) {
-  return fetchJson(API_URL, { method: 'POST', body: JSON.stringify({ action, sessionToken: state.sessionToken, actorName: state.user?.name, payload }) }, 30000, 0);
+  return fetchJson(API_URL, { method: 'POST', body: JSON.stringify({ action, sessionToken: state.sessionToken, actorName: state.user?.name, payload }) }, 20000, 0);
 }
 
 async function loadAll(showLoader = false) {
@@ -2022,7 +2030,11 @@ function openMaintForm() {
     const asset = state.assets.find(a => a['รหัสครุภัณฑ์'] === assetId);
     if (!val('f_issue')) { toast('กรุณากรอกอาการ/ปัญหา'); return; }
     const saveBtn = document.getElementById('btnSave'); if (saveBtn.disabled) return; setButtonBusy(saveBtn, true); setLoading(true, 'กำลังบันทึกงานซ่อม...');
-    try { await apiPost('addMaint', { assetId, assetName: asset ? asset['ชื่อครุภัณฑ์'] : '', issue: val('f_issue'), reporter: val('f_reporter'), reportDate: val('f_rdate'), photo: val('f_maintPhotoVal') }); closeSheet(); toast('แจ้งซ่อมแล้ว'); await reloadThen(renderMaint); }
+    try {
+       let maintPhoto = val('f_maintPhotoVal');
+       if (isInlineImage(maintPhoto)) maintPhoto = await uploadImageToDrive(maintPhoto, 'maint-' + assetId);
+       await apiPost('addMaint', { assetId, assetName: asset ? asset['ชื่อครุภัณฑ์'] : '', issue: val('f_issue'), reporter: val('f_reporter'), reportDate: val('f_rdate'), photo: maintPhoto });
+       closeSheet(); toast('แจ้งซ่อมแล้ว'); await reloadThen(renderMaint); }
     catch (err) { toast(err.message || 'แจ้งซ่อมไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(saveBtn, false); }
   };
 }
@@ -2997,6 +3009,12 @@ function renderSettings() {
       <div class="btn-row" style="margin-top:6px;"><button class="btn btn-primary" id="btnChangePw">เปลี่ยนรหัสผ่าน</button></div>
     </div>
 
+    <div class="section-title" style="margin-top:20px; font-size:14px;">ย้ายรูปเก่าออกจาก Google Sheets</div>
+    <div class="glass" style="padding:16px; margin-bottom:6px;">
+      <div class="hint" style="margin-top:0;">ใช้ครั้งเดียวหลังอัปเดตระบบ เพื่อย้ายรูป Base64 เดิมในชีตไป Google Drive แล้วแทนที่ด้วย URL ขนาดเล็ก ช่วยลดเวลาเปิดระบบอย่างมาก</div>
+      <div class="btn-row" style="margin-top:10px;"><button class="btn btn-ghost" id="btnMigrateImages">ย้ายรูปเก่าไป Drive</button></div>
+    </div>
+
     <div class="section-title" style="margin-top:20px; font-size:14px;">สำรองข้อมูล</div>
     <div class="glass" style="padding:16px;">
       <div class="hint" style="margin-top:0;">ดาวน์โหลดข้อมูลทั้งหมดในระบบเป็นไฟล์ JSON ไว้สำรองหรือย้ายระบบ</div>
@@ -3013,7 +3031,11 @@ function renderSettings() {
     const reader = new FileReader();
     reader.onload = async () => {
       const btn = document.getElementById('btnUploadGaruda'); setButtonBusy(btn, true, 'กำลังอัปโหลด...'); setLoading(true, 'กำลังอัปโหลดตราครุฑ...');
-      try { await apiPost('updateSystemSettings', { garudaLogo: reader.result }); toast('อัปโหลดตราครุฑแล้ว'); await reloadThen(renderSettings); }
+      try {
+        const url = await uploadImageToDrive(reader.result, 'garuda');
+        await apiPost('updateSystemSettings', { garudaLogo: url });
+        toast('อัปโหลดตราครุฑแล้ว'); await reloadThen(renderSettings);
+      }
       catch (err) { toast(err.message || 'อัปโหลดไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(btn, false); }
     };
     reader.readAsDataURL(file);
@@ -3040,6 +3062,19 @@ function renderSettings() {
     try { await apiPost('changeRolePassword', { role, newPassword: pw }); document.getElementById('st_pwnew').value = ''; toast('เปลี่ยนรหัสผ่านแล้ว'); }
     catch (err) { toast(err.message || 'เปลี่ยนรหัสผ่านไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(btn, false); }
   };
+  document.getElementById('btnMigrateImages').onclick = async () => {
+    const btn = document.getElementById('btnMigrateImages');
+    if (!confirm('ระบบจะย้ายรูป Base64 เดิมทั้งหมดไป Google Drive แล้วเปลี่ยนค่าในชีตเป็น URL ต้องการดำเนินการหรือไม่?')) return;
+    setButtonBusy(btn, true, 'กำลังย้ายรูป...');
+    setLoading(true, 'กำลังย้ายรูปเก่าไป Google Drive...');
+    try {
+      const r = await apiPost('migrateImagesToDrive', {});
+      toast('ย้ายรูปแล้ว ' + (r.migrated || 0) + ' รูป' + ((r.failed || 0) ? ' / ล้มเหลว ' + r.failed : ''));
+      await reloadThen(renderSettings);
+    } catch (err) { toast(err.message || 'ย้ายรูปไม่สำเร็จ'); }
+    finally { setLoading(false); setButtonBusy(btn, false); }
+  };
+
   document.getElementById('btnExportAll').onclick = () => {
     const data = { assets: state.assets, borrow: state.borrow, maint: state.maint, components: state.components, memos: state.memos, exportedAt: new Date().toISOString() };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8;' });
