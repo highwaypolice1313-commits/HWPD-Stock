@@ -1032,8 +1032,8 @@ async function completeLogin({ role, name, token }) {
     renderTab('dashboard');
   } catch (err) {
     if (state.dashboard) renderTab('dashboard');
-    else document.getElementById('view-dashboard').innerHTML = emptyState('โหลดข้อมูลไม่สำเร็จ — กดปุ่มรีเฟรชด้านบนเพื่อลองใหม่');
-    toast('เข้าสู่ระบบแล้ว แต่โหลดข้อมูลไม่สำเร็จ: ' + (err.message || 'กรุณารีเฟรช'));
+    else document.getElementById('view-dashboard').innerHTML = emptyState('เซิร์ฟเวอร์ยังตอบไม่ทัน — กดรีเฟรชเพื่อลองอีกครั้ง');
+    toast('เข้าสู่ระบบแล้ว แต่เซิร์ฟเวอร์ยังตอบไม่ทัน');
   }
 }
 
@@ -1146,47 +1146,49 @@ function setButtonBusy(btn, busy, textBusy = 'กำลังบันทึก.
   else { btn.disabled = false; btn.textContent = btn.dataset.originalText || 'บันทึก'; btn.removeAttribute('aria-busy'); }
 }
 
-async function fetchJson(url, options = {}, timeout = 15000, retries = 0) {
+async function fetchJson(url, options = {}, timeout = 30000, retries = 1) {
+  let lastErr = null;
   for (let attempt = 0; attempt <= retries; attempt++) {
-    if (attempt > 0) {
-      const label = document.getElementById('loadingText');
-      if (label) label.textContent = 'เชื่อมต่อไม่สำเร็จ กำลังลองใหม่ (ครั้งที่ ' + (attempt + 1) + ')...';
-    }
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeout);
     try {
-      const res = await fetch(url, { ...options, signal: controller.signal, cache: 'no-store' });
+      const res = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+        cache: 'no-store',
+        credentials: 'omit'
+      });
       const text = await res.text();
       const looksLikeHtml = text.trim().startsWith('<');
       if (!res.ok || looksLikeHtml) {
-        if (attempt < retries) { await new Promise(r => setTimeout(r, 600 * (attempt + 1))); continue; }
-        throw new Error(looksLikeHtml ? 'เซิร์ฟเวอร์ตอบกลับไม่ถูกต้อง (ลองใหม่อีกครั้ง)' : 'เซิร์ฟเวอร์ตอบกลับผิดพลาด (' + res.status + ')');
+        throw new Error(looksLikeHtml ? 'เซิร์ฟเวอร์ตอบกลับไม่ถูกต้อง' : 'เซิร์ฟเวอร์ตอบกลับผิดพลาด (' + res.status + ')');
       }
       const j = JSON.parse(text);
       if (!j.ok) throw new Error(j.error || 'ไม่สามารถดำเนินการได้');
       return j.data;
     } catch (err) {
-      if (err.name === 'AbortError') {
-        if (attempt < retries) continue;
-        throw new Error('การเชื่อมต่อใช้เวลานานเกินไป กรุณาลองใหม่');
-      }
-      if (attempt >= retries) throw err;
+      lastErr = err;
+      // retry แบบเงียบ ๆ เฉพาะ GET/อ่านข้อมูล ไม่แสดง "ครั้งที่ 2" รบกวนผู้ใช้
+      if (attempt < retries) await new Promise(r => setTimeout(r, 900));
     } finally {
       clearTimeout(timer);
     }
   }
+  if (lastErr?.name === 'AbortError') throw new Error('เซิร์ฟเวอร์ตอบช้ากว่าปกติ กรุณากดรีเฟรชอีกครั้ง');
+  throw lastErr || new Error('เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ');
 }
 
 async function apiGet(action, params = {}) {
   const qs = new URLSearchParams({ action, ...params }).toString();
-  return fetchJson(API_URL + '?' + qs);
+  // GET อ่านข้อมูลให้เวลามากกว่า POST และ retry แบบเงียบ 1 ครั้ง
+  return fetchJson(API_URL + '?' + qs, {}, action === 'getAll' ? 40000 : 25000, 1);
 }
 async function apiPost(action, payload) {
-  return fetchJson(API_URL, { method: 'POST', body: JSON.stringify({ action, sessionToken: state.sessionToken, actorName: state.user?.name, payload }) }, 20000, 0);
+  return fetchJson(API_URL, { method: 'POST', body: JSON.stringify({ action, sessionToken: state.sessionToken, actorName: state.user?.name, payload }) }, 30000, 0);
 }
 
 async function loadAll(showLoader = false) {
-  if (showLoader) setLoading(true, 'กำลังอัปเดตข้อมูล...');
+  if (showLoader) setLoading(true, 'กำลังโหลดข้อมูล...');
   try {
     const data = await apiGet('getAll', { token: state.sessionToken });
     state.assets = data.assets || [];
@@ -1194,19 +1196,44 @@ async function loadAll(showLoader = false) {
     state.maint = data.maint || [];
     state.components = data.components || [];
     state.dashboard = data.dashboard || null;
-    state.memos = data.memos || [];
     state.settings = data.settings || {};
     state.users = data.users || [];
-    if (isAdmin()) state.activity = data.activity || [];
+    // memos/activity ถูกโหลดแบบ lazy เมื่อเปิดหน้านั้น เพื่อลดขนาดข้อมูลตอนเปิดระบบ
+    if (Array.isArray(data.memos)) state.memos = data.memos;
+    if (Array.isArray(data.activity)) state.activity = data.activity;
+    try {
+      localStorage.setItem('hpAssetLastGoodDataV1', JSON.stringify({
+        assets: state.assets, borrow: state.borrow, maint: state.maint,
+        components: state.components, dashboard: state.dashboard,
+        settings: state.settings, users: state.users
+      }));
+    } catch (e) {}
     setConnection(true);
     lastSyncAt = new Date();
     updateSyncLabel();
     updateBorrowDot();
     return { successCount: 1, errors: [] };
   } catch (err) {
+    // ถ้าเคยโหลดสำเร็จแล้ว ให้ใช้ข้อมูลล่าสุดในเครื่องก่อน ไม่ปล่อยหน้าเปล่า
+    try {
+      const raw = localStorage.getItem('hpAssetLastGoodDataV1');
+      if (raw) {
+        const d = JSON.parse(raw);
+        state.assets = d.assets || state.assets || [];
+        state.borrow = d.borrow || state.borrow || [];
+        state.maint = d.maint || state.maint || [];
+        state.components = d.components || state.components || [];
+        state.dashboard = d.dashboard || state.dashboard || null;
+        state.settings = d.settings || state.settings || {};
+        state.users = d.users || state.users || [];
+        setConnection(false);
+        updateBorrowDot();
+        toast('ใช้ข้อมูลล่าสุดที่บันทึกไว้ชั่วคราว — กำลังรอเซิร์ฟเวอร์');
+        return { successCount: 0, errors: [err] };
+      }
+    } catch (e) {}
     if (/เซสชัน/.test(err.message || '')) { sessionExpired(); throw err; }
     setConnection(false);
-    toast('ไม่สามารถเชื่อมต่อฐานข้อมูลได้: ' + (err.message || ''));
     throw err;
   } finally {
     if (showLoader) setLoading(false);
@@ -2089,9 +2116,16 @@ function openMaintForm() {
 }
 
 /* ========================================================= USERS / OFFICERS */
-function renderUsers() {
+async function renderUsers() {
   if (!isAdmin()) return;
   const el = document.getElementById('view-users');
+  el.innerHTML = emptyState('กำลังโหลดรายชื่อเจ้าหน้าที่...');
+  try {
+    if (!state.users.length) state.users = await apiGet('getUsers', { token: state.sessionToken });
+    state.activity = await apiGet('getActivityLog', { token: state.sessionToken });
+  } catch (e) {
+    toast('โหลดข้อมูลเจ้าหน้าที่ไม่สำเร็จ: ' + (e.message || ''));
+  }
   el.innerHTML = `
     <div class="section-title">
       รายชื่อข้าราชการตำรวจในสังกัด <small>${state.users.length} คน</small>
@@ -2393,9 +2427,13 @@ function buildMemoBodyHtml(m) {
 }
 
 /* ---------- รายการเอกสาร (การ์ดตัวอย่างกระดาษจริง) ---------- */
-function renderMemos() {
+async function renderMemos() {
   const el = document.getElementById('view-memos');
-  const list = state.memos;
+  el.innerHTML = emptyState('กำลังโหลดเอกสารใบเบิก-ยืม...');
+  try { state.memos = await apiGet('getMemos', { token: state.sessionToken }); } catch (e) {
+    toast('โหลดเอกสารไม่สำเร็จ: ' + (e.message || ''));
+  }
+  const list = state.memos || [];
   el.innerHTML = `
     <div class="section-title">เอกสารใบเบิก-ยืม <small>${list.length} ฉบับ</small></div>
     <div class="hint" style="margin-top:0;">แตะที่เอกสารเพื่อเปิดดู/แก้ไขได้โดยตรงบนหน้าเอกสารจริง แล้วค่อยบันทึกหรือพิมพ์</div>
