@@ -1038,13 +1038,64 @@ async function completeLogin({ role, name, token }) {
 }
 
 /* ========================================================= IMAGE UPLOAD — Drive URL, never Base64 in Sheets */
+function isInlineImage(v) { return typeof v === 'string' && v.indexOf('data:image/') === 0; }
+
+// บีบรูปในเบราว์เซอร์ก่อนส่งไป Apps Script
+// เป้าหมายคือให้ request เล็กมาก ลด timeout และปัญหา payload ยาวเกินไป
+async function compressImageDataUrl(dataUrl, maxBytes = 60000) {
+  if (!dataUrl || !isInlineImage(dataUrl)) return dataUrl || '';
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        let w = img.naturalWidth || img.width;
+        let h = img.naturalHeight || img.height;
+        const maxSide = 1280;
+        if (Math.max(w, h) > maxSide) {
+          const scale = maxSide / Math.max(w, h);
+          w = Math.max(1, Math.round(w * scale));
+          h = Math.max(1, Math.round(h * scale));
+        }
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d', { alpha: false });
+        let quality = 0.78;
+        let out = '';
+        for (let i = 0; i < 7; i++) {
+          canvas.width = w; canvas.height = h;
+          ctx.clearRect(0, 0, w, h);
+          ctx.drawImage(img, 0, 0, w, h);
+          out = canvas.toDataURL('image/jpeg', quality);
+          const bytes = Math.ceil((out.length - out.indexOf(',') - 1) * 3 / 4);
+          if (bytes <= maxBytes) break;
+          if (quality > 0.52) quality -= 0.06;
+          else { w = Math.max(480, Math.round(w * 0.82)); h = Math.max(480, Math.round(h * 0.82)); }
+        }
+        resolve(out);
+      } catch (e) { reject(e); }
+    };
+    img.onerror = () => reject(new Error('ไม่สามารถอ่านรูปภาพได้'));
+    img.src = dataUrl;
+  });
+}
+
 async function uploadImageToDrive(dataUrl, fileName) {
   if (!dataUrl) return '';
-  if (!String(dataUrl).startsWith('data:image/')) return dataUrl;
-  const result = await apiPost('uploadImage', { dataUrl: dataUrl, fileName: fileName || 'image' });
+  if (!isInlineImage(dataUrl)) return dataUrl;
+  const compressed = await compressImageDataUrl(dataUrl, 60000);
+  const result = await apiPost('uploadImage', { dataUrl: compressed, fileName: fileName || 'image' });
   return result && result.url ? result.url : '';
 }
-function isInlineImage(v) { return typeof v === 'string' && v.indexOf('data:image/') === 0; }
+
+async function prepareImageFile(file, maxBytes = 60000) {
+  if (!file) return '';
+  const raw = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error('อ่านไฟล์รูปภาพไม่สำเร็จ'));
+    reader.readAsDataURL(file);
+  });
+  return compressImageDataUrl(raw, maxBytes);
+}
 
 /* ========================================================= API */
 let busyCount = 0;
@@ -1820,14 +1871,11 @@ function openBorrowDetail(id) {
     returnPhotoInput.onchange = (e) => {
       const file = e.target.files && e.target.files[0];
       if (!file) return;
-      if (file.size > 200000) { toast('ไฟล์รูปใหญ่เกินไป กรุณาใช้รูปที่เล็กกว่า 200KB'); e.target.value = ''; return; }
-      const reader = new FileReader();
-      reader.onload = () => {
-        document.getElementById('f_returnPhotoVal').value = reader.result;
-        const img = document.getElementById('f_returnPhotoPreview');
-        img.src = reader.result; img.style.display = 'block';
-      };
-      reader.readAsDataURL(file);
+      prepareImageFile(file, 60000).then(data => {
+      document.getElementById('f_returnPhotoVal').value = data;
+      const img = document.getElementById('f_returnPhotoPreview');
+      img.src = data; img.style.display = 'block';
+    }).catch(err => toast(err.message || 'เตรียมรูปไม่สำเร็จ'));
     };
   }
   document.getElementById('btnPrintForm').onclick = () => openPrintMemoForm({ borrow: b, componentNames: compNames });
@@ -1848,8 +1896,10 @@ function openBorrowDetail(id) {
   if (returnBtn) {
     returnBtn.onclick = async () => {
       const btn = document.getElementById('btnReturn'); if (btn.disabled) return; setButtonBusy(btn, true, 'กำลังบันทึกการคืน...'); setLoading(true, 'กำลังบันทึกการคืน...');
-      const returnPhotoVal = document.getElementById('f_returnPhotoVal') ? val('f_returnPhotoVal') : '';
-      try { await apiPost('returnAsset', { borrowId: id, returnDate: isoDate(), conditionPhotoReturn: returnPhotoVal }); closeSheet(); toast('บันทึกการคืนแล้ว'); await reloadThen(renderBorrow); }
+      let returnPhotoVal = document.getElementById('f_returnPhotoVal') ? val('f_returnPhotoVal') : '';
+      try {
+        if (isInlineImage(returnPhotoVal)) returnPhotoVal = await uploadImageToDrive(returnPhotoVal, 'return-' + id);
+        await apiPost('returnAsset', { borrowId: id, returnDate: isoDate(), conditionPhotoReturn: returnPhotoVal }); closeSheet(); toast('บันทึกการคืนแล้ว'); await reloadThen(renderBorrow); }
       catch (err) { toast(err.message || 'บันทึกการคืนไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(btn, false); }
     };
   }
@@ -1883,14 +1933,11 @@ function openBorrowForm() {
   document.getElementById('f_conditionPhoto').onchange = (e) => {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
-    if (file.size > 200000) { toast('ไฟล์รูปใหญ่เกินไป กรุณาใช้รูปที่เล็กกว่า 200KB'); e.target.value = ''; return; }
-    const reader = new FileReader();
-    reader.onload = () => {
-      document.getElementById('f_conditionPhotoVal').value = reader.result;
+    prepareImageFile(file, 60000).then(data => {
+      document.getElementById('f_conditionPhotoVal').value = data;
       const img = document.getElementById('f_conditionPhotoPreview');
-      img.src = reader.result; img.style.display = 'block';
-    };
-    reader.readAsDataURL(file);
+      img.src = data; img.style.display = 'block';
+    }).catch(err => toast(err.message || 'เตรียมรูปไม่สำเร็จ'));
   };
   if (!available.length) { toast('ไม่มีครุภัณฑ์ที่พร้อมให้ยืมในขณะนี้'); }
   function wirePicker(pickId, textId) {
@@ -1929,7 +1976,9 @@ function openBorrowForm() {
     setButtonBusy(saveBtn, true);
     setLoading(true, admin ? 'กำลังบันทึกการยืม...' : 'กำลังส่งคำขอ...');
     try {
-       const payload = { assetId, assetName: asset ? asset['ชื่อครุภัณฑ์'] : '', borrower: val('f_borrower'), borrowerLineId: '', borrowDate: val('f_borrowdate'), dueDate: val('f_duedate'), approver: admin ? val('f_approver') : '', note: val('f_bnote'), componentIds, conditionPhotoOut: val('f_conditionPhotoVal') };
+       let conditionPhotoOut = val('f_conditionPhotoVal');
+       if (isInlineImage(conditionPhotoOut)) conditionPhotoOut = await uploadImageToDrive(conditionPhotoOut, 'borrow-' + assetId);
+       const payload = { assetId, assetName: asset ? asset['ชื่อครุภัณฑ์'] : '', borrower: val('f_borrower'), borrowerLineId: '', borrowDate: val('f_borrowdate'), dueDate: val('f_duedate'), approver: admin ? val('f_approver') : '', note: val('f_bnote'), componentIds, conditionPhotoOut };
        await apiPost(admin ? 'borrowAsset' : 'requestBorrow', payload);
       closeSheet(); toast(admin ? 'บันทึกการยืมแล้ว' : 'ส่งคำขอยืมแล้ว รอแอดมินอนุมัติ'); await reloadThen(renderBorrow);
     } catch (err) { toast(err.message || 'ทำรายการไม่สำเร็จ'); }
@@ -2184,21 +2233,20 @@ function openUserForm(u) {
   document.getElementById('u_photoFile').onchange = (e) => {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
-    if (file.size > 45000) { toast('ไฟล์รูปใหญ่เกินไป กรุณาใช้รูปที่เล็กกว่า 40KB'); e.target.value = ''; return; }
-    const reader = new FileReader();
-    reader.onload = () => {
-      document.getElementById('u_photo').value = reader.result;
-      document.getElementById('u_photoPreview').innerHTML = `<img src="${reader.result}">`;
-    };
-    reader.readAsDataURL(file);
+    prepareImageFile(file, 60000).then(data => {
+      document.getElementById('u_photo').value = data;
+      document.getElementById('u_photoPreview').innerHTML = `<img src="${data}">`;
+    }).catch(err => toast(err.message || 'เตรียมรูปไม่สำเร็จ'));
   };
   document.getElementById('btnCancel').onclick = closeSheet;
   document.getElementById('btnSave').onclick = async () => {
     if (!val('u_name').trim()) { toast('กรุณากรอกชื่อ-สกุล'); return; }
     const saveBtn = document.getElementById('btnSave'); if (saveBtn.disabled) return; setButtonBusy(saveBtn, true); setLoading(true, 'กำลังบันทึกรายชื่อ จนท....');
     try {
-      if (!editing) await apiPost('addUser', { name: val('u_name'), rank: val('u_rank'), position: val('u_position'), unit: val('u_unit'), role: val('u_role'), memoRole: val('u_memorole'), photo: val('u_photo') });
-      else await apiPost('updateUserRole', { officerId: officerId(u) || undefined, lineUserId: (!officerId(u) && u['LINEUserId']) || undefined, username: (!officerId(u) && u['ชื่อผู้ใช้']) || undefined, name: val('u_name'), rank: val('u_rank'), position: val('u_position'), unit: val('u_unit'), role: val('u_role'), memoRole: val('u_memorole'), photo: val('u_photo') });
+      let userPhoto = val('u_photo');
+      if (isInlineImage(userPhoto)) userPhoto = await uploadImageToDrive(userPhoto, 'user-' + (officerId(u) || Date.now()));
+      if (!editing) await apiPost('addUser', { name: val('u_name'), rank: val('u_rank'), position: val('u_position'), unit: val('u_unit'), role: val('u_role'), memoRole: val('u_memorole'), photo: userPhoto });
+      else await apiPost('updateUserRole', { officerId: officerId(u) || undefined, lineUserId: (!officerId(u) && u['LINEUserId']) || undefined, username: (!officerId(u) && u['ชื่อผู้ใช้']) || undefined, name: val('u_name'), rank: val('u_rank'), position: val('u_position'), unit: val('u_unit'), role: val('u_role'), memoRole: val('u_memorole'), photo: userPhoto });
       closeSheet();
       toast(editing ? 'แก้ไขรายชื่อและยศเรียบร้อยแล้ว' : 'บันทึกรายชื่อและยศเรียบร้อยแล้ว');
       await reloadThen(renderUsers);
@@ -3023,22 +3071,21 @@ function renderSettings() {
   `;
   document.querySelectorAll('.theme-swatch-card').forEach(card => { card.onclick = () => { applyTheme(card.dataset.themeId); renderSettings(); }; });
 
-  document.getElementById('btnUploadGaruda').onclick = () => {
+  document.getElementById('btnUploadGaruda').onclick = async () => {
     const inp = document.getElementById('st_garuda');
     const file = inp.files && inp.files[0];
     if (!file) { toast('กรุณาเลือกไฟล์รูปภาพก่อน'); return; }
-    if (file.size > 45000) { toast('ไฟล์ใหญ่เกินไป กรุณาใช้รูปขนาดเล็กกว่านี้ (ไม่เกินประมาณ 30-40KB)'); return; }
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const btn = document.getElementById('btnUploadGaruda'); setButtonBusy(btn, true, 'กำลังอัปโหลด...'); setLoading(true, 'กำลังอัปโหลดตราครุฑ...');
+    const btn = document.getElementById('btnUploadGaruda'); setButtonBusy(btn, true, 'กำลังเตรียมรูป...'); setLoading(true, 'กำลังเตรียมตราครุฑ...');
+    try {
+      const compressed = await prepareImageFile(file, 60000);
+      setButtonBusy(btn, true, 'กำลังอัปโหลด...'); setLoading(true, 'กำลังอัปโหลดตราครุฑ...');
       try {
-        const url = await uploadImageToDrive(reader.result, 'garuda');
+        const url = await uploadImageToDrive(compressed, 'garuda');
         await apiPost('updateSystemSettings', { garudaLogo: url });
         toast('อัปโหลดตราครุฑแล้ว'); await reloadThen(renderSettings);
       }
       catch (err) { toast(err.message || 'อัปโหลดไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(btn, false); }
-    };
-    reader.readAsDataURL(file);
+    } catch (err) { toast(err.message || 'เตรียมรูปไม่สำเร็จ'); setLoading(false); setButtonBusy(btn, false); }
   };
   const btnRemoveG = document.getElementById('btnRemoveGaruda');
   if (btnRemoveG) btnRemoveG.onclick = async () => {
