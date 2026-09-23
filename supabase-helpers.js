@@ -100,6 +100,15 @@ async function gasUploadImageToDrive(dataUrl, fileName) {
 }
 
 // ==================== FIELD MAPPING: DB row (English) <-> Thai keys ที่หน้าเว็บใช้ ====================
+
+const assetToThai = r => ({
+  'รหัสครุภัณฑ์': r.id, 'ชื่อครุภัณฑ์': r.name, 'หมวดหมู่': r.category, 'ยี่ห้อ/รุ่น': r.brand,
+  'หมายเลขเครื่อง': r.serial, 'วันที่รับเข้า': r.received_date, 'มูลค่า(บาท)': r.value,
+  'สถานะ': r.status, 'ผู้ครอบครอง/หน่วยงาน': r.holder, 'หน่วยงาน': r.unit, 'หมายเหตุ': r.note,
+  'รูปภาพ(URL)': r.image_url, 'วันที่บันทึก': r.created_at, 'วันครบกำหนดตรวจสภาพ/ต่อทะเบียน': r.renewal_due,
+  'ทะเบียนรถ': r.license_plate, 'หมายเลขตัวถัง': r.chassis_no
+});
+
 const auditToThai = r => ({
   'รหัสตรวจนับ': r.id, 'รหัสครุภัณฑ์': r.asset_id, 'ชื่อครุภัณฑ์': r.asset_name, 'ปีที่ตรวจ': r.year,
   'ผล': r.result, 'ผู้ตรวจ': r.inspector, 'วันที่ตรวจ': r.inspected_at, 'หมายเหตุ': r.note,
