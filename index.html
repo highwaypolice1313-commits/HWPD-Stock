@@ -1273,6 +1273,17 @@ function toThaiNumber(input) {
   const thaiNumbers = ['๐', '๑', '๒', '๓', '๔', '๕', '๖', '๗', '๘', '๙'];
   return String(input).replace(/[0-9]/g, (match) => thaiNumbers[parseInt(match, 10)]);
 }
+// แปลงเลขอารบิกเป็นเลขไทยเฉพาะ text node (ไม่แตะ tag/attribute เช่น id, src, style)
+function thaiifyHtml(html) {
+  if (!html) return html;
+  const tpl = document.createElement('template');
+  tpl.innerHTML = html;
+  const walker = document.createTreeWalker(tpl.content, NodeFilter.SHOW_TEXT);
+  const nodes = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode);
+  nodes.forEach(n => { n.nodeValue = toThaiNumber(n.nodeValue); });
+  return tpl.innerHTML;
+}
 function thaiDate(v) {
   if (!v) return '-';
   const d = toDate(v);
@@ -2354,7 +2365,7 @@ function refitAllPapers() {
 }
 window.addEventListener('resize', () => { clearTimeout(window._refitT); window._refitT = setTimeout(refitAllPapers, 120); });
 function wrapPfDoc(innerHtml, editable) {
-  return `<div class="pf-doc" id="memoDocBody" ${editable ? 'contenteditable="true" spellcheck="false"' : ''}>${innerHtml || ''}</div>`;
+  return `<div class="pf-doc" id="memoDocBody" ${editable ? 'contenteditable="true" spellcheck="false"' : ''}>${thaiifyHtml(innerHtml || '')}</div>`;
 }
 function mountPaper(container, pfDocWrapperHtml) {
   if (!container) return;
@@ -2510,22 +2521,34 @@ function openMemoEditor(opts) {
   const dirtyEl = document.getElementById('docDirty');
   desk.addEventListener('input', () => { dirtyEl.classList.add('show'); });
 
+// พิมพ์เลขอารบิกลงในเอกสาร -> แปลงเป็นเลขไทยทันที (ตอนออกจากช่องที่กำลังแก้)
+desk.addEventListener('focusout', () => {
+  const b = document.getElementById('memoDocBody');
+  if (!b) return;
+  const walker = document.createTreeWalker(b, NodeFilter.SHOW_TEXT);
+  let n;
+  while ((n = walker.nextNode())) {
+    const t = toThaiNumber(n.nodeValue);
+    if (t !== n.nodeValue) n.nodeValue = t;
+  }
+});
+
   document.getElementById('btnMemoPrint').onclick = () => {
-    const b = getBody();
-    if (b) document.getElementById('printArea').innerHTML = b.outerHTML;
-    setTimeout(() => window.print(), 80);
-  };
+  const b = getBody();
+  if (b) document.getElementById('printArea').innerHTML = thaiifyHtml(b.outerHTML);
+  setTimeout(() => window.print(), 80);
+};
   document.getElementById('btnMemoSave').onclick = async () => {
     const b = getBody();
     if (!b) { toast('ไม่พบเนื้อหาเอกสาร'); return; }
-    const g = (id) => { const e = document.getElementById(id); return e ? e.textContent.trim() : ''; };
+    const g = (id) => { const e = document.getElementById(id); return e ? toThaiNumber(e.textContent.trim()) : ''; };
     const payload = {
       id: opts.id || undefined,
       subject: g('ed_subject') || 'ไม่ระบุเรื่อง',
       docNo: g('ed_docno'),
       docDate: g('ed_docdate'),
       requesterName: g('ed_reqname') || g('ed_reqname2'),
-      html: b.innerHTML,
+      html: thaiifyHtml(b.innerHTML),
       borrowId: opts.borrowId || '',
       status: 'บันทึกแล้ว'
     };
