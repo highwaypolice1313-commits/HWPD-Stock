@@ -16,7 +16,7 @@
  */
 
 // ==================== CONFIG — แก้ตรงนี้ ====================
-const SUPABASE_URL = 'https://fuwuwboakywjlrtqwcjh.supabase.co/rest/v1/';
+const SUPABASE_URL = 'https://fuwuwboakywjlrtqwcjh.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1d3V3Ym9ha3l3amxydHF3Y2poIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxMjM1NzksImV4cCI6MjEwNTY5OTU3OX0.BLQAGxm4s9g-w0fMR952cfZNK7KbuBXvGdImvKEi-PE';
 const STORAGE_BUCKET = 'asset-images';
 
