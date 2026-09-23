@@ -4,10 +4,16 @@
  * ตัวกลางแทน Google Apps Script backend เดิม — คุยกับ Supabase (Postgres)
  * โดยตรงจากเบราว์เซอร์ ใช้คู่กับ schema ที่ตั้งไว้แล้วใน Supabase SQL Editor
  *
+ * รูปภาพทั้งหมด (ครุภัณฑ์ / จนท. / ตราครุฑ / สภาพพัสดุตอนยืม-คืน / อาการซ่อม) ยัง
+ * อัปโหลดขึ้น Google Drive ผ่าน Apps Script ตัวเดิม (GAS_UPLOAD_URL ด้านล่าง) เหมือนระบบเดิม
+ * ทุกประการ — ไม่ได้ขึ้น Supabase Storage เพื่อไม่ให้กินโควตาพื้นที่ฝั่ง Supabase
+ * ตาราง Supabase เก็บแค่ "URL ของรูปบน Drive" เป็น text เท่านั้น
+ *
  * วิธีใช้:
  *  1. ใส่ SUPABASE_URL / SUPABASE_ANON_KEY ของโปรเจกต์ตัวเองด้านล่าง
- *  2. โหลดไฟล์นี้ "ก่อน" สคริปต์หลักของ index.html เสมอ (ดูคำแนะนำแนบท้าย)
- *  3. ในสคริปต์หลัก แก้ apiGet/apiPost ให้เรียก supaApiGet/supaApiPost แทนการ fetch ไป GAS
+ *  2. GAS_UPLOAD_URL ด้านล่างใช้ URL เดิมจาก index.html (สคริปต์ที่มี action 'uploadImage' อยู่แล้ว)
+ *  3. โหลดไฟล์นี้ "ก่อน" สคริปต์หลักของ index.html เสมอ
+ *  4. ในสคริปต์หลัก แก้ apiGet/apiPost ให้เรียก supaApiGet/supaApiPost แทน
  *
  * แนวคิดการแปลงข้อมูล: ตาราง Supabase ใช้ชื่อคอลัมน์ภาษาอังกฤษ แต่โค้ดหน้าเว็บเดิม
  * ใช้ key เป็นภาษาไทย (ตามหัวคอลัมน์ Google Sheets เดิม) ฟังก์ชัน xxxToThai() ด้านล่าง
@@ -18,7 +24,10 @@
 // ==================== CONFIG — แก้ตรงนี้ ====================
 const SUPABASE_URL = 'https://fuwuwboakywjlrtqwcjh.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1d3V3Ym9ha3l3amxydHF3Y2poIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxMjM1NzksImV4cCI6MjEwNTY5OTU3OX0.BLQAGxm4s9g-w0fMR952cfZNK7KbuBXvGdImvKEi-PE';
-const STORAGE_BUCKET = 'asset-images';
+
+// สคริปต์ Google Apps Script ตัวเดิม (มี action 'uploadImage' อัปโหลดขึ้น Drive อยู่แล้ว)
+// ใช้ค่าเดียวกับ API_URL ใน index.html เดิม — ถ้า deploy ใหม่ให้แก้ URL นี้เท่านั้น
+const GAS_UPLOAD_URL = 'https://script.google.com/macros/s/AKfycbw9mgyNR0My7CPuRRX1bRStNcuv1O6nTSivhZssA8svIOOul0VW9v32_rhGwJBDOkp37A/exec';
 
 // ต้องโหลด <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 // ไว้ก่อนไฟล์นี้ ไม่งั้น window.supabase จะยังไม่มี
@@ -41,10 +50,6 @@ async function sha256Hex(text) {
 }
 
 // ==================== LOCAL SESSION TOKEN ====================
-// ไม่มี server กลางที่เซ็นลายเซ็น token แบบ GAS เดิมอีกต่อไป (RLS ฝั่ง Supabase
-// เปิด anon full access ตามที่ตั้งไว้ใน schema.sql อยู่แล้ว) จึงใช้ token ที่เก็บ
-// role + วันหมดอายุไว้ในเครื่อง แค่พอกันเซสชันเก่าเกิน 30 วันหลุดอัตโนมัติ
-// ไม่ได้ปลอดภัยระดับเดียวกับ JWT ที่เซ็นลายเซ็น — เหมาะกับระบบภายในที่คุมด้วยรหัสผ่านระดับ role
 function makeLocalToken(role) {
   const payload = { role, exp: Date.now() + 30 * 24 * 60 * 60 * 1000 };
   return btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
@@ -67,25 +72,22 @@ function supaLoginAsViewer() {
   return { role: 'viewer', token: makeLocalToken('viewer'), displayName: 'ผู้ดูอย่างเดียว' };
 }
 
-// ==================== IMAGE UPLOAD (แทน Google Drive) ====================
-async function uploadImageToSupabase(dataUrl, fileName) {
+// ==================== IMAGE UPLOAD — ขึ้น Google Drive ผ่าน Apps Script เดิม ====================
+// รับ dataUrl (base64) แล้วส่งให้ GAS ตัวเดิมอัปโหลดขึ้น Drive เหมือนระบบก่อนย้าย
+// คืนค่า { url } เป็น URL รูปบน Drive เพื่อเก็บลง Supabase เป็น text ธรรมดา
+async function uploadImageToDrive(dataUrl, fileName) {
   if (!dataUrl) return { url: '' };
-  if (!/^data:image\//i.test(dataUrl)) return { url: dataUrl };
-  const m = dataUrl.match(/^data:image\/(png|jpeg|jpg|webp);base64,(.+)$/i);
-  if (!m) throw new Error('รูปภาพต้องเป็น PNG, JPG หรือ WEBP');
-  const ext = m[1].toLowerCase() === 'jpeg' ? 'jpg' : m[1].toLowerCase();
-  const bin = atob(m[2]);
-  const bytes = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-  const safe = String(fileName || ('image-' + Date.now())).replace(/[^\w.-]+/g, '_').slice(0, 80);
-  const path = safe + '-' + Date.now() + '.' + ext;
-  const { error } = await sb.storage.from(STORAGE_BUCKET).upload(path, bytes, {
-    contentType: 'image/' + (ext === 'jpg' ? 'jpeg' : ext),
-    upsert: true
+  if (!/^data:image\//i.test(dataUrl)) return { url: dataUrl }; // เป็น URL อยู่แล้ว ไม่ต้องอัปโหลดซ้ำ
+  const res = await fetch(GAS_UPLOAD_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action: 'uploadImage', payload: { dataUrl, fileName: fileName || 'image' } })
   });
-  if (error) throw new Error('อัปโหลดรูปไม่สำเร็จ: ' + error.message);
-  const { data } = sb.storage.from(STORAGE_BUCKET).getPublicUrl(path);
-  return { url: data.publicUrl, path };
+  const text = await res.text();
+  let j;
+  try { j = JSON.parse(text); } catch (e) { throw new Error('เซิร์ฟเวอร์อัปโหลดรูปตอบกลับไม่ถูกต้อง'); }
+  if (!j.ok) throw new Error(j.error || 'อัปโหลดรูปไม่สำเร็จ');
+  return { url: j.data && j.data.url ? j.data.url : '' };
 }
 
 // ==================== FIELD MAPPING: DB row (English) <-> Thai keys ที่หน้าเว็บใช้ ====================
@@ -396,14 +398,12 @@ async function sDeleteComponent(id, actor) {
 async function sAddUser(p, actor) {
   const id = genId('OFC');
   let photoUrl = '';
-  if (p.photoData) photoUrl = (await uploadImageToSupabase(p.photoData, 'user-' + id)).url;
+  if (p.photoData) photoUrl = (await uploadImageToDrive(p.photoData, 'user-' + id)).url;
   else if (p.photo) photoUrl = p.photo;
   const row = {
     id, line_user_id: p.lineUserId || '', name: p.name, position: p.position || '', unit: p.unit || '',
     role: p.role || 'viewer', rank: p.rank || '', memo_role: p.memoRole || 'ไม่ระบุ (เลือกเองตอนพิมพ์)',
     photo: photoUrl, username: p.username || ''
-    // หมายเหตุ: ระบบล็อกอินรายบุคคล (username/password) เป็นของเดิมที่ไม่ได้ใช้แล้วในหน้าเว็บ
-    // ปัจจุบันล็อกอินด้วยรหัสผ่านระดับ role เท่านั้น จึงไม่ตั้ง password_hash ที่นี่
   };
   const { error } = await sb.from('users').insert(row);
   if (error) throw new Error('เพิ่มรายชื่อไม่สำเร็จ: ' + error.message);
@@ -422,7 +422,7 @@ async function sUpdateUserRole(p, actor) {
   if (p.role !== undefined) upd.role = p.role;
   if (p.rank !== undefined) upd.rank = p.rank;
   if (p.memoRole !== undefined) upd.memo_role = p.memoRole;
-  if (p.photoData) upd.photo = (await uploadImageToSupabase(p.photoData, 'user-' + val)).url;
+  if (p.photoData) upd.photo = (await uploadImageToDrive(p.photoData, 'user-' + val)).url;
   else if (p.photo !== undefined) upd.photo = p.photo;
   const { error } = await sb.from('users').update(upd).eq(col, val);
   if (error) throw new Error('แก้ไขไม่สำเร็จ: ' + error.message);
@@ -481,7 +481,7 @@ async function sUpdateSystemSettings(p, actor) {
   if (p.garudaLogo !== undefined) {
     const logo = String(p.garudaLogo || '').trim();
     if (!logo) updates.garudaLogo = '';
-    else if (/^data:image\//i.test(logo)) updates.garudaLogo = (await uploadImageToSupabase(logo, 'garuda')).url;
+    else if (/^data:image\//i.test(logo)) updates.garudaLogo = (await uploadImageToDrive(logo, 'garuda')).url;
     else updates.garudaLogo = logo;
   }
   for (const key of Object.keys(updates)) {
@@ -524,7 +524,7 @@ async function supaApiPost(action, payload, role, actorName) {
   actorName = actorName || (role === 'admin' ? 'แอดมิน' : (role === 'viewer' ? 'ผู้ดูอย่างเดียว' : 'ไม่ทราบผู้ใช้'));
 
   switch (action) {
-    case 'uploadImage': return await uploadImageToSupabase(payload.dataUrl, payload.fileName);
+    case 'uploadImage': return await uploadImageToDrive(payload.dataUrl, payload.fileName);
     case 'addAsset': return await sAddAsset(payload, actorName);
     case 'updateAsset': return await sUpdateAsset(payload, actorName);
     case 'deleteAsset': return await sDeleteAsset(payload.id, actorName);
@@ -546,7 +546,7 @@ async function supaApiPost(action, payload, role, actorName) {
     case 'deleteMemo': return await sDeleteMemo(payload.id, actorName);
     case 'updateSystemSettings': return await sUpdateSystemSettings(payload, actorName);
     case 'saveAuditRecord': return await sSaveAuditRecord(payload, actorName);
-    case 'migrateImagesToDrive': return { migrated: 0, failed: 0 }; // ไม่จำเป็นแล้วบน Supabase (ไม่มี Base64 เก่าในตารางใหม่)
+    case 'migrateImagesToDrive': return { migrated: 0, failed: 0 };
     case 'changeRolePassword': return await sChangeRolePassword(payload);
     default: throw new Error('ไม่รู้จัก action: ' + action);
   }
