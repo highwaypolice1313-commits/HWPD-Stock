@@ -77,11 +77,20 @@ function supaLoginAsViewer() {
 // คืนค่า { url } เป็น URL รูปบน Drive เพื่อเก็บลง Supabase เป็น text ธรรมดา
 async function gasUploadImageToDrive(dataUrl, fileName) {
   if (!dataUrl) return { url: '' };
-  if (!/^data:image\//i.test(dataUrl)) return { url: dataUrl }; // เป็น URL อยู่แล้ว ไม่ต้องอัปโหลดซ้ำ
+  if (!/^data:image\//i.test(dataUrl)) return { url: dataUrl };
+
+  // ส่ง sessionToken/actorName ไปด้วย เพราะ GAS backend เดิมต้องใช้ยืนยันตัวตน
+  const _st = (typeof state !== 'undefined') ? state : null;
+
   const res = await fetch(GAS_UPLOAD_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ action: 'uploadImage', payload: { dataUrl, fileName: fileName || 'image' } })
+    body: JSON.stringify({
+      action: 'uploadImage',
+      sessionToken: _st ? _st.sessionToken : '',
+      actorName: _st && _st.user ? _st.user.name : '',
+      payload: { dataUrl, fileName: fileName || 'image' }
+    })
   });
   const text = await res.text();
   let j;
