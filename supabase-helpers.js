@@ -501,18 +501,24 @@ async function sUpdateSystemSettings(p, actor) {
 
 async function sSaveAuditRecord(p, actor) {
   const year = Number(p.year) || new Date().getFullYear();
-  const { data: existing } = await sb.from('audit_records').select('id').eq('asset_id', p.assetId).eq('year', year).maybeSingle();
+  const { data: existing, error: e0 } = await sb.from('audit_records').select('id').eq('asset_id', p.assetId).eq('year', year).maybeSingle();
+  if (e0) throw new Error('ตรวจสอบข้อมูลเดิมไม่สำเร็จ: ' + e0.message);
+
   const payload = {
     result: p.status || 'ยังไม่ตรวจ', inspector: actor || '', note: p.note || '',
     inspected_at: new Date().toISOString(),
     found_status: p.foundStatus || '', condition_score: p.conditionScore !== undefined && p.conditionScore !== '' ? Number(p.conditionScore) : null,
     last_used_date: p.lastUsedDate || null, committee_decision: p.committeeDecision || ''
   };
+
   if (existing) {
-    await sb.from('audit_records').update(payload).eq('id', existing.id);
+    const { error } = await sb.from('audit_records').update(payload).eq('id', existing.id);
+    if (error) throw new Error('บันทึกผลตรวจไม่สำเร็จ: ' + error.message);
   } else {
-    await sb.from('audit_records').insert({ id: genId('AUD'), asset_id: p.assetId, asset_name: p.assetName || '', year, ...payload });
+    const { error } = await sb.from('audit_records').insert({ id: genId('AUD'), asset_id: p.assetId, asset_name: p.assetName || '', year, ...payload });
+    if (error) throw new Error('บันทึกผลตรวจไม่สำเร็จ: ' + error.message);
   }
+
   await logActivitySb(actor, 'บันทึกผลตรวจนับยานพาหนะ', p.assetId + ' → ' + (p.status || ''));
   return { saved: true };
 }
