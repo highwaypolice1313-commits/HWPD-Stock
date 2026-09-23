@@ -75,7 +75,7 @@ function supaLoginAsViewer() {
 // ==================== IMAGE UPLOAD — ขึ้น Google Drive ผ่าน Apps Script เดิม ====================
 // รับ dataUrl (base64) แล้วส่งให้ GAS ตัวเดิมอัปโหลดขึ้น Drive เหมือนระบบก่อนย้าย
 // คืนค่า { url } เป็น URL รูปบน Drive เพื่อเก็บลง Supabase เป็น text ธรรมดา
-async function uploadImageToDrive(dataUrl, fileName) {
+async function gasUploadImageToDrive(dataUrl, fileName) {
   if (!dataUrl) return { url: '' };
   if (!/^data:image\//i.test(dataUrl)) return { url: dataUrl }; // เป็น URL อยู่แล้ว ไม่ต้องอัปโหลดซ้ำ
   const res = await fetch(GAS_UPLOAD_URL, {
@@ -398,7 +398,7 @@ async function sDeleteComponent(id, actor) {
 async function sAddUser(p, actor) {
   const id = genId('OFC');
   let photoUrl = '';
-  if (p.photoData) photoUrl = (await uploadImageToDrive(p.photoData, 'user-' + id)).url;
+  if (p.photoData) photoUrl = (await gasUploadImageToDrive(p.photoData, 'user-' + id)).url;
   else if (p.photo) photoUrl = p.photo;
   const row = {
     id, line_user_id: p.lineUserId || '', name: p.name, position: p.position || '', unit: p.unit || '',
@@ -422,7 +422,7 @@ async function sUpdateUserRole(p, actor) {
   if (p.role !== undefined) upd.role = p.role;
   if (p.rank !== undefined) upd.rank = p.rank;
   if (p.memoRole !== undefined) upd.memo_role = p.memoRole;
-  if (p.photoData) upd.photo = (await uploadImageToDrive(p.photoData, 'user-' + val)).url;
+  if (p.photoData) upd.photo = (await gasUploadImageToDrive(p.photoData, 'user-' + val)).url;
   else if (p.photo !== undefined) upd.photo = p.photo;
   const { error } = await sb.from('users').update(upd).eq(col, val);
   if (error) throw new Error('แก้ไขไม่สำเร็จ: ' + error.message);
@@ -481,7 +481,7 @@ async function sUpdateSystemSettings(p, actor) {
   if (p.garudaLogo !== undefined) {
     const logo = String(p.garudaLogo || '').trim();
     if (!logo) updates.garudaLogo = '';
-    else if (/^data:image\//i.test(logo)) updates.garudaLogo = (await uploadImageToDrive(logo, 'garuda')).url;
+    else if (/^data:image\//i.test(logo)) updates.garudaLogo = (await gasUploadImageToDrive(logo, 'garuda')).url;
     else updates.garudaLogo = logo;
   }
   for (const key of Object.keys(updates)) {
@@ -524,7 +524,7 @@ async function supaApiPost(action, payload, role, actorName) {
   actorName = actorName || (role === 'admin' ? 'แอดมิน' : (role === 'viewer' ? 'ผู้ดูอย่างเดียว' : 'ไม่ทราบผู้ใช้'));
 
   switch (action) {
-    case 'uploadImage': return await uploadImageToDrive(payload.dataUrl, payload.fileName);
+    case 'uploadImage': return await gasUploadImageToDrive(payload.dataUrl, payload.fileName);
     case 'addAsset': return await sAddAsset(payload, actorName);
     case 'updateAsset': return await sUpdateAsset(payload, actorName);
     case 'deleteAsset': return await sDeleteAsset(payload.id, actorName);
