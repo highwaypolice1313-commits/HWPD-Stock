@@ -1764,6 +1764,9 @@ function openAssetForm(a) {
     <div class="field"><label>หมวดหมู่</label><select class="input" id="f_cat">${CATS.map(c => `<option ${a && a['หมวดหมู่']===c?'selected':''}>${c}</option>`).join('')}</select></div>
     <div class="field"><label>ยี่ห้อ/รุ่น</label><input class="input" id="f_brand" value="${a ? escapeHtml(a['ยี่ห้อ/รุ่น'])||'' : ''}"></div>
     <div class="field"><label>หมายเลขเครื่อง/serial</label><input class="input" id="f_serial" value="${a ? escapeHtml(a['หมายเลขเครื่อง'])||'' : ''}"></div>
+    <div class="field" id="f_vehicleWrap" style="display:none;"><div class="memo-two-col">
+    <div class="field"><label>ทะเบียนรถ</label><input class="input" id="f_licensePlate" value="${a ? escapeHtml(a['ทะเบียนรถ'])||'' : ''}"></div>
+    <div class="field"><label>หมายเลขตัวถัง/แชสซี่</label><input class="input" id="f_chassisNo" value="${a ? escapeHtml(a['หมายเลขตัวถัง'])||'' : ''}"></div></div></div>
     <div class="field"><label>วันที่รับเข้า</label><input class="input" type="date" id="f_date" value="${a && a['วันที่รับเข้า'] ? isoDate(a['วันที่รับเข้า']) : isoDate()}"></div>
     <div class="field"><label>มูลค่า (บาท)</label><input class="input" type="number" id="f_value" value="${a ? escapeHtml(a['มูลค่า(บาท)']) : ''}"></div>
     <div class="field"><label>สถานะ</label><select class="input" id="f_status">${ASSET_STATUSES.map(s => `<option ${a && a['สถานะ']===s?'selected':''}>${s}</option>`).join('')}</select></div>
@@ -1773,14 +1776,20 @@ function openAssetForm(a) {
     <div class="field"><label>หมายเหตุ</label><input class="input" id="f_note" value="${a ? escapeHtml(a['หมายเหตุ'])||'' : ''}"></div>
     <div class="btn-row"><button class="btn btn-ghost" id="btnCancel">ยกเลิก</button><button class="btn btn-primary" id="btnSave">บันทึก</button></div>
   `);
+   function toggleVehicleFields() {
+  document.getElementById('f_vehicleWrap').style.display = (val('f_cat') === 'ยานพาหนะ') ? 'block' : 'none';
+}
+document.getElementById('f_cat').onchange = toggleVehicleFields;
+toggleVehicleFields();
   document.getElementById('btnCancel').onclick = closeSheet;
   document.getElementById('btnSave').onclick = async () => {
     const payload = {
-      id: a ? a['รหัสครุภัณฑ์'] : undefined,
-      name: val('f_name'), category: val('f_cat'), brand: val('f_brand'), serial: val('f_serial'),
-      receivedDate: val('f_date'), value: val('f_value'), status: val('f_status'), holder: val('f_holder'), unit: val('f_unit'),
-      renewalDue: val('f_renewal'), note: val('f_note')
-    };
+  id: a ? a['รหัสครุภัณฑ์'] : undefined,
+  name: val('f_name'), category: val('f_cat'), brand: val('f_brand'), serial: val('f_serial'),
+  receivedDate: val('f_date'), value: val('f_value'), status: val('f_status'), holder: val('f_holder'), unit: val('f_unit'),
+  renewalDue: val('f_renewal'), note: val('f_note'),
+  licensePlate: val('f_licensePlate'), chassisNo: val('f_chassisNo')   // เพิ่มบรรทัดนี้
+};
     if (!payload.name) { toast('กรุณากรอกชื่อครุภัณฑ์'); return; }
     const saveBtn = document.getElementById('btnSave'); if (saveBtn.disabled) return; setButtonBusy(saveBtn, true); setLoading(true, 'กำลังบันทึกข้อมูล...');
     try { await apiPost(editing ? 'updateAsset' : 'addAsset', payload); closeSheet(); toast(editing ? 'แก้ไขข้อมูลแล้ว' : 'เพิ่มครุภัณฑ์แล้ว'); await reloadThen(renderAssets); }
@@ -2964,29 +2973,106 @@ function drawAuditView() {
       </div>
       <div class="audit-progress-track"><div class="audit-progress-fill" style="width:${pct}%;"></div></div>
       <div class="btn-row"><button class="btn btn-primary" id="btnPrintAuditReport">พิมพ์รายงานสรุปผลตรวจนับ (A4)</button></div>
+      <div class="btn-row"><button class="btn btn-ghost" id="btnPrintVehicleReport">พิมพ์แบบ บชก.3 (เฉพาะยานพาหนะ)</button></div>
     </div>
     <div id="auditList">${state.assets.length ? state.assets.map(auditRow).join('') : emptyState('ยังไม่มีครุภัณฑ์ในระบบ')}</div>
   `;
   document.querySelectorAll('.audit-status-btn').forEach(b => b.onclick = () => setAuditStatus(b.dataset.id, b.dataset.status));
   document.getElementById('btnPrintAuditReport').onclick = printAuditReport;
+  document.getElementById('btnPrintVehicleReport').onclick = printVehicleAuditReport;
+   document.querySelectorAll('[data-vehicle-audit]').forEach(el => el.onclick = () => openVehicleAuditForm(el.dataset.vehicleAudit));
 }
 function auditRow(a) {
   const rec = auditRecordFor(a['รหัสครุภัณฑ์']);
   const status = rec ? rec['ผล'] : 'ยังไม่ตรวจ';
   const cls = { 'พบปกติ': 'status-ready', 'ชำรุด': 'status-repair', 'สูญหาย': 'status-overdue', 'ยังไม่ตรวจ': 'status-disposed' }[status] || '';
-  return `<div class="glass list-item" style="cursor:default;">
+  const isVehicle = a['หมวดหมู่'] === 'ยานพาหนะ';
+  return `<div class="glass list-item" style="cursor:${isVehicle?'pointer':'default'};" ${isVehicle ? `data-vehicle-audit="${escapeHtml(a['รหัสครุภัณฑ์'])}"` : ''}>
     <div class="li-icon">${catIcon(a['หมวดหมู่'])}</div>
-    <div class="li-body"><div class="li-title">${escapeHtml(a['ชื่อครุภัณฑ์'])}</div><div class="li-sub">${escapeHtml(a['รหัสครุภัณฑ์'])}</div></div>
+    <div class="li-body"><div class="li-title">${escapeHtml(a['ชื่อครุภัณฑ์'])}</div><div class="li-sub">${escapeHtml(a['ทะเบียนรถ']||a['รหัสครุภัณฑ์'])}</div></div>
     <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
       <span class="status-badge ${cls}">${status}</span>
+      ${isVehicle ? `<span class="hint" style="margin:0;">แตะเพื่อกรอกผลตรวจ →</span>` : `
       <div class="audit-btn-row">
         <button class="audit-btn ok ${status==='พบปกติ'?'active-ok':''}" data-id="${escapeHtml(a['รหัสครุภัณฑ์'])}" data-status="พบปกติ">พบปกติ</button>
         <button class="audit-btn warn ${status==='ชำรุด'?'active-warn':''}" data-id="${escapeHtml(a['รหัสครุภัณฑ์'])}" data-status="ชำรุด">ชำรุด</button>
         <button class="audit-btn bad ${status==='สูญหาย'?'active-bad':''}" data-id="${escapeHtml(a['รหัสครุภัณฑ์'])}" data-status="สูญหาย">สูญหาย</button>
-      </div>
+      </div>`}
     </div>
   </div>`;
 }
+function printVehicleAuditReport() {
+  const orgName = (state.settings && state.settings.orgName) || ORG_NAME;
+  const phone = (state.settings && state.settings.orgPhone) || ORG_PHONE;
+  const vehicles = state.assets.filter(a => a['หมวดหมู่'] === 'ยานพาหนะ');
+  let keep = 0, dispose = 0, transfer = 0;
+
+  const rows = vehicles.map((a, i) => {
+    const rec = auditRecordFor(a['รหัสครุภัณฑ์']) || {};
+    const score = rec['คะแนนสภาพ'];
+    if (rec['ความเห็นคณะกรรมการ'] === 'สมควรเก็บไว้ใช้งาน') keep++;
+    if (rec['ความเห็นคณะกรรมการ'] === 'สมควรจำหน่าย') dispose++;
+    if (rec['ความเห็นคณะกรรมการ'] === 'ให้หน่วยงานอื่น') transfer++;
+    const scoreCell = n => `<td style="border:1px solid #000; text-align:center; padding:4px;">${String(score)===String(n) ? toThaiNumber(1) : ''}</td>`;
+    return `<tr>
+      <td style="border:1px solid #000; text-align:center; padding:4px;">${toThaiNumber(i+1)}</td>
+      <td style="border:1px solid #000; padding:4px 6px;">${escapeHtml(a['รหัสครุภัณฑ์'])}</td>
+      <td style="border:1px solid #000; padding:4px 6px;">${escapeHtml(a['ทะเบียนรถ'])||''}</td>
+      <td style="border:1px solid #000; padding:4px 6px;">${escapeHtml(a['หมายเลขตัวถัง'])||''}</td>
+      <td style="border:1px solid #000; padding:4px 6px;">${escapeHtml(a['หมายเลขเครื่อง'])||''}</td>
+      <td style="border:1px solid #000; text-align:center; padding:4px;">${escapeHtml(rec['ผลตรวจ(A/D)'])||''}</td>
+      ${[5,4,3,2,1,0].map(scoreCell).join('')}
+      <td style="border:1px solid #000; text-align:center; padding:4px;">${thaiDate(rec['วันที่ใช้งานครั้งสุดท้าย'])}</td>
+      <td style="border:1px solid #000; text-align:center; padding:4px;">${thaiDate(rec['วันที่ตรวจ'])}</td>
+      <td style="border:1px solid #000; text-align:center; padding:4px;">${rec['ความเห็นคณะกรรมการ']==='สมควรเก็บไว้ใช้งาน'?'๑':''}</td>
+      <td style="border:1px solid #000; text-align:center; padding:4px;">${rec['ความเห็นคณะกรรมการ']==='สมควรจำหน่าย'?'๑':''}</td>
+      <td style="border:1px solid #000; padding:4px 6px;">${rec['ความเห็นคณะกรรมการ']==='ให้หน่วยงานอื่น'?'✓':''}</td>
+    </tr>`;
+  }).join('');
+
+  const html = `
+    <style>@page{ size: A4 landscape; margin: 10mm; }</style>
+    <div style="font-family:'TH Sarabun New','Sarabun','Kanit',sans-serif; font-size:13pt; color:#000;">
+      <div style="text-align:right; border:1px solid #000; width:80px; padding:3px; float:right;">แบบ บชก.3</div>
+      <div style="text-align:center; font-weight:700; font-size:16pt;">รายงานผลการตรวจสอบครุภัณฑ์เครื่องจักร/ยานพาหนะ ประจำปี ${toThaiNumber(state.auditYear+543)}</div>
+      <div style="text-align:center; margin-bottom:6mm;">หน่วยงาน ${escapeHtml(orgName)} ${phone ? 'โทรศัพท์ '+escapeHtml(phone) : ''}</div>
+      <table style="width:100%; border-collapse:collapse; font-size:11pt;">
+        <thead>
+          <tr style="background:#f2f2f2; text-align:center;">
+            <th rowspan="2" style="border:1px solid #000;">ที่</th>
+            <th rowspan="2" style="border:1px solid #000;">หมายเลขทะเบียนครุภัณฑ์</th>
+            <th rowspan="2" style="border:1px solid #000;">ทะเบียน</th>
+            <th rowspan="2" style="border:1px solid #000;">หมายเลขตัวถัง</th>
+            <th rowspan="2" style="border:1px solid #000;">หมายเลขเครื่องยนต์</th>
+            <th rowspan="2" style="border:1px solid #000;">ผลตรวจสอบ</th>
+            <th colspan="6" style="border:1px solid #000;">สภาพเป็นทันช้าย</th>
+            <th rowspan="2" style="border:1px solid #000;">วันที่ใช้งาน<br>ครั้งสุดท้าย</th>
+            <th rowspan="2" style="border:1px solid #000;">วันที่ตรวจสภาพ</th>
+            <th colspan="3" style="border:1px solid #000;">ความเห็นคณะกรรมการ</th>
+          </tr>
+          <tr style="background:#f2f2f2; text-align:center;">
+            <th style="border:1px solid #000;">๕</th><th style="border:1px solid #000;">๔</th><th style="border:1px solid #000;">๓</th>
+            <th style="border:1px solid #000;">๒</th><th style="border:1px solid #000;">๑</th><th style="border:1px solid #000;">๐</th>
+            <th style="border:1px solid #000;">เก็บไว้ใช้/ซ่อม</th><th style="border:1px solid #000;">จำหน่าย</th><th style="border:1px solid #000;">ให้หน่วยงานอื่น</th>
+          </tr>
+        </thead>
+        <tbody>${rows || `<tr><td colspan="16" style="text-align:center; padding:12px; border:1px solid #000;">ไม่มีข้อมูลยานพาหนะ</td></tr>`}</tbody>
+        <tfoot>
+          <tr style="font-weight:700;">
+            <td colspan="9" style="border:1px solid #000; text-align:right; padding:5px;">รวมทั้งสิ้นจำนวน ${toThaiNumber(vehicles.length)} รายการ</td>
+            <td colspan="2" style="border:1px solid #000;"></td>
+            <td style="border:1px solid #000; text-align:center;">${toThaiNumber(keep)}</td>
+            <td style="border:1px solid #000; text-align:center;">${toThaiNumber(dispose)}</td>
+            <td style="border:1px solid #000; text-align:center;">${toThaiNumber(transfer)}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>`;
+  const pa = document.getElementById('printArea');
+  pa.innerHTML = html;
+  setTimeout(() => { window.print(); pa.innerHTML = ''; }, 80);
+}
+   
 async function setAuditStatus(assetId, status) {
   const asset = state.assets.find(a => a['รหัสครุภัณฑ์'] === assetId);
   try {
@@ -3034,6 +3120,54 @@ function printAuditReport() {
   const pa = document.getElementById('printArea');
   pa.innerHTML = html;
   setTimeout(() => { window.print(); pa.innerHTML = ''; }, 80);
+}
+
+   function openVehicleAuditForm(assetId) {
+  const a = state.assets.find(x => x['รหัสครุภัณฑ์'] === assetId);
+  if (!a) return;
+  const rec = auditRecordFor(assetId) || {};
+  showSheet(`
+    <div class="sheet-title">ผลตรวจสอบยานพาหนะ — ${escapeHtml(a['ชื่อครุภัณฑ์'])}</div>
+    <div class="detail-row"><span>ทะเบียน</span><span>${escapeHtml(a['ทะเบียนรถ'])||'-'}</span></div>
+    <div class="detail-row"><span>หมายเลขตัวถัง</span><span>${escapeHtml(a['หมายเลขตัวถัง'])||'-'}</span></div>
+    <div class="detail-row"><span>หมายเลขเครื่องยนต์</span><span>${escapeHtml(a['หมายเลขเครื่อง'])||'-'}</span></div>
+    <div class="field"><label>ผลการตรวจสอบ</label>
+      <select class="input" id="va_found">
+        <option value="A" ${rec['ผลตรวจ(A/D)']==='A'?'selected':''}>A — เป็นอยู่จริง</option>
+        <option value="D" ${rec['ผลตรวจ(A/D)']==='D'?'selected':''}>D — สูญหาย</option>
+      </select>
+    </div>
+    <div class="field"><label>สภาพเป็นทันช้าย (ให้คะแนน)</label>
+      <select class="input" id="va_score">
+        ${[5,4,3,2,1,0].map(n => `<option value="${n}" ${String(rec['คะแนนสภาพ'])===String(n)?'selected':''}>${n}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field"><label>วันที่ใช้งานครั้งสุดท้าย</label><input class="input" type="date" id="va_lastused" value="${rec['วันที่ใช้งานครั้งสุดท้าย'] ? isoDate(rec['วันที่ใช้งานครั้งสุดท้าย']) : ''}"></div>
+    <div class="field"><label>ความเห็นคณะกรรมการ</label>
+      <select class="input" id="va_decision">
+        <option value="สมควรเก็บไว้ใช้งาน" ${rec['ความเห็นคณะกรรมการ']==='สมควรเก็บไว้ใช้งาน'?'selected':''}>สมควรเก็บไว้ใช้งาน/ซ่อมไว้ใช้งาน</option>
+        <option value="สมควรจำหน่าย" ${rec['ความเห็นคณะกรรมการ']==='สมควรจำหน่าย'?'selected':''}>สมควรจำหน่าย</option>
+        <option value="ให้หน่วยงานอื่น" ${rec['ความเห็นคณะกรรมการ']==='ให้หน่วยงานอื่น'?'selected':''}>จำเป็นต้องให้หน่วยงานอื่น</option>
+      </select>
+    </div>
+    <div class="field"><label>หมายเหตุ</label><input class="input" id="va_note" value="${escapeHtml(rec['หมายเหตุ'])||''}"></div>
+    <div class="btn-row"><button class="btn btn-ghost" id="btnCancel">ยกเลิก</button><button class="btn btn-primary" id="btnSaveVA">บันทึกผลตรวจ</button></div>
+  `);
+  document.getElementById('btnCancel').onclick = closeSheet;
+  document.getElementById('btnSaveVA').onclick = async () => {
+    const status = val('va_found') === 'A' ? 'พบปกติ' : 'สูญหาย';
+    try {
+      await apiPost('saveAuditRecord', {
+        assetId, assetName: a['ชื่อครุภัณฑ์'], year: state.auditYear, status,
+        foundStatus: val('va_found'), conditionScore: val('va_score'),
+        lastUsedDate: val('va_lastused'), committeeDecision: val('va_decision'), note: val('va_note')
+      });
+      closeSheet(); toast('บันทึกผลตรวจแล้ว');
+      const records = await apiGet('getAuditRecords', { year: state.auditYear, token: state.sessionToken });
+      state.auditRecords = records || [];
+      drawAuditView();
+    } catch (err) { toast(err.message || 'บันทึกไม่สำเร็จ'); }
+  };
 }
    
 /* ========================================================= ตั้งค่าระบบ */
