@@ -100,11 +100,11 @@ async function gasUploadImageToDrive(dataUrl, fileName) {
 }
 
 // ==================== FIELD MAPPING: DB row (English) <-> Thai keys ที่หน้าเว็บใช้ ====================
-const assetToThai = r => ({
-  'รหัสครุภัณฑ์': r.id, 'ชื่อครุภัณฑ์': r.name, 'หมวดหมู่': r.category, 'ยี่ห้อ/รุ่น': r.brand,
-  'หมายเลขเครื่อง': r.serial, 'วันที่รับเข้า': r.received_date, 'มูลค่า(บาท)': r.value,
-  'สถานะ': r.status, 'ผู้ครอบครอง/หน่วยงาน': r.holder, 'หน่วยงาน': r.unit, 'หมายเหตุ': r.note,
-  'รูปภาพ(URL)': r.image_url, 'วันที่บันทึก': r.created_at, 'วันครบกำหนดตรวจสภาพ/ต่อทะเบียน': r.renewal_due
+const auditToThai = r => ({
+  'รหัสตรวจนับ': r.id, 'รหัสครุภัณฑ์': r.asset_id, 'ชื่อครุภัณฑ์': r.asset_name, 'ปีที่ตรวจ': r.year,
+  'ผล': r.result, 'ผู้ตรวจ': r.inspector, 'วันที่ตรวจ': r.inspected_at, 'หมายเหตุ': r.note,
+  'ผลตรวจ(A/D)': r.found_status, 'คะแนนสภาพ': r.condition_score,
+  'วันที่ใช้งานครั้งสุดท้าย': r.last_used_date, 'ความเห็นคณะกรรมการ': r.committee_decision
 });
 const borrowToThai = r => ({
   'รหัสรายการ': r.id, 'รหัสครุภัณฑ์': r.asset_id, 'ชื่อครุภัณฑ์': r.asset_name, 'ผู้ยืม': r.borrower,
@@ -274,11 +274,12 @@ async function setComponentsStatusSb(ids, status) {
 async function sAddAsset(p, actor) {
   const id = p.id || genId('AST');
   const row = {
-    id, name: p.name, category: p.category, brand: p.brand || '', serial: p.serial || '',
-    received_date: p.receivedDate || null, value: (p.value !== undefined && p.value !== '') ? Number(p.value) : null,
-    status: p.status || 'พร้อมใช้งาน', holder: p.holder || '', unit: p.unit || '',
-    note: p.note || '', image_url: p.imageUrl || '', renewal_due: p.renewalDue || null
-  };
+  id, name: p.name, category: p.category, brand: p.brand || '', serial: p.serial || '',
+  received_date: p.receivedDate || null, value: (p.value !== undefined && p.value !== '') ? Number(p.value) : null,
+  status: p.status || 'พร้อมใช้งาน', holder: p.holder || '', unit: p.unit || '',
+  note: p.note || '', image_url: p.imageUrl || '', renewal_due: p.renewalDue || null,
+  license_plate: p.licensePlate || '', chassis_no: p.chassisNo || ''   // เพิ่มบรรทัดนี้
+};
   const { error } = await sb.from('assets').insert(row);
   if (error) throw new Error('เพิ่มครุภัณฑ์ไม่สำเร็จ: ' + error.message);
   await logActivitySb(actor, 'เพิ่มครุภัณฑ์', p.name);
@@ -286,7 +287,8 @@ async function sAddAsset(p, actor) {
 }
 async function sUpdateAsset(p, actor) {
   const map = { name: 'name', category: 'category', brand: 'brand', serial: 'serial', receivedDate: 'received_date',
-    value: 'value', status: 'status', holder: 'holder', unit: 'unit', note: 'note', imageUrl: 'image_url', renewalDue: 'renewal_due' };
+  value: 'value', status: 'status', holder: 'holder', unit: 'unit', note: 'note', imageUrl: 'image_url', renewalDue: 'renewal_due',
+  licensePlate: 'license_plate', chassisNo: 'chassis_no' };   // เพิ่ม 2 ตัวนี้
   const upd = {};
   Object.keys(map).forEach(k => {
     if (p[k] === undefined) return;
@@ -504,12 +506,18 @@ async function sUpdateSystemSettings(p, actor) {
 async function sSaveAuditRecord(p, actor) {
   const year = Number(p.year) || new Date().getFullYear();
   const { data: existing } = await sb.from('audit_records').select('id').eq('asset_id', p.assetId).eq('year', year).maybeSingle();
+  const payload = {
+    result: p.status || 'ยังไม่ตรวจ', inspector: actor || '', note: p.note || '',
+    inspected_at: new Date().toISOString(),
+    found_status: p.foundStatus || '', condition_score: p.conditionScore !== undefined && p.conditionScore !== '' ? Number(p.conditionScore) : null,
+    last_used_date: p.lastUsedDate || null, committee_decision: p.committeeDecision || ''
+  };
   if (existing) {
-    await sb.from('audit_records').update({ result: p.status || 'ยังไม่ตรวจ', inspector: actor || '', note: p.note, inspected_at: new Date().toISOString() }).eq('id', existing.id);
+    await sb.from('audit_records').update(payload).eq('id', existing.id);
   } else {
-    await sb.from('audit_records').insert({ id: genId('AUD'), asset_id: p.assetId, asset_name: p.assetName || '', year, result: p.status || 'ยังไม่ตรวจ', inspector: actor || '', note: p.note || '' });
+    await sb.from('audit_records').insert({ id: genId('AUD'), asset_id: p.assetId, asset_name: p.assetName || '', year, ...payload });
   }
-  await logActivitySb(actor, 'บันทึกผลตรวจนับ', p.assetId + ' → ' + p.status);
+  await logActivitySb(actor, 'บันทึกผลตรวจนับยานพาหนะ', p.assetId + ' → ' + (p.status || ''));
   return { saved: true };
 }
 
