@@ -9,7 +9,8 @@
 <!-- TODO: วางไฟล์สองตัวนี้ไว้โฟลเดอร์เดียวกับ index.html -->
 <script src="chart.umd.js"></script>
 <script src="qrcode.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-helpers.js"></script>
 <style>
 /* =========================================================
    DESIGN TOKENS — "รุ่งอรุณ ทางหลวง" (dawn patrol)
@@ -813,7 +814,6 @@ html:not(.has-thsarabun) .pf-title{ font-size:26pt; line-height:30pt; }
 /* =========================================================
    CONFIG — แก้ค่าตรงนี้ก่อนใช้งานจริง
    ========================================================= */
-const API_URL = 'https://script.google.com/macros/s/AKfycbw9mgyNR0My7CPuRRX1bRStNcuv1O6nTSivhZssA8svIOOul0VW9v32_rhGwJBDOkp37A/exec';
 const ORG_NAME = 'ส.ทล.3 กก.1 บก.ทล. อ.เมืองลพบุรี จ.ลพบุรี';
 const ORG_PHONE = '';
 const GUN_CATEGORY = 'อาวุธปืน';
@@ -903,7 +903,7 @@ let selectedRole = null;
 
 async function init() {
   const sess = loadSession();
-  if (!sess) { showRoleSelect(); return; }
+  if (!sess || !verifyLocalToken(sess.token)) { showRoleSelect(); return; }
   await completeLogin({ role: sess.role, name: sess.name, token: sess.token });
 }
 
@@ -951,15 +951,9 @@ document.querySelectorAll('.role-select-card').forEach(card => {
       document.getElementById('loginSpinner').style.display = 'block';
       document.getElementById('loginSubText').innerHTML = 'ตำรวจทางหลวง<br>กำลังเข้าสู่ระบบ...';
       try {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'loginAsViewer', payload: {} })
-        });
-        const j = await res.json();
-        if (!j.ok) throw new Error(j.error || 'เข้าสู่ระบบไม่สำเร็จ');
-        saveSession({ role: j.data.role, token: j.data.token, name: j.data.displayName });
-        await completeLogin({ role: j.data.role, name: j.data.displayName, token: j.data.token });
+        const d = supaLoginAsViewer();
+        saveSession({ role: d.role, token: d.token, name: d.displayName });
+        await completeLogin({ role: d.role, name: d.displayName, token: d.token });
       } catch (err) {
         toast(err.message || 'เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่');
         showRoleSelect();
@@ -993,16 +987,9 @@ async function doRoleLogin() {
   btn.disabled = true;
   btn.textContent = 'กำลังเข้าสู่ระบบ...';
   try {
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'loginWithRole', payload: { role: selectedRole, password } })
-    });
-    const j = await res.json();
-    if (!j.ok) throw new Error(j.error || 'เข้าสู่ระบบไม่สำเร็จ');
-    const displayName = j.data.displayName || (j.data.role === 'admin' ? 'แอดมิน' : 'ผู้ดูอย่างเดียว');
-    saveSession({ role: j.data.role, token: j.data.token, name: displayName });
-    await completeLogin({ role: j.data.role, name: displayName, token: j.data.token });
+    const d = await supaLoginWithRole(selectedRole, password);
+    saveSession({ role: d.role, token: d.token, name: d.displayName });
+    await completeLogin({ role: d.role, name: d.displayName, token: d.token });
   } catch (err) {
     errEl.textContent = err.message || 'เข้าสู่ระบบไม่สำเร็จ';
     document.getElementById('rl_password').focus();
@@ -1179,12 +1166,10 @@ async function fetchJson(url, options = {}, timeout = 30000, retries = 1) {
 }
 
 async function apiGet(action, params = {}) {
-  const qs = new URLSearchParams({ action, ...params }).toString();
-  // GET อ่านข้อมูลให้เวลามากกว่า POST และ retry แบบเงียบ 1 ครั้ง
-  return fetchJson(API_URL + '?' + qs, {}, action === 'getAll' ? 40000 : 25000, 1);
+  return supaApiGet(action, params);
 }
 async function apiPost(action, payload) {
-  return fetchJson(API_URL, { method: 'POST', body: JSON.stringify({ action, sessionToken: state.sessionToken, actorName: state.user?.name, payload }) }, 30000, 0);
+  return supaApiPost(action, payload, state.role, state.user && state.user.name);
 }
 
 async function loadAll(showLoader = false) {
