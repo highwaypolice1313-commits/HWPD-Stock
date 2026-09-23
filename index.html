@@ -2358,8 +2358,8 @@ function buildMemoBodyHtml(m) {
   const req = m.requester || {}, apv = m.approver || {}, iss = m.issuer || {};
   const itemsText = m.itemsText !== undefined ? m.itemsText : itemPhraseList(m.items || []);
   const logo = state.settings && state.settings.garudaLogo;
-  const emblemHtml = (logo && logo.indexOf('data:image') === 0)
-    ? `<img src="${logo}" alt="ตราครุฑ">`
+  const emblemHtml = logo
+    ? `<img src="${escapeHtml(logo)}" alt="ตราครุฑ">`
     : `<div class="pf-emblem-placeholder">[ ตราครุฑ ]</div>`;
 
   // แปลงเบอร์โทรและหน่วยงานให้เป็นเลขไทย
@@ -3116,7 +3116,7 @@ function renderSettings() {
     const btn = document.getElementById('btnUploadGaruda'); setButtonBusy(btn, true, 'กำลังเตรียมรูป...'); setLoading(true, 'กำลังเตรียมตราครุฑ...');
     try {
       const compressed = await prepareImageFile(file, 60000);
-      setButtonBusy(btn, true, 'กำลังอัปโหลด...'); setLoading(true, 'กำลังอัปโหลดตราครุฑ...');
+      setButtonBusy(btn, true, 'กำลังอัปโหลด...');   // ← ลบ setLoading(true, ...) ตัวนี้ออก
       try {
         const url = await uploadImageToDrive(compressed, 'garuda');
         await apiPost('updateSystemSettings', { garudaLogo: url });
