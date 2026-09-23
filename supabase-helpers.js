@@ -134,10 +134,6 @@ const memoToThai = r => ({
   'เนื้อหาเอกสาร(HTML)': r.html, 'รหัสรายการยืม': r.borrow_id, 'สถานะ': r.status, 'ผู้สร้าง': r.created_by,
   'วันที่สร้าง': r.created_at, 'แก้ไขล่าสุด': r.updated_at
 });
-const auditToThai = r => ({
-  'รหัสตรวจนับ': r.id, 'รหัสครุภัณฑ์': r.asset_id, 'ชื่อครุภัณฑ์': r.asset_name, 'ปีที่ตรวจ': r.year,
-  'ผล': r.result, 'ผู้ตรวจ': r.inspector, 'วันที่ตรวจ': r.inspected_at, 'หมายเหตุ': r.note
-});
 
 // ==================== DASHBOARD BUILDER (พอร์ตจาก buildDashboard_ ฝั่ง GAS) ====================
 function buildDashboardJS(assets, borrow, maint, alertDays) {
