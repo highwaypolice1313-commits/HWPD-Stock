@@ -198,12 +198,12 @@ async function logActivitySb(actor, action, detail) {
 }
 
 // ==================== GET-side actions ====================
-const SETTING_KEYS = ['orgName', 'orgPhone', 'docNoPrefix', 'renewalAlertDays', 'garudaLogo'];
+const SETTING_KEYS = ['orgName', 'orgPhone', 'docNoPrefix', 'renewalAlertDays', 'garudaLogo','auditCommittee', 'auditPeriodStart', 'auditPeriodEnd'];
 
 async function sGetSystemSettings() {
   const { data, error } = await sb.from('system_settings').select('*');
   if (error) throw new Error(error.message);
-  const s = { orgName: '', orgPhone: '', docNoPrefix: '', renewalAlertDays: 30, garudaLogo: '' };
+  const s = { orgName: '', orgPhone: '', docNoPrefix: '', renewalAlertDays: 30, garudaLogo: '' , auditCommittee: '', auditPeriodStart: '', auditPeriodEnd: '' };
   (data || []).forEach(row => { if (SETTING_KEYS.indexOf(row.key) !== -1) s[row.key] = row.value; });
   const days = Number(s.renewalAlertDays);
   s.renewalAlertDays = (s.renewalAlertDays !== '' && !isNaN(days) && days >= 0) ? days : 30;
@@ -500,6 +500,10 @@ async function sUpdateSystemSettings(p, actor) {
     else if (/^data:image\//i.test(logo)) updates.garudaLogo = (await gasUploadImageToDrive(logo, 'garuda')).url;
     else updates.garudaLogo = logo;
   }
+if (p.auditCommittee !== undefined) updates.auditCommittee = String(p.auditCommittee || '');
+if (p.auditPeriodStart !== undefined) updates.auditPeriodStart = String(p.auditPeriodStart || '').trim();
+if (p.auditPeriodEnd !== undefined) updates.auditPeriodEnd = String(p.auditPeriodEnd || '').trim();
+  
   for (const key of Object.keys(updates)) {
     const { error } = await sb.from('system_settings').upsert({ key, value: String(updates[key]), updated_at: new Date().toISOString() });
     if (error) throw new Error(error.message);
