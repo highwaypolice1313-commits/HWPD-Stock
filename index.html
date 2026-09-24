@@ -340,6 +340,7 @@ input[type="date"]::-webkit-date-and-time-value{ text-align:left; }
     padding:22mm 20mm 20mm 25mm; -webkit-print-color-adjust:exact; print-color-adjust:exact;
   }
   #printArea.qr-print-area{ padding:20mm; text-align:center; font-family:'Kanit',sans-serif; }
+  #printArea.report-print-area{ width:100%; padding:0; }
 }
 
 /* =========================================================
@@ -937,19 +938,25 @@ function auditPeriodLineHtml() {
 function committeeSignBlockHtml() {
   const c = getAuditCommittee();
   const [head, m1, m2, sec] = c;
-  const line = (m, extraStyle) => `
-    <div style="text-align:center; ${extraStyle || ''}">
-      <div>ลงชื่อ ${escapeHtml(m.rank) || '.....................'} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; เป็น${escapeHtml(m.role)}</div>
+  const sigGap = `<span style="display:inline-block; width:34mm;">&nbsp;</span>`;
+  const block = (m) => `
+    <div style="text-align:center;">
+      <div>ลงชื่อ ${escapeHtml(m.rank) || '.....................'}${sigGap}เป็น${escapeHtml(m.role)}</div>
       <div style="margin-top:3mm;">( ${escapeHtml(m.name) || '.....................................'} )</div>
       <div>${escapeHtml(m.position) || '&nbsp;'}</div>
     </div>`;
   return `
-    <div style="margin-top:8mm;">${line(head)}</div>
-    <div style="display:flex; gap:10mm; margin-top:10mm;">
-      <div style="flex:1;">${line(m1)}</div>
-      <div style="flex:1;">${line(m2)}</div>
-    </div>
-    <div style="margin-top:10mm;">${line(sec)}</div>
+    <div style="margin-top:10mm;">${block(head)}</div>
+    <table style="width:100%; border-collapse:collapse; margin-top:12mm;">
+      <tr>
+        <td style="border:1px solid #000; padding:6mm 4mm; width:50%; vertical-align:top;">${block(m1)}</td>
+        <td style="border:1px solid #000; padding:6mm 4mm; width:50%; vertical-align:top;">${block(m2)}</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #000; padding:6mm 4mm; vertical-align:top;">${block(sec)}</td>
+        <td style="border:1px solid #000; padding:6mm 4mm;"></td>
+      </tr>
+    </table>
   `;
 }
  
@@ -2954,46 +2961,51 @@ function printOfficialGeneralReport() {
  
   const html = `
     <style>@page{ size:A4; margin:12mm; } table{ page-break-inside:auto; } tr{ page-break-inside:avoid; }</style>
-    <div style="font-family:'TH Sarabun New','Sarabun','Kanit',sans-serif; font-size:14pt; color:#000;">
-      <div style="text-align:center; font-weight:700; font-size:17pt;">รายงานผลการตรวจสอบครุภัณฑ์ทั่วไป ประจำปี ${yearBE}</div>
-      <div style="text-align:center; margin-bottom:5mm;">หน่วยงาน ${escapeHtml(orgName)}${phone ? '&nbsp;&nbsp;&nbsp;โทรศัพท์…' + escapeHtml(phone) : ''}</div>
-      <table style="width:100%; border-collapse:collapse; font-size:12.5pt;">
-        <thead>
-          <tr style="background:#f2f2f2; text-align:center; font-weight:700;">
-            <th style="border:1px solid #000; padding:5px; width:4%;">ที่</th>
-            <th style="border:1px solid #000; padding:5px; width:22%;">ชื่อครุภัณฑ์</th>
-            <th style="border:1px solid #000; padding:5px; width:13%;">หมายเลขครุภัณฑ์</th>
-            <th style="border:1px solid #000; padding:5px; width:18%;">หมายเลขเครื่อง<br>ยี่ห้อ/ขนาด</th>
-            <th style="border:1px solid #000; padding:5px; width:5%;">ดี</th>
-            <th style="border:1px solid #000; padding:5px; width:5%;">ชำรุด</th>
-            <th style="border:1px solid #000; padding:5px; width:6%;">เสื่อม<br>คุณภาพ</th>
-            <th style="border:1px solid #000; padding:5px; width:7%;">เก็บไว้นาน<br>ไม่นำมาใช้</th>
-            <th style="border:1px solid #000; padding:5px; width:6%;">หมด<br>ความจำเป็น</th>
-            <th style="border:1px solid #000; padding:5px; width:14%;">ความเห็น<br>ของคณะกรรมการ</th>
-          </tr>
-        </thead>
-        <tbody>${rows || `<tr><td colspan="10" style="text-align:center; padding:12px; border:1px solid #000;">ไม่มีข้อมูลครุภัณฑ์</td></tr>`}</tbody>
-        <tfoot>
-          <tr style="font-weight:700;">
-            <td style="border:1px solid #000; text-align:center;"></td>
-            <td style="border:1px solid #000; padding:4px 6px;">รวมทั้งสิ้น</td>
-            <td style="border:1px solid #000; text-align:center;">${items.length}</td>
-            <td style="border:1px solid #000;"></td>
-            <td style="border:1px solid #000; text-align:center;">${sumGood}</td>
-            <td style="border:1px solid #000; text-align:center;">${sumBroken}</td>
-            <td style="border:1px solid #000; text-align:center;">${sumWorn}</td>
-            <td style="border:1px solid #000; text-align:center;">${sumUnused}</td>
-            <td style="border:1px solid #000; text-align:center;">${sumObsolete}</td>
-            <td style="border:1px solid #000;"></td>
-          </tr>
-        </tfoot>
-      </table>
-      ${auditPeriodLineHtml()}
-      ${committeeSignBlockHtml()}
+    <div style="font-family:'TH Sarabun New','Sarabun','Kanit',sans-serif; font-size:14pt; color:#000; min-height:calc(297mm - 24mm); display:flex; flex-direction:column;">
+      <div>
+        <div style="text-align:center; font-weight:700; font-size:17pt;">รายงานผลการตรวจสอบครุภัณฑ์ทั่วไป ประจำปี ${yearBE}</div>
+        <div style="text-align:center; margin-bottom:5mm;">หน่วยงาน ${escapeHtml(orgName)}${phone ? '&nbsp;&nbsp;&nbsp;โทรศัพท์…' + escapeHtml(phone) : ''}</div>
+        <table style="width:100%; border-collapse:collapse; font-size:12.5pt;">
+          <thead>
+            <tr style="background:#f2f2f2; text-align:center; font-weight:700;">
+              <th style="border:1px solid #000; padding:5px; width:4%;">ที่</th>
+              <th style="border:1px solid #000; padding:5px; width:22%;">ชื่อครุภัณฑ์</th>
+              <th style="border:1px solid #000; padding:5px; width:13%;">หมายเลขครุภัณฑ์</th>
+              <th style="border:1px solid #000; padding:5px; width:18%;">หมายเลขเครื่อง<br>ยี่ห้อ/ขนาด</th>
+              <th style="border:1px solid #000; padding:5px; width:5%;">ดี</th>
+              <th style="border:1px solid #000; padding:5px; width:5%;">ชำรุด</th>
+              <th style="border:1px solid #000; padding:5px; width:6%;">เสื่อม<br>คุณภาพ</th>
+              <th style="border:1px solid #000; padding:5px; width:7%;">เก็บไว้นาน<br>ไม่นำมาใช้</th>
+              <th style="border:1px solid #000; padding:5px; width:6%;">หมด<br>ความจำเป็น</th>
+              <th style="border:1px solid #000; padding:5px; width:14%;">ความเห็น<br>ของคณะกรรมการ</th>
+            </tr>
+          </thead>
+          <tbody>${rows || `<tr><td colspan="10" style="text-align:center; padding:12px; border:1px solid #000;">ไม่มีข้อมูลครุภัณฑ์</td></tr>`}</tbody>
+          <tfoot>
+            <tr style="font-weight:700;">
+              <td style="border:1px solid #000; text-align:center;"></td>
+              <td style="border:1px solid #000; padding:4px 6px;">รวมทั้งสิ้น</td>
+              <td style="border:1px solid #000; text-align:center;">${items.length}</td>
+              <td style="border:1px solid #000;"></td>
+              <td style="border:1px solid #000; text-align:center;">${sumGood}</td>
+              <td style="border:1px solid #000; text-align:center;">${sumBroken}</td>
+              <td style="border:1px solid #000; text-align:center;">${sumWorn}</td>
+              <td style="border:1px solid #000; text-align:center;">${sumUnused}</td>
+              <td style="border:1px solid #000; text-align:center;">${sumObsolete}</td>
+              <td style="border:1px solid #000;"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <div style="margin-top:auto;">
+        ${auditPeriodLineHtml()}
+        ${committeeSignBlockHtml()}
+      </div>
     </div>`;
   const pa = document.getElementById('printArea');
+  pa.classList.add('report-print-area');
   pa.innerHTML = html;
-  setTimeout(() => { window.print(); pa.innerHTML = ''; }, 80);
+  setTimeout(() => { window.print(); pa.classList.remove('report-print-area'); pa.innerHTML = ''; }, 80);
 }
  
 /* ---- 2.5 รายงานเครื่องมือสื่อสาร (ฟังก์ชันใหม่) ---- */
@@ -3030,48 +3042,53 @@ function printCommsAuditReport() {
     </tr>`;
   }).join('');
  
-  const html = `
+    const html = `
     <style>@page{ size:A4; margin:12mm; } table{ page-break-inside:auto; } tr{ page-break-inside:avoid; }</style>
-    <div style="font-family:'TH Sarabun New','Sarabun','Kanit',sans-serif; font-size:14pt; color:#000;">
-      <div style="text-align:center; font-weight:700; font-size:17pt;">รายงานผลการตรวจสอบครุภัณฑ์เครื่องมือสื่อสาร ประจำปี ${yearBE}</div>
-      <div style="text-align:center; margin-bottom:5mm;">หน่วยงาน ${escapeHtml(orgName)}${phone ? '&nbsp;&nbsp;&nbsp;โทรศัพท์…' + escapeHtml(phone) : ''}</div>
-      <table style="width:100%; border-collapse:collapse; font-size:12pt;">
-        <thead>
-          <tr style="background:#f2f2f2; text-align:center; font-weight:700;">
-            <th style="border:1px solid #000; padding:5px; width:4%;">ลำดับที่</th>
-            <th style="border:1px solid #000; padding:5px; width:16%;">ชื่อครุภัณฑ์</th>
-            <th style="border:1px solid #000; padding:5px; width:12%;">หมายเลขครุภัณฑ์</th>
-            <th style="border:1px solid #000; padding:5px; width:12%;">หมายเลขเครื่อง</th>
-            <th style="border:1px solid #000; padding:5px; width:18%;">ชนิดวิทยุรับ-ส่ง</th>
-            <th style="border:1px solid #000; padding:5px; width:5%;">ดี</th>
-            <th style="border:1px solid #000; padding:5px; width:5%;">ชำรุด</th>
-            <th style="border:1px solid #000; padding:5px; width:6%;">เสื่อม<br>คุณภาพ</th>
-            <th style="border:1px solid #000; padding:5px; width:6%;">เก็บไว้นาน<br>ไม่นำมาใช้</th>
-            <th style="border:1px solid #000; padding:5px; width:6%;">หมด<br>ความจำเป็น</th>
-            <th style="border:1px solid #000; padding:5px; width:10%;">ความเห็น<br>ของคณะกรรมการ</th>
-          </tr>
-        </thead>
-        <tbody>${rows || `<tr><td colspan="11" style="text-align:center; padding:12px; border:1px solid #000;">ไม่มีข้อมูลเครื่องมือสื่อสาร</td></tr>`}</tbody>
-        <tfoot>
-          <tr style="font-weight:700;">
-            <td style="border:1px solid #000;"></td>
-            <td style="border:1px solid #000; padding:4px 6px;">รวมทั้งสิ้น ${items.length} เครื่อง</td>
-            <td style="border:1px solid #000;" colspan="3"></td>
-            <td style="border:1px solid #000; text-align:center;">${sumGood}</td>
-            <td style="border:1px solid #000; text-align:center;">${sumBroken}</td>
-            <td style="border:1px solid #000; text-align:center;">${sumWorn}</td>
-            <td style="border:1px solid #000; text-align:center;">${sumUnused}</td>
-            <td style="border:1px solid #000; text-align:center;">${sumObsolete}</td>
-            <td style="border:1px solid #000;"></td>
-          </tr>
-        </tfoot>
-      </table>
-      ${auditPeriodLineHtml()}
-      ${committeeSignBlockHtml()}
+    <div style="font-family:'TH Sarabun New','Sarabun','Kanit',sans-serif; font-size:14pt; color:#000; min-height:calc(297mm - 24mm); display:flex; flex-direction:column;">
+      <div>
+        <div style="text-align:center; font-weight:700; font-size:17pt;">รายงานผลการตรวจสอบครุภัณฑ์เครื่องมือสื่อสาร ประจำปี ${yearBE}</div>
+        <div style="text-align:center; margin-bottom:5mm;">หน่วยงาน ${escapeHtml(orgName)}${phone ? '&nbsp;&nbsp;&nbsp;โทรศัพท์…' + escapeHtml(phone) : ''}</div>
+        <table style="width:100%; border-collapse:collapse; font-size:12pt;">
+          <thead>
+            <tr style="background:#f2f2f2; text-align:center; font-weight:700;">
+              <th style="border:1px solid #000; padding:5px; width:4%;">ลำดับที่</th>
+              <th style="border:1px solid #000; padding:5px; width:16%;">ชื่อครุภัณฑ์</th>
+              <th style="border:1px solid #000; padding:5px; width:12%;">หมายเลขครุภัณฑ์</th>
+              <th style="border:1px solid #000; padding:5px; width:12%;">หมายเลขเครื่อง</th>
+              <th style="border:1px solid #000; padding:5px; width:18%;">ชนิดวิทยุรับ-ส่ง</th>
+              <th style="border:1px solid #000; padding:5px; width:5%;">ดี</th>
+              <th style="border:1px solid #000; padding:5px; width:5%;">ชำรุด</th>
+              <th style="border:1px solid #000; padding:5px; width:6%;">เสื่อม<br>คุณภาพ</th>
+              <th style="border:1px solid #000; padding:5px; width:6%;">เก็บไว้นาน<br>ไม่นำมาใช้</th>
+              <th style="border:1px solid #000; padding:5px; width:6%;">หมด<br>ความจำเป็น</th>
+              <th style="border:1px solid #000; padding:5px; width:10%;">ความเห็น<br>ของคณะกรรมการ</th>
+            </tr>
+          </thead>
+          <tbody>${rows || `<tr><td colspan="11" style="text-align:center; padding:12px; border:1px solid #000;">ไม่มีข้อมูลเครื่องมือสื่อสาร</td></tr>`}</tbody>
+          <tfoot>
+            <tr style="font-weight:700;">
+              <td style="border:1px solid #000;"></td>
+              <td style="border:1px solid #000; padding:4px 6px;">รวมทั้งสิ้น ${items.length} เครื่อง</td>
+              <td style="border:1px solid #000;" colspan="3"></td>
+              <td style="border:1px solid #000; text-align:center;">${sumGood}</td>
+              <td style="border:1px solid #000; text-align:center;">${sumBroken}</td>
+              <td style="border:1px solid #000; text-align:center;">${sumWorn}</td>
+              <td style="border:1px solid #000; text-align:center;">${sumUnused}</td>
+              <td style="border:1px solid #000; text-align:center;">${sumObsolete}</td>
+              <td style="border:1px solid #000;"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <div style="margin-top:auto;">
+        ${auditPeriodLineHtml()}
+        ${committeeSignBlockHtml()}
+      </div>
     </div>`;
   const pa = document.getElementById('printArea');
+  pa.classList.add('report-print-area');
   pa.innerHTML = html;
-  setTimeout(() => { window.print(); pa.innerHTML = ''; }, 80);
+  setTimeout(() => { window.print(); pa.classList.remove('report-print-area'); pa.innerHTML = ''; }, 80);
 }
    
    /* ========================= ฟีเจอร์ ๔: ตรวจนับพัสดุประจำปี ========================= */
@@ -3227,59 +3244,64 @@ function printVehicleAuditReport() {
     </tr>`;
   }).join('');
  
-  const html = `
+    const html = `
     <style>@page{ size: A4 landscape; margin: 10mm; }</style>
-    <div style="font-family:'TH Sarabun New','Sarabun','Kanit',sans-serif; font-size:13pt; color:#000;">
-      <div style="text-align:right; border:1px solid #000; width:80px; padding:3px; float:right;">แบบ บชก.3</div>
-      <div style="text-align:center; font-weight:700; font-size:16pt;">รายงานผลการตรวจสอบครุภัณฑ์เครื่องจักร/ยานพาหนะ ประจำปี ${toThaiNumber(state.auditYear + 543)}</div>
-      <div style="text-align:center; margin-bottom:6mm;">หน่วยงาน ${escapeHtml(orgName)} ${phone ? 'โทรศัพท์ ' + escapeHtml(phone) : ''}</div>
-      <table style="width:100%; border-collapse:collapse; font-size:11pt;">
-        <thead>
-          <tr style="background:#f2f2f2; text-align:center;">
-            <th rowspan="2" style="border:1px solid #000;">ที่</th>
-            <th rowspan="2" style="border:1px solid #000;">หมายเลขกรม</th>
-            <th rowspan="2" style="border:1px solid #000;">ทะเบียน</th>
-            <th rowspan="2" style="border:1px solid #000;">หมายเลขแชสซีส์</th>
-            <th rowspan="2" style="border:1px solid #000;">หมายเลขเครื่องยนต์</th>
-            <th rowspan="2" style="border:1px solid #000;">ผลการ<br>ตรวจสอบ</th>
-            <th colspan="6" style="border:1px solid #000;">สภาพเป็นดัชนี</th>
-            <th rowspan="2" style="border:1px solid #000;">วันที่ใช้งาน<br>ครั้งสุดท้าย</th>
-            <th rowspan="2" style="border:1px solid #000;">วันที่ตรวจสภาพ</th>
-            <th colspan="3" style="border:1px solid #000;">ความเห็นของคณะกรรมการ</th>
-          </tr>
-          <tr style="background:#f2f2f2; text-align:center;">
-            <th style="border:1px solid #000;">๕</th><th style="border:1px solid #000;">๔</th><th style="border:1px solid #000;">๓</th>
-            <th style="border:1px solid #000;">๒</th><th style="border:1px solid #000;">๑</th><th style="border:1px solid #000;">๐</th>
-            <th style="border:1px solid #000;">เก็บไว้ใช้/ซ่อม</th><th style="border:1px solid #000;">จำหน่าย</th><th style="border:1px solid #000;">ให้หน่วยงานอื่น</th>
-          </tr>
-        </thead>
-        <tbody>${rows || `<tr><td colspan="16" style="text-align:center; padding:12px; border:1px solid #000;">ไม่มีข้อมูลยานพาหนะ</td></tr>`}</tbody>
-        <tfoot>
-          <tr style="font-weight:700;">
-            <td colspan="6" style="border:1px solid #000; text-align:right; padding:5px;">รวมทั้งสิ้นจำนวน ${toThaiNumber(vehicles.length)} รายการ</td>
-            <td style="border:1px solid #000; text-align:center;">${toThaiNumber(scoreSums[5])}</td>
-            <td style="border:1px solid #000; text-align:center;">${toThaiNumber(scoreSums[4])}</td>
-            <td style="border:1px solid #000; text-align:center;">${toThaiNumber(scoreSums[3])}</td>
-            <td style="border:1px solid #000; text-align:center;">${toThaiNumber(scoreSums[2])}</td>
-            <td style="border:1px solid #000; text-align:center;">${toThaiNumber(scoreSums[1])}</td>
-            <td style="border:1px solid #000; text-align:center;">${toThaiNumber(scoreSums[0])}</td>
-            <td colspan="2" style="border:1px solid #000;"></td>
-            <td style="border:1px solid #000; text-align:center;">${toThaiNumber(keep)}</td>
-            <td style="border:1px solid #000; text-align:center;">${toThaiNumber(dispose)}</td>
-            <td style="border:1px solid #000; text-align:center;">${toThaiNumber(transfer)}</td>
-          </tr>
-        </tfoot>
-      </table>
-      <div style="margin-top:6mm; font-size:11pt;">
-        <div><b>หมายเหตุ ผลการตรวจสอบ ระบุสถานะ:</b> A อยู่ระหว่างการใช้งาน (${toThaiNumber(countA)})&nbsp;&nbsp; D เสนอขออนุมัติแทงจำหน่ายและรอจำหน่าย/สูญไป (${toThaiNumber(countD)})</div>
-        <div><b>หลักเกณฑ์สภาพเป็นดัชนี:</b> 5 เครื่องใหม่ &nbsp; 4 สภาพใช้งานได้ดี &nbsp; 3 ใช้งานได้แต่ต้องซ่อมบำรุง (Minor Repair) &nbsp; 2 ต้องซ่อมใหญ่ (Major Repair) &nbsp; 1 ต้องซ่อมปรับปรุงทั้งคัน &nbsp; 0 สภาพสมควรจำหน่าย/ซ่อมไม่ได้</div>
+    <div style="font-family:'TH Sarabun New','Sarabun','Kanit',sans-serif; font-size:13pt; color:#000; min-height:calc(210mm - 20mm); display:flex; flex-direction:column;">
+      <div>
+        <div style="text-align:right; border:1px solid #000; width:80px; padding:3px; float:right;">แบบ บชก.3</div>
+        <div style="text-align:center; font-weight:700; font-size:16pt;">รายงานผลการตรวจสอบครุภัณฑ์เครื่องจักร/ยานพาหนะ ประจำปี ${toThaiNumber(state.auditYear + 543)}</div>
+        <div style="text-align:center; margin-bottom:6mm;">หน่วยงาน ${escapeHtml(orgName)} ${phone ? 'โทรศัพท์ ' + escapeHtml(phone) : ''}</div>
+        <table style="width:100%; border-collapse:collapse; font-size:11pt;">
+          <thead>
+            <tr style="background:#f2f2f2; text-align:center;">
+              <th rowspan="2" style="border:1px solid #000;">ที่</th>
+              <th rowspan="2" style="border:1px solid #000;">หมายเลขกรม</th>
+              <th rowspan="2" style="border:1px solid #000;">ทะเบียน</th>
+              <th rowspan="2" style="border:1px solid #000;">หมายเลขแชสซีส์</th>
+              <th rowspan="2" style="border:1px solid #000;">หมายเลขเครื่องยนต์</th>
+              <th rowspan="2" style="border:1px solid #000;">ผลการ<br>ตรวจสอบ</th>
+              <th colspan="6" style="border:1px solid #000;">สภาพเป็นดัชนี</th>
+              <th rowspan="2" style="border:1px solid #000;">วันที่ใช้งาน<br>ครั้งสุดท้าย</th>
+              <th rowspan="2" style="border:1px solid #000;">วันที่ตรวจสภาพ</th>
+              <th colspan="3" style="border:1px solid #000;">ความเห็นของคณะกรรมการ</th>
+            </tr>
+            <tr style="background:#f2f2f2; text-align:center;">
+              <th style="border:1px solid #000;">๕</th><th style="border:1px solid #000;">๔</th><th style="border:1px solid #000;">๓</th>
+              <th style="border:1px solid #000;">๒</th><th style="border:1px solid #000;">๑</th><th style="border:1px solid #000;">๐</th>
+              <th style="border:1px solid #000;">เก็บไว้ใช้/ซ่อม</th><th style="border:1px solid #000;">จำหน่าย</th><th style="border:1px solid #000;">ให้หน่วยงานอื่น</th>
+            </tr>
+          </thead>
+          <tbody>${rows || `<tr><td colspan="16" style="text-align:center; padding:12px; border:1px solid #000;">ไม่มีข้อมูลยานพาหนะ</td></tr>`}</tbody>
+          <tfoot>
+            <tr style="font-weight:700;">
+              <td colspan="6" style="border:1px solid #000; text-align:right; padding:5px;">รวมทั้งสิ้นจำนวน ${toThaiNumber(vehicles.length)} รายการ</td>
+              <td style="border:1px solid #000; text-align:center;">${toThaiNumber(scoreSums[5])}</td>
+              <td style="border:1px solid #000; text-align:center;">${toThaiNumber(scoreSums[4])}</td>
+              <td style="border:1px solid #000; text-align:center;">${toThaiNumber(scoreSums[3])}</td>
+              <td style="border:1px solid #000; text-align:center;">${toThaiNumber(scoreSums[2])}</td>
+              <td style="border:1px solid #000; text-align:center;">${toThaiNumber(scoreSums[1])}</td>
+              <td style="border:1px solid #000; text-align:center;">${toThaiNumber(scoreSums[0])}</td>
+              <td colspan="2" style="border:1px solid #000;"></td>
+              <td style="border:1px solid #000; text-align:center;">${toThaiNumber(keep)}</td>
+              <td style="border:1px solid #000; text-align:center;">${toThaiNumber(dispose)}</td>
+              <td style="border:1px solid #000; text-align:center;">${toThaiNumber(transfer)}</td>
+            </tr>
+          </tfoot>
+        </table>
+        <div style="margin-top:6mm; font-size:11pt;">
+          <div><b>หมายเหตุ ผลการตรวจสอบ ระบุสถานะ:</b> A อยู่ระหว่างการใช้งาน (${toThaiNumber(countA)})&nbsp;&nbsp; D เสนอขออนุมัติแทงจำหน่ายและรอจำหน่าย/สูญไป (${toThaiNumber(countD)})</div>
+          <div><b>หลักเกณฑ์สภาพเป็นดัชนี:</b> 5 เครื่องใหม่ &nbsp; 4 สภาพใช้งานได้ดี &nbsp; 3 ใช้งานได้แต่ต้องซ่อมบำรุง (Minor Repair) &nbsp; 2 ต้องซ่อมใหญ่ (Major Repair) &nbsp; 1 ต้องซ่อมปรับปรุงทั้งคัน &nbsp; 0 สภาพสมควรจำหน่าย/ซ่อมไม่ได้</div>
+        </div>
       </div>
-      ${auditPeriodLineHtml()}
-      ${committeeSignBlockHtml()}
+      <div style="margin-top:auto;">
+        ${auditPeriodLineHtml()}
+        ${committeeSignBlockHtml()}
+      </div>
     </div>`;
   const pa = document.getElementById('printArea');
+  pa.classList.add('report-print-area');
   pa.innerHTML = html;
-  setTimeout(() => { window.print(); pa.innerHTML = ''; }, 80);
+  setTimeout(() => { window.print(); pa.classList.remove('report-print-area'); pa.innerHTML = ''; }, 80);
 }
    
 async function setAuditStatus(assetId, status) {
