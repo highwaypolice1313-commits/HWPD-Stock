@@ -3380,44 +3380,9 @@ function printAuditReport() {
 }
    
 /* ========================================================= ตั้งค่าระบบ */
-function renderSettings() {
-  if (!isAdmin()) return;
-  const el = document.getElementById('view-settings');
-  const s = state.settings || {};
-  const active = currentTheme();
-  el.innerHTML = `
-    <div class="section-title">ตั้งค่าระบบ</div>
 
-    <div class="section-title" style="margin-top:6px; font-size:14px;">ธีมเว็บ</div>
-    <div class="glass" style="padding:16px; margin-bottom:6px;">
-      <div class="hint" style="margin-top:0;">เลือกธีมสีของหน้าจอ — บันทึกไว้เฉพาะเครื่อง/เบราว์เซอร์นี้</div>
-      <div id="themeSwatchRow" style="display:flex; gap:12px; flex-wrap:wrap; margin-top:10px;">
-        ${THEMES.map(t => `
-          <div class="theme-swatch-card" data-theme-id="${t.id}" style="cursor:pointer; border:2px solid ${active===t.id?'var(--gold)':'var(--panel-line)'}; border-radius:14px; padding:10px; width:120px; text-align:center;">
-            <div style="display:flex; height:34px; border-radius:8px; overflow:hidden; margin-bottom:8px;">${t.swatches.map(c => `<div style="flex:1; background:${c};"></div>`).join('')}</div>
-            <div style="font-size:12px;">${t.name}</div>
-          </div>`).join('')}
-      </div>
-    </div>
-
-    <div class="section-title" style="margin-top:20px; font-size:14px;">ตราครุฑ (หัวเอกสารบันทึกข้อความ)</div>
-    <div class="glass" style="padding:16px; margin-bottom:6px;">
-      <div class="hint" style="margin-top:0;">อัปโหลดไฟล์รูปตราครุฑ (แนะนำ PNG พื้นหลังโปร่งใส ไฟล์เล็ก ไม่เกินประมาณ 30-40KB) ใช้ร่วมกันทุกคนในระบบทั้งหน้าจอและตอนพิมพ์</div>
-      <div style="display:flex; align-items:center; gap:14px; margin-top:12px; flex-wrap:wrap;">
-        <div id="garudaPreviewBox" style="width:60px;height:68px;border:1px dashed var(--panel-line);border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex:none;background:#fff;">
-          ${s.garudaLogo ? `<img src="${s.garudaLogo}" style="width:100%;height:100%;object-fit:contain;">` : `<span style="font-size:9px;color:var(--ink-dim);text-align:center;">ยังไม่มีรูป</span>`}
-        </div>
-        <div style="flex:1; min-width:180px;">
-          <input type="file" id="st_garuda" accept="image/png,image/jpeg,image/webp" class="input" style="padding:8px;">
-          <div class="btn-row" style="margin-top:8px;">
-            <button class="btn btn-ghost" id="btnUploadGaruda">อัปโหลดรูปนี้</button>
-            ${s.garudaLogo ? `<button class="btn btn-danger" id="btnRemoveGaruda">ลบรูปตราครุฑ</button>` : ''}
-          </div>
-        </div>
-      </div>
-    </div>
-
-
+/* ---- (ก) วางฟังก์ชันสองตัวนี้ไว้ "ก่อน" function renderSettings() { ... }
+   (นอกฟังก์ชัน ไม่ใช่ข้างในเทมเพลต) ---- */
 function auditCommitteeSettingsSectionHtml(s) {
   const c = getAuditCommittee();
   const person = (idx, label) => `
@@ -3448,9 +3413,9 @@ function wireAuditCommitteeSettingsHandlers() {
   btn.onclick = async () => {
     const committee = DEFAULT_AUDIT_COMMITTEE.map((_, idx) => ({
       role: DEFAULT_AUDIT_COMMITTEE[idx].role,
-      rank: (document.querySelector(`.ac-rank[data-idx="${idx}"]`) || {}).value || '',
-      name: (document.querySelector(`.ac-name[data-idx="${idx}"]`) || {}).value || '',
-      position: (document.querySelector(`.ac-position[data-idx="${idx}"]`) || {}).value || ''
+      rank: (document.querySelector('.ac-rank[data-idx="' + idx + '"]') || {}).value || '',
+      name: (document.querySelector('.ac-name[data-idx="' + idx + '"]') || {}).value || '',
+      position: (document.querySelector('.ac-position[data-idx="' + idx + '"]') || {}).value || ''
     }));
     setButtonBusy(btn, true); setLoading(true, 'กำลังบันทึกคณะกรรมการ...');
     try {
@@ -3465,7 +3430,47 @@ function wireAuditCommitteeSettingsHandlers() {
     finally { setLoading(false); setButtonBusy(btn, false); }
   };
 }
-   
+ 
+/* ---- (ข) แก้ renderSettings() ให้เป็นแบบนี้ทั้งฟังก์ชัน (แทนที่ของเดิมทั้งหมด) ---- */
+function renderSettings() {
+  if (!isAdmin()) return;
+  const el = document.getElementById('view-settings');
+  const s = state.settings || {};
+  const active = currentTheme();
+  el.innerHTML = `
+    <div class="section-title">ตั้งค่าระบบ</div>
+ 
+    <div class="section-title" style="margin-top:6px; font-size:14px;">ธีมเว็บ</div>
+    <div class="glass" style="padding:16px; margin-bottom:6px;">
+      <div class="hint" style="margin-top:0;">เลือกธีมสีของหน้าจอ — บันทึกไว้เฉพาะเครื่อง/เบราว์เซอร์นี้</div>
+      <div id="themeSwatchRow" style="display:flex; gap:12px; flex-wrap:wrap; margin-top:10px;">
+        ${THEMES.map(t => `
+          <div class="theme-swatch-card" data-theme-id="${t.id}" style="cursor:pointer; border:2px solid ${active===t.id?'var(--gold)':'var(--panel-line)'}; border-radius:14px; padding:10px; width:120px; text-align:center;">
+            <div style="display:flex; height:34px; border-radius:8px; overflow:hidden; margin-bottom:8px;">${t.swatches.map(c => `<div style="flex:1; background:${c};"></div>`).join('')}</div>
+            <div style="font-size:12px;">${t.name}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+ 
+    <div class="section-title" style="margin-top:20px; font-size:14px;">ตราครุฑ (หัวเอกสารบันทึกข้อความ)</div>
+    <div class="glass" style="padding:16px; margin-bottom:6px;">
+      <div class="hint" style="margin-top:0;">อัปโหลดไฟล์รูปตราครุฑ (แนะนำ PNG พื้นหลังโปร่งใส ไฟล์เล็ก ไม่เกินประมาณ 30-40KB) ใช้ร่วมกันทุกคนในระบบทั้งหน้าจอและตอนพิมพ์</div>
+      <div style="display:flex; align-items:center; gap:14px; margin-top:12px; flex-wrap:wrap;">
+        <div id="garudaPreviewBox" style="width:60px;height:68px;border:1px dashed var(--panel-line);border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex:none;background:#fff;">
+          ${s.garudaLogo ? `<img src="${s.garudaLogo}" style="width:100%;height:100%;object-fit:contain;">` : `<span style="font-size:9px;color:var(--ink-dim);text-align:center;">ยังไม่มีรูป</span>`}
+        </div>
+        <div style="flex:1; min-width:180px;">
+          <input type="file" id="st_garuda" accept="image/png,image/jpeg,image/webp" class="input" style="padding:8px;">
+          <div class="btn-row" style="margin-top:8px;">
+            <button class="btn btn-ghost" id="btnUploadGaruda">อัปโหลดรูปนี้</button>
+            ${s.garudaLogo ? `<button class="btn btn-danger" id="btnRemoveGaruda">ลบรูปตราครุฑ</button>` : ''}
+          </div>
+        </div>
+      </div>
+    </div>
+ 
+    ${auditCommitteeSettingsSectionHtml(s)}
+ 
     <div class="section-title" style="margin-top:20px; font-size:14px;">ข้อมูลหน่วยงาน &amp; เลขหนังสือ</div>
     <div class="glass" style="padding:16px; margin-bottom:6px;">
       <div class="field"><label>ส่วนราชการ (แสดงในหัวบันทึกข้อความ)</label><input class="input" id="st_org" value="${escapeHtml(s.orgName || ORG_NAME)}"></div>
@@ -3477,7 +3482,7 @@ function wireAuditCommitteeSettingsHandlers() {
       <div class="field"><label>แจ้งเตือนล่วงหน้าก่อนครบกำหนดตรวจสภาพ/ต่อทะเบียน (วัน)</label><input class="input" type="number" id="st_renewaldays" value="${s.renewalAlertDays || 30}"></div>
       <div class="btn-row" style="margin-top:14px;"><button class="btn btn-primary" id="btnSaveSettings">บันทึกการตั้งค่า</button></div>
     </div>
-
+ 
     <div class="section-title" style="margin-top:20px; font-size:14px;">รหัสผ่านเข้าระบบ</div>
     <div class="glass" style="padding:16px; margin-bottom:6px;">
       <div class="hint" style="margin-top:0;">เปลี่ยนรหัสผ่านของแต่ละระดับผู้ใช้งาน (ผู้ใช้ที่ล็อกอินค้างไว้จะไม่หลุด แต่ล็อกอินใหม่ต้องใช้รหัสผ่านใหม่)</div>
@@ -3487,13 +3492,13 @@ function wireAuditCommitteeSettingsHandlers() {
       </div>
       <div class="btn-row" style="margin-top:6px;"><button class="btn btn-primary" id="btnChangePw">เปลี่ยนรหัสผ่าน</button></div>
     </div>
-
+ 
     <div class="section-title" style="margin-top:20px; font-size:14px;">ย้ายรูปเก่าออกจาก Google Sheets</div>
     <div class="glass" style="padding:16px; margin-bottom:6px;">
       <div class="hint" style="margin-top:0;">ใช้ครั้งเดียวหลังอัปเดตระบบ เพื่อย้ายรูป Base64 เดิมในชีตไป Google Drive แล้วแทนที่ด้วย URL ขนาดเล็ก ช่วยลดเวลาเปิดระบบอย่างมาก</div>
       <div class="btn-row" style="margin-top:10px;"><button class="btn btn-ghost" id="btnMigrateImages">ย้ายรูปเก่าไป Drive</button></div>
     </div>
-
+ 
     <div class="section-title" style="margin-top:20px; font-size:14px;">สำรองข้อมูล</div>
     <div class="glass" style="padding:16px;">
       <div class="hint" style="margin-top:0;">ดาวน์โหลดข้อมูลทั้งหมดในระบบเป็นไฟล์ JSON ไว้สำรองหรือย้ายระบบ</div>
@@ -3501,7 +3506,7 @@ function wireAuditCommitteeSettingsHandlers() {
     </div>
   `;
   document.querySelectorAll('.theme-swatch-card').forEach(card => { card.onclick = () => { applyTheme(card.dataset.themeId); renderSettings(); }; });
-
+ 
   document.getElementById('btnUploadGaruda').onclick = async () => {
     const inp = document.getElementById('st_garuda');
     const file = inp.files && inp.files[0];
@@ -3509,7 +3514,7 @@ function wireAuditCommitteeSettingsHandlers() {
     const btn = document.getElementById('btnUploadGaruda'); setButtonBusy(btn, true, 'กำลังเตรียมรูป...'); setLoading(true, 'กำลังเตรียมตราครุฑ...');
     try {
       const compressed = await prepareImageFile(file, 60000);
-      setButtonBusy(btn, true, 'กำลังอัปโหลด...');   // ← ลบ setLoading(true, ...) ตัวนี้ออก
+      setButtonBusy(btn, true, 'กำลังอัปโหลด...');
       try {
         const url = await uploadImageToDrive(compressed, 'garuda');
         await apiPost('updateSystemSettings', { garudaLogo: url });
@@ -3524,7 +3529,7 @@ function wireAuditCommitteeSettingsHandlers() {
     try { await apiPost('updateSystemSettings', { garudaLogo: '' }); toast('ลบรูปตราครุฑแล้ว'); await reloadThen(renderSettings); }
     catch (err) { toast(err.message || 'ลบไม่สำเร็จ'); }
   };
-
+ 
   document.getElementById('btnSaveSettings').onclick = async () => {
     const btn = document.getElementById('btnSaveSettings'); if (btn.disabled) return; setButtonBusy(btn, true); setLoading(true, 'กำลังบันทึกการตั้งค่า...');
     try {
@@ -3552,7 +3557,7 @@ function wireAuditCommitteeSettingsHandlers() {
     } catch (err) { toast(err.message || 'ย้ายรูปไม่สำเร็จ'); }
     finally { setLoading(false); setButtonBusy(btn, false); }
   };
-
+ 
   document.getElementById('btnExportAll').onclick = () => {
     const data = { assets: state.assets, borrow: state.borrow, maint: state.maint, components: state.components, memos: state.memos, exportedAt: new Date().toISOString() };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8;' });
@@ -3561,6 +3566,8 @@ function wireAuditCommitteeSettingsHandlers() {
     document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
     toast('ดาวน์โหลดไฟล์สำรองข้อมูลแล้ว');
   };
+ 
+  wireAuditCommitteeSettingsHandlers();
 }
 
 init();
