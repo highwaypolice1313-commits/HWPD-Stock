@@ -2944,6 +2944,37 @@ function renderReports() {
   document.getElementById('btnPrintOfficialAssetReport').onclick = printOfficialGeneralReport;
 }
 
+ function printOfficialGeneralReport() {
+  const orgName = (state.settings && state.settings.orgName) || ORG_NAME;
+  const phone = (state.settings && state.settings.orgPhone) || ORG_PHONE;
+  const yearBE = toThaiNumber(state.auditYear + 543);
+ 
+  const items = state.assets.filter(a => a['หมวดหมู่'] !== 'ยานพาหนะ' && a['หมวดหมู่'] !== 'สื่อสาร');
+ 
+  let sumGood = 0, sumBroken = 0, sumWorn = 0, sumUnused = 0, sumObsolete = 0;
+  const rows = items.map((a, i) => {
+    const { cells, note } = auditMarkCells(a['รหัสครุภัณฑ์']);
+    if (cells.good) sumGood++;
+    if (cells.broken) sumBroken++;
+    if (cells.worn) sumWorn++;
+    if (cells.unused) sumUnused++;
+    if (cells.obsolete) sumObsolete++;
+    const machineCol = [a['หมายเลขเครื่อง'], a['ยี่ห้อ/รุ่น'] ? 'ยี่ห้อ ' + a['ยี่ห้อ/รุ่น'] : '']
+      .filter(Boolean).map(x => toThaiNumber(escapeHtml(x))).join(' ');
+    return `<tr>
+      <td style="text-align:center; border:1px solid #000; padding:4px;">${toThaiNumber(i + 1)}</td>
+      <td style="border:1px solid #000; padding:4px 6px;">${toThaiNumber(escapeHtml(a['ชื่อครุภัณฑ์']))}</td>
+      <td style="border:1px solid #000; padding:4px 6px;">${toThaiNumber(escapeHtml(a['รหัสครุภัณฑ์'])) || '-'}</td>
+      <td style="border:1px solid #000; padding:4px 6px;">${machineCol || '-'}</td>
+      <td style="text-align:center; border:1px solid #000;">${cells.good}</td>
+      <td style="text-align:center; border:1px solid #000;">${cells.broken}</td>
+      <td style="text-align:center; border:1px solid #000;">${cells.worn}</td>
+      <td style="text-align:center; border:1px solid #000;">${cells.unused}</td>
+      <td style="text-align:center; border:1px solid #000;">${cells.obsolete}</td>
+      <td style="border:1px solid #000; padding:4px 6px;">${toThaiNumber(escapeHtml(note))}</td>
+    </tr>`;
+  }).join('');
+ 
   const html = `
     <style>@page{ size:A4; margin:12mm; } table{ page-break-inside:auto; } tr{ page-break-inside:avoid; }</style>
     <div style="font-family:'TH Sarabun New','Sarabun','Kanit',sans-serif; font-size:14pt; color:#000;">
@@ -2992,6 +3023,37 @@ function renderReports() {
 }
  
 /* ---- 2.5 รายงานเครื่องมือสื่อสาร (ฟังก์ชันใหม่) ---- */
+function printCommsAuditReport() {
+  const orgName = (state.settings && state.settings.orgName) || ORG_NAME;
+  const phone = (state.settings && state.settings.orgPhone) || ORG_PHONE;
+  const yearBE = toThaiNumber(state.auditYear + 543);
+ 
+  const items = state.assets.filter(a => a['หมวดหมู่'] === 'สื่อสาร');
+ 
+  let sumGood = 0, sumBroken = 0, sumWorn = 0, sumUnused = 0, sumObsolete = 0;
+  const rows = items.map((a, i) => {
+    const { cells, note } = auditMarkCells(a['รหัสครุภัณฑ์']);
+    if (cells.good) sumGood++;
+    if (cells.broken) sumBroken++;
+    if (cells.worn) sumWorn++;
+    if (cells.unused) sumUnused++;
+    if (cells.obsolete) sumObsolete++;
+    const radioType = a['หมายเหตุ'] || a['ผู้ครอบครอง/หน่วยงาน'] || '-';
+    return `<tr>
+      <td style="text-align:center; border:1px solid #000; padding:4px;">${toThaiNumber(i + 1)}</td>
+      <td style="border:1px solid #000; padding:4px 6px;">${toThaiNumber(escapeHtml(a['ชื่อครุภัณฑ์']))}${a['ยี่ห้อ/รุ่น'] ? ' (' + toThaiNumber(escapeHtml(a['ยี่ห้อ/รุ่น'])) + ')' : ''}</td>
+      <td style="border:1px solid #000; padding:4px 6px;">${toThaiNumber(escapeHtml(a['รหัสครุภัณฑ์'])) || '-'}</td>
+      <td style="border:1px solid #000; padding:4px 6px;">${toThaiNumber(escapeHtml(a['หมายเลขเครื่อง'])) || '-'}</td>
+      <td style="border:1px solid #000; padding:4px 6px;">${toThaiNumber(escapeHtml(radioType))}</td>
+      <td style="text-align:center; border:1px solid #000;">${cells.good}</td>
+      <td style="text-align:center; border:1px solid #000;">${cells.broken}</td>
+      <td style="text-align:center; border:1px solid #000;">${cells.worn}</td>
+      <td style="text-align:center; border:1px solid #000;">${cells.unused}</td>
+      <td style="text-align:center; border:1px solid #000;">${cells.obsolete}</td>
+      <td style="border:1px solid #000; padding:4px 6px;">${toThaiNumber(escapeHtml(note))}</td>
+    </tr>`;
+  }).join('');
+ 
   const html = `
     <style>@page{ size:A4; margin:12mm; } table{ page-break-inside:auto; } tr{ page-break-inside:avoid; }</style>
     <div style="font-family:'TH Sarabun New','Sarabun','Kanit',sans-serif; font-size:14pt; color:#000;">
@@ -3158,6 +3220,40 @@ function auditRow(a) {
     </div>
   </div>`;
 }
+  function printVehicleAuditReport() {
+  const orgName = (state.settings && state.settings.orgName) || ORG_NAME;
+  const phone = (state.settings && state.settings.orgPhone) || ORG_PHONE;
+  const vehicles = state.assets.filter(a => a['หมวดหมู่'] === 'ยานพาหนะ');
+  let keep = 0, dispose = 0, transfer = 0;
+  const scoreSums = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0, 0: 0 };
+  let countA = 0, countD = 0;
+ 
+  const rows = vehicles.map((a, i) => {
+    const rec = auditRecordFor(a['รหัสครุภัณฑ์']) || {};
+    const score = rec['คะแนนสภาพ'];
+    if (rec['ผลตรวจ(A/D)'] === 'A') countA++;
+    if (rec['ผลตรวจ(A/D)'] === 'D') countD++;
+    if (score !== undefined && score !== null && score !== '' && scoreSums[score] !== undefined) scoreSums[score]++;
+    if (rec['ความเห็นคณะกรรมการ'] === 'สมควรเก็บไว้ใช้งาน') keep++;
+    if (rec['ความเห็นคณะกรรมการ'] === 'สมควรจำหน่าย') dispose++;
+    if (rec['ความเห็นคณะกรรมการ'] === 'ให้หน่วยงานอื่น') transfer++;
+    const scoreCell = n => `<td style="border:1px solid #000; text-align:center; padding:2px;">${String(score) === String(n) ? '๑' : ''}</td>`;
+    return `<tr>
+      <td style="border:1px solid #000; text-align:center; padding:2px;">${toThaiNumber(i + 1)}</td>
+      <td style="border:1px solid #000; padding:2px 4px;">${toThaiNumber(escapeHtml(a['รหัสครุภัณฑ์']))}</td>
+      <td style="border:1px solid #000; padding:2px 4px;">${toThaiNumber(escapeHtml(a['ทะเบียนรถ'])) || ''}</td>
+      <td style="border:1px solid #000; padding:2px 4px;">${toThaiNumber(escapeHtml(a['หมายเลขตัวถัง'])) || ''}</td>
+      <td style="border:1px solid #000; padding:2px 4px;">${toThaiNumber(escapeHtml(a['หมายเลขเครื่อง'])) || ''}</td>
+      <td style="border:1px solid #000; text-align:center; padding:2px;">${escapeHtml(rec['ผลตรวจ(A/D)']) || ''}</td>
+      ${[5, 4, 3, 2, 1, 0].map(scoreCell).join('')}
+      <td style="border:1px solid #000; text-align:center; padding:2px;">${thaiDate(rec['วันที่ใช้งานครั้งสุดท้าย'])}</td>
+      <td style="border:1px solid #000; text-align:center; padding:2px;">${thaiDate(rec['วันที่ตรวจ'])}</td>
+      <td style="border:1px solid #000; text-align:center; padding:2px;">${rec['ความเห็นคณะกรรมการ'] === 'สมควรเก็บไว้ใช้งาน' ? '๑' : ''}</td>
+      <td style="border:1px solid #000; text-align:center; padding:2px;">${rec['ความเห็นคณะกรรมการ'] === 'สมควรจำหน่าย' ? '๑' : ''}</td>
+      <td style="border:1px solid #000; padding:2px 4px;">${rec['ความเห็นคณะกรรมการ'] === 'ให้หน่วยงานอื่น' ? '✓' : ''}</td>
+    </tr>`;
+  }).join('');
+ 
   const html = `
     <style>@page{ size: A4 landscape; margin: 8mm; } table{ page-break-inside:auto; } tr{ page-break-inside:avoid; }</style>
     <div style="font-family:'TH Sarabun New','Sarabun','Kanit',sans-serif; font-size:10.5pt; line-height:1.2; color:#000;">
