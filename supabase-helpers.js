@@ -198,12 +198,12 @@ async function logActivitySb(actor, action, detail) {
 }
 
 // ==================== GET-side actions ====================
-const SETTING_KEYS = ['orgName', 'orgPhone', 'docNoPrefix', 'renewalAlertDays', 'garudaLogo','auditCommittee', 'auditPeriodStart', 'auditPeriodEnd', 'categoryUnits'];
+const SETTING_KEYS = ['orgName', 'orgPhone', 'docNoPrefix', 'renewalAlertDays', 'garudaLogo','auditCommittee', 'auditPeriodStart', 'auditPeriodEnd', 'categoryUnits', 'assetCategories'];
 
 async function sGetSystemSettings() {
   const { data, error } = await sb.from('system_settings').select('*');
   if (error) throw new Error(error.message);
-  const s = { orgName: '', orgPhone: '', docNoPrefix: '', renewalAlertDays: 30, garudaLogo: '' , auditCommittee: '', auditPeriodStart: '', auditPeriodEnd: '', categoryUnits: '' };
+  const s = { orgName: '', orgPhone: '', docNoPrefix: '', renewalAlertDays: 30, garudaLogo: '' , auditCommittee: '', auditPeriodStart: '', auditPeriodEnd: '', categoryUnits: '', assetCategories: '' };
   (data || []).forEach(row => { if (SETTING_KEYS.indexOf(row.key) !== -1) s[row.key] = row.value; });
   const days = Number(s.renewalAlertDays);
   s.renewalAlertDays = (s.renewalAlertDays !== '' && !isNaN(days) && days >= 0) ? days : 30;
@@ -576,6 +576,18 @@ if (p.auditCommittee !== undefined) updates.auditCommittee = String(p.auditCommi
 if (p.auditPeriodStart !== undefined) updates.auditPeriodStart = String(p.auditPeriodStart || '').trim();
 if (p.auditPeriodEnd !== undefined) updates.auditPeriodEnd = String(p.auditPeriodEnd || '').trim();
 if (p.categoryUnits !== undefined) updates.categoryUnits = String(p.categoryUnits || '');
+if (p.assetCategories !== undefined) updates.assetCategories = String(p.assetCategories || '');
+
+  // เปลี่ยนชื่อหมวดหมู่ในครุภัณฑ์ที่มีอยู่แล้วให้ตรงกับชื่อใหม่ (ทำก่อนบันทึกการตั้งค่า)
+  if (p.categoryRenames !== undefined) {
+    let renames = [];
+    try { renames = JSON.parse(p.categoryRenames || '[]'); } catch (e) { renames = []; }
+    for (const r of renames) {
+      if (!r || !r.old || !r.new || r.old === r.new) continue;
+      const { error: renameErr } = await sb.from('assets').update({ category: r.new }).eq('category', r.old);
+      if (renameErr) throw new Error('เปลี่ยนชื่อหมวดหมู่ "' + r.old + '" ไม่สำเร็จ: ' + renameErr.message);
+    }
+  }
   
   for (const key of Object.keys(updates)) {
     const { error } = await sb.from('system_settings').upsert({ key, value: String(updates[key]), updated_at: new Date().toISOString() });
