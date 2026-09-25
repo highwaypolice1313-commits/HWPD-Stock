@@ -246,14 +246,14 @@ input[type="date"]::-webkit-date-and-time-value{ text-align:left; }
 
 /* ---------- ฝังปุ่ม + ไว้ในแถบเมนูล่าง (มือถือ) แทนการลอยกลางจอบังเมนู ---------- */
 @media (max-width:899px){
-  .tabbar{ justify-content:space-between; }
+  .tabbar{ justify-content:stretch; }
   .tab.tab-overflow{ display:none !important; }
   .fab{
     position:static; order:3; flex:0 0 auto; transform:none; left:auto; bottom:auto;
-    width:50px; height:50px; margin:-22px 4px 0; border:3px solid var(--bg-1);
-    box-shadow:0 10px 20px rgba(187,138,63,.4);
+    width:48px; height:48px; margin:-20px 6px 0; border:3px solid var(--bg-1);
+    box-shadow:0 10px 20px rgba(187,138,63,.4); align-self:flex-start;
   }
-  .fab svg{width:19px;height:19px;}
+  .fab svg{width:18px;height:18px;}
   .tab[data-tab="dashboard"]{order:1;}
   .tab[data-tab="assets"]{order:2;}
   .tab[data-tab="borrow"]{order:4;}
@@ -307,6 +307,10 @@ input[type="date"]::-webkit-date-and-time-value{ text-align:left; }
 .tab.active{color:var(--navy); background:var(--gold-wash);}
 .tab.active .lbl{font-weight:600;}
 .tab-dot{position:absolute; top:-3px; right:-5px; width:8px;height:8px;border-radius:50%; background:var(--bad); border:1.5px solid #fff;}
+@media (max-width:899px){
+  .tab{ flex:1 1 0; min-width:0; padding:8px 4px; }
+  .tab .lbl{ overflow:hidden; text-overflow:ellipsis; max-width:100%; }
+}
 
 .overlay{
   position:fixed; inset:0; background:rgba(15,25,38,.46); backdrop-filter:blur(4px); z-index:80;
@@ -724,274 +728,6 @@ html:not(.has-thsarabun) .pf-title{ font-size:26pt; line-height:30pt; }
 .audit-btn.active-ok{ background:var(--ok-wash); border-color:transparent; font-weight:600; }
 .audit-btn.active-warn{ background:var(--warn-wash); border-color:transparent; font-weight:600; }
 .audit-btn.active-bad{ background:var(--bad-wash); border-color:transparent; font-weight:600; }
-
-/* =========================================================
-   MOBILE NAV v2 — แถบเมนูมือถือใหม่
-   เป้าหมาย: 320px–899px / ไม่ล้น / ไม่เบียด / กดง่าย
-   ========================================================= */
-@media (max-width:899px){
-  body{
-    padding-bottom:calc(104px + env(safe-area-inset-bottom)) !important;
-  }
-
-  /* แถบเมนูเป็น 5 ช่องพอดีจอ ไม่เลื่อนซ้ายขวา */
-  .tabbar{
-    position:fixed !important;
-    left:10px !important;
-    right:10px !important;
-    bottom:calc(10px + env(safe-area-inset-bottom)) !important;
-    width:auto !important;
-    max-width:none !important;
-    height:68px !important;
-    min-height:68px !important;
-    margin:0 !important;
-    padding:6px !important;
-    display:grid !important;
-    grid-template-columns:repeat(5,minmax(0,1fr)) !important;
-    gap:4px !important;
-    align-items:stretch !important;
-    justify-content:initial !important;
-    overflow:visible !important;
-    border-radius:22px !important;
-    background:rgba(255,255,255,.94) !important;
-    border:1px solid rgba(32,48,63,.10) !important;
-    box-shadow:0 12px 34px rgba(20,32,45,.18), 0 2px 8px rgba(20,32,45,.06) !important;
-    backdrop-filter:blur(24px) saturate(1.25) !important;
-    -webkit-backdrop-filter:blur(24px) saturate(1.25) !important;
-    z-index:100 !important;
-  }
-
-  .tabbar::-webkit-scrollbar{display:none !important;}
-
-  /* แสดงเฉพาะ 4 เมนูหลัก + เพิ่มเติม */
-  .tabbar .tab.tab-overflow{
-    display:none !important;
-  }
-
-  .tabbar .tab{
-    width:100% !important;
-    min-width:0 !important;
-    height:56px !important;
-    min-height:56px !important;
-    padding:6px 2px !important;
-    margin:0 !important;
-    flex:none !important;
-    display:flex !important;
-    flex-direction:column !important;
-    align-items:center !important;
-    justify-content:center !important;
-    gap:4px !important;
-    border-radius:16px !important;
-    color:var(--ink-dim) !important;
-    background:transparent !important;
-    transform:none !important;
-    white-space:normal !important;
-  }
-
-  .tabbar .tab:hover{
-    transform:none !important;
-    background:transparent !important;
-  }
-
-  .tabbar .tab:active{
-    transform:scale(.96) !important;
-  }
-
-  .tabbar .tab.active{
-    color:var(--navy) !important;
-    background:var(--gold-wash) !important;
-    box-shadow:none !important;
-  }
-
-  .tabbar .tab .ico{
-    width:22px !important;
-    height:22px !important;
-    display:flex !important;
-    align-items:center !important;
-    justify-content:center !important;
-    position:relative !important;
-  }
-
-  .tabbar .tab .ico svg{
-    width:21px !important;
-    height:21px !important;
-  }
-
-  .tabbar .tab .lbl{
-    display:block !important;
-    max-width:100% !important;
-    overflow:hidden !important;
-    text-overflow:ellipsis !important;
-    white-space:nowrap !important;
-    font-size:9.5px !important;
-    line-height:1.15 !important;
-    font-weight:400 !important;
-  }
-
-  .tabbar .tab.active .lbl{
-    font-weight:600 !important;
-  }
-
-  /* จุดแจ้งเตือน */
-  .tabbar .tab-dot{
-    top:-2px !important;
-    right:-3px !important;
-    width:8px !important;
-    height:8px !important;
-    border-width:2px !important;
-  }
-
-  /* ลำดับเมนูมือถือ */
-  .tabbar .tab[data-tab="dashboard"]{grid-column:1 !important;order:initial !important;}
-  .tabbar .tab[data-tab="assets"]{grid-column:2 !important;order:initial !important;}
-  .tabbar .tab[data-tab="borrow"]{grid-column:3 !important;order:initial !important;}
-  #moreTabBtn{grid-column:5 !important;order:initial !important;}
-
-  /* ปุ่ม + ไม่กินพื้นที่เมนู
-     เมื่อระบบเปิดใช้งาน จะลอยเป็นปุ่มกลางเหนือแถบ */
-  .tabbar .fab{
-    position:absolute !important;
-    left:50% !important;
-    top:-26px !important;
-    transform:translateX(-50%) !important;
-    width:52px !important;
-    height:52px !important;
-    min-width:52px !important;
-    margin:0 !important;
-    padding:0 !important;
-    border:4px solid var(--bg-1) !important;
-    border-radius:50% !important;
-    box-shadow:0 10px 24px rgba(187,138,63,.38) !important;
-    z-index:4 !important;
-    display:flex !important;
-    align-items:center !important;
-    justify-content:center !important;
-  }
-
-  .tabbar .fab:active{
-    transform:translateX(-50%) scale(.94) !important;
-  }
-
-  .tabbar .fab svg{
-    width:20px !important;
-    height:20px !important;
-  }
-
-  /* ถ้า FAB ถูกซ่อน ให้ไม่มีผลต่อ layout */
-  .tabbar .fab[style*="display:none"]{
-    display:none !important;
-  }
-
-  /* more menu: ปุ่มเพิ่มเติมดูเหมือนเมนูจริง */
-  #moreTabBtn{
-    display:flex !important;
-  }
-
-  /* ปรับ sheet เมนูเพิ่มเติมให้ดูเป็นแอป */
-  .sheet{
-    width:100% !important;
-    max-width:640px !important;
-    max-height:82vh !important;
-    padding:12px 16px calc(22px + env(safe-area-inset-bottom)) !important;
-    border-radius:26px 26px 0 0 !important;
-  }
-
-  .sheet-handle{
-    width:42px !important;
-    height:4px !important;
-    margin:0 auto 16px !important;
-  }
-
-  .sheet-title{
-    font-size:18px !important;
-    margin-bottom:12px !important;
-  }
-
-  .more-menu-item{
-    min-height:54px !important;
-    padding:8px 6px !important;
-    gap:12px !important;
-    border-radius:15px !important;
-    font-size:14px !important;
-  }
-
-  .more-menu-item .ico{
-    width:40px !important;
-    height:40px !important;
-    border-radius:12px !important;
-  }
-
-  /* มือถือแคบมาก */
-  @media (max-width:360px){
-    .tabbar{
-      left:7px !important;
-      right:7px !important;
-      bottom:calc(7px + env(safe-area-inset-bottom)) !important;
-      height:64px !important;
-      min-height:64px !important;
-      padding:5px !important;
-      border-radius:20px !important;
-    }
-
-    .tabbar .tab{
-      height:52px !important;
-      min-height:52px !important;
-    }
-
-    .tabbar .tab .ico,
-    .tabbar .tab .ico svg{
-      width:20px !important;
-      height:20px !important;
-    }
-
-    .tabbar .tab .lbl{
-      font-size:8.7px !important;
-    }
-
-    .tabbar .fab{
-      width:48px !important;
-      height:48px !important;
-      min-width:48px !important;
-      top:-24px !important;
-    }
-  }
-
-  /* รองรับมือถือแนวนอน */
-  @media (orientation:landscape) and (max-height:520px){
-    .tabbar{
-      height:58px !important;
-      min-height:58px !important;
-      bottom:6px !important;
-    }
-    .tabbar .tab{
-      height:46px !important;
-      min-height:46px !important;
-      flex-direction:row !important;
-      gap:7px !important;
-    }
-    .tabbar .tab .lbl{font-size:10px !important;}
-    body{padding-bottom:76px !important;}
-  }
-
-  /* กันเนื้อหาถูกแถบล่างบัง */
-  #appScreen{
-    padding-bottom:8px;
-  }
-}
-
-/* Dark theme */
-@media (max-width:899px){
-  :root[data-theme="night"] .tabbar{
-    background:rgba(18,34,54,.94) !important;
-    border-color:rgba(255,255,255,.10) !important;
-    box-shadow:0 12px 34px rgba(0,0,0,.35) !important;
-  }
-  :root[data-theme="night"] .tabbar .tab.active{
-    background:rgba(214,162,74,.16) !important;
-    color:var(--gold-deep) !important;
-  }
-}
-
 </style>
 </head>
 <body>
