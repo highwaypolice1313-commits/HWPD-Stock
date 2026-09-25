@@ -939,31 +939,38 @@ function committeeSignBlockHtml(compact) {
   const c = getAuditCommittee();
   const [head, m1, m2, sec] = c;
 
-  const gapW   = compact ? '20mm' : '28mm';   // ช่องว่างสำหรับเซ็นชื่อจริง (ขยายให้กว้างขึ้น)
-  const headFs = compact ? '10.5pt' : '14pt';
-  const memFs  = compact ? '9.5pt'  : '13pt';
-  const topMt  = compact ? '4mm' : '10mm';
-  const rowMt  = compact ? '5mm' : '9mm';
+  const headGap  = compact ? '22mm' : '32mm';
+  const memberGap = compact ? '16mm' : '22mm';
+  const headFs   = compact ? '10.5pt' : '14pt';
+  const memberFs = compact ? '9.5pt'  : '12.5pt';
+  const topMt    = compact ? '4mm' : '10mm';
+  const gridMt   = compact ? '5mm' : '12mm';
+  const cellPad  = compact ? '2mm 2mm' : '6mm 2mm';
 
-  const line = (m, fs, mt) => {
+  const dottedGap = (w) => `<span style="display:inline-block; width:${w}; border-bottom:1px dotted #000; vertical-align:middle; margin:0 1.5mm;">&nbsp;</span>`;
+
+  const line = (m, gapW, fs) => {
     const rank = toThaiNumber(escapeHtml(m.rank)) || '.....................';
     const name = toThaiNumber(escapeHtml(m.name)) || '.....................................';
     const position = toThaiNumber(escapeHtml(m.position)) || '&nbsp;';
     const role = toThaiNumber(escapeHtml(m.role));
-    const gap = `<span style="display:inline-block; width:${gapW}; border-bottom:1px dotted #000; vertical-align:middle; margin:0 2mm;">&nbsp;</span>`;
     return `
-      <div style="text-align:center; font-size:${fs}; margin-top:${mt};">
-        <div>ลงชื่อ ${rank}${gap}เป็น${role}</div>
-        <div style="margin-top:${compact ? '1.5mm' : '3mm'};">( ${name} )</div>
+      <div style="text-align:center; font-size:${fs};">
+        <div style="white-space:nowrap;">ลงชื่อ ${rank}${dottedGap(gapW)}เป็น${role}</div>
+        <div style="margin-top:${compact?'1.5mm':'3mm'};">( ${name} )</div>
         <div>${position}</div>
       </div>`;
   };
 
   return `
-    ${line(head, headFs, topMt)}
-    ${line(m1, memFs, rowMt)}
-    ${line(m2, memFs, rowMt)}
-    ${line(sec, memFs, rowMt)}
+    <div style="margin-top:${topMt};">${line(head, headGap, headFs)}</div>
+    <table style="width:100%; border-collapse:collapse; margin-top:${gridMt}; table-layout:fixed;">
+      <tr>
+        <td style="padding:${cellPad}; width:50%; vertical-align:top;">${line(m1, memberGap, memberFs)}</td>
+        <td style="padding:${cellPad}; width:50%; vertical-align:top;">${line(m2, memberGap, memberFs)}</td>
+      </tr>
+    </table>
+    <div style="margin-top:${gridMt};">${line(sec, headGap, headFs)}</div>
   `;
 }
  
