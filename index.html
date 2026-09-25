@@ -1912,25 +1912,84 @@ function openComponentForm(parentId, c) {
 }
 
 /* ========================================================= BORROW */
+function borrowDaysInfo(b) {
+  if (b['สถานะ'] === 'คืนแล้ว') return 'คืนแล้ว ' + thaiDate(b['วันที่คืนจริง']);
+  if (b['สถานะ'] === 'ถูกปฏิเสธ' || b['สถานะ'] === 'รออนุมัติ') return 'กำหนดคืน ' + thaiDate(b['กำหนดคืน']);
+  const days = daysUntil(b['กำหนดคืน']);
+  if (days === null) return '';
+  if (days < 0) return 'เกินกำหนด ' + toThaiNumber(Math.abs(days)) + ' วัน';
+  if (days === 0) return 'ครบกำหนดวันนี้';
+  return 'เหลืออีก ' + toThaiNumber(days) + ' วัน';
+}
 function renderBorrow() {
   const el = document.getElementById('view-borrow');
+  if (state.borrowTab === undefined) state.borrowTab = 'active';
+  if (state.borrowSearch === undefined) state.borrowSearch = '';
+  if (state.borrowSort === undefined) state.borrowSort = 'due_asc';
+
   const pending = state.borrow.filter(b => b['สถานะ'] === 'รออนุมัติ');
   const active = state.borrow.filter(b => b['สถานะ'] !== 'คืนแล้ว' && b['สถานะ'] !== 'รออนุมัติ' && b['สถานะ'] !== 'ถูกปฏิเสธ');
-  const history = state.borrow.filter(b => b['สถานะ'] === 'คืนแล้ว' || b['สถานะ'] === 'ถูกปฏิเสธ').slice(-15).reverse();
+  const history = state.borrow.filter(b => b['สถานะ'] === 'คืนแล้ว' || b['สถานะ'] === 'ถูกปฏิเสธ');
+  const overdueCount = active.filter(b => effectiveBorrowStatus(b) === 'เกินกำหนด').length;
+
+  if (state.borrowTab === 'pending' && !isAdmin()) state.borrowTab = 'active';
+
+  const TABS = [
+    { id: 'pending', label: 'รออนุมัติ', count: pending.length, show: isAdmin() },
+    { id: 'active',  label: 'ค้างคืน',   count: active.length,  show: true },
+    { id: 'history', label: 'ประวัติ',   count: history.length, show: true }
+  ].filter(t => t.show);
+
+  let list = { pending, active, history }[state.borrowTab] || [];
+  const q = state.borrowSearch.toLowerCase();
+  if (q) list = list.filter(b => String(b['ผู้ยืม']||'').toLowerCase().includes(q) || String(b['ชื่อครุภัณฑ์']||'').toLowerCase().includes(q));
+
+  const [sField, sDir] = state.borrowSort.split('_');
+  const sMul = sDir === 'desc' ? -1 : 1;
+  list = [...list].sort((a, b) => {
+    if (sField === 'due') return sMul * (toDate(a['กำหนดคืน']||0) - toDate(b['กำหนดคืน']||0));
+    if (sField === 'name') return sMul * String(a['ผู้ยืม']||'').localeCompare(String(b['ผู้ยืม']||''), 'th');
+    return 0;
+  });
+
   el.innerHTML = `
     <div class="section-title">
-      รายการยืม-คืน <small>${active.length} รายการค้างคืน</small>
+      รายการยืม-คืน <small>${active.length} รายการค้างคืน${overdueCount ? ' · เกินกำหนด ' + overdueCount : ''}</small>
       <span class="section-actions"><button class="icon-btn" id="btnExportBorrow" title="ส่งออก CSV">${ICONS.download}</button></span>
     </div>
-    ${pending.length ? `<div class="section-title" style="margin-top:0;">คำขอรออนุมัติ <small>${pending.length} รายการ</small></div>
-    <div id="borrowPending">${pending.map(borrowRow).join('')}</div>` : ''}
-    <div class="section-title">รายการค้างคืน</div>
-    <div id="borrowActive">${active.length ? active.map(borrowRow).join('') : emptyState('ไม่มีรายการค้างคืน')}</div>
-    <div class="section-title">ประวัติ</div>
-    <div>${history.length ? history.map(borrowRow).join('') : emptyState('ยังไม่มีประวัติ')}</div>
+    <div class="stat-grid" style="margin-bottom:14px;">
+      <div class="stat-card warn"><div class="stat-num">${pending.length}</div><div class="stat-label">รออนุมัติ</div></div>
+      <div class="stat-card ok"><div class="stat-num">${active.length}</div><div class="stat-label">ค้างคืน</div></div>
+      <div class="stat-card bad"><div class="stat-num">${overdueCount}</div><div class="stat-label">เกินกำหนด</div></div>
+    </div>
+    <div class="search-row">
+      <input class="input" id="borrowSearchInput" placeholder="ค้นหาชื่อผู้ยืมหรือครุภัณฑ์..." value="${escapeHtml(state.borrowSearch)}">
+      <select class="input sort-select" id="borrowSortSelect">
+        <option value="due_asc" ${state.borrowSort==='due_asc'?'selected':''}>กำหนดคืนใกล้สุด</option>
+        <option value="due_desc" ${state.borrowSort==='due_desc'?'selected':''}>กำหนดคืนไกลสุด</option>
+        <option value="name_asc" ${state.borrowSort==='name_asc'?'selected':''}>ชื่อผู้ยืม ก-ฮ</option>
+      </select>
+    </div>
+    <div class="chip-row">
+      ${TABS.map(t => `<div class="chip ${state.borrowTab===t.id?'active':''}" data-btab="${t.id}">${t.label} (${t.count})</div>`).join('')}
+    </div>
+    <div id="borrowList">${list.length ? list.map(borrowRow).join('') : emptyState(
+      state.borrowTab==='pending' ? 'ไม่มีคำขอรออนุมัติ' :
+      state.borrowTab==='active'  ? 'ไม่มีรายการค้างคืน' : 'ยังไม่มีประวัติ'
+    )}</div>
   `;
   document.querySelectorAll('.borrow-item').forEach(it => it.onclick = () => openBorrowDetail(it.dataset.id));
   document.getElementById('btnExportBorrow').onclick = () => exportCsv('ยืมคืน.csv', ['รหัสรายการ','รหัสครุภัณฑ์','ชื่อครุภัณฑ์','ผู้ยืม','วันที่ยืม','กำหนดคืน','วันที่คืนจริง','สถานะ','ผู้อนุมัติ','หมายเหตุ'], state.borrow);
+  document.querySelectorAll('[data-btab]').forEach(c => c.onclick = () => { state.borrowTab = c.dataset.btab; renderBorrow(); });
+  const searchInput = document.getElementById('borrowSearchInput');
+  searchInput.oninput = (e) => {
+    state.borrowSearch = e.target.value;
+    const pos = e.target.selectionStart;
+    renderBorrow();
+    const again = document.getElementById('borrowSearchInput');
+    if (again) { again.focus(); try { again.setSelectionRange(pos, pos); } catch (err) {} }
+  };
+  document.getElementById('borrowSortSelect').onchange = (e) => { state.borrowSort = e.target.value; renderBorrow(); };
 }
 function effectiveBorrowStatus(b) {
   if (b['สถานะ'] === 'คืนแล้ว' || b['สถานะ'] === 'รออนุมัติ' || b['สถานะ'] === 'ถูกปฏิเสธ') return b['สถานะ'];
@@ -1939,10 +1998,15 @@ function effectiveBorrowStatus(b) {
   return b['สถานะ'] || 'กำลังยืม';
 }
 function borrowRow(b) {
+  const eff = effectiveBorrowStatus(b);
+  const info = borrowDaysInfo(b);
   return `<div class="glass list-item borrow-item" data-id="${escapeHtml(b['รหัสรายการ'])}">
     <div class="li-icon">${ICONS.swap}</div>
-    <div class="li-body"><div class="li-title">${escapeHtml(b['ชื่อครุภัณฑ์'])}</div><div class="li-sub">ผู้ยืม: ${escapeHtml(b['ผู้ยืม'])} · กำหนดคืน ${thaiDate(b['กำหนดคืน'])}</div></div>
-    <div class="status-badge ${statusClass(effectiveBorrowStatus(b))}">${escapeHtml(effectiveBorrowStatus(b))}</div>
+    <div class="li-body">
+      <div class="li-title">${escapeHtml(b['ชื่อครุภัณฑ์'])}</div>
+      <div class="li-sub">${escapeHtml(b['ผู้ยืม'])}${info ? ' · ' + info : ''}</div>
+    </div>
+    <div class="status-badge ${statusClass(eff)}">${escapeHtml(eff)}</div>
   </div>`;
 }
 function borrowedComponentIds(b) { return String(b['รหัสส่วนควบที่ยืม'] || '').split(',').map(s => s.trim()).filter(Boolean); }
