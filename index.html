@@ -238,11 +238,27 @@ input[type="date"]::-webkit-date-and-time-value{ text-align:left; }
 }
 
 .fab{
-  position:fixed; right:18px; bottom:calc(118px + env(safe-area-inset-bottom)); z-index:45; width:56px;height:56px; border-radius:50%;
-  background:linear-gradient(150deg, var(--gold), var(--gold-deep)); color:#fff; border:none;
-  box-shadow:0 14px 30px rgba(187,138,63,.4); cursor:pointer; display:flex;align-items:center;justify-content:center;
+  position:fixed; left:50%; transform:translateX(-50%); bottom:calc(40px + env(safe-area-inset-bottom)); z-index:55; width:58px;height:58px; border-radius:50%;
+  background:linear-gradient(150deg, var(--gold), var(--gold-deep)); color:#fff; border:4px solid var(--bg-1);
+  box-shadow:0 14px 26px rgba(187,138,63,.4); cursor:pointer; display:flex;align-items:center;justify-content:center;
 }
 .fab svg{width:22px;height:22px;}
+
+/* ---------- แถบเมนูลัดหน้าแรก แบบแอพธนาคาร ---------- */
+.quick-actions{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px 6px; margin-bottom:16px; }
+.qa-item{ display:flex; flex-direction:column; align-items:center; gap:7px; cursor:pointer; text-align:center; }
+.qa-icon{ width:52px;height:52px;border-radius:17px; display:flex; align-items:center; justify-content:center; transition:transform .15s ease; }
+.qa-item:active .qa-icon{ transform:scale(.93); }
+.qa-icon svg{ width:22px;height:22px; }
+.qa-label{ font-size:10.5px; color:var(--ink); line-height:1.3; font-weight:400; }
+.qa-navy{ background:var(--navy-wash); color:var(--navy); }
+.qa-warn{ background:var(--warn-wash); color:var(--warn); }
+.qa-bad{ background:var(--bad-wash); color:var(--bad); }
+.qa-info{ background:var(--info-wash); color:var(--info); }
+.qa-ok{ background:var(--ok-wash); color:var(--ok); }
+.qa-gold{ background:var(--gold-wash); color:var(--gold-deep); }
+.qa-off{ background:var(--off-wash); color:var(--off); }
+@media (min-width:900px){ .quick-actions{ display:none; } }
 
 /* ---------- bottom tab bar (มือถือ) — เลื่อนแนวนอนได้ ไม่บีบเบียดกันอีกต่อไป ---------- */
 .tabbar{
@@ -300,20 +316,31 @@ input[type="date"]::-webkit-date-and-time-value{ text-align:left; }
 .login-wrap{
   min-height:100vh; display:flex; align-items:center; justify-content:center; flex-direction:column; padding:36px 26px; text-align:center;
   background:
-    radial-gradient(560px 360px at 20% 0%, rgba(187,138,63,.35), transparent 60%),
+    radial-gradient(460px 340px at 50% 4%, rgba(187,138,63,.5), transparent 62%),
     radial-gradient(620px 420px at 100% 10%, rgba(255,255,255,.08), transparent 55%),
-    linear-gradient(150deg, var(--navy-deep), var(--navy) 60%, #1c3f63);
+    linear-gradient(170deg, var(--navy-deep), var(--navy) 65%);
   color:#fff;
 }
 .login-badge{
-  width:78px;height:78px;border-radius:24px; display:flex;align-items:center;justify-content:center; margin-bottom:24px;
-  background:linear-gradient(150deg, var(--gold), var(--gold-deep)); color:#fff; box-shadow:0 16px 38px rgba(0,0,0,.25);
-  animation:badgeIn .5s ease-out;
+  width:96px;height:96px;border-radius:50%; display:flex;align-items:center;justify-content:center; margin-bottom:22px;
+  border:1.5px solid rgba(255,255,255,.25); animation:badgeIn .5s ease-out;
 }
-.login-badge svg{width:36px;height:36px;}
+.login-badge-inner{
+  width:70px;height:70px;border-radius:50%; display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(150deg, var(--gold), var(--gold-deep)); color:#fff; box-shadow:0 16px 38px rgba(0,0,0,.25);
+}
+.login-badge svg{width:30px;height:30px;}
 @keyframes badgeIn{from{opacity:0; transform:scale(.85);} to{opacity:1; transform:scale(1);}}
-.login-title{font-size:20px; font-weight:600; margin-bottom:6px; font-family:var(--font-disp);}
-.login-sub{font-size:13px; color:rgba(255,255,255,.72); margin-bottom:28px; max-width:300px; line-height:1.65; font-weight:300;}
+.login-title{font-size:21px; font-weight:600; margin-bottom:6px; font-family:var(--font-disp);}
+.login-sub{font-size:13px; color:rgba(255,255,255,.68); margin-bottom:30px; max-width:300px; line-height:1.65; font-weight:300;}
+.login-cta{
+  width:100%; max-width:300px; border:none; border-radius:99px; padding:15px; font-family:inherit; font-size:14.5px; font-weight:500; cursor:pointer;
+  background:linear-gradient(150deg, var(--gold), var(--gold-deep)); color:#fff; box-shadow:0 14px 30px rgba(187,138,63,.4);
+}
+.login-cta:active{ transform:translateY(1px); }
+.login-cta-hint{font-size:11px; color:rgba(255,255,255,.45); margin-top:12px;}
+.role-pick-row{ background:#fff; }
+.role-pick-row .li-title{ font-weight:600; }
 .spinner{width:26px;height:26px;border-radius:50%; border:3px solid rgba(255,255,255,.25); border-top-color:var(--gold); animation:spin 0.8s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
 .toast{
@@ -327,21 +354,7 @@ input[type="date"]::-webkit-date-and-time-value{ text-align:left; }
 .detail-row span:last-child{text-align:right; word-break:break-word; overflow-wrap:anywhere; min-width:0; flex:1;}
 .hint{font-size:11px; color:var(--ink-dim); margin-top:14px; line-height:1.6;}
 
-.role-select-box{width:100%; max-width:300px;}
-.role-select-card{
-  display:flex; align-items:center; gap:14px; padding:16px 18px; margin-bottom:12px; border-radius:18px;
-  background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.18); cursor:pointer; text-align:left; transition:.18s ease;
-}
-.role-select-card:hover, .role-select-card:active{ background:rgba(255,255,255,.16); transform:translateY(-1px); }
-.rsc-icon{width:42px;height:42px;border-radius:13px; display:flex;align-items:center;justify-content:center; flex:none; background:linear-gradient(150deg, var(--gold), var(--gold-deep)); color:#fff;}
-.rsc-icon svg{width:19px;height:19px;}
-.rsc-body{flex:1; min-width:0;}
-.rsc-title{font-size:14.5px; font-weight:600; color:#fff;}
-.rsc-sub{font-size:11.5px; color:rgba(255,255,255,.65); margin-top:2px;}
-.role-login-form{width:100%; max-width:300px; text-align:left;}
-.role-login-form .field label{color:rgba(255,255,255,.72);}
-.role-login-form .field input{background:rgba(255,255,255,.95); color:#20303f;}
-.link-btn{color:var(--gold); font-size:12.5px; cursor:pointer; text-decoration:underline;}
+.link-btn{color:var(--gold-deep); font-size:12.5px; cursor:pointer; text-decoration:underline;}
 
 @keyframes appIn{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
 .app-in{animation:appIn .4s ease-out;}
@@ -630,7 +643,8 @@ html:not(.has-thsarabun) .pf-title{ font-size:26pt; line-height:30pt; }
   .sheet{ width:min(760px,calc(100vw - 120px)); max-width:760px; max-height:88vh; overflow-y:auto; border-radius:24px; border:1px solid var(--panel-line); padding:28px 32px 30px; box-shadow:var(--shadow-lg); margin:0; }
   .sheet-handle{ display:none; }
 
-  .login-badge{ width:92px; height:92px; border-radius:28px; margin-bottom:24px; }
+  .login-badge{ width:108px; height:108px; margin-bottom:24px; }
+  .login-badge-inner{ width:80px; height:80px; }
 }
 
 @media (min-width:900px) and (max-width:1199px){
@@ -690,49 +704,18 @@ html:not(.has-thsarabun) .pf-title{ font-size:26pt; line-height:30pt; }
 
 <div id="loginScreen" class="login-wrap">
   <div class="login-badge">
-    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l8 4v6c0 5-3.5 9-8 10-4.5-1-8-5-8-10V6l8-4z"/></svg>
+    <div class="login-badge-inner">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l8 4v6c0 5-3.5 9-8 10-4.5-1-8-5-8-10V6l8-4z"/></svg>
+    </div>
   </div>
   <div class="login-title">ระบบพัสดุครุภัณฑ์</div>
-  <div class="login-sub" id="loginSubText">ตำรวจทางหลวง<br>กรุณาเลือกระดับผู้ใช้งานเพื่อเข้าสู่ระบบ</div>
+  <div class="login-sub" id="loginSubText">ตำรวจทางหลวง</div>
   <div class="spinner" id="loginSpinner" style="display:none;"></div>
   <div id="sessionRetryBox" style="display:none; margin-top:6px;">
     <button class="btn btn-primary" id="btnRetrySession" style="width:auto;padding:11px 26px;">ลองเชื่อมต่อใหม่</button>
   </div>
-
-  <div class="role-select-box" id="roleSelectBox">
-    <div class="role-select-card" data-role="admin">
-      <div class="rsc-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M10 2.5l6.5 3v5c0 4.2-2.8 7.4-6.5 8-3.7-.6-6.5-3.8-6.5-8v-5l6.5-3z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M7.3 10l1.9 1.9 3.5-3.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-      <div class="rsc-body">
-        <div class="rsc-title">แอดมิน</div>
-        <div class="rsc-sub">จัดการข้อมูล เพิ่ม/แก้ไข/อนุมัติได้เต็มรูปแบบ</div>
-      </div>
-    </div>
-    <div class="role-select-card" data-role="viewer">
-      <div class="rsc-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M2 10s3-5.5 8-5.5S18 10 18 10s-3 5.5-8 5.5S2 10 2 10z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.3" stroke="currentColor" stroke-width="1.4"/></svg></div>
-      <div class="rsc-body">
-        <div class="rsc-title">ดูอย่างเดียว</div>
-        <div class="rsc-sub">เข้าดูได้ทันที ไม่ต้องใช้รหัสผ่าน</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="role-login-form" id="roleLoginForm" style="display:none;">
-    <div class="field">
-      <label>ระดับผู้ใช้งาน</label>
-      <div class="input" id="rl_roleDisplay" style="background:rgba(255,255,255,.95);color:#20303f;font-weight:600;display:flex;align-items:center;justify-content:center;">
-        <span id="rl_roleLabel"></span>
-      </div>
-    </div>
-    <div class="field">
-      <label>รหัสผ่าน</label>
-      <input class="input" id="rl_password" type="password" inputmode="text" autocomplete="current-password" placeholder="กรอกรหัสผ่าน">
-    </div>
-    <button class="btn btn-primary" style="width:100%;" id="btnRoleLogin">เข้าสู่ระบบ</button>
-    <div class="hint" id="roleLoginError" style="color:#ffb4bd;"></div>
-    <div style="margin-top:14px; text-align:center;">
-      <span class="link-btn" id="btnBackToRoles">เปลี่ยนระดับผู้ใช้งาน</span>
-    </div>
-  </div>
+  <button class="login-cta" id="btnStartLogin" type="button">เริ่มต้นใช้งาน</button>
+  <div class="login-cta-hint" id="loginCtaHint">แตะเพื่อเลือกระดับผู้ใช้งาน</div>
 </div>
 
 <div id="app" style="display:none;">
@@ -1075,39 +1058,67 @@ document.getElementById('btnRetrySession').addEventListener('click', () => {
 function showRoleSelect() {
   selectedRole = null;
   document.getElementById('loginSpinner').style.display = 'none';
-  document.getElementById('loginSubText').innerHTML = 'ตำรวจทางหลวง<br>กรุณาเลือกระดับผู้ใช้งานเพื่อเข้าสู่ระบบ';
-  document.getElementById('roleSelectBox').style.display = 'block';
-  document.getElementById('roleLoginForm').style.display = 'none';
+  document.getElementById('loginSubText').innerHTML = 'ตำรวจทางหลวง';
+  const ctaBtn = document.getElementById('btnStartLogin');
+  const ctaHint = document.getElementById('loginCtaHint');
+  if (ctaBtn) ctaBtn.style.display = '';
+  if (ctaHint) ctaHint.style.display = '';
+  closeSheet();
 }
 
-document.querySelectorAll('.role-select-card').forEach(card => {
-  card.addEventListener('click', async () => {
-    selectedRole = card.dataset.role;
-    if (selectedRole === 'viewer') {
-      document.getElementById('roleSelectBox').style.display = 'none';
-      document.getElementById('loginSpinner').style.display = 'block';
-      document.getElementById('loginSubText').innerHTML = 'ตำรวจทางหลวง<br>กำลังเข้าสู่ระบบ...';
-      try {
-        const d = supaLoginAsViewer();
-        saveSession({ role: d.role, token: d.token, name: d.displayName });
-        await completeLogin({ role: d.role, name: d.displayName, token: d.token });
-      } catch (err) {
-        toast(err.message || 'เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่');
-        showRoleSelect();
-      }
-      return;
-    }
-    document.getElementById('roleSelectBox').style.display = 'none';
-    document.getElementById('roleLoginForm').style.display = 'block';
-    document.getElementById('rl_roleLabel').textContent = 'แอดมิน';
-    document.getElementById('rl_password').value = '';
-    document.getElementById('roleLoginError').textContent = '';
-    setTimeout(() => document.getElementById('rl_password').focus(), 50);
-  });
-});
-document.getElementById('btnBackToRoles').addEventListener('click', showRoleSelect);
-document.getElementById('rl_password').addEventListener('keydown', (e) => { if (e.key === 'Enter') doRoleLogin(); });
-document.getElementById('btnRoleLogin').addEventListener('click', doRoleLogin);
+function openRoleSheet() {
+  showSheet(`
+    <div class="sheet-title">เลือกระดับผู้ใช้งาน</div>
+    <div class="glass list-item role-pick-row" id="rp_admin">
+      <div class="li-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M10 2.5l6.5 3v5c0 4.2-2.8 7.4-6.5 8-3.7-.6-6.5-3.8-6.5-8v-5l6.5-3z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M7.3 10l1.9 1.9 3.5-3.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="li-body"><div class="li-title">แอดมิน</div><div class="li-sub">จัดการข้อมูล เพิ่ม/แก้ไข/อนุมัติได้เต็มรูปแบบ</div></div>
+    </div>
+    <div class="glass list-item role-pick-row" id="rp_viewer">
+      <div class="li-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M2 10s3-5.5 8-5.5S18 10 18 10s-3 5.5-8 5.5S2 10 2 10z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.3" stroke="currentColor" stroke-width="1.4"/></svg></div>
+      <div class="li-body"><div class="li-title">ดูอย่างเดียว</div><div class="li-sub">เข้าดูได้ทันที ไม่ต้องใช้รหัสผ่าน</div></div>
+    </div>
+  `);
+  document.getElementById('rp_admin').onclick = () => openAdminPasswordSheet();
+  document.getElementById('rp_viewer').onclick = () => loginAsViewer();
+}
+
+async function loginAsViewer() {
+  closeSheet();
+  document.getElementById('btnStartLogin').style.display = 'none';
+  document.getElementById('loginCtaHint').style.display = 'none';
+  document.getElementById('loginSpinner').style.display = 'block';
+  document.getElementById('loginSubText').innerHTML = 'ตำรวจทางหลวง<br>กำลังเข้าสู่ระบบ...';
+  try {
+    const d = supaLoginAsViewer();
+    saveSession({ role: d.role, token: d.token, name: d.displayName });
+    await completeLogin({ role: d.role, name: d.displayName, token: d.token });
+  } catch (err) {
+    toast(err.message || 'เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่');
+    showRoleSelect();
+  }
+}
+
+function openAdminPasswordSheet() {
+  selectedRole = 'admin';
+  showSheet(`
+    <div class="sheet-title">เข้าสู่ระบบ — แอดมิน</div>
+    <div class="field">
+      <label>รหัสผ่าน</label>
+      <input class="input" id="rl_password" type="password" inputmode="text" autocomplete="current-password" placeholder="กรอกรหัสผ่าน">
+    </div>
+    <div class="hint" id="roleLoginError" style="color:var(--bad);"></div>
+    <div class="btn-row"><button class="btn btn-primary" id="btnRoleLogin" style="width:100%;">เข้าสู่ระบบ</button></div>
+    <div style="margin-top:14px; text-align:center;">
+      <span class="link-btn" id="btnBackToRoles">เปลี่ยนระดับผู้ใช้งาน</span>
+    </div>
+  `);
+  document.getElementById('btnBackToRoles').onclick = openRoleSheet;
+  document.getElementById('rl_password').addEventListener('keydown', (e) => { if (e.key === 'Enter') doRoleLogin(); });
+  document.getElementById('btnRoleLogin').onclick = doRoleLogin;
+  setTimeout(() => document.getElementById('rl_password').focus(), 60);
+}
+
+document.getElementById('btnStartLogin').addEventListener('click', openRoleSheet);
 document.getElementById('btnLogout').addEventListener('click', () => {
   if (!confirm('ยืนยันการออกจากระบบ?')) return;
   clearSession();
@@ -1126,6 +1137,7 @@ async function doRoleLogin() {
   try {
     const d = await supaLoginWithRole(selectedRole, password);
     saveSession({ role: d.role, token: d.token, name: d.displayName });
+    closeSheet();
     await completeLogin({ role: d.role, name: d.displayName, token: d.token });
   } catch (err) {
     errEl.textContent = err.message || 'เข้าสู่ระบบไม่สำเร็จ';
@@ -1592,10 +1604,29 @@ function renderDashboard() {
   if (d.dueRenewalCount > 0) {
     banners += `<div class="alert-banner warn">${ICONS.warn}<span>มีครุภัณฑ์ใกล้ครบกำหนดตรวจสภาพ/ต่อทะเบียน ${d.dueRenewalCount} รายการ (ภายใน ${renewalWindowDays()} วัน หรือเลยกำหนดแล้ว)</span><span class="alert-link" onclick="renderTab('assets')">ดูรายการ</span></div>`;
   }
+  const qaItems = [
+    { tab:'assets', label:'ครุภัณฑ์', cls:'navy', icon:'<svg viewBox="0 0 20 20" fill="none"><rect x="2.5" y="3.5" width="15" height="3.6" rx="0.8" stroke="currentColor" stroke-width="1.4"/><path d="M3.8 7.1v7.4a1.5 1.5 0 001.5 1.5h9.4a1.5 1.5 0 001.5-1.5V7.1" stroke="currentColor" stroke-width="1.4"/><path d="M8 10.3h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>' },
+    { tab:'borrow', label:'ยืม-คืน', cls:'warn', icon: ICONS.swap },
+    { tab:'maint', label:'ซ่อมบำรุง', cls:'bad', icon: ICONS.wrench },
+    { tab:'memos', label:'เอกสารใบเบิก', cls:'info', icon: ICONS.log },
+    { tab:'reports', label:'รายงาน', cls:'ok', icon:'<svg viewBox="0 0 20 20" fill="none"><path d="M4 16.5V11M10 16.5V6M16 16.5v-8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>' }
+  ];
+  if (isAdmin()) {
+    qaItems.push({ tab:'audit', label:'ตรวจนับประจำปี', cls:'gold', icon: ICONS.checklist });
+    qaItems.push({ tab:'users', label:'จนท.ในสังกัด', cls:'navy', icon: ICONS.user });
+    qaItems.push({ tab:'settings', label:'ตั้งค่าระบบ', cls:'off', icon:'<svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="2.6" stroke="currentColor" stroke-width="1.4"/><path d="M10 2.8v2M10 15.2v2M17.2 10h-2M4.8 10h-2M15.1 4.9l-1.4 1.4M6.3 13.7l-1.4 1.4M15.1 15.1l-1.4-1.4M6.3 6.3L4.9 4.9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>' });
+  }
+  const quickActionsHtml = `<div class="quick-actions">${qaItems.map(q => `
+    <div class="qa-item" onclick="renderTab('${q.tab}')">
+      <div class="qa-icon qa-${q.cls}">${q.icon}</div>
+      <div class="qa-label">${q.label}</div>
+    </div>`).join('')}</div>`;
+
   el.innerHTML = `
     <div class="section-title">ภาพรวมระบบ <small>อัปเดตล่าสุดวันนี้</small></div>
     ${banners}
-    
+    ${quickActionsHtml}
+
     <div class="dashboard-left">
       <div class="glass hero-card">
         <div class="hero-row">
