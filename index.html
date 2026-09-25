@@ -879,7 +879,15 @@ const state = {
   auditYear: new Date().getFullYear(), auditRecords: []
 };
 const PAGE_SIZE = 12;
-const CATS = ['อาวุธปืน','ยานพาหนะ','สื่อสาร','คอมพิวเตอร์/IT','เครื่องแบบ/สนาม','อื่นๆ'];
+const DEFAULT_CATS = ['อาวุธปืน','ยานพาหนะ','สื่อสาร','คอมพิวเตอร์/IT','เครื่องแบบ/สนาม','อื่นๆ'];
+function getCategories() {
+  try {
+    const raw = state.settings && state.settings.assetCategories;
+    const arr = raw ? JSON.parse(raw) : null;
+    if (Array.isArray(arr) && arr.length) return arr;
+  } catch (e) {}
+  return DEFAULT_CATS.slice();
+}
 const COMPONENT_TYPES = ['ซองกระสุน/แม็กกาซีน','ศูนย์เล็ง/กล้อง','ไฟฉายติดปืน','สายสะพาย','ซองพกพา','อุปกรณ์ทำความสะอาด','อื่นๆ'];
 const ASSET_STATUSES = ['พร้อมใช้งาน','กำลังยืม','ซ่อมบำรุง','จำหน่ายแล้ว'];
 const TH_MONTHS_FULL = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
@@ -1690,7 +1698,7 @@ function renderAssets() {
     </div>
     <div class="chip-row">
       <div class="chip ${state.assetFilter==='all'?'active':''}" data-cat="all">ทุกหมวดหมู่</div>
-      ${CATS.map(c => `<div class="chip ${state.assetFilter===c?'active':''}" data-cat="${c}">${c}</div>`).join('')}
+      ${getCategories().map(c => `<div class="chip ${state.assetFilter===c?'active':''}" data-cat="${escapeHtml(c)}">${escapeHtml(c)}</div>`).join('')}
     </div>
     <div class="chip-row">
       <div class="chip ${state.assetStatusFilter==='all'?'active':''}" data-status="all">ทุกสถานะ</div>
@@ -1792,7 +1800,7 @@ function assetRow(a) {
   </div>`;
 }
 
-   function openAssetPickerSheet(currentId, onPick) {
+  function openAssetPickerSheet(currentId, onPick) {
   const available = state.assets.filter(a => a['สถานะ'] === 'พร้อมใช้งาน');
   let pickCat = 'all', pickQ = '';
   const pickerRoot = document.createElement('div');
@@ -1802,7 +1810,7 @@ function assetRow(a) {
     let list = available.filter(a => pickCat === 'all' || a['หมวดหมู่'] === pickCat);
     const q = pickQ.toLowerCase();
     if (q) list = list.filter(a => String(a['ชื่อครุภัณฑ์']||'').toLowerCase().includes(q) || String(a['รหัสครุภัณฑ์']||'').toLowerCase().includes(q));
-    const catCounts = CATS.map(c => ({ c, n: available.filter(a => a['หมวดหมู่']===c).length })).filter(x => x.n);
+    const catCounts = getCategories().map(c => ({ c, n: available.filter(a => a['หมวดหมู่']===c).length })).filter(x => x.n);
     pickerRoot.innerHTML = `
       <div class="overlay" style="z-index:95;">
         <div class="sheet" style="max-height:92vh;">
@@ -1931,7 +1939,7 @@ function openAssetForm(a) {
   showSheet(`
     <div class="sheet-title">${editing ? 'แก้ไขครุภัณฑ์' : 'เพิ่มครุภัณฑ์ใหม่'}</div>
     <div class="field"><label>ชื่อครุภัณฑ์</label><input class="input" id="f_name" value="${a ? escapeHtml(a['ชื่อครุภัณฑ์']) : ''}"></div>
-    <div class="field"><label>หมวดหมู่</label><select class="input" id="f_cat">${CATS.map(c => `<option ${a && a['หมวดหมู่']===c?'selected':''}>${c}</option>`).join('')}</select></div>
+    <div class="field"><label>หมวดหมู่</label><select class="input" id="f_cat">${getCategories().map(c => `<option ${a && a['หมวดหมู่']===c?'selected':''}>${escapeHtml(c)}</option>`).join('')}</select></div>
     <div class="field"><label>ยี่ห้อ/รุ่น</label><input class="input" id="f_brand" value="${a ? escapeHtml(a['ยี่ห้อ/รุ่น'])||'' : ''}"></div>
     <div class="field"><label>หมายเลขเครื่อง/serial</label><input class="input" id="f_serial" value="${a ? escapeHtml(a['หมายเลขเครื่อง'])||'' : ''}"></div>
     <div class="field" id="f_vehicleWrap" style="display:none;"><div class="memo-two-col">
@@ -3486,7 +3494,7 @@ function drawAuditView() {
   const pct = total ? Math.round((checked / total) * 100) : 0;
 
   // สถิติแยกตามหมวด (แสดงเฉพาะหมวดที่มีครุภัณฑ์)
-  const catStats = CATS.map(c => {
+  const catStats = getCategories().map(c => {
     const list = state.assets.filter(a => a['หมวดหมู่'] === c);
     return { name: c, total: list.length, done: list.filter(auditIsChecked).length };
   }).filter(s => s.total > 0);
@@ -3850,6 +3858,7 @@ function renderSettings() {
   const s = state.settings || {};
   const active = currentTheme();
   const catUnits = getCategoryUnits();
+  const cats = getCategories();
   if (!state.settingsTab) state.settingsTab = 'general';
 
   const TABS = [
@@ -3902,19 +3911,22 @@ function renderSettings() {
     <div class="settings-panel" data-panel="committee" style="display:${state.settingsTab==='committee'?'block':'none'};">
       ${auditCommitteeSettingsSectionHtml(s)}
     </div>
-        <div class="settings-panel" data-panel="units" style="display:${state.settingsTab==='units'?'block':'none'};">
-      <div class="section-title" style="margin-top:6px; font-size:14px;">หน่วยนับตามหมวดหมู่ครุภัณฑ์</div>
+      <div class="settings-panel" data-panel="units" style="display:${state.settingsTab==='units'?'block':'none'};">
+      <div class="section-title" style="margin-top:6px; font-size:14px;">หมวดหมู่ & หน่วยนับครุภัณฑ์</div>
       <div class="glass" style="padding:16px;">
-        <div class="hint" style="margin-top:0;">กำหนดหน่วยนับที่จะแสดงในเอกสารบันทึกข้อความ (ใบเบิก) ให้ตรงกับแต่ละหมวดหมู่ครุภัณฑ์ เช่น อาวุธปืน = กระบอก, ยานพาหนะ = คัน — ระบบจะเลือกให้อัตโนมัติเมื่อดึงรายการจากครุภัณฑ์ที่มีอยู่แล้ว แต่ยังแก้ทีละรายการในฟอร์มใบเบิกได้เสมอ</div>
-        <div style="margin-top:12px;">
-          ${CATS.map(c => `
-            <div class="memo-two-col" style="align-items:flex-end;">
-              <div class="field" style="flex:2 1 160px;"><label>หมวดหมู่</label><div class="input" style="background:var(--panel-soft); color:var(--ink-dim); display:flex; align-items:center;">${escapeHtml(c)}</div></div>
-              <div class="field" style="max-width:140px;"><label>หน่วยนับ</label><input class="input cu-unit" data-cat="${escapeHtml(c)}" value="${escapeHtml(catUnits[c] || '')}" placeholder="เช่น เครื่อง"></div>
+        <div class="hint" style="margin-top:0;">จัดการรายการหมวดหมู่ครุภัณฑ์ที่ใช้ทั้งระบบ พร้อมกำหนดหน่วยนับสำหรับเอกสารบันทึกข้อความ (ใบเบิก) — แก้ชื่อหมวดหมู่ตรงนี้ได้เลย ระบบจะปรับชื่อหมวดหมู่ในครุภัณฑ์ที่มีอยู่แล้วให้ตรงกันอัตโนมัติเมื่อกดบันทึก</div>
+        <div id="cuRows" style="margin-top:12px;">
+          ${cats.map((c, i) => `
+            <div class="memo-two-col cu-row" style="align-items:flex-end;" data-idx="${i}">
+              <input type="hidden" class="cu-original" value="${escapeHtml(c)}">
+              <div class="field" style="flex:2 1 160px;"><label>ชื่อหมวดหมู่</label><input class="input cu-name" value="${escapeHtml(c)}"></div>
+              <div class="field" style="max-width:140px;"><label>หน่วยนับ</label><input class="input cu-unit" value="${escapeHtml(catUnits[c] || '')}" placeholder="เช่น เครื่อง"></div>
+              <div class="field" style="max-width:56px;"><button type="button" class="btn btn-danger cu-del" style="padding:12px; width:100%;" title="ลบหมวดหมู่นี้">ลบ</button></div>
             </div>
           `).join('')}
         </div>
-        <div class="btn-row" style="margin-top:14px;"><button class="btn btn-primary" id="btnSaveCategoryUnits">บันทึกหน่วยนับ</button></div>
+        <button type="button" class="mf-add" id="btnAddCategory" style="margin-top:4px;">+ เพิ่มหมวดหมู่ใหม่</button>
+        <div class="btn-row" style="margin-top:14px;"><button class="btn btn-primary" id="btnSaveCategoryUnits">บันทึกหมวดหมู่ & หน่วยนับ</button></div>
       </div>
     </div>
 
@@ -4031,15 +4043,63 @@ function renderSettings() {
     toast('ดาวน์โหลดไฟล์สำรองข้อมูลแล้ว');
   };
 
+  function wireCategoryUnitRows() {
+    document.querySelectorAll('.cu-del').forEach(btn => {
+      btn.onclick = () => {
+        const row = btn.closest('.cu-row');
+        const original = row.querySelector('.cu-original').value;
+        // ถ้าหมวดหมู่นี้มีครุภัณฑ์ใช้อยู่แล้ว เตือนก่อนลบ เพราะครุภัณฑ์เดิมจะยังคงชื่อหมวดหมู่เก่าไว้ แต่จะไม่แสดงในตัวกรองอีกต่อไป
+        if (original) {
+          const count = state.assets.filter(a => a['หมวดหมู่'] === original).length;
+          if (count > 0 && !confirm('มีครุภัณฑ์ ' + count + ' รายการอยู่ในหมวดหมู่ "' + original + '" หากลบหมวดหมู่นี้ ครุภัณฑ์เดิมจะยังคงข้อมูลไว้ แต่จะไม่แสดงในตัวกรองหมวดหมู่อีกต่อไป ยืนยันการลบ?')) return;
+        }
+        row.remove();
+      };
+    });
+  }
+  wireCategoryUnitRows();
+
+  document.getElementById('btnAddCategory').onclick = () => {
+    const wrap = document.getElementById('cuRows');
+    const div = document.createElement('div');
+    div.className = 'memo-two-col cu-row';
+    div.style.alignItems = 'flex-end';
+    div.innerHTML = `
+      <input type="hidden" class="cu-original" value="">
+      <div class="field" style="flex:2 1 160px;"><label>ชื่อหมวดหมู่</label><input class="input cu-name" placeholder="เช่น เครื่องมือช่าง"></div>
+      <div class="field" style="max-width:140px;"><label>หน่วยนับ</label><input class="input cu-unit" placeholder="เช่น เครื่อง"></div>
+      <div class="field" style="max-width:56px;"><button type="button" class="btn btn-danger cu-del" style="padding:12px; width:100%;" title="ลบหมวดหมู่นี้">ลบ</button></div>
+    `;
+    wrap.appendChild(div);
+    wireCategoryUnitRows();
+    div.querySelector('.cu-name').focus();
+  };
+
   document.getElementById('btnSaveCategoryUnits').onclick = async () => {
     const btn = document.getElementById('btnSaveCategoryUnits');
-    // เก็บค่าหน่วยนับของทุกหมวดหมู่จากช่องกรอก แล้วรวมเป็น object เดียวก่อนส่ง
-    const obj = {};
-    document.querySelectorAll('.cu-unit').forEach(inp => { obj[inp.dataset.cat] = inp.value.trim() || 'เครื่อง'; });
-    setButtonBusy(btn, true); setLoading(true, 'กำลังบันทึกหน่วยนับ...');
+    const rows = Array.from(document.querySelectorAll('.cu-row'));
+    const categories = [];
+    const unitsObj = {};
+    const renames = [];
+    for (const row of rows) {
+      const original = row.querySelector('.cu-original').value;
+      const name = row.querySelector('.cu-name').value.trim();
+      const unit = row.querySelector('.cu-unit').value.trim();
+      if (!name) continue; // ข้ามแถวที่ไม่ได้กรอกชื่อหมวดหมู่
+      if (categories.includes(name)) { toast('มีชื่อหมวดหมู่ซ้ำกัน: ' + name); return; }
+      categories.push(name);
+      unitsObj[name] = unit || 'เครื่อง';
+      if (original && original !== name) renames.push({ old: original, new: name });
+    }
+    if (!categories.length) { toast('ต้องมีอย่างน้อย 1 หมวดหมู่'); return; }
+    setButtonBusy(btn, true); setLoading(true, 'กำลังบันทึกหมวดหมู่...');
     try {
-      await apiPost('updateSystemSettings', { categoryUnits: JSON.stringify(obj) });
-      toast('บันทึกหน่วยนับแล้ว');
+      await apiPost('updateSystemSettings', {
+        assetCategories: JSON.stringify(categories),
+        categoryUnits: JSON.stringify(unitsObj),
+        categoryRenames: JSON.stringify(renames)
+      });
+      toast('บันทึกหมวดหมู่และหน่วยนับแล้ว');
       await reloadThen(renderSettings);
     } catch (err) { toast(err.message || 'บันทึกไม่สำเร็จ'); }
     finally { setLoading(false); setButtonBusy(btn, false); }
