@@ -2106,7 +2106,13 @@ function openBorrowForm() {
       </div>
       <div class="field">
         <label>ครุภัณฑ์</label>
-        <select class="input" id="f_asset">${available.map(a => `<option value="${escapeHtml(a['รหัสครุภัณฑ์'])}" data-name="${escapeHtml((a['ชื่อครุภัณฑ์']||'').toLowerCase())}" data-code="${escapeHtml((a['รหัสครุภัณฑ์']||'').toLowerCase())}">${escapeHtml(a['ชื่อครุภัณฑ์'])} (${escapeHtml(a['รหัสครุภัณฑ์'])})</option>`).join('')}</select>
+        <select class="input" id="f_asset">
+  ${CATS.map(cat => {
+    const inCat = available.filter(a => a['หมวดหมู่'] === cat);
+    if (!inCat.length) return '';
+    return `<optgroup label="${escapeHtml(cat)} (${inCat.length})">${inCat.map(a => `<option value="${escapeHtml(a['รหัสครุภัณฑ์'])}" data-name="${escapeHtml((a['ชื่อครุภัณฑ์']||'').toLowerCase())}" data-code="${escapeHtml((a['รหัสครุภัณฑ์']||'').toLowerCase())}">${escapeHtml(a['ชื่อครุภัณฑ์'])} (${escapeHtml(a['รหัสครุภัณฑ์'])})</option>`).join('')}</optgroup>`;
+  }).join('')}
+</select>
       </div>
       <div id="f_assetInfo"></div>
       <div class="field" id="f_compWrap"></div>
@@ -2115,10 +2121,12 @@ function openBorrowForm() {
     <div class="mf-section">
       <div class="mf-section-title"><span class="mf-step">2</span> ผู้ยืมและกำหนดคืน</div>
       <div class="field">
-        <label>ผู้ยืม (เลือกจากทำเนียบ จนท.ในสังกัด กันเลือกผิดคน)</label>
-        <select class="input" id="f_borrowerPick">${officerSelectOptions('')}</select>
-        <input class="input" id="f_borrower" placeholder="พิมพ์ชื่อ-สกุลผู้ยืม" style="margin-top:8px; display:none;">
-      </div>
+  <label>ผู้ยืม (พิมพ์เพื่อค้นหาจากทำเนียบ จนท.ในสังกัด หรือพิมพ์ชื่อเอง)</label>
+  <input class="input" id="f_borrower" list="borrowerDatalist" placeholder="พิมพ์ชื่อ-สกุลผู้ยืม" autocomplete="off">
+  <datalist id="borrowerDatalist">
+    ${state.users.map(u => `<option value="${escapeHtml(officerFullName(u))}" label="${escapeHtml(officerLabel(u))}"></option>`).join('')}
+  </datalist>
+</div>
       <div class="memo-two-col">
         <div class="field"><label>วันที่ยืม</label><input class="input" type="date" id="f_borrowdate" value="${isoDate()}"></div>
         <div class="field"><label>กำหนดคืน</label><input class="input" type="date" id="f_duedate" value="${isoDate(new Date(Date.now() + 7 * 86400000))}"></div>
@@ -2198,7 +2206,6 @@ function openBorrowForm() {
     };
     if (pick.value && pick.value !== '__other__' && pick.value !== '') pick.onchange();
   }
-  wirePicker('f_borrowerPick', 'f_borrower');
   if (admin) wirePicker('f_approverPick', 'f_approver');
 
   function refreshComponentPicker() {
