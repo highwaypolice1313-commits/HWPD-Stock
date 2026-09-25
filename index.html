@@ -2080,6 +2080,7 @@ function openBorrowDetail(id) {
       ${b['รูปสภาพ(ตอนคืน)'] ? `<div style="flex:1 1 160px;"><div class="hint" style="margin-top:0; font-weight:500; color:var(--ink);">รูปสภาพตอนคืน</div><img class="condition-photo-thumb" src="${b['รูปสภาพ(ตอนคืน)']}"></div>` : ''}
     </div>` : ''}
     <div class="btn-row"><button class="btn btn-ghost" id="btnPrintForm">พิมพ์บันทึกขอเบิก-ยืม</button></div>
+    ${isAdmin() ? `<div class="btn-row"><button class="btn btn-ghost" id="btnEditBorrow">แก้ไขข้อมูลการยืม (วันที่/ชื่อผู้ยืม)</button></div>` : ''}
     ${isAdmin() && status === 'รออนุมัติ' ? `<div class="btn-row"><button class="btn btn-danger" id="btnReject">ปฏิเสธ</button><button class="btn btn-ok" id="btnApprove">อนุมัติ</button></div>` : ''}
     ${isAdmin() && (status === 'กำลังยืม' || status === 'เกินกำหนด' || eff === 'เกินกำหนด') ? `
     <div class="mf-section" style="margin-top:16px;">
@@ -2106,6 +2107,8 @@ function openBorrowDetail(id) {
     };
   }
   document.getElementById('btnPrintForm').onclick = () => openPrintMemoForm({ borrow: b, componentNames: compNames });
+  const editBtn = document.getElementById('btnEditBorrow');
+  if (editBtn) editBtn.onclick = () => { closeSheet(); openBorrowEditForm(b); };
   if (isAdmin() && status === 'รออนุมัติ') {
     document.getElementById('btnApprove').onclick = async () => {
       const btn = document.getElementById('btnApprove'); if (btn.disabled) return; setButtonBusy(btn, true, 'กำลังอนุมัติ...'); setLoading(true, 'กำลังอนุมัติคำขอ...');
@@ -2130,6 +2133,55 @@ function openBorrowDetail(id) {
       catch (err) { toast(err.message || 'บันทึกการคืนไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(btn, false); }
     };
   }
+}
+function openBorrowEditForm(b) {
+  showSheet(`
+    <div class="sheet-title">แก้ไขข้อมูลการยืม</div>
+    <div class="field"><label>ครุภัณฑ์</label><div class="input" style="background:var(--panel-soft); color:var(--ink-dim);">${escapeHtml(b['ชื่อครุภัณฑ์'])}</div></div>
+    <div class="field">
+      <label>ผู้ยืม</label>
+      <input class="input" id="ef_borrower" list="editBorrowerDatalist" value="${escapeHtml(b['ผู้ยืม'])}">
+      <datalist id="editBorrowerDatalist">
+        ${state.users.map(u => `<option value="${escapeHtml(officerFullName(u))}"></option>`).join('')}
+      </datalist>
+    </div>
+    <div class="memo-two-col">
+      <div class="field"><label>วันที่ยืม</label><input class="input" type="date" id="ef_borrowdate" value="${b['วันที่ยืม'] ? isoDate(b['วันที่ยืม']) : ''}"></div>
+      <div class="field"><label>กำหนดคืน</label><input class="input" type="date" id="ef_duedate" value="${b['กำหนดคืน'] ? isoDate(b['กำหนดคืน']) : ''}"></div>
+    </div>
+    <div class="chip-row" style="margin-bottom:0;">
+      <div class="chip" data-edays="3">3 วัน</div>
+      <div class="chip" data-edays="7">7 วัน</div>
+      <div class="chip" data-edays="14">14 วัน</div>
+      <div class="chip" data-edays="30">30 วัน</div>
+      <div class="chip" data-edays="365">1 ปี</div>
+    </div>
+    <div class="hint" style="margin-top:6px;">ปุ่มลัดจะคำนวณ "กำหนดคืน" จากวันที่ยืมด้านบนโดยอัตโนมัติ</div>
+    ${b['สถานะ'] === 'คืนแล้ว' ? `<div class="field" style="margin-top:14px;"><label>วันที่คืนจริง</label><input class="input" type="date" id="ef_returndate" value="${b['วันที่คืนจริง'] ? isoDate(b['วันที่คืนจริง']) : ''}"></div>` : ''}
+    <div class="field"><label>หมายเหตุ</label><input class="input" id="ef_note" value="${escapeHtml(b['หมายเหตุ'])||''}"></div>
+    <div class="btn-row"><button class="btn btn-ghost" id="btnCancel">ยกเลิก</button><button class="btn btn-primary" id="btnSaveEdit">บันทึกการแก้ไข</button></div>
+  `);
+  document.querySelectorAll('[data-edays]').forEach(chip => {
+    chip.onclick = () => {
+      const base = val('ef_borrowdate') || isoDate();
+      const days = Number(chip.dataset.edays);
+      document.getElementById('ef_duedate').value = isoDate(new Date(toDate(base).getTime() + days * 86400000));
+    };
+  });
+  document.getElementById('btnCancel').onclick = closeSheet;
+  document.getElementById('btnSaveEdit').onclick = async () => {
+    if (!val('ef_borrower').trim()) { toast('กรุณากรอกชื่อผู้ยืม'); return; }
+    if (!val('ef_borrowdate') || !val('ef_duedate')) { toast('กรุณาระบุวันที่ยืมและกำหนดคืน'); return; }
+    if (val('ef_duedate') < val('ef_borrowdate')) { toast('กำหนดคืนต้องไม่ก่อนวันที่ยืม'); return; }
+    const payload = {
+      id: b['รหัสรายการ'], borrower: val('ef_borrower'), borrowDate: val('ef_borrowdate'), dueDate: val('ef_duedate'), note: val('ef_note')
+    };
+    const returnDateEl = document.getElementById('ef_returndate');
+    if (returnDateEl) payload.returnDate = returnDateEl.value;
+    const btn = document.getElementById('btnSaveEdit'); if (btn.disabled) return; setButtonBusy(btn, true); setLoading(true, 'กำลังบันทึกการแก้ไข...');
+    try { await apiPost('updateBorrow', payload); closeSheet(); toast('แก้ไขข้อมูลการยืมแล้ว'); await reloadThen(renderBorrow); }
+    catch (err) { toast(err.message || 'แก้ไขไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(btn, false); }
+  };
 }
 function openBorrowForm() {
   const available = state.assets.filter(a => a['สถานะ'] === 'พร้อมใช้งาน');
@@ -2171,6 +2223,7 @@ function openBorrowForm() {
         <div class="chip active" data-days="7">7 วัน</div>
         <div class="chip" data-days="14">14 วัน</div>
         <div class="chip" data-days="30">30 วัน</div>
+        <div class="chip" data-days="365">1 ปี</div>
       </div>
     </div>
 
@@ -3277,7 +3330,7 @@ function printCommsAuditReport() {
   pa.innerHTML = html;
   setTimeout(() => { window.print(); pa.classList.remove('report-print-area'); pa.innerHTML = ''; }, 80);
 }
-   
+ 
    /* ========================= ฟีเจอร์ ๔: ตรวจนับพัสดุประจำปี ========================= */
 async function renderAudit() {
   if (!isAdmin()) return;
