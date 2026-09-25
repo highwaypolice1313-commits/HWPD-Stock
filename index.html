@@ -1800,8 +1800,10 @@ function assetRow(a) {
   </div>`;
 }
 
-  function openAssetPickerSheet(currentId, onPick) {
-  const available = state.assets.filter(a => a['สถานะ'] === 'พร้อมใช้งาน');
+function openAssetPickerSheet(currentId, onPick, onlyAvailable = true) {
+  // onlyAvailable=true (ค่าเริ่มต้น สำหรับหน้ายืม): แสดงเฉพาะครุภัณฑ์ที่ "พร้อมใช้งาน"
+  // onlyAvailable=false (ใช้ในหน้าซ่อมบำรุง): แสดงครุภัณฑ์ทุกสถานะ พร้อมป้ายสถานะกำกับให้เห็นชัด
+  const available = onlyAvailable ? state.assets.filter(a => a['สถานะ'] === 'พร้อมใช้งาน') : state.assets.slice();
   let pickCat = 'all', pickQ = '';
   const pickerRoot = document.createElement('div');
   document.body.appendChild(pickerRoot);
@@ -1826,7 +1828,7 @@ function assetRow(a) {
             <div class="glass list-item ap-item" data-id="${escapeHtml(a['รหัสครุภัณฑ์'])}">
               <div class="li-icon">${catIcon(a['หมวดหมู่'])}</div>
               <div class="li-body"><div class="li-title">${escapeHtml(a['ชื่อครุภัณฑ์'])}</div><div class="li-sub">${escapeHtml(a['รหัสครุภัณฑ์'])}${a['ยี่ห้อ/รุ่น'] ? ' · ' + escapeHtml(a['ยี่ห้อ/รุ่น']) : ''}</div></div>
-              ${a['รหัสครุภัณฑ์']===currentId ? `<div class="status-badge status-ready">เลือกอยู่</div>` : ''}
+              ${a['รหัสครุภัณฑ์']===currentId ? `<div class="status-badge status-ready">เลือกอยู่</div>` : (!onlyAvailable ? `<div class="status-badge ${statusClass(a['สถานะ'])}">${escapeHtml(a['สถานะ'])}</div>` : '')}
             </div>`).join('') : emptyState('ไม่พบครุภัณฑ์ที่ค้นหา')}
           </div>
         </div>
@@ -2443,24 +2445,81 @@ function openBorrowForm() {
 /* ========================================================= MAINTENANCE */
 function renderMaint() {
   const el = document.getElementById('view-maint');
-  const open = state.maint.filter(m => m['สถานะ'] !== 'ซ่อมเสร็จ');
-  const done = state.maint.filter(m => m['สถานะ'] === 'ซ่อมเสร็จ').slice(-15).reverse();
+  if (state.maintTab === undefined) state.maintTab = 'active';
+  if (state.maintSearch === undefined) state.maintSearch = '';
+  if (state.maintSort === undefined) state.maintSort = 'date_desc';
+
+  const pending = state.maint.filter(m => m['สถานะ'] === 'รอซ่อม');
+  const active = state.maint.filter(m => m['สถานะ'] !== 'ซ่อมเสร็จ');
+  const history = state.maint.filter(m => m['สถานะ'] === 'ซ่อมเสร็จ');
+  const totalCost = state.maint.reduce((s, m) => s + (Number(m['ค่าใช้จ่าย(บาท)']) || 0), 0);
+
+  const TABS = [
+    { id: 'pending', label: 'รอซ่อม', count: pending.length },
+    { id: 'active',  label: 'ค้างซ่อม', count: active.length },
+    { id: 'history', label: 'ซ่อมเสร็จแล้ว', count: history.length }
+  ];
+
+  let list = { pending, active, history }[state.maintTab] || [];
+  const q = state.maintSearch.toLowerCase();
+  if (q) list = list.filter(m => String(m['ชื่อครุภัณฑ์']||'').toLowerCase().includes(q) || String(m['อาการ/ปัญหา']||'').toLowerCase().includes(q) || String(m['ผู้แจ้ง']||'').toLowerCase().includes(q));
+
+  const [sField, sDir] = state.maintSort.split('_');
+  const sMul = sDir === 'desc' ? -1 : 1;
+  list = [...list].sort((a, b) => {
+    if (sField === 'date') return sMul * (toDate(a['วันที่แจ้ง']||0) - toDate(b['วันที่แจ้ง']||0));
+    if (sField === 'name') return sMul * String(a['ชื่อครุภัณฑ์']||'').localeCompare(String(b['ชื่อครุภัณฑ์']||''), 'th');
+    if (sField === 'cost') return sMul * ((Number(a['ค่าใช้จ่าย(บาท)'])||0) - (Number(b['ค่าใช้จ่าย(บาท)'])||0));
+    return 0;
+  });
+
   el.innerHTML = `
     <div class="section-title">
-      งานซ่อมบำรุง <small>${open.length} รายการค้าง</small>
+      งานซ่อมบำรุง <small>${active.length} รายการค้างซ่อม</small>
       <span class="section-actions"><button class="icon-btn" id="btnExportMaint" title="ส่งออก CSV">${ICONS.download}</button></span>
     </div>
-    <div>${open.length ? open.map(maintRow).join('') : emptyState('ไม่มีงานซ่อมค้าง')}</div>
-    <div class="section-title">ประวัติซ่อมเสร็จแล้ว</div>
-    <div>${done.length ? done.map(maintRow).join('') : emptyState('ยังไม่มีประวัติ')}</div>
+    <div class="stat-grid" style="margin-bottom:14px;">
+      <div class="stat-card warn"><div class="stat-num">${pending.length}</div><div class="stat-label">รอซ่อม</div></div>
+      <div class="stat-card ok"><div class="stat-num">${active.length}</div><div class="stat-label">ค้างซ่อม</div></div>
+      <div class="stat-card info"><div class="stat-num">${Number(totalCost).toLocaleString()}</div><div class="stat-label">ค่าใช้จ่ายสะสม (บาท)</div></div>
+    </div>
+    <div class="search-row">
+      <input class="input" id="maintSearchInput" placeholder="ค้นหาชื่อครุภัณฑ์ อาการ หรือผู้แจ้ง..." value="${escapeHtml(state.maintSearch)}">
+      <select class="input sort-select" id="maintSortSelect">
+        <option value="date_desc" ${state.maintSort==='date_desc'?'selected':''}>แจ้งล่าสุดก่อน</option>
+        <option value="date_asc" ${state.maintSort==='date_asc'?'selected':''}>แจ้งเก่าสุดก่อน</option>
+        <option value="name_asc" ${state.maintSort==='name_asc'?'selected':''}>ชื่อครุภัณฑ์ ก-ฮ</option>
+        <option value="cost_desc" ${state.maintSort==='cost_desc'?'selected':''}>ค่าใช้จ่ายมาก-น้อย</option>
+      </select>
+    </div>
+    <div class="chip-row">
+      ${TABS.map(t => `<div class="chip ${state.maintTab===t.id?'active':''}" data-mtab="${t.id}">${t.label} (${t.count})</div>`).join('')}
+    </div>
+    <div id="maintList">${list.length ? list.map(maintRow).join('') : emptyState(
+      state.maintTab==='pending' ? 'ไม่มีงานรอซ่อม' :
+      state.maintTab==='active'  ? 'ไม่มีงานซ่อมค้าง' : 'ยังไม่มีประวัติ'
+    )}</div>
   `;
   document.querySelectorAll('.maint-item').forEach(it => it.onclick = () => openMaintDetail(it.dataset.id));
   document.getElementById('btnExportMaint').onclick = () => exportCsv('ซ่อมบำรุง.csv', ['รหัสรายการ','รหัสครุภัณฑ์','ชื่อครุภัณฑ์','วันที่แจ้ง','อาการ/ปัญหา','ผู้แจ้ง','สถานะ','วันที่ซ่อมเสร็จ','ค่าใช้จ่าย(บาท)','ผู้รับผิดชอบ','หมายเหตุ'], state.maint);
+  document.querySelectorAll('[data-mtab]').forEach(c => c.onclick = () => { state.maintTab = c.dataset.mtab; renderMaint(); });
+  const searchInput = document.getElementById('maintSearchInput');
+  searchInput.oninput = (e) => {
+    state.maintSearch = e.target.value;
+    const pos = e.target.selectionStart;
+    renderMaint();
+    const again = document.getElementById('maintSearchInput');
+    if (again) { again.focus(); try { again.setSelectionRange(pos, pos); } catch (err) {} }
+  };
+  document.getElementById('maintSortSelect').onchange = (e) => { state.maintSort = e.target.value; renderMaint(); };
 }
 function maintRow(m) {
   return `<div class="glass list-item maint-item" data-id="${escapeHtml(m['รหัสรายการ'])}">
     <div class="li-icon">${ICONS.wrench}</div>
-    <div class="li-body"><div class="li-title">${escapeHtml(m['ชื่อครุภัณฑ์'])}</div><div class="li-sub">${escapeHtml(m['อาการ/ปัญหา'])}</div></div>
+    <div class="li-body">
+      <div class="li-title">${escapeHtml(m['ชื่อครุภัณฑ์'])}</div>
+      <div class="li-sub">${escapeHtml(m['อาการ/ปัญหา'])} · แจ้งเมื่อ ${thaiDate(m['วันที่แจ้ง'])}</div>
+    </div>
     <div class="status-badge ${statusClass(m['สถานะ'])}">${escapeHtml(m['สถานะ'])}</div>
   </div>`;
 }
@@ -2503,34 +2562,64 @@ function openMaintDetail(id) {
 function openMaintForm() {
   showSheet(`
     <div class="sheet-title">แจ้งซ่อมบำรุง</div>
-    <div class="field"><label>ครุภัณฑ์</label><select class="input" id="f_asset">${state.assets.map(a => `<option value="${escapeHtml(a['รหัสครุภัณฑ์'])}">${escapeHtml(a['ชื่อครุภัณฑ์'])} (${escapeHtml(a['รหัสครุภัณฑ์'])})</option>`).join('')}</select></div>
-    <div class="field"><label>อาการ/ปัญหา</label><input class="input" id="f_issue"></div>
-    <div class="field"><label>ผู้แจ้ง</label><input class="input" id="f_reporter" value="${escapeHtml(state.user.name || '')}"></div>
-        <div class="field"><label>วันที่แจ้ง</label><input class="input" type="date" id="f_rdate" value="${isoDate()}"></div>
-    <div class="field">
-      <label>รูปถ่ายอาการ/ความเสียหาย — ไม่บังคับ</label>
-      <input type="file" id="f_maintPhoto" accept="image/png,image/jpeg,image/webp" class="input" style="padding:8px;">
-      <input type="hidden" id="f_maintPhotoVal" value="">
-      <img id="f_maintPhotoPreview" class="condition-photo-thumb" style="display:none;">
+
+    <div class="mf-section">
+      <div class="mf-section-title"><span class="mf-step">1</span> เลือกครุภัณฑ์</div>
+      <div class="glass list-item" id="f_assetTrigger" style="cursor:pointer;">
+        <div class="li-icon" id="f_assetIcon">${ICONS.other}</div>
+        <div class="li-body">
+          <div class="li-title" id="f_assetName">แตะเพื่อเลือกครุภัณฑ์</div>
+          <div class="li-sub" id="f_assetSub">${state.assets.length} รายการทั้งหมด</div>
+        </div>
+        <span class="status-badge status-ready" style="flex:none;">เปลี่ยน</span>
+      </div>
+      <input type="hidden" id="f_asset" value="">
     </div>
+
+    <div class="mf-section">
+      <div class="mf-section-title"><span class="mf-step">2</span> รายละเอียดปัญหา</div>
+      <div class="field"><label>อาการ/ปัญหา</label><input class="input" id="f_issue"></div>
+      <div class="memo-two-col">
+        <div class="field"><label>ผู้แจ้ง</label><input class="input" id="f_reporter" value="${escapeHtml(state.user.name || '')}"></div>
+        <div class="field"><label>วันที่แจ้ง</label><input class="input" type="date" id="f_rdate" value="${isoDate()}"></div>
+      </div>
+      <div class="field">
+        <label>รูปถ่ายอาการ/ความเสียหาย — ไม่บังคับ</label>
+        <input type="file" id="f_maintPhoto" accept="image/png,image/jpeg,image/webp" class="input" style="padding:8px;">
+        <input type="hidden" id="f_maintPhotoVal" value="">
+        <img id="f_maintPhotoPreview" class="condition-photo-thumb" style="display:none;">
+      </div>
+    </div>
+
     <div class="btn-row"><button class="btn btn-ghost" id="btnCancel">ยกเลิก</button><button class="btn btn-primary" id="btnSave">บันทึก</button></div>
   `);
+
+  // เลือกครุภัณฑ์ผ่านการ์ดค้นหา+หมวดหมู่แบบเดียวกับหน้ายืม แต่เปิดให้เลือกได้ทุกสถานะ (onlyAvailable=false)
+  function selectAsset(id) {
+    const asset = state.assets.find(a => a['รหัสครุภัณฑ์'] === id);
+    if (!asset) return;
+    document.getElementById('f_asset').value = id;
+    document.getElementById('f_assetIcon').innerHTML = catIcon(asset['หมวดหมู่']);
+    document.getElementById('f_assetName').textContent = asset['ชื่อครุภัณฑ์'];
+    document.getElementById('f_assetSub').textContent = asset['หมวดหมู่'] + (asset['ยี่ห้อ/รุ่น'] ? ' · ' + asset['ยี่ห้อ/รุ่น'] : '') + ' · ' + asset['สถานะ'];
+  }
+  document.getElementById('f_assetTrigger').onclick = () => openAssetPickerSheet(val('f_asset'), selectAsset, false);
+  if (state.assets.length) selectAsset(state.assets[0]['รหัสครุภัณฑ์']);
+
   document.getElementById('f_maintPhoto').onchange = (e) => {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
-    if (file.size > 200000) { toast('ไฟล์รูปใหญ่เกินไป กรุณาใช้รูปที่เล็กกว่า 200KB'); e.target.value = ''; return; }
-    const reader = new FileReader();
-    reader.onload = () => {
-      document.getElementById('f_maintPhotoVal').value = reader.result;
+    prepareImageFile(file, 60000).then(data => {
+      document.getElementById('f_maintPhotoVal').value = data;
       const img = document.getElementById('f_maintPhotoPreview');
-      img.src = reader.result; img.style.display = 'block';
-    };
-    reader.readAsDataURL(file);
+      img.src = data; img.style.display = 'block';
+    }).catch(err => toast(err.message || 'เตรียมรูปไม่สำเร็จ'));
   };
   document.getElementById('btnCancel').onclick = closeSheet;
   document.getElementById('btnSave').onclick = async () => {
     const assetId = val('f_asset');
     const asset = state.assets.find(a => a['รหัสครุภัณฑ์'] === assetId);
+    if (!assetId) { toast('กรุณาเลือกครุภัณฑ์'); return; }
     if (!val('f_issue')) { toast('กรุณากรอกอาการ/ปัญหา'); return; }
     const saveBtn = document.getElementById('btnSave'); if (saveBtn.disabled) return; setButtonBusy(saveBtn, true); setLoading(true, 'กำลังบันทึกงานซ่อม...');
     try {
