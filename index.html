@@ -244,6 +244,32 @@ input[type="date"]::-webkit-date-and-time-value{ text-align:left; }
 }
 .fab svg{width:22px;height:22px;}
 
+/* ---------- ฝังปุ่ม + ไว้ในแถบเมนูล่าง (มือถือ) แทนการลอยกลางจอบังเมนู ---------- */
+@media (max-width:899px){
+  .tabbar{ justify-content:space-between; }
+  .tab.tab-overflow{ display:none !important; }
+  .fab{
+    position:static; order:3; flex:0 0 auto; transform:none; left:auto; bottom:auto;
+    width:50px; height:50px; margin:-22px 4px 0; border:3px solid var(--bg-1);
+    box-shadow:0 10px 20px rgba(187,138,63,.4);
+  }
+  .fab svg{width:19px;height:19px;}
+  .tab[data-tab="dashboard"]{order:1;}
+  .tab[data-tab="assets"]{order:2;}
+  .tab[data-tab="borrow"]{order:4;}
+  #moreTabBtn{order:5;}
+  .more-menu-item{
+    display:flex; align-items:center; gap:12px; width:100%; padding:13px 10px; border:none; background:none;
+    font-family:inherit; font-size:14.5px; color:var(--ink); cursor:pointer; border-radius:14px; text-align:left;
+  }
+  .more-menu-item:active{ background:var(--navy-wash); }
+  .more-menu-item .ico{ width:36px;height:36px;border-radius:11px; background:var(--navy-wash); color:var(--navy); display:flex;align-items:center;justify-content:center; flex:none; }
+  .more-menu-item .ico svg{width:18px;height:18px;}
+}
+@media (min-width:900px){
+  #moreTabBtn{display:none;}
+}
+
 /* ---------- แถบเมนูลัดหน้าแรก แบบแอพธนาคาร ---------- */
 .quick-actions{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px 6px; margin-bottom:16px; }
 .qa-item{ display:flex; flex-direction:column; align-items:center; gap:7px; cursor:pointer; text-align:center; }
@@ -756,11 +782,10 @@ html:not(.has-thsarabun) .pf-title{ font-size:26pt; line-height:30pt; }
   <div class="page" id="view-settings" style="display:none;"></div>
   <div class="page" id="view-audit" style="display:none;"></div>
 
-  <button class="fab" id="fabBtn" style="display:none;" aria-label="เพิ่มรายการ">
-    <svg viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-  </button>
-
   <div class="tabbar">
+    <button class="fab" id="fabBtn" style="display:none;" aria-label="เพิ่มรายการ">
+      <svg viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
     <button class="tab active" data-tab="dashboard">
       <span class="ico"><svg viewBox="0 0 20 20" fill="none"><path d="M3.5 9.5L10 4l6.5 5.5V16a1 1 0 01-1 1h-3.2v-5h-4.6v5H4.5a1 1 0 01-1-1V9.5z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></span>
       <span class="lbl">หน้าหลัก</span>
@@ -776,29 +801,33 @@ html:not(.has-thsarabun) .pf-title{ font-size:26pt; line-height:30pt; }
       </span>
       <span class="lbl">ยืม-คืน</span>
     </button>
-    <button class="tab" data-tab="maint">
+    <button class="tab tab-overflow" data-tab="maint">
       <span class="ico"><svg viewBox="0 0 20 20" fill="none"><path d="M12.4 5.1a3.4 3.4 0 00-4.4 4.4l-5 5a1.5 1.5 0 002.1 2.1l5-5a3.4 3.4 0 004.4-4.4l-2.2 2.2-1.9-.4-.4-1.9 2.4-2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></span>
       <span class="lbl">ซ่อมบำรุง</span>
     </button>
-    <button class="tab" data-tab="memos">
+    <button class="tab tab-overflow" data-tab="memos">
       <span class="ico"><svg viewBox="0 0 20 20" fill="none"><path d="M4 3.5h9l3 3v10a1 1 0 01-1 1H4a1 1 0 01-1-1v-12a1 1 0 011-1z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M6.5 9h7M6.5 12h7M6.5 15h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></span>
       <span class="lbl">เอกสารใบเบิก</span>
     </button>
-    <button class="tab" data-tab="users" id="usersTabBtn" style="display:none;">
+    <button class="tab tab-overflow" data-tab="users" id="usersTabBtn" style="display:none;">
       <span class="ico"><svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="6.6" r="3" stroke="currentColor" stroke-width="1.4"/><path d="M3.8 16.2c1-3 3.4-4.6 6.2-4.6s5.2 1.6 6.2 4.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></span>
       <span class="lbl">จนท.ในสังกัด</span>
     </button>
-    <button class="tab" data-tab="reports">
+    <button class="tab tab-overflow" data-tab="reports">
       <span class="ico"><svg viewBox="0 0 20 20" fill="none"><path d="M4 16.5V11M10 16.5V6M16 16.5v-8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>
       <span class="lbl">รายงาน</span>
     </button>
-   <button class="tab" data-tab="audit" id="auditTabBtn" style="display:none;">
+   <button class="tab tab-overflow" data-tab="audit" id="auditTabBtn" style="display:none;">
       <span class="ico"><svg viewBox="0 0 20 20" fill="none"><path d="M5 5h10M5 10h10M5 15h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="2.6" cy="5" r="0.9" fill="currentColor"/><circle cx="2.6" cy="10" r="0.9" fill="currentColor"/><circle cx="2.6" cy="15" r="0.9" fill="currentColor"/></svg></span>
       <span class="lbl">ตรวจนับประจำปี</span>
     </button>
-    <button class="tab" data-tab="settings" id="settingsTabBtn" style="display:none;">
+    <button class="tab tab-overflow" data-tab="settings" id="settingsTabBtn" style="display:none;">
       <span class="ico"><svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="2.6" stroke="currentColor" stroke-width="1.4"/><path d="M10 2.8v2M10 15.2v2M17.2 10h-2M4.8 10h-2M15.1 4.9l-1.4 1.4M6.3 13.7l-1.4 1.4M15.1 15.1l-1.4-1.4M6.3 6.3L4.9 4.9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></span>
       <span class="lbl">ตั้งค่าระบบ</span>
+    </button>
+    <button class="tab" id="moreTabBtn" aria-label="เมนูเพิ่มเติม">
+      <span class="ico"><svg viewBox="0 0 20 20" fill="none"><circle cx="4" cy="10" r="1.4" fill="currentColor"/><circle cx="10" cy="10" r="1.4" fill="currentColor"/><circle cx="16" cy="10" r="1.4" fill="currentColor"/></svg></span>
+      <span class="lbl">เพิ่มเติม</span>
     </button>
   </div>
 </div>
@@ -1554,7 +1583,8 @@ function exportCsv(filename, headers, rows) {
 }
 
 /* ========================================================= TABS */
-document.querySelectorAll('.tab').forEach(btn => { btn.addEventListener('click', () => renderTab(btn.dataset.tab)); });
+document.querySelectorAll('.tab[data-tab]').forEach(btn => { btn.addEventListener('click', () => renderTab(btn.dataset.tab)); });
+document.getElementById('moreTabBtn').addEventListener('click', openMoreMenu);
 document.getElementById('refreshBtn')?.addEventListener('click', refreshData);
 window.addEventListener('online', () => setConnection(true));
 window.addEventListener('offline', () => { setConnection(false); toast('ขณะนี้อุปกรณ์ออฟไลน์'); });
@@ -1562,10 +1592,12 @@ window.addEventListener('offline', () => { setConnection(false); toast('ขณ�
 function renderTab(name) {
   if ((name === 'users' || name === 'settings' || name === 'audit') && !isAdmin()) name = 'dashboard';
   state.tab = name;
-  document.querySelectorAll('.tab').forEach(t => {
+  document.querySelectorAll('.tab[data-tab]').forEach(t => {
     t.classList.toggle('active', t.dataset.tab === name);
     if (t.dataset.tab === name) t.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
   });
+  const moreBtn = document.getElementById('moreTabBtn');
+  if (moreBtn) moreBtn.classList.toggle('active', ['maint','memos','users','reports','audit','settings'].includes(name));
   document.querySelectorAll('.page').forEach(p => { p.style.display = 'none'; });
   const activePage = document.getElementById('view-' + name);
   if (activePage) activePage.style.display = 'block';
@@ -1587,6 +1619,23 @@ function renderTab(name) {
   if (name === 'reports') renderReports();
   if (name === 'settings') renderSettings();
   if (name === 'audit') renderAudit();
+}
+
+function openMoreMenu() {
+  const items = [
+    { tab:'maint', label:'ซ่อมบำรุง', icon: ICONS.wrench },
+    { tab:'memos', label:'เอกสารใบเบิก', icon: ICONS.log },
+    { tab:'users', label:'จนท.ในสังกัด', icon: ICONS.user, adminOnly:true },
+    { tab:'reports', label:'รายงาน', icon: '<svg viewBox="0 0 20 20" fill="none"><path d="M4 16.5V11M10 16.5V6M16 16.5v-8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>' },
+    { tab:'audit', label:'ตรวจนับประจำปี', icon: ICONS.checklist, adminOnly:true },
+    { tab:'settings', label:'ตั้งค่าระบบ', icon: '<svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="2.6" stroke="currentColor" stroke-width="1.4"/><path d="M10 2.8v2M10 15.2v2M17.2 10h-2M4.8 10h-2M15.1 4.9l-1.4 1.4M6.3 13.7l-1.4 1.4M15.1 15.1l-1.4-1.4M6.3 6.3L4.9 4.9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>', adminOnly:true }
+  ].filter(it => !it.adminOnly || isAdmin());
+  const html = `<div class="sheet-title">เมนูเพิ่มเติม</div>
+    <div>${items.map(it => `<button class="more-menu-item" data-tab="${it.tab}"><span class="ico">${it.icon}</span><span>${it.label}</span></button>`).join('')}</div>`;
+  showSheet(html);
+  document.querySelectorAll('.more-menu-item').forEach(btn => {
+    btn.onclick = () => { closeSheet(); renderTab(btn.dataset.tab); };
+  });
 }
 
 /* ========================================================= DASHBOARD */
