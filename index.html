@@ -2122,7 +2122,10 @@ function openBorrowDetail(id) {
       ${b['รูปสภาพ(ตอนคืน)'] ? `<div style="flex:1 1 160px;"><div class="hint" style="margin-top:0; font-weight:500; color:var(--ink);">รูปสภาพตอนคืน</div><img class="condition-photo-thumb" src="${b['รูปสภาพ(ตอนคืน)']}"></div>` : ''}
     </div>` : ''}
     <div class="btn-row"><button class="btn btn-ghost" id="btnPrintForm">พิมพ์บันทึกขอเบิก-ยืม</button></div>
-    ${isAdmin() ? `<div class="btn-row"><button class="btn btn-ghost" id="btnEditBorrow">แก้ไขข้อมูลการยืม (วันที่/ชื่อผู้ยืม)</button></div>` : ''}
+    ${isAdmin() ? `<div class="btn-row">
+      <button class="btn btn-ghost" id="btnEditBorrow">แก้ไขข้อมูลการยืม (วันที่/ชื่อผู้ยืม)</button>
+      <button class="btn btn-danger" id="btnDeleteBorrow">ลบรายการนี้</button>
+    </div>` : ''}
     ${isAdmin() && status === 'รออนุมัติ' ? `<div class="btn-row"><button class="btn btn-danger" id="btnReject">ปฏิเสธ</button><button class="btn btn-ok" id="btnApprove">อนุมัติ</button></div>` : ''}
     ${isAdmin() && (status === 'กำลังยืม' || status === 'เกินกำหนด' || eff === 'เกินกำหนด') ? `
     <div class="mf-section" style="margin-top:16px;">
@@ -2151,6 +2154,25 @@ function openBorrowDetail(id) {
   document.getElementById('btnPrintForm').onclick = () => openPrintMemoForm({ borrow: b, componentNames: compNames });
   const editBtn = document.getElementById('btnEditBorrow');
   if (editBtn) editBtn.onclick = () => { closeSheet(); openBorrowEditForm(b); };
+  const deleteBorrowBtn = document.getElementById('btnDeleteBorrow');
+  if (deleteBorrowBtn) {
+    deleteBorrowBtn.onclick = async () => {
+      // เตือนเป็นพิเศษถ้ารายการนี้ยังไม่คืน เพราะลบแล้วครุภัณฑ์จะถูกปรับกลับเป็น "พร้อมใช้งาน" ทันที
+      const stillActive = (eff === 'กำลังยืม' || eff === 'เกินกำหนด');
+      const confirmMsg = stillActive
+        ? 'รายการนี้ยังไม่ได้คืน หากลบ ครุภัณฑ์ "' + (b['ชื่อครุภัณฑ์'] || '') + '" จะถูกปรับสถานะกลับเป็น "พร้อมใช้งาน" ทันที ยืนยันการลบ?'
+        : 'ยืนยันการลบรายการยืม-คืนนี้? (ไม่สามารถกู้คืนได้)';
+      if (!confirm(confirmMsg)) return;
+      const btn = deleteBorrowBtn;
+      if (btn.disabled) return;
+      setButtonBusy(btn, true, 'กำลังลบ...'); setLoading(true, 'กำลังลบรายการ...');
+      try {
+        await apiPost('deleteBorrow', { id });
+        closeSheet(); toast('ลบรายการยืม-คืนแล้ว'); await reloadThen(renderBorrow);
+      } catch (err) { toast(err.message || 'ลบไม่สำเร็จ'); }
+      finally { setLoading(false); setButtonBusy(btn, false, 'ลบรายการนี้'); }
+    };
+  }
   if (isAdmin() && status === 'รออนุมัติ') {
     document.getElementById('btnApprove').onclick = async () => {
       const btn = document.getElementById('btnApprove'); if (btn.disabled) return; setButtonBusy(btn, true, 'กำลังอนุมัติ...'); setLoading(true, 'กำลังอนุมัติคำขอ...');
