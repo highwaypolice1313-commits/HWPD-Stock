@@ -900,7 +900,35 @@ function getAuditCommittee() {
   } catch (e) {}
   return DEFAULT_AUDIT_COMMITTEE.map(x => ({ ...x }));
 }
+
+/* ---- หน่วยนับตามหมวดหมู่ครุภัณฑ์ (ใช้ในเอกสารบันทึกข้อความ) ---- */
+// ค่าเริ่มต้น — TODO: แก้หน่วยนับเริ่มต้นตรงนี้ได้ตามต้องการ หรือไปแก้ที่หน้า "ตั้งค่าระบบ" ก็ได้
+const DEFAULT_CATEGORY_UNITS = {
+  'อาวุธปืน': 'กระบอก',
+  'ยานพาหนะ': 'คัน',
+  'สื่อสาร': 'เครื่อง',
+  'คอมพิวเตอร์/IT': 'เครื่อง',
+  'เครื่องแบบ/สนาม': 'ชุด',
+  'อื่นๆ': 'รายการ'
+};
+function getCategoryUnits() {
+  try {
+    const raw = state.settings && state.settings.categoryUnits;
+    const obj = raw ? JSON.parse(raw) : null;
+    if (obj && typeof obj === 'object') return { ...DEFAULT_CATEGORY_UNITS, ...obj };
+  } catch (e) {}
+  return { ...DEFAULT_CATEGORY_UNITS };
+}
+function unitForCategory(cat) {
+  const units = getCategoryUnits();
+  return units[cat] || 'เครื่อง';
+}
+function unitDatalistOptions() {
+  const units = Array.from(new Set(Object.values(getCategoryUnits())));
+  return units.map(u => `<option value="${escapeHtml(u)}"></option>`).join('');
+}
 /* ========================================================= SESSION (localStorage) */
+   
 function loadSession() {
   try {
     const raw = localStorage.getItem(SESSION_KEY);
@@ -2895,15 +2923,20 @@ desk.addEventListener('focusout', () => {
 
 /* ---------- ฟอร์มสร้างเอกสาร (กรอกข้อมูล + ตัวอย่างสด) ---------- */
 function buildMemoItemList(opts) {
-  if (opts.borrow) { const b = opts.borrow; return [{ name: b['ชื่อครุภัณฑ์'] || '', brand: '', serial: '', qty: 1 }]; }
-  if (opts.items) return opts.items.map(a => ({ name: a['ชื่อครุภัณฑ์'] || '', brand: a['ยี่ห้อ/รุ่น'] || '', serial: a['หมายเลขเครื่อง'] || '', qty: 1 }));
-  return [{ name: '', brand: '', serial: '', qty: 1 }];
+  if (opts.borrow) {
+    const b = opts.borrow;
+    // หาหมวดหมู่จากครุภัณฑ์ต้นทาง เพื่อเลือกหน่วยนับให้ตรงกับประเภท (เช่น รถ = คัน)
+    const asset = state.assets.find(a => a['รหัสครุภัณฑ์'] === b['รหัสครุภัณฑ์']);
+    return [{ name: b['ชื่อครุภัณฑ์'] || '', brand: '', serial: '', qty: 1, unit: unitForCategory(asset ? asset['หมวดหมู่'] : '') }];
+  }
+  if (opts.items) return opts.items.map(a => ({ name: a['ชื่อครุภัณฑ์'] || '', brand: a['ยี่ห้อ/รุ่น'] || '', serial: a['หมายเลขเครื่อง'] || '', qty: 1, unit: unitForCategory(a['หมวดหมู่']) }));
+  return [{ name: '', brand: '', serial: '', qty: 1, unit: 'เครื่อง' }];
 }
 function itemPhraseList(items) {
   const phrases = items.map(it => {
     let p = escapeHtml(it.name);
     if (it.brand) p += ' ยี่ห้อ ' + escapeHtml(it.brand);
-    p += ' จำนวน ' + toThaiNumber(it.qty || 1) + ' เครื่อง';
+    p += ' จำนวน ' + toThaiNumber(it.qty || 1) + ' ' + escapeHtml(it.unit || 'เครื่อง');
     if (it.serial) p += ' หมายเลข SN ' + toThaiNumber(it.serial); // แปลง Serial เป็นเลขไทย
     return p;
   });
@@ -2938,12 +2971,14 @@ function collectMemoFormData() {
   const brands = document.querySelectorAll('.memo-item-brand');
   const serials = document.querySelectorAll('.memo-item-serial');
   const qtys = document.querySelectorAll('.memo-item-qty');
+  const units = document.querySelectorAll('.memo-item-unit');
   
   const items = Array.from(names).map((el, i) => ({
     name: el.value.trim(), 
     brand: brands[i] ? brands[i].value.trim() : '', 
     serial: serials[i] ? toThaiNumber(serials[i].value.trim()) : '', 
-    qty: toThaiNumber((qtys[i] && qtys[i].value) || 1)
+    qty: toThaiNumber((qtys[i] && qtys[i].value) || 1),
+    unit: units[i] ? (units[i].value.trim() || 'เครื่อง') : 'เครื่อง'
   })).filter(it => it.name);
 
   const prefix = (state.settings && state.settings.docNoPrefix) || '';
@@ -3016,10 +3051,13 @@ function openPrintMemoForm(opts) {
         <div class="mf-item-head"><span>รายการที่ ${i+1}</span>${items.length > 1 ? `<button type="button" class="mf-item-del">ลบ</button>` : ''}</div>
         <div class="memo-two-col">
           <div class="field"><label>ชื่อพัสดุ</label><input class="input memo-item-name" value="${escapeHtml(it.name)}"></div>
-          <div class="field" style="max-width:90px;"><label>จำนวน</label><input class="input memo-item-qty" type="number" min="1" value="${it.qty}"></div>
         </div>
         <div class="memo-two-col">
+          <div class="field" style="max-width:90px;"><label>จำนวน</label><input class="input memo-item-qty" type="number" min="1" value="${it.qty}"></div>
+          <div class="field" style="max-width:120px;"><label>หน่วยนับ</label><input class="input memo-item-unit" list="unitDatalist" value="${escapeHtml(it.unit || 'เครื่อง')}"></div>
           <div class="field"><label>ยี่ห้อ/รุ่น</label><input class="input memo-item-brand" value="${escapeHtml(it.brand)}"></div>
+        </div>
+        <div class="memo-two-col">
           <div class="field"><label>หมายเลขเครื่อง/SN</label><input class="input memo-item-serial" value="${escapeHtml(it.serial)}"></div>
         </div>
       </div>`).join('');
@@ -3035,6 +3073,7 @@ function openPrintMemoForm(opts) {
       <button class="sheet-close" id="sheetCloseBtn" type="button" title="ปิด" aria-label="ปิด">${ICONS.close}</button>
       <div class="sheet-handle"></div>
       <div class="sheet-title">สร้างเอกสารบันทึกข้อความ</div>
+      <datalist id="unitDatalist">${unitDatalistOptions()}</datalist>
       <div class="mf-tabs">
         <button type="button" class="active" data-view="form">กรอกข้อมูล</button>
         <button type="button" data-view="preview">ตัวอย่างเอกสาร</button>
@@ -3111,14 +3150,17 @@ function openPrintMemoForm(opts) {
     const wrap = document.getElementById('m_itemsWrap');
     const div = document.createElement('div');
     div.className = 'mf-item'; div.setAttribute('data-item', '');
-    div.innerHTML = `
+       div.innerHTML = `
       <div class="mf-item-head"><span>รายการเพิ่มเติม</span><button type="button" class="mf-item-del">ลบ</button></div>
       <div class="memo-two-col">
         <div class="field"><label>ชื่อพัสดุ</label><input class="input memo-item-name"></div>
-        <div class="field" style="max-width:90px;"><label>จำนวน</label><input class="input memo-item-qty" type="number" min="1" value="1"></div>
       </div>
       <div class="memo-two-col">
+        <div class="field" style="max-width:90px;"><label>จำนวน</label><input class="input memo-item-qty" type="number" min="1" value="1"></div>
+        <div class="field" style="max-width:120px;"><label>หน่วยนับ</label><input class="input memo-item-unit" list="unitDatalist" value="เครื่อง"></div>
         <div class="field"><label>ยี่ห้อ/รุ่น</label><input class="input memo-item-brand"></div>
+      </div>
+      <div class="memo-two-col">
         <div class="field"><label>หมายเลขเครื่อง/SN</label><input class="input memo-item-serial"></div>
       </div>`;
     wrap.appendChild(div);
@@ -3738,11 +3780,13 @@ function renderSettings() {
   const el = document.getElementById('view-settings');
   const s = state.settings || {};
   const active = currentTheme();
+  const catUnits = getCategoryUnits();
   if (!state.settingsTab) state.settingsTab = 'general';
 
   const TABS = [
     { id: 'general',   label: 'ทั่วไป' },
     { id: 'committee',  label: 'คณะกรรมการตรวจสอบ' },
+    { id: 'units',      label: 'หมวดหมู่ & หน่วยนับ' },
     { id: 'org',        label: 'หน่วยงาน & เอกสาร' },
     { id: 'security',   label: 'รหัสผ่าน' },
     { id: 'data',       label: 'ข้อมูล & สำรอง' }
@@ -3788,6 +3832,21 @@ function renderSettings() {
 
     <div class="settings-panel" data-panel="committee" style="display:${state.settingsTab==='committee'?'block':'none'};">
       ${auditCommitteeSettingsSectionHtml(s)}
+    </div>
+        <div class="settings-panel" data-panel="units" style="display:${state.settingsTab==='units'?'block':'none'};">
+      <div class="section-title" style="margin-top:6px; font-size:14px;">หน่วยนับตามหมวดหมู่ครุภัณฑ์</div>
+      <div class="glass" style="padding:16px;">
+        <div class="hint" style="margin-top:0;">กำหนดหน่วยนับที่จะแสดงในเอกสารบันทึกข้อความ (ใบเบิก) ให้ตรงกับแต่ละหมวดหมู่ครุภัณฑ์ เช่น อาวุธปืน = กระบอก, ยานพาหนะ = คัน — ระบบจะเลือกให้อัตโนมัติเมื่อดึงรายการจากครุภัณฑ์ที่มีอยู่แล้ว แต่ยังแก้ทีละรายการในฟอร์มใบเบิกได้เสมอ</div>
+        <div style="margin-top:12px;">
+          ${CATS.map(c => `
+            <div class="memo-two-col" style="align-items:flex-end;">
+              <div class="field" style="flex:2 1 160px;"><label>หมวดหมู่</label><div class="input" style="background:var(--panel-soft); color:var(--ink-dim); display:flex; align-items:center;">${escapeHtml(c)}</div></div>
+              <div class="field" style="max-width:140px;"><label>หน่วยนับ</label><input class="input cu-unit" data-cat="${escapeHtml(c)}" value="${escapeHtml(catUnits[c] || '')}" placeholder="เช่น เครื่อง"></div>
+            </div>
+          `).join('')}
+        </div>
+        <div class="btn-row" style="margin-top:14px;"><button class="btn btn-primary" id="btnSaveCategoryUnits">บันทึกหน่วยนับ</button></div>
+      </div>
     </div>
 
     <div class="settings-panel" data-panel="org" style="display:${state.settingsTab==='org'?'block':'none'};">
@@ -3901,6 +3960,20 @@ function renderSettings() {
     const a = document.createElement('a'); a.href = url; a.download = 'สำรองข้อมูลระบบพัสดุ.json';
     document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
     toast('ดาวน์โหลดไฟล์สำรองข้อมูลแล้ว');
+  };
+
+  document.getElementById('btnSaveCategoryUnits').onclick = async () => {
+    const btn = document.getElementById('btnSaveCategoryUnits');
+    // เก็บค่าหน่วยนับของทุกหมวดหมู่จากช่องกรอก แล้วรวมเป็น object เดียวก่อนส่ง
+    const obj = {};
+    document.querySelectorAll('.cu-unit').forEach(inp => { obj[inp.dataset.cat] = inp.value.trim() || 'เครื่อง'; });
+    setButtonBusy(btn, true); setLoading(true, 'กำลังบันทึกหน่วยนับ...');
+    try {
+      await apiPost('updateSystemSettings', { categoryUnits: JSON.stringify(obj) });
+      toast('บันทึกหน่วยนับแล้ว');
+      await reloadThen(renderSettings);
+    } catch (err) { toast(err.message || 'บันทึกไม่สำเร็จ'); }
+    finally { setLoading(false); setButtonBusy(btn, false); }
   };
 
   wireAuditCommitteeSettingsHandlers();
