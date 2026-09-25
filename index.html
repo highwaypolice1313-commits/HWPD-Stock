@@ -2128,6 +2128,7 @@ function openBorrowDetail(id) {
     </div>` : ''}
     ${isAdmin() && status === 'รออนุมัติ' ? `<div class="btn-row"><button class="btn btn-danger" id="btnReject">ปฏิเสธ</button><button class="btn btn-ok" id="btnApprove">อนุมัติ</button></div>` : ''}
     ${isAdmin() && (status === 'กำลังยืม' || status === 'เกินกำหนด' || eff === 'เกินกำหนด') ? `
+    <div class="btn-row"><button class="btn btn-ok" id="btnRenewBorrow" style="width:100%;">ยืมต่อ (คนเดิม)</button></div>
     <div class="mf-section" style="margin-top:16px;">
       <div class="mf-section-title" style="margin-bottom:10px;"><span class="mf-step">✓</span> บันทึกการคืน</div>
       <div class="field">
@@ -2154,6 +2155,8 @@ function openBorrowDetail(id) {
   document.getElementById('btnPrintForm').onclick = () => openPrintMemoForm({ borrow: b, componentNames: compNames });
   const editBtn = document.getElementById('btnEditBorrow');
   if (editBtn) editBtn.onclick = () => { closeSheet(); openBorrowEditForm(b); };
+  const renewBtn = document.getElementById('btnRenewBorrow');
+  if (renewBtn) renewBtn.onclick = () => { closeSheet(); openRenewBorrowForm(b); };
   const deleteBorrowBtn = document.getElementById('btnDeleteBorrow');
   if (deleteBorrowBtn) {
     deleteBorrowBtn.onclick = async () => {
@@ -2247,6 +2250,44 @@ function openBorrowEditForm(b) {
     catch (err) { toast(err.message || 'แก้ไขไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(btn, false); }
   };
 }
+ function openRenewBorrowForm(b) {
+  showSheet(`
+    <div class="sheet-title">ยืมต่อ (คนเดิม)</div>
+    <div class="glass" style="padding:14px 16px; margin-bottom:14px;">
+      <div style="font-size:15px; font-weight:600;">${escapeHtml(b['ผู้ยืม'])}</div>
+      <div style="font-size:12.5px; color:var(--ink-dim); margin-top:2px;">${escapeHtml(b['ชื่อครุภัณฑ์'])}</div>
+    </div>
+    <div class="hint" style="margin-top:0;">ระบบจะปิดรายการเดิมเป็น "คืนแล้ว" (วันนี้) แล้วเปิดรายการยืมใหม่ให้ผู้ยืมคนเดิมทันที โดยไม่ต้องกรอกข้อมูลซ้ำ</div>
+    <div class="field" style="margin-top:14px;"><label>กำหนดคืนใหม่</label><input class="input" type="date" id="rn_duedate" value="${isoDate(new Date(Date.now() + 7 * 86400000))}"></div>
+    <div class="chip-row" style="margin-bottom:0;">
+      <div class="chip" data-rdays="3">3 วัน</div>
+      <div class="chip active" data-rdays="7">7 วัน</div>
+      <div class="chip" data-rdays="14">14 วัน</div>
+      <div class="chip" data-rdays="30">30 วัน</div>
+      <div class="chip" data-rdays="365">1 ปี</div>
+    </div>
+    <div class="field" style="margin-top:14px;"><label>หมายเหตุ</label><input class="input" id="rn_note" value="${escapeHtml(b['หมายเหตุ'])||''}"></div>
+    <div class="btn-row"><button class="btn btn-ghost" id="btnCancel">ยกเลิก</button><button class="btn btn-primary" id="btnConfirmRenew">ยืนยันยืมต่อ</button></div>
+  `);
+  document.querySelectorAll('[data-rdays]').forEach(chip => {
+    chip.onclick = () => {
+      document.querySelectorAll('[data-rdays]').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      const days = Number(chip.dataset.rdays);
+      document.getElementById('rn_duedate').value = isoDate(new Date(Date.now() + days * 86400000));
+    };
+  });
+  document.getElementById('rn_duedate').oninput = () => document.querySelectorAll('[data-rdays]').forEach(c => c.classList.remove('active'));
+  document.getElementById('btnCancel').onclick = closeSheet;
+  document.getElementById('btnConfirmRenew').onclick = async () => {
+    if (!val('rn_duedate')) { toast('กรุณาระบุกำหนดคืนใหม่'); return; }
+    const btn = document.getElementById('btnConfirmRenew'); if (btn.disabled) return; setButtonBusy(btn, true, 'กำลังทำรายการ...'); setLoading(true, 'กำลังยืมต่อ...');
+    try {
+      await apiPost('renewBorrow', { borrowId: b['รหัสรายการ'], dueDate: val('rn_duedate'), note: val('rn_note') });
+      closeSheet(); toast('ยืมต่อสำเร็จแล้ว'); await reloadThen(renderBorrow);
+    } catch (err) { toast(err.message || 'ยืมต่อไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(btn, false); }
+  };
+}  
 function openBorrowForm() {
   const available = state.assets.filter(a => a['สถานะ'] === 'พร้อมใช้งาน');
   const admin = isAdmin();
