@@ -2925,9 +2925,15 @@ desk.addEventListener('focusout', () => {
 function buildMemoItemList(opts) {
   if (opts.borrow) {
     const b = opts.borrow;
-    // หาหมวดหมู่จากครุภัณฑ์ต้นทาง เพื่อเลือกหน่วยนับให้ตรงกับประเภท (เช่น รถ = คัน)
+    // หาข้อมูลครุภัณฑ์ต้นทาง เพื่อดึงยี่ห้อ/รุ่น, หมายเลขเครื่อง และหมวดหมู่ (สำหรับเลือกหน่วยนับ)
     const asset = state.assets.find(a => a['รหัสครุภัณฑ์'] === b['รหัสครุภัณฑ์']);
-    return [{ name: b['ชื่อครุภัณฑ์'] || '', brand: '', serial: '', qty: 1, unit: unitForCategory(asset ? asset['หมวดหมู่'] : '') }];
+    return [{
+      name: b['ชื่อครุภัณฑ์'] || '',
+      brand: asset ? (asset['ยี่ห้อ/รุ่น'] || '') : '',
+      serial: asset ? (asset['หมายเลขเครื่อง'] || '') : '',
+      qty: 1,
+      unit: unitForCategory(asset ? asset['หมวดหมู่'] : '')
+    }];
   }
   if (opts.items) return opts.items.map(a => ({ name: a['ชื่อครุภัณฑ์'] || '', brand: a['ยี่ห้อ/รุ่น'] || '', serial: a['หมายเลขเครื่อง'] || '', qty: 1, unit: unitForCategory(a['หมวดหมู่']) }));
   return [{ name: '', brand: '', serial: '', qty: 1, unit: 'เครื่อง' }];
