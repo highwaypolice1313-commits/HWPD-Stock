@@ -1742,10 +1742,11 @@ function openScannerSheet() {
       }
     },
     () => { /* เฟรมที่ยังอ่านไม่ออก — เงียบไว้ */ }
-    ).catch(err => {
+        ).catch(err => {
     document.getElementById('qrReaderBox').innerHTML = '<div class="hint" style="color:var(--bad); text-align:center; padding:20px;">ไม่สามารถเปิดกล้องได้ กรุณาอนุญาตการใช้กล้องในเบราว์เซอร์</div>';
     activeHtml5Qr = null; // สำคัญ: เคลียร์ตัวแปรเมื่อเปิดกล้องไม่สำเร็จ กันปุ่มปิดหน้าต่างค้าง
   });
+}
 function assetRow(a) {
   const dleft = daysUntil(a['วันครบกำหนดตรวจสภาพ/ต่อทะเบียน']);
   const renewalTag = (dleft !== null && dleft <= renewalWindowDays() && a['สถานะ'] !== 'จำหน่ายแล้ว')
