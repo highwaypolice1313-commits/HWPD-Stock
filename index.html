@@ -1696,8 +1696,21 @@ function emptyState(msg) { return `<div class="glass empty-state">${msg}</div>`;
 /* ========================= ฟีเจอร์ ๓: สแกน QR/บาร์โค้ด ========================= */
 let activeHtml5Qr = null;
 function stopScanner() {
-  if (activeHtml5Qr) {
-    activeHtml5Qr.stop().catch(() => {}).finally(() => { try { activeHtml5Qr.clear(); } catch (e) {} activeHtml5Qr = null; });
+  if (!activeHtml5Qr) return;
+  const scanner = activeHtml5Qr;
+  activeHtml5Qr = null; // เคลียร์ตัวแปรก่อนเลย กันเรียกซ้ำ/กันค้าง
+  try {
+    // บางกรณี .stop() จะโยน error ทันที (ไม่ใช่ promise reject) เช่นตอนกล้องไม่เคยเริ่มทำงานจริง
+    // ต้องครอบ try/catch ไว้ ไม่งั้นจะทำให้ closeSheet() ค้างและปิดหน้าต่างไม่ได้
+    const stopResult = scanner.stop();
+    if (stopResult && typeof stopResult.then === 'function') {
+      stopResult.catch(() => {}).finally(() => { try { scanner.clear(); } catch (e) {} });
+    } else {
+      try { scanner.clear(); } catch (e) {}
+    }
+  } catch (e) {
+    // สแกนเนอร์ไม่เคยเริ่มทำงานจริง (เช่น ขอสิทธิ์กล้องไม่สำเร็จ) — ไม่ต้องทำอะไรเพิ่ม ปล่อยผ่านได้เลย
+    try { scanner.clear(); } catch (e2) {}
   }
 }
 function openScannerSheet() {
@@ -1729,10 +1742,10 @@ function openScannerSheet() {
       }
     },
     () => { /* เฟรมที่ยังอ่านไม่ออก — เงียบไว้ */ }
-  ).catch(err => {
+    ).catch(err => {
     document.getElementById('qrReaderBox').innerHTML = '<div class="hint" style="color:var(--bad); text-align:center; padding:20px;">ไม่สามารถเปิดกล้องได้ กรุณาอนุญาตการใช้กล้องในเบราว์เซอร์</div>';
+    activeHtml5Qr = null; // สำคัญ: เคลียร์ตัวแปรเมื่อเปิดกล้องไม่สำเร็จ กันปุ่มปิดหน้าต่างค้าง
   });
-}   
 function assetRow(a) {
   const dleft = daysUntil(a['วันครบกำหนดตรวจสภาพ/ต่อทะเบียน']);
   const renewalTag = (dleft !== null && dleft <= renewalWindowDays() && a['สถานะ'] !== 'จำหน่ายแล้ว')
