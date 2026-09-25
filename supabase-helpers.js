@@ -408,6 +408,32 @@ async function sDeleteBorrow(p, actor) {
   await logActivitySb(actor, 'ลบรายการยืม-คืน', p.id);
   return { deleted: true };
 }
+async function sRenewBorrow(p, actor) {
+  // ตรวจสอบก่อนว่ามีรายการยืมเดิมอยู่จริง และยังไม่ได้คืน
+  const { data: b, error: e1 } = await sb.from('borrow').select('*').eq('id', p.borrowId).single();
+  if (e1 || !b) throw new Error('ไม่พบรายการยืมรหัส ' + p.borrowId);
+  if (b.status !== 'กำลังยืม') throw new Error('ยืมต่อได้เฉพาะรายการที่ยังไม่คืนเท่านั้น');
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  // ปิดรายการเดิมเป็น "คืนแล้ว" ณ วันนี้
+  const { error: e2 } = await sb.from('borrow').update({ status: 'คืนแล้ว', return_date: today }).eq('id', p.borrowId);
+  if (e2) throw new Error('ปิดรายการเดิมไม่สำเร็จ: ' + e2.message);
+
+  // เปิดรายการยืมใหม่ให้ผู้ยืมคนเดิมทันที — ครุภัณฑ์ยังอยู่ในสถานะ "กำลังยืม" อยู่แล้ว ไม่ต้องแก้ไขอะไรเพิ่ม
+  const newId = genId('BRW');
+  const row = {
+    id: newId, asset_id: b.asset_id, asset_name: b.asset_name, borrower: b.borrower,
+    borrower_line_id: b.borrower_line_id || '', borrow_date: today, due_date: p.dueDate || null,
+    status: 'กำลังยืม', approver: actor, note: p.note !== undefined ? p.note : (b.note || ''),
+    component_ids: b.component_ids || '', photo_out: b.photo_out || ''
+  };
+  const { error: e3 } = await sb.from('borrow').insert(row);
+  if (e3) throw new Error('เปิดรายการยืมใหม่ไม่สำเร็จ: ' + e3.message);
+
+  await logActivitySb(actor, 'ยืมต่อ (คนเดิม)', b.borrower + ' → ' + b.asset_name);
+  return { renewed: true, newId };
+}
 
 async function sAddMaint(p, actor) {
   const id = genId('MNT');
@@ -589,7 +615,7 @@ async function sChangeRolePassword(p) {
   return { updated: !!data };
 }
 
-const ADMIN_ACTIONS = ['addAsset', 'updateAsset', 'deleteAsset', 'borrowAsset', 'returnAsset', 'updateBorrow', 'deleteBorrow',
+const ADMIN_ACTIONS = ['addAsset', 'updateAsset', 'deleteAsset', 'borrowAsset', 'returnAsset', 'updateBorrow', 'deleteBorrow', 'renewBorrow',
   'approveBorrowRequest', 'rejectBorrowRequest', 'addMaint', 'updateMaint', 'addUser', 'updateUserRole',
   'deleteUser', 'addComponent', 'updateComponent', 'deleteComponent', 'deleteMemo', 'updateSystemSettings',
   'saveAuditRecord', 'migrateImagesToDrive', 'changeRolePassword'];
@@ -614,6 +640,7 @@ async function supaApiPost(action, payload, role, actorName) {
     case 'returnAsset': return await sReturnAsset(payload, actorName);
     case 'updateBorrow': return await sUpdateBorrow(payload, actorName);
     case 'deleteBorrow': return await sDeleteBorrow(payload, actorName);
+    case 'renewBorrow': return await sRenewBorrow(payload, actorName);
     case 'addMaint': return await sAddMaint(payload, actorName);
     case 'updateMaint': return await sUpdateMaint(payload, actorName);
     case 'addComponent': return await sAddComponent(payload, actorName);
