@@ -238,53 +238,11 @@ input[type="date"]::-webkit-date-and-time-value{ text-align:left; }
 }
 
 .fab{
-  position:fixed; left:50%; transform:translateX(-50%); bottom:calc(40px + env(safe-area-inset-bottom)); z-index:55; width:58px;height:58px; border-radius:50%;
-  background:linear-gradient(150deg, var(--gold), var(--gold-deep)); color:#fff; border:4px solid var(--bg-1);
-  box-shadow:0 14px 26px rgba(187,138,63,.4); cursor:pointer; display:flex;align-items:center;justify-content:center;
+  position:fixed; right:18px; bottom:calc(118px + env(safe-area-inset-bottom)); z-index:45; width:56px;height:56px; border-radius:50%;
+  background:linear-gradient(150deg, var(--gold), var(--gold-deep)); color:#fff; border:none;
+  box-shadow:0 14px 30px rgba(187,138,63,.4); cursor:pointer; display:flex;align-items:center;justify-content:center;
 }
 .fab svg{width:22px;height:22px;}
-
-/* ---------- ฝังปุ่ม + ไว้ในแถบเมนูล่าง (มือถือ) แทนการลอยกลางจอบังเมนู ---------- */
-@media (max-width:899px){
-  .tabbar{ justify-content:space-between; }
-  .tab.tab-overflow{ display:none !important; }
-  .fab{
-    position:static; order:3; flex:0 0 auto; transform:none; left:auto; bottom:auto;
-    width:50px; height:50px; margin:-22px 4px 0; border:3px solid var(--bg-1);
-    box-shadow:0 10px 20px rgba(187,138,63,.4);
-  }
-  .fab svg{width:19px;height:19px;}
-  .tab[data-tab="dashboard"]{order:1;}
-  .tab[data-tab="assets"]{order:2;}
-  .tab[data-tab="borrow"]{order:4;}
-  #moreTabBtn{order:5;}
-  .more-menu-item{
-    display:flex; align-items:center; gap:12px; width:100%; padding:13px 10px; border:none; background:none;
-    font-family:inherit; font-size:14.5px; color:var(--ink); cursor:pointer; border-radius:14px; text-align:left;
-  }
-  .more-menu-item:active{ background:var(--navy-wash); }
-  .more-menu-item .ico{ width:36px;height:36px;border-radius:11px; background:var(--navy-wash); color:var(--navy); display:flex;align-items:center;justify-content:center; flex:none; }
-  .more-menu-item .ico svg{width:18px;height:18px;}
-}
-@media (min-width:900px){
-  #moreTabBtn{display:none;}
-}
-
-/* ---------- แถบเมนูลัดหน้าแรก แบบแอพธนาคาร ---------- */
-.quick-actions{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px 6px; margin-bottom:16px; }
-.qa-item{ display:flex; flex-direction:column; align-items:center; gap:7px; cursor:pointer; text-align:center; }
-.qa-icon{ width:52px;height:52px;border-radius:17px; display:flex; align-items:center; justify-content:center; transition:transform .15s ease; }
-.qa-item:active .qa-icon{ transform:scale(.93); }
-.qa-icon svg{ width:22px;height:22px; }
-.qa-label{ font-size:10.5px; color:var(--ink); line-height:1.3; font-weight:400; }
-.qa-navy{ background:var(--navy-wash); color:var(--navy); }
-.qa-warn{ background:var(--warn-wash); color:var(--warn); }
-.qa-bad{ background:var(--bad-wash); color:var(--bad); }
-.qa-info{ background:var(--info-wash); color:var(--info); }
-.qa-ok{ background:var(--ok-wash); color:var(--ok); }
-.qa-gold{ background:var(--gold-wash); color:var(--gold-deep); }
-.qa-off{ background:var(--off-wash); color:var(--off); }
-@media (min-width:900px){ .quick-actions{ display:none; } }
 
 /* ---------- bottom tab bar (มือถือ) — เลื่อนแนวนอนได้ ไม่บีบเบียดกันอีกต่อไป ---------- */
 .tabbar{
@@ -342,31 +300,20 @@ input[type="date"]::-webkit-date-and-time-value{ text-align:left; }
 .login-wrap{
   min-height:100vh; display:flex; align-items:center; justify-content:center; flex-direction:column; padding:36px 26px; text-align:center;
   background:
-    radial-gradient(460px 340px at 50% 4%, rgba(187,138,63,.5), transparent 62%),
+    radial-gradient(560px 360px at 20% 0%, rgba(187,138,63,.35), transparent 60%),
     radial-gradient(620px 420px at 100% 10%, rgba(255,255,255,.08), transparent 55%),
-    linear-gradient(170deg, var(--navy-deep), var(--navy) 65%);
+    linear-gradient(150deg, var(--navy-deep), var(--navy) 60%, #1c3f63);
   color:#fff;
 }
 .login-badge{
-  width:96px;height:96px;border-radius:50%; display:flex;align-items:center;justify-content:center; margin-bottom:22px;
-  border:1.5px solid rgba(255,255,255,.25); animation:badgeIn .5s ease-out;
-}
-.login-badge-inner{
-  width:70px;height:70px;border-radius:50%; display:flex;align-items:center;justify-content:center;
+  width:78px;height:78px;border-radius:24px; display:flex;align-items:center;justify-content:center; margin-bottom:24px;
   background:linear-gradient(150deg, var(--gold), var(--gold-deep)); color:#fff; box-shadow:0 16px 38px rgba(0,0,0,.25);
+  animation:badgeIn .5s ease-out;
 }
-.login-badge svg{width:30px;height:30px;}
+.login-badge svg{width:36px;height:36px;}
 @keyframes badgeIn{from{opacity:0; transform:scale(.85);} to{opacity:1; transform:scale(1);}}
-.login-title{font-size:21px; font-weight:600; margin-bottom:6px; font-family:var(--font-disp);}
-.login-sub{font-size:13px; color:rgba(255,255,255,.68); margin-bottom:30px; max-width:300px; line-height:1.65; font-weight:300;}
-.login-cta{
-  width:100%; max-width:300px; border:none; border-radius:99px; padding:15px; font-family:inherit; font-size:14.5px; font-weight:500; cursor:pointer;
-  background:linear-gradient(150deg, var(--gold), var(--gold-deep)); color:#fff; box-shadow:0 14px 30px rgba(187,138,63,.4);
-}
-.login-cta:active{ transform:translateY(1px); }
-.login-cta-hint{font-size:11px; color:rgba(255,255,255,.45); margin-top:12px;}
-.role-pick-row{ background:#fff; }
-.role-pick-row .li-title{ font-weight:600; }
+.login-title{font-size:20px; font-weight:600; margin-bottom:6px; font-family:var(--font-disp);}
+.login-sub{font-size:13px; color:rgba(255,255,255,.72); margin-bottom:28px; max-width:300px; line-height:1.65; font-weight:300;}
 .spinner{width:26px;height:26px;border-radius:50%; border:3px solid rgba(255,255,255,.25); border-top-color:var(--gold); animation:spin 0.8s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
 .toast{
@@ -380,7 +327,21 @@ input[type="date"]::-webkit-date-and-time-value{ text-align:left; }
 .detail-row span:last-child{text-align:right; word-break:break-word; overflow-wrap:anywhere; min-width:0; flex:1;}
 .hint{font-size:11px; color:var(--ink-dim); margin-top:14px; line-height:1.6;}
 
-.link-btn{color:var(--gold-deep); font-size:12.5px; cursor:pointer; text-decoration:underline;}
+.role-select-box{width:100%; max-width:300px;}
+.role-select-card{
+  display:flex; align-items:center; gap:14px; padding:16px 18px; margin-bottom:12px; border-radius:18px;
+  background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.18); cursor:pointer; text-align:left; transition:.18s ease;
+}
+.role-select-card:hover, .role-select-card:active{ background:rgba(255,255,255,.16); transform:translateY(-1px); }
+.rsc-icon{width:42px;height:42px;border-radius:13px; display:flex;align-items:center;justify-content:center; flex:none; background:linear-gradient(150deg, var(--gold), var(--gold-deep)); color:#fff;}
+.rsc-icon svg{width:19px;height:19px;}
+.rsc-body{flex:1; min-width:0;}
+.rsc-title{font-size:14.5px; font-weight:600; color:#fff;}
+.rsc-sub{font-size:11.5px; color:rgba(255,255,255,.65); margin-top:2px;}
+.role-login-form{width:100%; max-width:300px; text-align:left;}
+.role-login-form .field label{color:rgba(255,255,255,.72);}
+.role-login-form .field input{background:rgba(255,255,255,.95); color:#20303f;}
+.link-btn{color:var(--gold); font-size:12.5px; cursor:pointer; text-decoration:underline;}
 
 @keyframes appIn{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
 .app-in{animation:appIn .4s ease-out;}
@@ -669,8 +630,7 @@ html:not(.has-thsarabun) .pf-title{ font-size:26pt; line-height:30pt; }
   .sheet{ width:min(760px,calc(100vw - 120px)); max-width:760px; max-height:88vh; overflow-y:auto; border-radius:24px; border:1px solid var(--panel-line); padding:28px 32px 30px; box-shadow:var(--shadow-lg); margin:0; }
   .sheet-handle{ display:none; }
 
-  .login-badge{ width:108px; height:108px; margin-bottom:24px; }
-  .login-badge-inner{ width:80px; height:80px; }
+  .login-badge{ width:92px; height:92px; border-radius:28px; margin-bottom:24px; }
 }
 
 @media (min-width:900px) and (max-width:1199px){
@@ -724,453 +684,55 @@ html:not(.has-thsarabun) .pf-title{ font-size:26pt; line-height:30pt; }
 .audit-btn.active-ok{ background:var(--ok-wash); border-color:transparent; font-weight:600; }
 .audit-btn.active-warn{ background:var(--warn-wash); border-color:transparent; font-weight:600; }
 .audit-btn.active-bad{ background:var(--bad-wash); border-color:transparent; font-weight:600; }
-
-/* =========================================================
-   MOBILE NAV v2 — แถบเมนูมือถือใหม่
-   เป้าหมาย: 320px–899px / ไม่ล้น / ไม่เบียด / กดง่าย
-   ========================================================= */
-@media (max-width:899px){
-  body{
-    padding-bottom:calc(104px + env(safe-area-inset-bottom)) !important;
-  }
-
-  /* แถบเมนูเป็น 5 ช่องพอดีจอ ไม่เลื่อนซ้ายขวา */
-  .tabbar{
-    position:fixed !important;
-    left:10px !important;
-    right:10px !important;
-    bottom:calc(10px + env(safe-area-inset-bottom)) !important;
-    width:auto !important;
-    max-width:none !important;
-    height:68px !important;
-    min-height:68px !important;
-    margin:0 !important;
-    padding:6px !important;
-    display:grid !important;
-    grid-template-columns:repeat(5,minmax(0,1fr)) !important;
-    gap:4px !important;
-    align-items:stretch !important;
-    justify-content:initial !important;
-    overflow:visible !important;
-    border-radius:22px !important;
-    background:rgba(255,255,255,.94) !important;
-    border:1px solid rgba(32,48,63,.10) !important;
-    box-shadow:0 12px 34px rgba(20,32,45,.18), 0 2px 8px rgba(20,32,45,.06) !important;
-    backdrop-filter:blur(24px) saturate(1.25) !important;
-    -webkit-backdrop-filter:blur(24px) saturate(1.25) !important;
-    z-index:100 !important;
-  }
-
-  .tabbar::-webkit-scrollbar{display:none !important;}
-
-  /* แสดงเฉพาะ 4 เมนูหลัก + เพิ่มเติม */
-  .tabbar .tab.tab-overflow{
-    display:none !important;
-  }
-
-  .tabbar .tab{
-    width:100% !important;
-    min-width:0 !important;
-    height:56px !important;
-    min-height:56px !important;
-    padding:6px 2px !important;
-    margin:0 !important;
-    flex:none !important;
-    display:flex !important;
-    flex-direction:column !important;
-    align-items:center !important;
-    justify-content:center !important;
-    gap:4px !important;
-    border-radius:16px !important;
-    color:var(--ink-dim) !important;
-    background:transparent !important;
-    transform:none !important;
-    white-space:normal !important;
-  }
-
-  .tabbar .tab:hover{
-    transform:none !important;
-    background:transparent !important;
-  }
-
-  .tabbar .tab:active{
-    transform:scale(.96) !important;
-  }
-
-  .tabbar .tab.active{
-    color:var(--navy) !important;
-    background:var(--gold-wash) !important;
-    box-shadow:none !important;
-  }
-
-  .tabbar .tab .ico{
-    width:22px !important;
-    height:22px !important;
-    display:flex !important;
-    align-items:center !important;
-    justify-content:center !important;
-    position:relative !important;
-  }
-
-  .tabbar .tab .ico svg{
-    width:21px !important;
-    height:21px !important;
-  }
-
-  .tabbar .tab .lbl{
-    display:block !important;
-    max-width:100% !important;
-    overflow:hidden !important;
-    text-overflow:ellipsis !important;
-    white-space:nowrap !important;
-    font-size:9.5px !important;
-    line-height:1.15 !important;
-    font-weight:400 !important;
-  }
-
-  .tabbar .tab.active .lbl{
-    font-weight:600 !important;
-  }
-
-  /* จุดแจ้งเตือน */
-  .tabbar .tab-dot{
-    top:-2px !important;
-    right:-3px !important;
-    width:8px !important;
-    height:8px !important;
-    border-width:2px !important;
-  }
-
-  /* ลำดับเมนูมือถือ */
-  .tabbar .tab[data-tab="dashboard"]{grid-column:1 !important;order:initial !important;}
-  .tabbar .tab[data-tab="assets"]{grid-column:2 !important;order:initial !important;}
-  .tabbar .tab[data-tab="borrow"]{grid-column:3 !important;order:initial !important;}
-  #moreTabBtn{grid-column:5 !important;order:initial !important;}
-
-  /* ปุ่ม + ไม่กินพื้นที่เมนู
-     เมื่อระบบเปิดใช้งาน จะลอยเป็นปุ่มกลางเหนือแถบ */
-  .tabbar .fab{
-    position:absolute !important;
-    left:50% !important;
-    top:-26px !important;
-    transform:translateX(-50%) !important;
-    width:52px !important;
-    height:52px !important;
-    min-width:52px !important;
-    margin:0 !important;
-    padding:0 !important;
-    border:4px solid var(--bg-1) !important;
-    border-radius:50% !important;
-    box-shadow:0 10px 24px rgba(187,138,63,.38) !important;
-    z-index:4 !important;
-    display:flex !important;
-    align-items:center !important;
-    justify-content:center !important;
-  }
-
-  .tabbar .fab:active{
-    transform:translateX(-50%) scale(.94) !important;
-  }
-
-  .tabbar .fab svg{
-    width:20px !important;
-    height:20px !important;
-  }
-
-  /* ถ้า FAB ถูกซ่อน ให้ไม่มีผลต่อ layout */
-  .tabbar .fab[style*="display:none"]{
-    display:none !important;
-  }
-
-  /* more menu: ปุ่มเพิ่มเติมดูเหมือนเมนูจริง */
-  #moreTabBtn{
-    display:flex !important;
-  }
-
-  /* ปรับ sheet เมนูเพิ่มเติมให้ดูเป็นแอป */
-  .sheet{
-    width:100% !important;
-    max-width:640px !important;
-    max-height:82vh !important;
-    padding:12px 16px calc(22px + env(safe-area-inset-bottom)) !important;
-    border-radius:26px 26px 0 0 !important;
-  }
-
-  .sheet-handle{
-    width:42px !important;
-    height:4px !important;
-    margin:0 auto 16px !important;
-  }
-
-  .sheet-title{
-    font-size:18px !important;
-    margin-bottom:12px !important;
-  }
-
-  .more-menu-item{
-    min-height:54px !important;
-    padding:8px 6px !important;
-    gap:12px !important;
-    border-radius:15px !important;
-    font-size:14px !important;
-  }
-
-  .more-menu-item .ico{
-    width:40px !important;
-    height:40px !important;
-    border-radius:12px !important;
-  }
-
-  /* มือถือแคบมาก */
-  @media (max-width:360px){
-    .tabbar{
-      left:7px !important;
-      right:7px !important;
-      bottom:calc(7px + env(safe-area-inset-bottom)) !important;
-      height:64px !important;
-      min-height:64px !important;
-      padding:5px !important;
-      border-radius:20px !important;
-    }
-
-    .tabbar .tab{
-      height:52px !important;
-      min-height:52px !important;
-    }
-
-    .tabbar .tab .ico,
-    .tabbar .tab .ico svg{
-      width:20px !important;
-      height:20px !important;
-    }
-
-    .tabbar .tab .lbl{
-      font-size:8.7px !important;
-    }
-
-    .tabbar .fab{
-      width:48px !important;
-      height:48px !important;
-      min-width:48px !important;
-      top:-24px !important;
-    }
-  }
-
-  /* รองรับมือถือแนวนอน */
-  @media (orientation:landscape) and (max-height:520px){
-    .tabbar{
-      height:58px !important;
-      min-height:58px !important;
-      bottom:6px !important;
-    }
-    .tabbar .tab{
-      height:46px !important;
-      min-height:46px !important;
-      flex-direction:row !important;
-      gap:7px !important;
-    }
-    .tabbar .tab .lbl{font-size:10px !important;}
-    body{padding-bottom:76px !important;}
-  }
-
-  /* กันเนื้อหาถูกแถบล่างบัง */
-  #appScreen{
-    padding-bottom:8px;
-  }
-}
-
-/* Dark theme */
-@media (max-width:899px){
-  :root[data-theme="night"] .tabbar{
-    background:rgba(18,34,54,.94) !important;
-    border-color:rgba(255,255,255,.10) !important;
-    box-shadow:0 12px 34px rgba(0,0,0,.35) !important;
-  }
-  :root[data-theme="night"] .tabbar .tab.active{
-    background:rgba(214,162,74,.16) !important;
-    color:var(--gold-deep) !important;
-  }
-}
-
 </style>
-
-<style id="final-fab-layout-fix">
-/* =========================================================
-   FINAL FAB LAYOUT
-   - มือถือ: ปุ่ม + อยู่กึ่งกลางเหนือแถบเมนู
-   - คอม: ปุ่ม + แยกออกจากแถบเมนู ไปมุมขวาล่าง
-   ========================================================= */
-
-/* FAB is now outside .tabbar, so it can never be trapped inside
-   the desktop sidebar or mobile bottom navigation. */
-#fabBtn{
-  position:fixed !important;
-  z-index:9999 !important;
-  left:auto !important;
-  transform:none !important;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  box-sizing:border-box;
-  width:58px !important;
-  height:58px !important;
-  min-width:58px !important;
-  padding:0 !important;
-  margin:0 !important;
-  border-radius:50% !important;
-  border:4px solid var(--bg-1) !important;
-  background:linear-gradient(150deg,var(--gold),var(--gold-deep)) !important;
-  color:#fff !important;
-  box-shadow:0 14px 30px rgba(20,32,45,.24),0 8px 18px rgba(187,138,63,.28) !important;
-}
-
-/* ===== Desktop / tablet ===== */
-@media (min-width:900px){
-  #fabBtn{
-    right:30px !important;
-    bottom:30px !important;
-    top:auto !important;
-  }
-  .tabbar #fabBtn{ display:none !important; }
-}
-
-/* ===== Mobile ===== */
-@media (max-width:899px){
-  #fabBtn{
-    left:50% !important;
-    right:auto !important;
-    bottom:48px !important;
-    top:auto !important;
-    transform:translateX(-50%) !important;
-    width:54px !important;
-    height:54px !important;
-    min-width:54px !important;
-    border-width:3px !important;
-    box-shadow:0 12px 26px rgba(20,32,45,.22),0 7px 16px rgba(187,138,63,.30) !important;
-  }
-  .tabbar #fabBtn{
-    position:fixed !important;
-  }
-}
-
-/* Very small phones */
-@media (max-width:360px){
-  #fabBtn{
-    width:50px !important;
-    height:50px !important;
-    min-width:50px !important;
-    bottom:46px !important;
-  }
-}
-</style>
-
-
-<style id="final-responsive-fab-fix">
-/* ===== FINAL RESPONSIVE NAV + FAB FIX ===== */
-.fab{
-  position:fixed !important;
-  z-index:120 !important;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-
-/* Desktop / laptop: FAB is completely independent from the navigation */
-@media (min-width:900px){
-  .fab{
-    left:auto !important;
-    right:34px !important;
-    bottom:34px !important;
-    transform:none !important;
-    width:58px !important;
-    height:58px !important;
-    margin:0 !important;
-  }
-  .tabbar .fab{ position:fixed !important; }
-}
-
-/* Phone/tablet: reserve a dedicated zone ABOVE the bottom navigation */
-@media (max-width:899px){
-  body{
-    padding-bottom:calc(112px + env(safe-area-inset-bottom)) !important;
-  }
-
-  .tabbar{
-    position:fixed !important;
-    left:10px !important;
-    right:10px !important;
-    bottom:calc(10px + env(safe-area-inset-bottom)) !important;
-    height:68px !important;
-    min-height:68px !important;
-    z-index:100 !important;
-    overflow:visible !important;
-  }
-
-  /* The + button NEVER occupies the tabbar area */
-  .fab,
-  .tabbar .fab{
-    position:fixed !important;
-    left:50% !important;
-    right:auto !important;
-    top:auto !important;
-    bottom:calc(10px + env(safe-area-inset-bottom) + 78px) !important;
-    transform:translateX(-50%) !important;
-    width:54px !important;
-    height:54px !important;
-    min-width:54px !important;
-    min-height:54px !important;
-    margin:0 !important;
-    border-radius:50% !important;
-    z-index:130 !important;
-    border-width:4px !important;
-  }
-
-  /* Keep the five menu cells visually clear of the FAB */
-  .tabbar .tab{
-    position:relative !important;
-    z-index:101 !important;
-  }
-
-  /* If a previous rule tried to place FAB as a grid item, cancel it */
-  .tabbar .fab{
-    grid-column:auto !important;
-    grid-row:auto !important;
-    order:initial !important;
-  }
-}
-
-@media (max-width:360px){
-  .tabbar{
-    left:7px !important;
-    right:7px !important;
-    bottom:calc(7px + env(safe-area-inset-bottom)) !important;
-  }
-  .fab,
-  .tabbar .fab{
-    bottom:calc(7px + env(safe-area-inset-bottom) + 76px) !important;
-    width:50px !important;
-    height:50px !important;
-  }
-}
-</style>
-
 </head>
 <body>
 
 <div id="loginScreen" class="login-wrap">
   <div class="login-badge">
-    <div class="login-badge-inner">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l8 4v6c0 5-3.5 9-8 10-4.5-1-8-5-8-10V6l8-4z"/></svg>
-    </div>
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l8 4v6c0 5-3.5 9-8 10-4.5-1-8-5-8-10V6l8-4z"/></svg>
   </div>
   <div class="login-title">ระบบพัสดุครุภัณฑ์</div>
-  <div class="login-sub" id="loginSubText">ตำรวจทางหลวง</div>
+  <div class="login-sub" id="loginSubText">ตำรวจทางหลวง<br>กรุณาเลือกระดับผู้ใช้งานเพื่อเข้าสู่ระบบ</div>
   <div class="spinner" id="loginSpinner" style="display:none;"></div>
   <div id="sessionRetryBox" style="display:none; margin-top:6px;">
     <button class="btn btn-primary" id="btnRetrySession" style="width:auto;padding:11px 26px;">ลองเชื่อมต่อใหม่</button>
   </div>
-  <button class="login-cta" id="btnStartLogin" type="button">เริ่มต้นใช้งาน</button>
-  <div class="login-cta-hint" id="loginCtaHint">แตะเพื่อเลือกระดับผู้ใช้งาน</div>
+
+  <div class="role-select-box" id="roleSelectBox">
+    <div class="role-select-card" data-role="admin">
+      <div class="rsc-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M10 2.5l6.5 3v5c0 4.2-2.8 7.4-6.5 8-3.7-.6-6.5-3.8-6.5-8v-5l6.5-3z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M7.3 10l1.9 1.9 3.5-3.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="rsc-body">
+        <div class="rsc-title">แอดมิน</div>
+        <div class="rsc-sub">จัดการข้อมูล เพิ่ม/แก้ไข/อนุมัติได้เต็มรูปแบบ</div>
+      </div>
+    </div>
+    <div class="role-select-card" data-role="viewer">
+      <div class="rsc-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M2 10s3-5.5 8-5.5S18 10 18 10s-3 5.5-8 5.5S2 10 2 10z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.3" stroke="currentColor" stroke-width="1.4"/></svg></div>
+      <div class="rsc-body">
+        <div class="rsc-title">ดูอย่างเดียว</div>
+        <div class="rsc-sub">เข้าดูได้ทันที ไม่ต้องใช้รหัสผ่าน</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="role-login-form" id="roleLoginForm" style="display:none;">
+    <div class="field">
+      <label>ระดับผู้ใช้งาน</label>
+      <div class="input" id="rl_roleDisplay" style="background:rgba(255,255,255,.95);color:#20303f;font-weight:600;display:flex;align-items:center;justify-content:center;">
+        <span id="rl_roleLabel"></span>
+      </div>
+    </div>
+    <div class="field">
+      <label>รหัสผ่าน</label>
+      <input class="input" id="rl_password" type="password" inputmode="text" autocomplete="current-password" placeholder="กรอกรหัสผ่าน">
+    </div>
+    <button class="btn btn-primary" style="width:100%;" id="btnRoleLogin">เข้าสู่ระบบ</button>
+    <div class="hint" id="roleLoginError" style="color:#ffb4bd;"></div>
+    <div style="margin-top:14px; text-align:center;">
+      <span class="link-btn" id="btnBackToRoles">เปลี่ยนระดับผู้ใช้งาน</span>
+    </div>
+  </div>
 </div>
 
 <div id="app" style="display:none;">
@@ -1211,8 +773,11 @@ html:not(.has-thsarabun) .pf-title{ font-size:26pt; line-height:30pt; }
   <div class="page" id="view-settings" style="display:none;"></div>
   <div class="page" id="view-audit" style="display:none;"></div>
 
+  <button class="fab" id="fabBtn" style="display:none;" aria-label="เพิ่มรายการ">
+    <svg viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+  </button>
+
   <div class="tabbar">
-    
     <button class="tab active" data-tab="dashboard">
       <span class="ico"><svg viewBox="0 0 20 20" fill="none"><path d="M3.5 9.5L10 4l6.5 5.5V16a1 1 0 01-1 1h-3.2v-5h-4.6v5H4.5a1 1 0 01-1-1V9.5z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></span>
       <span class="lbl">หน้าหลัก</span>
@@ -1228,33 +793,29 @@ html:not(.has-thsarabun) .pf-title{ font-size:26pt; line-height:30pt; }
       </span>
       <span class="lbl">ยืม-คืน</span>
     </button>
-    <button class="tab tab-overflow" data-tab="maint">
+    <button class="tab" data-tab="maint">
       <span class="ico"><svg viewBox="0 0 20 20" fill="none"><path d="M12.4 5.1a3.4 3.4 0 00-4.4 4.4l-5 5a1.5 1.5 0 002.1 2.1l5-5a3.4 3.4 0 004.4-4.4l-2.2 2.2-1.9-.4-.4-1.9 2.4-2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></span>
       <span class="lbl">ซ่อมบำรุง</span>
     </button>
-    <button class="tab tab-overflow" data-tab="memos">
+    <button class="tab" data-tab="memos">
       <span class="ico"><svg viewBox="0 0 20 20" fill="none"><path d="M4 3.5h9l3 3v10a1 1 0 01-1 1H4a1 1 0 01-1-1v-12a1 1 0 011-1z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M6.5 9h7M6.5 12h7M6.5 15h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></span>
       <span class="lbl">เอกสารใบเบิก</span>
     </button>
-    <button class="tab tab-overflow" data-tab="users" id="usersTabBtn" style="display:none;">
+    <button class="tab" data-tab="users" id="usersTabBtn" style="display:none;">
       <span class="ico"><svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="6.6" r="3" stroke="currentColor" stroke-width="1.4"/><path d="M3.8 16.2c1-3 3.4-4.6 6.2-4.6s5.2 1.6 6.2 4.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></span>
       <span class="lbl">จนท.ในสังกัด</span>
     </button>
-    <button class="tab tab-overflow" data-tab="reports">
+    <button class="tab" data-tab="reports">
       <span class="ico"><svg viewBox="0 0 20 20" fill="none"><path d="M4 16.5V11M10 16.5V6M16 16.5v-8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>
       <span class="lbl">รายงาน</span>
     </button>
-   <button class="tab tab-overflow" data-tab="audit" id="auditTabBtn" style="display:none;">
+   <button class="tab" data-tab="audit" id="auditTabBtn" style="display:none;">
       <span class="ico"><svg viewBox="0 0 20 20" fill="none"><path d="M5 5h10M5 10h10M5 15h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="2.6" cy="5" r="0.9" fill="currentColor"/><circle cx="2.6" cy="10" r="0.9" fill="currentColor"/><circle cx="2.6" cy="15" r="0.9" fill="currentColor"/></svg></span>
       <span class="lbl">ตรวจนับประจำปี</span>
     </button>
-    <button class="tab tab-overflow" data-tab="settings" id="settingsTabBtn" style="display:none;">
+    <button class="tab" data-tab="settings" id="settingsTabBtn" style="display:none;">
       <span class="ico"><svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="2.6" stroke="currentColor" stroke-width="1.4"/><path d="M10 2.8v2M10 15.2v2M17.2 10h-2M4.8 10h-2M15.1 4.9l-1.4 1.4M6.3 13.7l-1.4 1.4M15.1 15.1l-1.4-1.4M6.3 6.3L4.9 4.9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></span>
       <span class="lbl">ตั้งค่าระบบ</span>
-    </button>
-    <button class="tab" id="moreTabBtn" aria-label="เมนูเพิ่มเติม">
-      <span class="ico"><svg viewBox="0 0 20 20" fill="none"><circle cx="4" cy="10" r="1.4" fill="currentColor"/><circle cx="10" cy="10" r="1.4" fill="currentColor"/><circle cx="16" cy="10" r="1.4" fill="currentColor"/></svg></span>
-      <span class="lbl">เพิ่มเติม</span>
     </button>
   </div>
 </div>
@@ -1514,67 +1075,39 @@ document.getElementById('btnRetrySession').addEventListener('click', () => {
 function showRoleSelect() {
   selectedRole = null;
   document.getElementById('loginSpinner').style.display = 'none';
-  document.getElementById('loginSubText').innerHTML = 'ตำรวจทางหลวง';
-  const ctaBtn = document.getElementById('btnStartLogin');
-  const ctaHint = document.getElementById('loginCtaHint');
-  if (ctaBtn) ctaBtn.style.display = '';
-  if (ctaHint) ctaHint.style.display = '';
-  closeSheet();
+  document.getElementById('loginSubText').innerHTML = 'ตำรวจทางหลวง<br>กรุณาเลือกระดับผู้ใช้งานเพื่อเข้าสู่ระบบ';
+  document.getElementById('roleSelectBox').style.display = 'block';
+  document.getElementById('roleLoginForm').style.display = 'none';
 }
 
-function openRoleSheet() {
-  showSheet(`
-    <div class="sheet-title">เลือกระดับผู้ใช้งาน</div>
-    <div class="glass list-item role-pick-row" id="rp_admin">
-      <div class="li-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M10 2.5l6.5 3v5c0 4.2-2.8 7.4-6.5 8-3.7-.6-6.5-3.8-6.5-8v-5l6.5-3z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M7.3 10l1.9 1.9 3.5-3.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-      <div class="li-body"><div class="li-title">แอดมิน</div><div class="li-sub">จัดการข้อมูล เพิ่ม/แก้ไข/อนุมัติได้เต็มรูปแบบ</div></div>
-    </div>
-    <div class="glass list-item role-pick-row" id="rp_viewer">
-      <div class="li-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M2 10s3-5.5 8-5.5S18 10 18 10s-3 5.5-8 5.5S2 10 2 10z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.3" stroke="currentColor" stroke-width="1.4"/></svg></div>
-      <div class="li-body"><div class="li-title">ดูอย่างเดียว</div><div class="li-sub">เข้าดูได้ทันที ไม่ต้องใช้รหัสผ่าน</div></div>
-    </div>
-  `);
-  document.getElementById('rp_admin').onclick = () => openAdminPasswordSheet();
-  document.getElementById('rp_viewer').onclick = () => loginAsViewer();
-}
-
-async function loginAsViewer() {
-  closeSheet();
-  document.getElementById('btnStartLogin').style.display = 'none';
-  document.getElementById('loginCtaHint').style.display = 'none';
-  document.getElementById('loginSpinner').style.display = 'block';
-  document.getElementById('loginSubText').innerHTML = 'ตำรวจทางหลวง<br>กำลังเข้าสู่ระบบ...';
-  try {
-    const d = supaLoginAsViewer();
-    saveSession({ role: d.role, token: d.token, name: d.displayName });
-    await completeLogin({ role: d.role, name: d.displayName, token: d.token });
-  } catch (err) {
-    toast(err.message || 'เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่');
-    showRoleSelect();
-  }
-}
-
-function openAdminPasswordSheet() {
-  selectedRole = 'admin';
-  showSheet(`
-    <div class="sheet-title">เข้าสู่ระบบ — แอดมิน</div>
-    <div class="field">
-      <label>รหัสผ่าน</label>
-      <input class="input" id="rl_password" type="password" inputmode="text" autocomplete="current-password" placeholder="กรอกรหัสผ่าน">
-    </div>
-    <div class="hint" id="roleLoginError" style="color:var(--bad);"></div>
-    <div class="btn-row"><button class="btn btn-primary" id="btnRoleLogin" style="width:100%;">เข้าสู่ระบบ</button></div>
-    <div style="margin-top:14px; text-align:center;">
-      <span class="link-btn" id="btnBackToRoles">เปลี่ยนระดับผู้ใช้งาน</span>
-    </div>
-  `);
-  document.getElementById('btnBackToRoles').onclick = openRoleSheet;
-  document.getElementById('rl_password').addEventListener('keydown', (e) => { if (e.key === 'Enter') doRoleLogin(); });
-  document.getElementById('btnRoleLogin').onclick = doRoleLogin;
-  setTimeout(() => document.getElementById('rl_password').focus(), 60);
-}
-
-document.getElementById('btnStartLogin').addEventListener('click', openRoleSheet);
+document.querySelectorAll('.role-select-card').forEach(card => {
+  card.addEventListener('click', async () => {
+    selectedRole = card.dataset.role;
+    if (selectedRole === 'viewer') {
+      document.getElementById('roleSelectBox').style.display = 'none';
+      document.getElementById('loginSpinner').style.display = 'block';
+      document.getElementById('loginSubText').innerHTML = 'ตำรวจทางหลวง<br>กำลังเข้าสู่ระบบ...';
+      try {
+        const d = supaLoginAsViewer();
+        saveSession({ role: d.role, token: d.token, name: d.displayName });
+        await completeLogin({ role: d.role, name: d.displayName, token: d.token });
+      } catch (err) {
+        toast(err.message || 'เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่');
+        showRoleSelect();
+      }
+      return;
+    }
+    document.getElementById('roleSelectBox').style.display = 'none';
+    document.getElementById('roleLoginForm').style.display = 'block';
+    document.getElementById('rl_roleLabel').textContent = 'แอดมิน';
+    document.getElementById('rl_password').value = '';
+    document.getElementById('roleLoginError').textContent = '';
+    setTimeout(() => document.getElementById('rl_password').focus(), 50);
+  });
+});
+document.getElementById('btnBackToRoles').addEventListener('click', showRoleSelect);
+document.getElementById('rl_password').addEventListener('keydown', (e) => { if (e.key === 'Enter') doRoleLogin(); });
+document.getElementById('btnRoleLogin').addEventListener('click', doRoleLogin);
 document.getElementById('btnLogout').addEventListener('click', () => {
   if (!confirm('ยืนยันการออกจากระบบ?')) return;
   clearSession();
@@ -1593,7 +1126,6 @@ async function doRoleLogin() {
   try {
     const d = await supaLoginWithRole(selectedRole, password);
     saveSession({ role: d.role, token: d.token, name: d.displayName });
-    closeSheet();
     await completeLogin({ role: d.role, name: d.displayName, token: d.token });
   } catch (err) {
     errEl.textContent = err.message || 'เข้าสู่ระบบไม่สำเร็จ';
@@ -2010,8 +1542,7 @@ function exportCsv(filename, headers, rows) {
 }
 
 /* ========================================================= TABS */
-document.querySelectorAll('.tab[data-tab]').forEach(btn => { btn.addEventListener('click', () => renderTab(btn.dataset.tab)); });
-document.getElementById('moreTabBtn').addEventListener('click', openMoreMenu);
+document.querySelectorAll('.tab').forEach(btn => { btn.addEventListener('click', () => renderTab(btn.dataset.tab)); });
 document.getElementById('refreshBtn')?.addEventListener('click', refreshData);
 window.addEventListener('online', () => setConnection(true));
 window.addEventListener('offline', () => { setConnection(false); toast('ขณะนี้อุปกรณ์ออฟไลน์'); });
@@ -2019,12 +1550,10 @@ window.addEventListener('offline', () => { setConnection(false); toast('ขณ�
 function renderTab(name) {
   if ((name === 'users' || name === 'settings' || name === 'audit') && !isAdmin()) name = 'dashboard';
   state.tab = name;
-  document.querySelectorAll('.tab[data-tab]').forEach(t => {
+  document.querySelectorAll('.tab').forEach(t => {
     t.classList.toggle('active', t.dataset.tab === name);
     if (t.dataset.tab === name) t.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
   });
-  const moreBtn = document.getElementById('moreTabBtn');
-  if (moreBtn) moreBtn.classList.toggle('active', ['maint','memos','users','reports','audit','settings'].includes(name));
   document.querySelectorAll('.page').forEach(p => { p.style.display = 'none'; });
   const activePage = document.getElementById('view-' + name);
   if (activePage) activePage.style.display = 'block';
@@ -2048,23 +1577,6 @@ function renderTab(name) {
   if (name === 'audit') renderAudit();
 }
 
-function openMoreMenu() {
-  const items = [
-    { tab:'maint', label:'ซ่อมบำรุง', icon: ICONS.wrench },
-    { tab:'memos', label:'เอกสารใบเบิก', icon: ICONS.log },
-    { tab:'users', label:'จนท.ในสังกัด', icon: ICONS.user, adminOnly:true },
-    { tab:'reports', label:'รายงาน', icon: '<svg viewBox="0 0 20 20" fill="none"><path d="M4 16.5V11M10 16.5V6M16 16.5v-8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>' },
-    { tab:'audit', label:'ตรวจนับประจำปี', icon: ICONS.checklist, adminOnly:true },
-    { tab:'settings', label:'ตั้งค่าระบบ', icon: '<svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="2.6" stroke="currentColor" stroke-width="1.4"/><path d="M10 2.8v2M10 15.2v2M17.2 10h-2M4.8 10h-2M15.1 4.9l-1.4 1.4M6.3 13.7l-1.4 1.4M15.1 15.1l-1.4-1.4M6.3 6.3L4.9 4.9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>', adminOnly:true }
-  ].filter(it => !it.adminOnly || isAdmin());
-  const html = `<div class="sheet-title">เมนูเพิ่มเติม</div>
-    <div>${items.map(it => `<button class="more-menu-item" data-tab="${it.tab}"><span class="ico">${it.icon}</span><span>${it.label}</span></button>`).join('')}</div>`;
-  showSheet(html);
-  document.querySelectorAll('.more-menu-item').forEach(btn => {
-    btn.onclick = () => { closeSheet(); renderTab(btn.dataset.tab); };
-  });
-}
-
 /* ========================================================= DASHBOARD */
 function renderDashboard() {
   const d = state.dashboard;
@@ -2080,29 +1592,10 @@ function renderDashboard() {
   if (d.dueRenewalCount > 0) {
     banners += `<div class="alert-banner warn">${ICONS.warn}<span>มีครุภัณฑ์ใกล้ครบกำหนดตรวจสภาพ/ต่อทะเบียน ${d.dueRenewalCount} รายการ (ภายใน ${renewalWindowDays()} วัน หรือเลยกำหนดแล้ว)</span><span class="alert-link" onclick="renderTab('assets')">ดูรายการ</span></div>`;
   }
-  const qaItems = [
-    { tab:'assets', label:'ครุภัณฑ์', cls:'navy', icon:'<svg viewBox="0 0 20 20" fill="none"><rect x="2.5" y="3.5" width="15" height="3.6" rx="0.8" stroke="currentColor" stroke-width="1.4"/><path d="M3.8 7.1v7.4a1.5 1.5 0 001.5 1.5h9.4a1.5 1.5 0 001.5-1.5V7.1" stroke="currentColor" stroke-width="1.4"/><path d="M8 10.3h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>' },
-    { tab:'borrow', label:'ยืม-คืน', cls:'warn', icon: ICONS.swap },
-    { tab:'maint', label:'ซ่อมบำรุง', cls:'bad', icon: ICONS.wrench },
-    { tab:'memos', label:'เอกสารใบเบิก', cls:'info', icon: ICONS.log },
-    { tab:'reports', label:'รายงาน', cls:'ok', icon:'<svg viewBox="0 0 20 20" fill="none"><path d="M4 16.5V11M10 16.5V6M16 16.5v-8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>' }
-  ];
-  if (isAdmin()) {
-    qaItems.push({ tab:'audit', label:'ตรวจนับประจำปี', cls:'gold', icon: ICONS.checklist });
-    qaItems.push({ tab:'users', label:'จนท.ในสังกัด', cls:'navy', icon: ICONS.user });
-    qaItems.push({ tab:'settings', label:'ตั้งค่าระบบ', cls:'off', icon:'<svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="2.6" stroke="currentColor" stroke-width="1.4"/><path d="M10 2.8v2M10 15.2v2M17.2 10h-2M4.8 10h-2M15.1 4.9l-1.4 1.4M6.3 13.7l-1.4 1.4M15.1 15.1l-1.4-1.4M6.3 6.3L4.9 4.9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>' });
-  }
-  const quickActionsHtml = `<div class="quick-actions">${qaItems.map(q => `
-    <div class="qa-item" onclick="renderTab('${q.tab}')">
-      <div class="qa-icon qa-${q.cls}">${q.icon}</div>
-      <div class="qa-label">${q.label}</div>
-    </div>`).join('')}</div>`;
-
   el.innerHTML = `
     <div class="section-title">ภาพรวมระบบ <small>อัปเดตล่าสุดวันนี้</small></div>
     ${banners}
-    ${quickActionsHtml}
-
+    
     <div class="dashboard-left">
       <div class="glass hero-card">
         <div class="hero-row">
@@ -4764,9 +4257,5 @@ function renderSettings() {
 
 init();
 </script>
-
-  <button class="fab" id="fabBtn" style="display:none;" aria-label="เพิ่มรายการ">
-      <svg viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-    </button>
 </body>
 </html>
