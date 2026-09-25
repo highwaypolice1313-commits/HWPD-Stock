@@ -246,14 +246,14 @@ input[type="date"]::-webkit-date-and-time-value{ text-align:left; }
 
 /* ---------- ฝังปุ่ม + ไว้ในแถบเมนูล่าง (มือถือ) แทนการลอยกลางจอบังเมนู ---------- */
 @media (max-width:899px){
-  .tabbar{ justify-content:space-between; }
+  .tabbar{ justify-content:stretch; }
   .tab.tab-overflow{ display:none !important; }
   .fab{
     position:static; order:3; flex:0 0 auto; transform:none; left:auto; bottom:auto;
-    width:50px; height:50px; margin:-22px 4px 0; border:3px solid var(--bg-1);
-    box-shadow:0 10px 20px rgba(187,138,63,.4);
+    width:48px; height:48px; margin:-20px 6px 0; border:3px solid var(--bg-1);
+    box-shadow:0 10px 20px rgba(187,138,63,.4); align-self:flex-start;
   }
-  .fab svg{width:19px;height:19px;}
+  .fab svg{width:18px;height:18px;}
   .tab[data-tab="dashboard"]{order:1;}
   .tab[data-tab="assets"]{order:2;}
   .tab[data-tab="borrow"]{order:4;}
@@ -307,6 +307,10 @@ input[type="date"]::-webkit-date-and-time-value{ text-align:left; }
 .tab.active{color:var(--navy); background:var(--gold-wash);}
 .tab.active .lbl{font-weight:600;}
 .tab-dot{position:absolute; top:-3px; right:-5px; width:8px;height:8px;border-radius:50%; background:var(--bad); border:1.5px solid #fff;}
+@media (max-width:899px){
+  .tab{ flex:1 1 0; min-width:0; padding:8px 4px; }
+  .tab .lbl{ overflow:hidden; text-overflow:ellipsis; max-width:100%; }
+}
 
 .overlay{
   position:fixed; inset:0; background:rgba(15,25,38,.46); backdrop-filter:blur(4px); z-index:80;
