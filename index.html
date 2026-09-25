@@ -2016,28 +2016,41 @@ function openBorrowDetail(id) {
   const compIds = borrowedComponentIds(b);
   const compNames = compIds.map(cid => { const c = state.components.find(x => x['รหัสส่วนควบ'] === cid); return c ? c['ชื่อส่วนควบ'] : cid; });
   const status = b['สถานะ'];
+  const eff = effectiveBorrowStatus(b);
+  const info = borrowDaysInfo(b);
   showSheet(`
     <div class="sheet-title">${escapeHtml(b['ชื่อครุภัณฑ์'])}</div>
-    <div class="detail-row"><span>ผู้ยืม</span><span>${escapeHtml(b['ผู้ยืม'])}</span></div>
+    <div class="glass" style="padding:14px 16px; margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+      <div style="min-width:0;">
+        <div style="font-size:15px; font-weight:600;">${escapeHtml(b['ผู้ยืม'])}</div>
+        <div style="font-size:12.5px; color:${eff==='เกินกำหนด' ? 'var(--bad)' : 'var(--ink-dim)'}; margin-top:2px; font-weight:${eff==='เกินกำหนด'?'600':'400'};">${info || ''}</div>
+      </div>
+      <div class="status-badge ${statusClass(eff)}" style="font-size:12px;">${escapeHtml(eff)}</div>
+    </div>
     <div class="detail-row"><span>วันที่ยืม</span><span>${thaiDate(b['วันที่ยืม'])}</span></div>
     <div class="detail-row"><span>กำหนดคืน</span><span>${thaiDate(b['กำหนดคืน'])}</span></div>
-    <div class="detail-row"><span>สถานะ</span><span class="status-badge ${statusClass(effectiveBorrowStatus(b))}">${escapeHtml(effectiveBorrowStatus(b))}</span></div>
     ${b['ผู้อนุมัติ'] ? `<div class="detail-row"><span>ผู้อนุมัติ</span><span>${escapeHtml(b['ผู้อนุมัติ'])}</span></div>` : ''}
     ${b['วันที่คืนจริง'] ? `<div class="detail-row"><span>วันที่คืนจริง</span><span>${thaiDate(b['วันที่คืนจริง'])}</span></div>` : ''}
-        ${compNames.length ? `<div class="detail-row"><span>ส่วนควบที่ยืมด้วย</span><span>${compNames.map(escapeHtml).join(', ')}</span></div>` : ''}
+    ${compNames.length ? `<div class="detail-row"><span>ส่วนควบที่ยืมด้วย</span><span>${compNames.map(escapeHtml).join(', ')}</span></div>` : ''}
     <div class="detail-row"><span>หมายเหตุ</span><span>${escapeHtml(b['หมายเหตุ']) || '-'}</span></div>
-    ${b['รูปสภาพ(ตอนยืม)'] ? `<div class="hint" style="margin-top:12px; font-weight:500; color:var(--ink);">รูปสภาพตอนยืม</div><img class="condition-photo-thumb" src="${b['รูปสภาพ(ตอนยืม)']}">` : ''}
-    ${b['รูปสภาพ(ตอนคืน)'] ? `<div class="hint" style="margin-top:12px; font-weight:500; color:var(--ink);">รูปสภาพตอนคืน</div><img class="condition-photo-thumb" src="${b['รูปสภาพ(ตอนคืน)']}">` : ''}
+    ${(b['รูปสภาพ(ตอนยืม)'] || b['รูปสภาพ(ตอนคืน)']) ? `
+    <div class="memo-two-col" style="margin-top:12px;">
+      ${b['รูปสภาพ(ตอนยืม)'] ? `<div style="flex:1 1 160px;"><div class="hint" style="margin-top:0; font-weight:500; color:var(--ink);">รูปสภาพตอนยืม</div><img class="condition-photo-thumb" src="${b['รูปสภาพ(ตอนยืม)']}"></div>` : ''}
+      ${b['รูปสภาพ(ตอนคืน)'] ? `<div style="flex:1 1 160px;"><div class="hint" style="margin-top:0; font-weight:500; color:var(--ink);">รูปสภาพตอนคืน</div><img class="condition-photo-thumb" src="${b['รูปสภาพ(ตอนคืน)']}"></div>` : ''}
+    </div>` : ''}
     <div class="btn-row"><button class="btn btn-ghost" id="btnPrintForm">พิมพ์บันทึกขอเบิก-ยืม</button></div>
     ${isAdmin() && status === 'รออนุมัติ' ? `<div class="btn-row"><button class="btn btn-danger" id="btnReject">ปฏิเสธ</button><button class="btn btn-ok" id="btnApprove">อนุมัติ</button></div>` : ''}
-    ${isAdmin() && (status === 'กำลังยืม' || status === 'เกินกำหนด' || effectiveBorrowStatus(b) === 'เกินกำหนด') ? `
-    <div class="field" style="margin-top:14px;">
-      <label>รูปถ่ายสภาพพัสดุ (ตอนคืน) — ไม่บังคับ</label>
-      <input type="file" id="f_returnPhoto" accept="image/png,image/jpeg,image/webp" class="input" style="padding:8px;">
-      <input type="hidden" id="f_returnPhotoVal" value="">
-      <img id="f_returnPhotoPreview" class="condition-photo-thumb" style="display:none;">
-    </div>
-    <div class="btn-row"><button class="btn btn-primary" id="btnReturn">บันทึกการคืน</button></div>` : ''}
+    ${isAdmin() && (status === 'กำลังยืม' || status === 'เกินกำหนด' || eff === 'เกินกำหนด') ? `
+    <div class="mf-section" style="margin-top:16px;">
+      <div class="mf-section-title" style="margin-bottom:10px;"><span class="mf-step">✓</span> บันทึกการคืน</div>
+      <div class="field">
+        <label>รูปถ่ายสภาพพัสดุ (ตอนคืน) — ไม่บังคับ</label>
+        <input type="file" id="f_returnPhoto" accept="image/png,image/jpeg,image/webp" class="input" style="padding:8px;">
+        <input type="hidden" id="f_returnPhotoVal" value="">
+        <img id="f_returnPhotoPreview" class="condition-photo-thumb" style="display:none;">
+      </div>
+      <button class="btn btn-primary" id="btnReturn" style="width:100%;">บันทึกการคืน</button>
+    </div>` : ''}
   `);
   const returnPhotoInput = document.getElementById('f_returnPhoto');
   if (returnPhotoInput) {
@@ -2045,10 +2058,10 @@ function openBorrowDetail(id) {
       const file = e.target.files && e.target.files[0];
       if (!file) return;
       prepareImageFile(file, 60000).then(data => {
-      document.getElementById('f_returnPhotoVal').value = data;
-      const img = document.getElementById('f_returnPhotoPreview');
-      img.src = data; img.style.display = 'block';
-    }).catch(err => toast(err.message || 'เตรียมรูปไม่สำเร็จ'));
+        document.getElementById('f_returnPhotoVal').value = data;
+        const img = document.getElementById('f_returnPhotoPreview');
+        img.src = data; img.style.display = 'block';
+      }).catch(err => toast(err.message || 'เตรียมรูปไม่สำเร็จ'));
     };
   }
   document.getElementById('btnPrintForm').onclick = () => openPrintMemoForm({ borrow: b, componentNames: compNames });
@@ -2065,7 +2078,7 @@ function openBorrowDetail(id) {
       catch (err) { toast(err.message || 'ปฏิเสธไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(btn, false); }
     };
   }
-    const returnBtn = document.getElementById('btnReturn');
+  const returnBtn = document.getElementById('btnReturn');
   if (returnBtn) {
     returnBtn.onclick = async () => {
       const btn = document.getElementById('btnReturn'); if (btn.disabled) return; setButtonBusy(btn, true, 'กำลังบันทึกการคืน...'); setLoading(true, 'กำลังบันทึกการคืน...');
@@ -2084,25 +2097,60 @@ function openBorrowForm() {
   showSheet(`
     <div class="sheet-title">${admin ? 'บันทึกการยืม' : 'ขอยืมครุภัณฑ์'}</div>
     ${!admin ? `<div class="hint" style="margin-top:0;margin-bottom:12px;">คำขอของท่านจะถูกส่งให้แอดมินตรวจสอบและอนุมัติก่อนจึงจะยืมได้จริง</div>` : ''}
-    <div class="field"><label>ครุภัณฑ์</label><select class="input" id="f_asset">${available.map(a => `<option value="${escapeHtml(a['รหัสครุภัณฑ์'])}">${escapeHtml(a['ชื่อครุภัณฑ์'])} (${escapeHtml(a['รหัสครุภัณฑ์'])})</option>`).join('')}</select></div>
-    <div class="field" id="f_compWrap"></div>
-    <div class="field">
-      <label>ผู้ยืม (เลือกจากทำเนียบ จนท.ในสังกัด กันเลือกผิดคน)</label>
-      <select class="input" id="f_borrowerPick">${officerSelectOptions('')}</select>
-      <input class="input" id="f_borrower" placeholder="พิมพ์ชื่อ-สกุลผู้ยืม" style="margin-top:8px; display:none;">
+
+    <div class="mf-section">
+      <div class="mf-section-title"><span class="mf-step">1</span> เลือกครุภัณฑ์</div>
+      <div class="field">
+        <label>ค้นหาครุภัณฑ์ที่จะยืม</label>
+        <input class="input" id="f_assetSearch" placeholder="พิมพ์ชื่อหรือรหัสเพื่อกรอง...">
+      </div>
+      <div class="field">
+        <label>ครุภัณฑ์</label>
+        <select class="input" id="f_asset">${available.map(a => `<option value="${escapeHtml(a['รหัสครุภัณฑ์'])}" data-name="${escapeHtml((a['ชื่อครุภัณฑ์']||'').toLowerCase())}" data-code="${escapeHtml((a['รหัสครุภัณฑ์']||'').toLowerCase())}">${escapeHtml(a['ชื่อครุภัณฑ์'])} (${escapeHtml(a['รหัสครุภัณฑ์'])})</option>`).join('')}</select>
+      </div>
+      <div id="f_assetInfo"></div>
+      <div class="field" id="f_compWrap"></div>
     </div>
-    <div class="field"><label>วันที่ยืม</label><input class="input" type="date" id="f_borrowdate" value="${isoDate()}"></div>
-    <div class="field"><label>กำหนดคืน</label><input class="input" type="date" id="f_duedate" value="${isoDate(new Date(Date.now() + 7 * 86400000))}"></div>
-    ${admin ? `<div class="field"><label>ผู้อนุมัติ</label><select class="input" id="f_approverPick">${officerSelectOptions(defaultApproverIdx)}</select><input class="input" id="f_approver" placeholder="พิมพ์ชื่อผู้อนุมัติ" style="margin-top:8px; display:none;"></div>` : ''}
-        <div class="field"><label>หมายเหตุ</label><input class="input" id="f_bnote"></div>
-    <div class="field">
-      <label>รูปถ่ายสภาพพัสดุ (ตอนยืม) — ไม่บังคับ</label>
-      <input type="file" id="f_conditionPhoto" accept="image/png,image/jpeg,image/webp" class="input" style="padding:8px;">
-      <input type="hidden" id="f_conditionPhotoVal" value="">
-      <img id="f_conditionPhotoPreview" class="condition-photo-thumb" style="display:none;">
+
+    <div class="mf-section">
+      <div class="mf-section-title"><span class="mf-step">2</span> ผู้ยืมและกำหนดคืน</div>
+      <div class="field">
+        <label>ผู้ยืม (เลือกจากทำเนียบ จนท.ในสังกัด กันเลือกผิดคน)</label>
+        <select class="input" id="f_borrowerPick">${officerSelectOptions('')}</select>
+        <input class="input" id="f_borrower" placeholder="พิมพ์ชื่อ-สกุลผู้ยืม" style="margin-top:8px; display:none;">
+      </div>
+      <div class="memo-two-col">
+        <div class="field"><label>วันที่ยืม</label><input class="input" type="date" id="f_borrowdate" value="${isoDate()}"></div>
+        <div class="field"><label>กำหนดคืน</label><input class="input" type="date" id="f_duedate" value="${isoDate(new Date(Date.now() + 7 * 86400000))}"></div>
+      </div>
+      <div class="chip-row" style="margin-bottom:0;">
+        <div class="chip" data-days="3">3 วัน</div>
+        <div class="chip active" data-days="7">7 วัน</div>
+        <div class="chip" data-days="14">14 วัน</div>
+        <div class="chip" data-days="30">30 วัน</div>
+      </div>
     </div>
+
+    ${admin ? `<div class="mf-section">
+      <div class="mf-section-title"><span class="mf-step">3</span> ผู้อนุมัติ</div>
+      <select class="input" id="f_approverPick">${officerSelectOptions(defaultApproverIdx)}</select>
+      <input class="input" id="f_approver" placeholder="พิมพ์ชื่อผู้อนุมัติ" style="margin-top:8px; display:none;">
+    </div>` : ''}
+
+    <div class="mf-section">
+      <div class="mf-section-title"><span class="mf-step">${admin?'4':'3'}</span> รายละเอียดเพิ่มเติม</div>
+      <div class="field"><label>หมายเหตุ</label><input class="input" id="f_bnote"></div>
+      <div class="field">
+        <label>รูปถ่ายสภาพพัสดุ (ตอนยืม) — ไม่บังคับ</label>
+        <input type="file" id="f_conditionPhoto" accept="image/png,image/jpeg,image/webp" class="input" style="padding:8px;">
+        <input type="hidden" id="f_conditionPhotoVal" value="">
+        <img id="f_conditionPhotoPreview" class="condition-photo-thumb" style="display:none;">
+      </div>
+    </div>
+
     <div class="btn-row"><button class="btn btn-ghost" id="btnCancel">ยกเลิก</button><button class="btn btn-primary" id="btnSave">${admin ? 'บันทึก' : 'ส่งคำขอ'}</button></div>
   `);
+
   document.getElementById('f_conditionPhoto').onchange = (e) => {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
@@ -2113,6 +2161,34 @@ function openBorrowForm() {
     }).catch(err => toast(err.message || 'เตรียมรูปไม่สำเร็จ'));
   };
   if (!available.length) { toast('ไม่มีครุภัณฑ์ที่พร้อมให้ยืมในขณะนี้'); }
+
+  // ค้นหากรองรายการในดรอปดาวน์
+  const assetSelect = document.getElementById('f_asset');
+  document.getElementById('f_assetSearch').oninput = (e) => {
+    const q = e.target.value.toLowerCase().trim();
+    let firstVisible = null;
+    Array.from(assetSelect.options).forEach(opt => {
+      const match = !q || opt.dataset.name.includes(q) || opt.dataset.code.includes(q);
+      opt.hidden = !match;
+      if (match && !firstVisible) firstVisible = opt;
+    });
+    if (assetSelect.selectedOptions[0]?.hidden && firstVisible) {
+      assetSelect.value = firstVisible.value;
+      refreshComponentPicker();
+      refreshAssetInfo();
+    }
+  };
+
+  function refreshAssetInfo() {
+    const asset = state.assets.find(a => a['รหัสครุภัณฑ์'] === val('f_asset'));
+    const box = document.getElementById('f_assetInfo');
+    if (!asset) { box.innerHTML = ''; return; }
+    box.innerHTML = `<div class="glass" style="padding:10px 14px; margin-bottom:12px; display:flex; align-items:center; gap:10px;">
+      <div class="li-icon" style="width:34px;height:34px;">${catIcon(asset['หมวดหมู่'])}</div>
+      <div style="font-size:12.5px; color:var(--ink-dim);">${escapeHtml(asset['หมวดหมู่'])}${asset['ยี่ห้อ/รุ่น'] ? ' · ' + escapeHtml(asset['ยี่ห้อ/รุ่น']) : ''}</div>
+    </div>`;
+  }
+
   function wirePicker(pickId, textId) {
     const pick = document.getElementById(pickId), text = document.getElementById(textId);
     pick.onchange = () => {
@@ -2124,6 +2200,7 @@ function openBorrowForm() {
   }
   wirePicker('f_borrowerPick', 'f_borrower');
   if (admin) wirePicker('f_approverPick', 'f_approver');
+
   function refreshComponentPicker() {
     const asset = state.assets.find(a => a['รหัสครุภัณฑ์'] === val('f_asset'));
     const wrap = document.getElementById('f_compWrap');
@@ -2133,8 +2210,21 @@ function openBorrowForm() {
       ? comps.map(c => `<label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:400; margin-bottom:7px; color:var(--ink);"><input type="checkbox" class="f_comp_chk" value="${escapeHtml(c['รหัสส่วนควบ'])}" style="width:16px;height:16px;"> ${escapeHtml(c['ชื่อส่วนควบ'])} <span style="color:var(--ink-dim); font-size:11px;">(${escapeHtml(c['ประเภท'] || '-')})</span></label>`).join('')
       : `<div class="hint">ยังไม่มีส่วนควบที่พร้อมใช้งานสำหรับอาวุธปืนนี้</div>`);
   }
+  refreshAssetInfo();
   refreshComponentPicker();
-  document.getElementById('f_asset').onchange = refreshComponentPicker;
+  assetSelect.onchange = () => { refreshComponentPicker(); refreshAssetInfo(); };
+
+  // ปุ่มลัดกำหนดคืน
+  document.querySelectorAll('[data-days]').forEach(chip => {
+    chip.onclick = () => {
+      document.querySelectorAll('[data-days]').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      const days = Number(chip.dataset.days);
+      document.getElementById('f_duedate').value = isoDate(new Date(Date.now() + days * 86400000));
+    };
+  });
+  document.getElementById('f_duedate').oninput = () => document.querySelectorAll('[data-days]').forEach(c => c.classList.remove('active'));
+
   document.getElementById('btnCancel').onclick = closeSheet;
   document.getElementById('btnSave').onclick = async () => {
     const assetId = val('f_asset');
