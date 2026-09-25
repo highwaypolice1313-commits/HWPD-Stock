@@ -389,6 +389,26 @@ async function sUpdateBorrow(p, actor) {
   return { updated: true };
 }
 
+async function sDeleteBorrow(p, actor) {
+  // ตรวจสอบก่อนว่ามีรายการยืมรหัสนี้อยู่จริงหรือไม่
+  const { data: b, error: e1 } = await sb.from('borrow').select('*').eq('id', p.id).single();
+  if (e1 || !b) throw new Error('ไม่พบรายการยืมรหัส ' + p.id);
+
+  // ถ้ารายการนี้ยังไม่ได้คืน (สถานะ "กำลังยืม") ต้องคืนสถานะครุภัณฑ์และส่วนควบกลับเป็น "พร้อมใช้งาน" ก่อนลบ
+  // ไม่งั้นครุภัณฑ์จะค้างสถานะ "กำลังยืม" ตลอดไปทั้งที่ไม่มีรายการยืมอ้างอิงอยู่แล้ว
+  if (b.status === 'กำลังยืม') {
+    await sb.from('assets').update({ status: 'พร้อมใช้งาน', holder: '' }).eq('id', b.asset_id);
+    const compIds = String(b.component_ids || '').split(',').map(s => s.trim()).filter(Boolean);
+    await setComponentsStatusSb(compIds, 'พร้อมใช้งาน');
+  }
+
+  const { error } = await sb.from('borrow').delete().eq('id', p.id);
+  if (error) throw new Error('ลบรายการไม่สำเร็จ: ' + error.message);
+
+  await logActivitySb(actor, 'ลบรายการยืม-คืน', p.id);
+  return { deleted: true };
+}
+
 async function sAddMaint(p, actor) {
   const id = genId('MNT');
   const row = { id, asset_id: p.assetId, asset_name: p.assetName || '', report_date: p.reportDate || null,
@@ -569,7 +589,7 @@ async function sChangeRolePassword(p) {
   return { updated: !!data };
 }
 
-const ADMIN_ACTIONS = ['addAsset', 'updateAsset', 'deleteAsset', 'borrowAsset', 'returnAsset', 'updateBorrow',
+const ADMIN_ACTIONS = ['addAsset', 'updateAsset', 'deleteAsset', 'borrowAsset', 'returnAsset', 'updateBorrow', 'deleteBorrow',
   'approveBorrowRequest', 'rejectBorrowRequest', 'addMaint', 'updateMaint', 'addUser', 'updateUserRole',
   'deleteUser', 'addComponent', 'updateComponent', 'deleteComponent', 'deleteMemo', 'updateSystemSettings',
   'saveAuditRecord', 'migrateImagesToDrive', 'changeRolePassword'];
@@ -593,6 +613,7 @@ async function supaApiPost(action, payload, role, actorName) {
     case 'rejectBorrowRequest': return await sRejectBorrow(payload, actorName);
     case 'returnAsset': return await sReturnAsset(payload, actorName);
     case 'updateBorrow': return await sUpdateBorrow(payload, actorName);
+    case 'deleteBorrow': return await sDeleteBorrow(payload, actorName);
     case 'addMaint': return await sAddMaint(payload, actorName);
     case 'updateMaint': return await sUpdateMaint(payload, actorName);
     case 'addComponent': return await sAddComponent(payload, actorName);
