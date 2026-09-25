@@ -1749,6 +1749,47 @@ function assetRow(a) {
     </div>
   </div>`;
 }
+
+   function openAssetPickerSheet(currentId, onPick) {
+  const available = state.assets.filter(a => a['สถานะ'] === 'พร้อมใช้งาน');
+  let pickCat = 'all', pickQ = '';
+  const pickerRoot = document.createElement('div');
+  document.body.appendChild(pickerRoot);
+
+  function draw() {
+    let list = available.filter(a => pickCat === 'all' || a['หมวดหมู่'] === pickCat);
+    const q = pickQ.toLowerCase();
+    if (q) list = list.filter(a => String(a['ชื่อครุภัณฑ์']||'').toLowerCase().includes(q) || String(a['รหัสครุภัณฑ์']||'').toLowerCase().includes(q));
+    const catCounts = CATS.map(c => ({ c, n: available.filter(a => a['หมวดหมู่']===c).length })).filter(x => x.n);
+    pickerRoot.innerHTML = `
+      <div class="overlay" style="z-index:95;">
+        <div class="sheet" style="max-height:92vh;">
+          <button class="sheet-close" id="apClose" type="button">${ICONS.close}</button>
+          <div class="sheet-handle"></div>
+          <div class="sheet-title">เลือกครุภัณฑ์</div>
+          <div class="search-row"><input class="input" id="apSearch" placeholder="ค้นหาชื่อหรือรหัส..." value="${escapeHtml(pickQ)}" autofocus></div>
+          <div class="chip-row">
+            <div class="chip ${pickCat==='all'?'active':''}" data-pcat="all">ทั้งหมด (${available.length})</div>
+            ${catCounts.map(x => `<div class="chip ${pickCat===x.c?'active':''}" data-pcat="${escapeHtml(x.c)}">${escapeHtml(x.c)} (${x.n})</div>`).join('')}
+          </div>
+          <div>${list.length ? list.map(a => `
+            <div class="glass list-item ap-item" data-id="${escapeHtml(a['รหัสครุภัณฑ์'])}">
+              <div class="li-icon">${catIcon(a['หมวดหมู่'])}</div>
+              <div class="li-body"><div class="li-title">${escapeHtml(a['ชื่อครุภัณฑ์'])}</div><div class="li-sub">${escapeHtml(a['รหัสครุภัณฑ์'])}${a['ยี่ห้อ/รุ่น'] ? ' · ' + escapeHtml(a['ยี่ห้อ/รุ่น']) : ''}</div></div>
+              ${a['รหัสครุภัณฑ์']===currentId ? `<div class="status-badge status-ready">เลือกอยู่</div>` : ''}
+            </div>`).join('') : emptyState('ไม่พบครุภัณฑ์ที่ค้นหา')}
+          </div>
+        </div>
+      </div>`;
+    document.getElementById('apClose').onclick = closePicker;
+    const searchEl = document.getElementById('apSearch');
+    searchEl.oninput = (e) => { pickQ = e.target.value; const pos = e.target.selectionStart; draw(); const again = document.getElementById('apSearch'); again.focus(); try { again.setSelectionRange(pos, pos); } catch(err){} };
+    document.querySelectorAll('[data-pcat]').forEach(c => c.onclick = () => { pickCat = c.dataset.pcat; draw(); });
+    document.querySelectorAll('.ap-item').forEach(it => it.onclick = () => { onPick(it.dataset.id); closePicker(); });
+  }
+  function closePicker() { pickerRoot.remove(); }
+  draw();
+}
 function openAssetDetail(id) {
   const a = state.assets.find(x => x['รหัสครุภัณฑ์'] === id);
   if (!a) return;
@@ -2099,24 +2140,18 @@ function openBorrowForm() {
     ${!admin ? `<div class="hint" style="margin-top:0;margin-bottom:12px;">คำขอของท่านจะถูกส่งให้แอดมินตรวจสอบและอนุมัติก่อนจึงจะยืมได้จริง</div>` : ''}
 
     <div class="mf-section">
-      <div class="mf-section-title"><span class="mf-step">1</span> เลือกครุภัณฑ์</div>
-      <div class="field">
-        <label>ค้นหาครุภัณฑ์ที่จะยืม</label>
-        <input class="input" id="f_assetSearch" placeholder="พิมพ์ชื่อหรือรหัสเพื่อกรอง...">
-      </div>
-      <div class="field">
-        <label>ครุภัณฑ์</label>
-        <select class="input" id="f_asset">
-  ${CATS.map(cat => {
-    const inCat = available.filter(a => a['หมวดหมู่'] === cat);
-    if (!inCat.length) return '';
-    return `<optgroup label="${escapeHtml(cat)} (${inCat.length})">${inCat.map(a => `<option value="${escapeHtml(a['รหัสครุภัณฑ์'])}" data-name="${escapeHtml((a['ชื่อครุภัณฑ์']||'').toLowerCase())}" data-code="${escapeHtml((a['รหัสครุภัณฑ์']||'').toLowerCase())}">${escapeHtml(a['ชื่อครุภัณฑ์'])} (${escapeHtml(a['รหัสครุภัณฑ์'])})</option>`).join('')}</optgroup>`;
-  }).join('')}
-</select>
-      </div>
-      <div id="f_assetInfo"></div>
-      <div class="field" id="f_compWrap"></div>
+  <div class="mf-section-title"><span class="mf-step">1</span> เลือกครุภัณฑ์</div>
+  <div class="glass list-item" id="f_assetTrigger" style="cursor:pointer;">
+    <div class="li-icon" id="f_assetIcon">${ICONS.other}</div>
+    <div class="li-body">
+      <div class="li-title" id="f_assetName">แตะเพื่อเลือกครุภัณฑ์</div>
+      <div class="li-sub" id="f_assetSub">${available.length} รายการพร้อมให้ยืม</div>
     </div>
+    <span class="status-badge status-ready" style="flex:none;">เปลี่ยน</span>
+  </div>
+  <input type="hidden" id="f_asset" value="">
+  <div class="field" id="f_compWrap" style="margin-top:10px;"></div>
+</div>
 
     <div class="mf-section">
       <div class="mf-section-title"><span class="mf-step">2</span> ผู้ยืมและกำหนดคืน</div>
@@ -2171,32 +2206,6 @@ function openBorrowForm() {
   if (!available.length) { toast('ไม่มีครุภัณฑ์ที่พร้อมให้ยืมในขณะนี้'); }
 
   // ค้นหากรองรายการในดรอปดาวน์
-  const assetSelect = document.getElementById('f_asset');
-  document.getElementById('f_assetSearch').oninput = (e) => {
-    const q = e.target.value.toLowerCase().trim();
-    let firstVisible = null;
-    Array.from(assetSelect.options).forEach(opt => {
-      const match = !q || opt.dataset.name.includes(q) || opt.dataset.code.includes(q);
-      opt.hidden = !match;
-      if (match && !firstVisible) firstVisible = opt;
-    });
-    if (assetSelect.selectedOptions[0]?.hidden && firstVisible) {
-      assetSelect.value = firstVisible.value;
-      refreshComponentPicker();
-      refreshAssetInfo();
-    }
-  };
-
-  function refreshAssetInfo() {
-    const asset = state.assets.find(a => a['รหัสครุภัณฑ์'] === val('f_asset'));
-    const box = document.getElementById('f_assetInfo');
-    if (!asset) { box.innerHTML = ''; return; }
-    box.innerHTML = `<div class="glass" style="padding:10px 14px; margin-bottom:12px; display:flex; align-items:center; gap:10px;">
-      <div class="li-icon" style="width:34px;height:34px;">${catIcon(asset['หมวดหมู่'])}</div>
-      <div style="font-size:12.5px; color:var(--ink-dim);">${escapeHtml(asset['หมวดหมู่'])}${asset['ยี่ห้อ/รุ่น'] ? ' · ' + escapeHtml(asset['ยี่ห้อ/รุ่น']) : ''}</div>
-    </div>`;
-  }
-
   function wirePicker(pickId, textId) {
     const pick = document.getElementById(pickId), text = document.getElementById(textId);
     pick.onchange = () => {
@@ -2217,9 +2226,18 @@ function openBorrowForm() {
       ? comps.map(c => `<label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:400; margin-bottom:7px; color:var(--ink);"><input type="checkbox" class="f_comp_chk" value="${escapeHtml(c['รหัสส่วนควบ'])}" style="width:16px;height:16px;"> ${escapeHtml(c['ชื่อส่วนควบ'])} <span style="color:var(--ink-dim); font-size:11px;">(${escapeHtml(c['ประเภท'] || '-')})</span></label>`).join('')
       : `<div class="hint">ยังไม่มีส่วนควบที่พร้อมใช้งานสำหรับอาวุธปืนนี้</div>`);
   }
-  refreshAssetInfo();
-  refreshComponentPicker();
-  assetSelect.onchange = () => { refreshComponentPicker(); refreshAssetInfo(); };
+
+  function selectAsset(id) {
+    const asset = state.assets.find(a => a['รหัสครุภัณฑ์'] === id);
+    if (!asset) return;
+    document.getElementById('f_asset').value = id;
+    document.getElementById('f_assetIcon').innerHTML = catIcon(asset['หมวดหมู่']);
+    document.getElementById('f_assetName').textContent = asset['ชื่อครุภัณฑ์'];
+    document.getElementById('f_assetSub').textContent = asset['หมวดหมู่'] + (asset['ยี่ห้อ/รุ่น'] ? ' · ' + asset['ยี่ห้อ/รุ่น'] : '');
+    refreshComponentPicker();
+  }
+  document.getElementById('f_assetTrigger').onclick = () => openAssetPickerSheet(val('f_asset'), selectAsset);
+  if (available.length) selectAsset(available[0]['รหัสครุภัณฑ์']);
 
   // ปุ่มลัดกำหนดคืน
   document.querySelectorAll('[data-days]').forEach(chip => {
