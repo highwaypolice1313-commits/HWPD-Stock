@@ -363,6 +363,32 @@ async function sReturnAsset(p, actor) {
   return { returned: true };
 }
 
+async function sUpdateBorrow(p, actor) {
+  // ตรวจสอบก่อนว่ามีรายการยืมรหัสนี้อยู่จริงหรือไม่
+  const { data: b, error: e1 } = await sb.from('borrow').select('*').eq('id', p.id).single();
+  if (e1 || !b) throw new Error('ไม่พบรายการยืมรหัส ' + p.id);
+
+  // เตรียมข้อมูลที่จะอัปเดต — อัปเดตเฉพาะฟิลด์ที่ส่งมาเท่านั้น
+  const upd = {};
+  if (p.borrower !== undefined) upd.borrower = p.borrower;
+  if (p.borrowDate !== undefined) upd.borrow_date = p.borrowDate || null;
+  if (p.dueDate !== undefined) upd.due_date = p.dueDate || null;
+  if (p.returnDate !== undefined) upd.return_date = p.returnDate || null;
+  if (p.note !== undefined) upd.note = p.note;
+
+  const { error } = await sb.from('borrow').update(upd).eq('id', p.id);
+  if (error) throw new Error('แก้ไขข้อมูลการยืมไม่สำเร็จ: ' + error.message);
+
+  // ถ้าเปลี่ยนชื่อผู้ยืม และครุภัณฑ์ตัวนี้ยังอยู่ในสถานะ "กำลังยืม" อยู่
+  // ให้อัปเดตชื่อผู้ครอบครองในตารางครุภัณฑ์ (assets) ให้ตรงกันไปด้วย
+  if (p.borrower !== undefined && b.status === 'กำลังยืม') {
+    await sb.from('assets').update({ holder: p.borrower }).eq('id', b.asset_id);
+  }
+
+  await logActivitySb(actor, 'แก้ไขข้อมูลการยืม', p.id);
+  return { updated: true };
+}
+
 async function sAddMaint(p, actor) {
   const id = genId('MNT');
   const row = { id, asset_id: p.assetId, asset_name: p.assetName || '', report_date: p.reportDate || null,
@@ -542,7 +568,7 @@ async function sChangeRolePassword(p) {
   return { updated: !!data };
 }
 
-const ADMIN_ACTIONS = ['addAsset', 'updateAsset', 'deleteAsset', 'borrowAsset', 'returnAsset',
+const ADMIN_ACTIONS = ['addAsset', 'updateAsset', 'deleteAsset', 'borrowAsset', 'returnAsset', 'updateBorrow',
   'approveBorrowRequest', 'rejectBorrowRequest', 'addMaint', 'updateMaint', 'addUser', 'updateUserRole',
   'deleteUser', 'addComponent', 'updateComponent', 'deleteComponent', 'deleteMemo', 'updateSystemSettings',
   'saveAuditRecord', 'migrateImagesToDrive', 'changeRolePassword'];
@@ -565,6 +591,7 @@ async function supaApiPost(action, payload, role, actorName) {
     case 'approveBorrowRequest': return await sApproveBorrow(payload, actorName);
     case 'rejectBorrowRequest': return await sRejectBorrow(payload, actorName);
     case 'returnAsset': return await sReturnAsset(payload, actorName);
+    case 'updateBorrow': return await sUpdateBorrow(payload, actorName);
     case 'addMaint': return await sAddMaint(payload, actorName);
     case 'updateMaint': return await sUpdateMaint(payload, actorName);
     case 'addComponent': return await sAddComponent(payload, actorName);
