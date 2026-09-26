@@ -912,10 +912,14 @@ function viewToggleHtml(key, current) {
     <button class="vt-btn ${isGrid ? 'active' : ''}" data-vt-key="${key}" data-vt-val="grid" title="มุมมองการ์ด">${ICONS.gridView}</button>
   </div>`;
 }
-function wireViewToggle(renderFn, containerSelector) {
+function wireViewToggle(renderFn, containerSelector, stateKey) {
   const root = containerSelector ? document.querySelector(containerSelector) : document;
   if (!root) return;
-  root.querySelectorAll('.vt-btn').forEach(b => b.onclick = () => { setViewMode(b.dataset.vtKey, b.dataset.vtVal); renderFn(); });
+  root.querySelectorAll('.vt-btn').forEach(b => b.onclick = () => {
+    setViewMode(b.dataset.vtKey, b.dataset.vtVal);
+    if (stateKey) state[stateKey] = b.dataset.vtVal;
+    renderFn();
+  });
 }
 function getAssetView() { try { return localStorage.getItem(ASSET_VIEW_KEY) || 'list'; } catch (e) { return 'list'; } }
 function setAssetView(v) { try { localStorage.setItem(ASSET_VIEW_KEY, v); } catch (e) {} }
@@ -2163,7 +2167,7 @@ function renderBorrow() {
     if (again) { again.focus(); try { again.setSelectionRange(pos, pos); } catch (err) {} }
   };
   document.getElementById('borrowSortSelect').onchange = (e) => { state.borrowSort = e.target.value; renderBorrow(); };
-  wireViewToggle(renderBorrow, '#view-borrow');
+  wireViewToggle(renderBorrow, '#view-borrow', 'borrowView');
 }
 function borrowCard(b) {
   const eff = effectiveBorrowStatus(b);
@@ -2615,7 +2619,7 @@ function renderMaint() {
     if (again) { again.focus(); try { again.setSelectionRange(pos, pos); } catch (err) {} }
   };
   document.getElementById('maintSortSelect').onchange = (e) => { state.maintSort = e.target.value; renderMaint(); };
-    wireViewToggle(renderMaint, '#view-maint');
+    wireViewToggle(renderMaint, '#view-maint', 'maintView');
 }
 function maintRow(m) {
   return `<div class="glass list-item maint-item" data-id="${escapeHtml(m['รหัสรายการ'])}">
@@ -2784,7 +2788,7 @@ function drawUsers() {
     const u = state.users.find(u => officerId(u) === it.dataset.id || (!officerId(u) && (u['LINEUserId'] || u['ชื่อผู้ใช้'] || u['ชื่อ-สกุล']) === it.dataset.id));
     if (u) openOfficerProfile(u);
   });
-    wireViewToggle(drawUsers, '#view-users');
+    wireViewToggle(drawUsers, '#view-users', 'usersView');
 }
 function userCard(u) {
   const idf = officerId(u) || u['LINEUserId'] || u['ชื่อผู้ใช้'] || u['ชื่อ-สกุล'] || '';
@@ -3122,7 +3126,7 @@ function drawMemos() {
       row.onclick = () => { if (m) openMemoEditor({ id: m['รหัสใบเบิก'], docHtml: m['เนื้อหาเอกสาร(HTML)'], borrowId: m['รหัสรายการยืม'] }); };
     });
   }
-  wireViewToggle(drawMemos, '#view-memos');
+  wireViewToggle(drawMemos, '#view-memos', 'memosView');
 }
 function memoRow(m) {
   return `<div class="glass list-item memo-row" data-id="${escapeHtml(m['รหัสใบเบิก'])}">
