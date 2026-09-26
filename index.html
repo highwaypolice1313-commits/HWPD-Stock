@@ -901,6 +901,20 @@ const state = {
 };
 const PAGE_SIZE = 12;
 const ASSET_VIEW_KEY = 'hpAssetViewV1';
+   function getViewMode(key, def) {
+  try { return localStorage.getItem('hpView_' + key) || (def || 'list'); } catch (e) { return def || 'list'; }
+}
+function setViewMode(key, v) { try { localStorage.setItem('hpView_' + key, v); } catch (e) {} }
+function viewToggleHtml(key, current) {
+  const isGrid = current === 'grid';
+  return `<div class="view-toggle">
+    <button class="vt-btn ${!isGrid ? 'active' : ''}" data-vt-key="${key}" data-vt-val="list" title="มุมมองรายการ">${ICONS.listView}</button>
+    <button class="vt-btn ${isGrid ? 'active' : ''}" data-vt-key="${key}" data-vt-val="grid" title="มุมมองการ์ด">${ICONS.gridView}</button>
+  </div>`;
+}
+function wireViewToggle(renderFn) {
+  document.querySelectorAll('.vt-btn').forEach(b => b.onclick = () => { setViewMode(b.dataset.vtKey, b.dataset.vtVal); renderFn(); });
+}
 function getAssetView() { try { return localStorage.getItem(ASSET_VIEW_KEY) || 'list'; } catch (e) { return 'list'; } }
 function setAssetView(v) { try { localStorage.setItem(ASSET_VIEW_KEY, v); } catch (e) {} }
 const DEFAULT_CATS = ['อาวุธปืน','ยานพาหนะ','สื่อสาร','คอมพิวเตอร์/IT','เครื่องแบบ/สนาม','อื่นๆ'];
@@ -2077,6 +2091,7 @@ function renderBorrow() {
   if (state.borrowTab === undefined) state.borrowTab = 'active';
   if (state.borrowSearch === undefined) state.borrowSearch = '';
   if (state.borrowSort === undefined) state.borrowSort = 'due_asc';
+  if (state.borrowView === undefined) state.borrowView = getViewMode('borrow');
 
   const pending = state.borrow.filter(b => b['สถานะ'] === 'รออนุมัติ');
   const active = state.borrow.filter(b => b['สถานะ'] !== 'คืนแล้ว' && b['สถานะ'] !== 'รออนุมัติ' && b['สถานะ'] !== 'ถูกปฏิเสธ');
@@ -2103,10 +2118,15 @@ function renderBorrow() {
     return 0;
   });
 
+  const isGrid = state.borrowView === 'grid';
+
   el.innerHTML = `
     <div class="section-title">
       รายการยืม-คืน <small>${active.length} รายการค้างคืน${overdueCount ? ' · เกินกำหนด ' + overdueCount : ''}</small>
-      <span class="section-actions"><button class="icon-btn" id="btnExportBorrow" title="ส่งออก CSV">${ICONS.download}</button></span>
+      <span class="section-actions">
+        ${viewToggleHtml('borrow', state.borrowView)}
+        <button class="icon-btn" id="btnExportBorrow" title="ส่งออก CSV">${ICONS.download}</button>
+      </span>
     </div>
     <div class="stat-grid" style="margin-bottom:14px;">
       <div class="stat-card warn"><div class="stat-num">${pending.length}</div><div class="stat-label">รออนุมัติ</div></div>
@@ -2124,7 +2144,7 @@ function renderBorrow() {
     <div class="chip-row">
       ${TABS.map(t => `<div class="chip ${state.borrowTab===t.id?'active':''}" data-btab="${t.id}">${t.label} (${t.count})</div>`).join('')}
     </div>
-    <div id="borrowList">${list.length ? list.map(borrowRow).join('') : emptyState(
+    <div id="borrowList" class="${isGrid ? 'asset-grid' : ''}">${list.length ? list.map(isGrid ? borrowCard : borrowRow).join('') : emptyState(
       state.borrowTab==='pending' ? 'ไม่มีคำขอรออนุมัติ' :
       state.borrowTab==='active'  ? 'ไม่มีรายการค้างคืน' : 'ยังไม่มีประวัติ'
     )}</div>
@@ -2141,6 +2161,22 @@ function renderBorrow() {
     if (again) { again.focus(); try { again.setSelectionRange(pos, pos); } catch (err) {} }
   };
   document.getElementById('borrowSortSelect').onchange = (e) => { state.borrowSort = e.target.value; renderBorrow(); };
+  wireViewToggle(renderBorrow);
+}
+function borrowCard(b) {
+  const eff = effectiveBorrowStatus(b);
+  const info = borrowDaysInfo(b);
+  return `<div class="glass asset-card borrow-item" data-id="${escapeHtml(b['รหัสรายการ'])}">
+    <div class="asset-card-top">
+      <div class="asset-card-icon">${ICONS.swap}</div>
+      <div class="status-badge ${statusClass(eff)}">${escapeHtml(eff)}</div>
+    </div>
+    <div>
+      <div class="asset-card-title">${escapeHtml(b['ชื่อครุภัณฑ์'])}</div>
+      <div class="asset-card-sub">${escapeHtml(b['ผู้ยืม'])}</div>
+      ${info ? `<div class="asset-card-sub">${escapeHtml(info)}</div>` : ''}
+    </div>
+  </div>`;
 }
 function effectiveBorrowStatus(b) {
   if (b['สถานะ'] === 'คืนแล้ว' || b['สถานะ'] === 'รออนุมัติ' || b['สถานะ'] === 'ถูกปฏิเสธ') return b['สถานะ'];
@@ -2501,11 +2537,13 @@ function openBorrowForm() {
 }
 
 /* ========================================================= MAINTENANCE */
+/* ========================================================= MAINTENANCE */
 function renderMaint() {
   const el = document.getElementById('view-maint');
   if (state.maintTab === undefined) state.maintTab = 'active';
   if (state.maintSearch === undefined) state.maintSearch = '';
   if (state.maintSort === undefined) state.maintSort = 'date_desc';
+  if (state.maintView === undefined) state.maintView = getViewMode('maint');
 
   const pending = state.maint.filter(m => m['สถานะ'] === 'รอซ่อม');
   const active = state.maint.filter(m => m['สถานะ'] !== 'ซ่อมเสร็จ');
@@ -2531,10 +2569,15 @@ function renderMaint() {
     return 0;
   });
 
+  const isGrid = state.maintView === 'grid';
+
   el.innerHTML = `
     <div class="section-title">
       งานซ่อมบำรุง <small>${active.length} รายการค้างซ่อม</small>
-      <span class="section-actions"><button class="icon-btn" id="btnExportMaint" title="ส่งออก CSV">${ICONS.download}</button></span>
+      <span class="section-actions">
+        ${viewToggleHtml('maint', state.maintView)}
+        <button class="icon-btn" id="btnExportMaint" title="ส่งออก CSV">${ICONS.download}</button>
+      </span>
     </div>
     <div class="stat-grid" style="margin-bottom:14px;">
       <div class="stat-card warn"><div class="stat-num">${pending.length}</div><div class="stat-label">รอซ่อม</div></div>
@@ -2553,7 +2596,7 @@ function renderMaint() {
     <div class="chip-row">
       ${TABS.map(t => `<div class="chip ${state.maintTab===t.id?'active':''}" data-mtab="${t.id}">${t.label} (${t.count})</div>`).join('')}
     </div>
-    <div id="maintList">${list.length ? list.map(maintRow).join('') : emptyState(
+    <div id="maintList" class="${isGrid ? 'asset-grid' : ''}">${list.length ? list.map(isGrid ? maintCard : maintRow).join('') : emptyState(
       state.maintTab==='pending' ? 'ไม่มีงานรอซ่อม' :
       state.maintTab==='active'  ? 'ไม่มีงานซ่อมค้าง' : 'ยังไม่มีประวัติ'
     )}</div>
@@ -2570,6 +2613,7 @@ function renderMaint() {
     if (again) { again.focus(); try { again.setSelectionRange(pos, pos); } catch (err) {} }
   };
   document.getElementById('maintSortSelect').onchange = (e) => { state.maintSort = e.target.value; renderMaint(); };
+  wireViewToggle(renderMaint);
 }
 function maintRow(m) {
   return `<div class="glass list-item maint-item" data-id="${escapeHtml(m['รหัสรายการ'])}">
@@ -2579,6 +2623,19 @@ function maintRow(m) {
       <div class="li-sub">${escapeHtml(m['อาการ/ปัญหา'])} · แจ้งเมื่อ ${thaiDate(m['วันที่แจ้ง'])}</div>
     </div>
     <div class="status-badge ${statusClass(m['สถานะ'])}">${escapeHtml(m['สถานะ'])}</div>
+  </div>`;
+}
+function maintCard(m) {
+  return `<div class="glass asset-card maint-item" data-id="${escapeHtml(m['รหัสรายการ'])}">
+    <div class="asset-card-top">
+      <div class="asset-card-icon">${ICONS.wrench}</div>
+      <div class="status-badge ${statusClass(m['สถานะ'])}">${escapeHtml(m['สถานะ'])}</div>
+    </div>
+    <div>
+      <div class="asset-card-title">${escapeHtml(m['ชื่อครุภัณฑ์'])}</div>
+      <div class="asset-card-sub">${escapeHtml(m['อาการ/ปัญหา'])}</div>
+      <div class="asset-card-sub">แจ้งเมื่อ ${thaiDate(m['วันที่แจ้ง'])}</div>
+    </div>
   </div>`;
 }
 function openMaintDetail(id) {
@@ -2617,6 +2674,21 @@ function openMaintDetail(id) {
     };
   }
 }
+   
+function maintCard(m) {
+  return `<div class="glass asset-card maint-item" data-id="${escapeHtml(m['รหัสรายการ'])}">
+    <div class="asset-card-top">
+      <div class="asset-card-icon">${ICONS.wrench}</div>
+      <div class="status-badge ${statusClass(m['สถานะ'])}">${escapeHtml(m['สถานะ'])}</div>
+    </div>
+    <div>
+      <div class="asset-card-title">${escapeHtml(m['ชื่อครุภัณฑ์'])}</div>
+      <div class="asset-card-sub">${escapeHtml(m['อาการ/ปัญหา'])}</div>
+      <div class="asset-card-sub">แจ้งเมื่อ ${thaiDate(m['วันที่แจ้ง'])}</div>
+    </div>
+  </div>`;
+}
+
 function openMaintForm() {
   showSheet(`
     <div class="sheet-title">แจ้งซ่อมบำรุง</div>
@@ -2692,6 +2764,7 @@ function openMaintForm() {
 /* ========================================================= USERS / OFFICERS */
 async function renderUsers() {
   if (!isAdmin()) return;
+  if (state.usersView === undefined) state.usersView = getViewMode('users');
   const el = document.getElementById('view-users');
   el.innerHTML = emptyState('กำลังโหลดรายชื่อเจ้าหน้าที่...');
   try {
@@ -2700,21 +2773,47 @@ async function renderUsers() {
   } catch (e) {
     toast('โหลดข้อมูลเจ้าหน้าที่ไม่สำเร็จ: ' + (e.message || ''));
   }
+  drawUsers();
+}
+function drawUsers() {
+  const el = document.getElementById('view-users');
+  const isGrid = state.usersView === 'grid';
   el.innerHTML = `
     <div class="section-title">
       รายชื่อข้าราชการตำรวจในสังกัด <small>${state.users.length} คน</small>
-      <span class="section-actions"><button class="icon-btn" id="btnAddUser" title="เพิ่มรายชื่อ"><svg viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button></span>
+      <span class="section-actions">
+        ${viewToggleHtml('users', state.usersView)}
+        <button class="icon-btn" id="btnAddUser" title="เพิ่มรายชื่อ"><svg viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+      </span>
     </div>
     <div class="hint" style="margin-top:0;">ทำเนียบนี้ใช้สำหรับเลือกชื่อแบบดรอปดาวน์ในหน้าเบิก-ยืม และบันทึกขอเบิกพัสดุ ไม่ได้ผูกกับการเข้าสู่ระบบ — กำหนด "บทบาทในบันทึกเบิก-ยืม" ให้แต่ละคนเพื่อให้ระบบเลือกผู้อนุมัติ/ผู้จ่ายพัสดุอัตโนมัติตอนพิมพ์บันทึกข้อความ</div>
-    <div id="userList">${state.users.length ? state.users.map(userRow).join('') : emptyState('ยังไม่มีรายชื่อ จนท.ในสังกัด')}</div>
+    <div id="userList" class="${isGrid ? 'asset-grid' : ''}">${state.users.length ? state.users.map(isGrid ? userCard : userRow).join('') : emptyState('ยังไม่มีรายชื่อ จนท.ในสังกัด')}</div>
     <div class="section-title">บันทึกกิจกรรมล่าสุด</div>
     <div>${state.activity.length ? state.activity.slice(0, 40).map(activityRow).join('') : emptyState('ยังไม่มีบันทึกกิจกรรม')}</div>
   `;
-    document.getElementById('btnAddUser').onclick = () => openUserForm();
+  document.getElementById('btnAddUser').onclick = () => openUserForm();
   document.querySelectorAll('.user-item').forEach(it => it.onclick = () => {
     const u = state.users.find(u => officerId(u) === it.dataset.id || (!officerId(u) && (u['LINEUserId'] || u['ชื่อผู้ใช้'] || u['ชื่อ-สกุล']) === it.dataset.id));
     if (u) openOfficerProfile(u);
   });
+  wireViewToggle(drawUsers);
+}
+function userCard(u) {
+  const idf = officerId(u) || u['LINEUserId'] || u['ชื่อผู้ใช้'] || u['ชื่อ-สกุล'] || '';
+  const memoRole = u['บทบาทเบิก-ยืม'];
+  const roleTag = memoRole && memoRole !== 'ไม่ระบุ (เลือกเองตอนพิมพ์)' ? `<div class="tag tag-brass" style="margin-top:6px;">${escapeHtml(memoRole)}</div>` : '';
+  const avatarHtml = u['รูปถ่าย'] ? `<img src="${u['รูปถ่าย']}" style="width:100%;height:100%;object-fit:cover;border-radius:13px;">` : ICONS.user;
+  return `<div class="glass asset-card user-item" data-id="${escapeHtml(idf)}">
+    <div class="asset-card-top">
+      <div class="asset-card-icon" style="overflow:hidden;">${avatarHtml}</div>
+      <span class="role-pill ${u['สิทธิ์']==='admin'?'':'viewer'}">${u['สิทธิ์']==='admin'?'แอดมิน':'ดูอย่างเดียว'}</span>
+    </div>
+    <div>
+      <div class="asset-card-title">${escapeHtml(officerFullName(u))}</div>
+      <div class="asset-card-sub">${escapeHtml(u['ตำแหน่ง']) || 'ไม่ระบุตำแหน่ง'}</div>
+    </div>
+    ${roleTag}
+  </div>`;
 }
 
    /* ========================= ฟีเจอร์ ๑+๒: โปรไฟล์ + พัสดุที่ถือครอง ========================= */
@@ -3002,23 +3101,50 @@ function buildMemoBodyHtml(m) {
 
 /* ---------- รายการเอกสาร (การ์ดตัวอย่างกระดาษจริง) ---------- */
 async function renderMemos() {
+  if (state.memosView === undefined) state.memosView = getViewMode('memos', 'grid');
   const el = document.getElementById('view-memos');
   el.innerHTML = emptyState('กำลังโหลดเอกสารใบเบิก-ยืม...');
   try { state.memos = await apiGet('getMemos', { token: state.sessionToken }); } catch (e) {
     toast('โหลดเอกสารไม่สำเร็จ: ' + (e.message || ''));
   }
+  drawMemos();
+}
+function drawMemos() {
+  const el = document.getElementById('view-memos');
   const list = state.memos || [];
+  const isGrid = state.memosView === 'grid';
   el.innerHTML = `
-    <div class="section-title">เอกสารใบเบิก-ยืม <small>${list.length} ฉบับ</small></div>
+    <div class="section-title">
+      เอกสารใบเบิก-ยืม <small>${list.length} ฉบับ</small>
+      <span class="section-actions">${viewToggleHtml('memos', state.memosView)}</span>
+    </div>
     <div class="hint" style="margin-top:0;">แตะที่เอกสารเพื่อเปิดดู/แก้ไขได้โดยตรงบนหน้าเอกสารจริง แล้วค่อยบันทึกหรือพิมพ์</div>
-    <div class="memo-grid" id="memoGrid">${list.length ? list.map(memoCard).join('') : emptyState('ยังไม่มีเอกสารที่บันทึกไว้ — กดปุ่ม + เพื่อสร้างเอกสารใหม่')}</div>
+    <div class="${isGrid ? 'memo-grid' : ''}" id="memoGrid">${list.length ? list.map(isGrid ? memoCard : memoRow).join('') : emptyState('ยังไม่มีเอกสารที่บันทึกไว้ — กดปุ่ม + เพื่อสร้างเอกสารใหม่')}</div>
   `;
-  document.querySelectorAll('.memo-card').forEach(card => {
-    const m = list.find(x => x['รหัสใบเบิก'] === card.dataset.id);
-    const thumb = card.querySelector('[data-thumb]');
-    if (m && thumb) mountPaper(thumb, wrapPfDoc(m['เนื้อหาเอกสาร(HTML)'], false));
-    card.onclick = () => { if (m) openMemoEditor({ id: m['รหัสใบเบิก'], docHtml: m['เนื้อหาเอกสาร(HTML)'], borrowId: m['รหัสรายการยืม'] }); };
-  });
+  if (isGrid) {
+    document.querySelectorAll('.memo-card').forEach(card => {
+      const m = list.find(x => x['รหัสใบเบิก'] === card.dataset.id);
+      const thumb = card.querySelector('[data-thumb]');
+      if (m && thumb) mountPaper(thumb, wrapPfDoc(m['เนื้อหาเอกสาร(HTML)'], false));
+      card.onclick = () => { if (m) openMemoEditor({ id: m['รหัสใบเบิก'], docHtml: m['เนื้อหาเอกสาร(HTML)'], borrowId: m['รหัสรายการยืม'] }); };
+    });
+  } else {
+    document.querySelectorAll('.memo-row').forEach(row => {
+      const m = list.find(x => x['รหัสใบเบิก'] === row.dataset.id);
+      row.onclick = () => { if (m) openMemoEditor({ id: m['รหัสใบเบิก'], docHtml: m['เนื้อหาเอกสาร(HTML)'], borrowId: m['รหัสรายการยืม'] }); };
+    });
+  }
+  wireViewToggle(drawMemos);
+}
+function memoRow(m) {
+  return `<div class="glass list-item memo-row" data-id="${escapeHtml(m['รหัสใบเบิก'])}">
+    <div class="li-icon">${ICONS.log}</div>
+    <div class="li-body">
+      <div class="li-title">${escapeHtml(m['เรื่อง']) || 'ไม่ระบุเรื่อง'}</div>
+      <div class="li-sub">${escapeHtml(m['ผู้ขอเบิก']) || ''}${m['ผู้ขอเบิก'] ? ' · ' : ''}${thaiDate(m['วันที่สร้าง'])}</div>
+    </div>
+    <div class="status-badge status-ready">${escapeHtml(m['สถานะ']) || 'บันทึกแล้ว'}</div>
+  </div>`;
 }
 function memoCard(m) {
   return `<div class="glass memo-card" data-id="${escapeHtml(m['รหัสใบเบิก'])}">
