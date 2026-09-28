@@ -892,6 +892,8 @@ const ICONS = {
   listView: '<svg viewBox="0 0 20 20" fill="none"><path d="M6.5 5h11M6.5 10h11M6.5 15h11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="2.7" cy="5" r="1" fill="currentColor"/><circle cx="2.7" cy="10" r="1" fill="currentColor"/><circle cx="2.7" cy="15" r="1" fill="currentColor"/></svg>'
 };
 
+ICONS.print = '<svg viewBox="0 0 20 20" fill="none"><path d="M5 7V3.5a1 1 0 011-1h8a1 1 0 011 1V7" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><rect x="3" y="7" width="14" height="7" rx="1.2" stroke="currentColor" stroke-width="1.4"/><rect x="6" y="12" width="8" height="5.5" rx="0.8" stroke="currentColor" stroke-width="1.4"/></svg>';
+   
 /* ========================================================= STATE */
 const state = {
   user: null, role: 'guest', sessionToken: null,
@@ -1973,6 +1975,28 @@ function openQuickStatusForm(a) {
     catch (err) { toast(err.message || 'เปลี่ยนสถานะไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(btn, false); }
   };
 }
+function triggerPrint(cleanupFn) {
+  const imgs = Array.from(document.querySelectorAll('#printArea img'));
+  let cleaned = false, started = false;
+  const cleanupOnce = () => { if (cleaned) return; cleaned = true; if (cleanupFn) cleanupFn(); };
+  const doPrint = () => {
+    const onAfter = () => { window.removeEventListener('afterprint', onAfter); cleanupOnce(); };
+    window.addEventListener('afterprint', onAfter);
+    window.print();
+    setTimeout(cleanupOnce, 4000);
+  };
+  const start = () => { if (started) return; started = true; doPrint(); };
+  let remaining = imgs.length;
+  imgs.forEach(img => {
+    if (img.complete) { remaining--; return; }
+    const done = () => { remaining--; if (remaining <= 0) start(); };
+    img.addEventListener('load', done);
+    img.addEventListener('error', done);
+  });
+  if (remaining <= 0) setTimeout(start, 50);
+  setTimeout(start, 1500);
+}
+   
    async function printQrBatch(list) {
   if (!list.length) { toast('ไม่มีรายการให้พิมพ์ QR'); return; }
   if (typeof QRCode === 'undefined') { toast('ไม่พบไฟล์ qrcode.min.js'); return; }
