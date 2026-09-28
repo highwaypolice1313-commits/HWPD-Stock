@@ -1049,41 +1049,49 @@ function auditPeriodLineHtml(compact) {
   return `<div style="margin-top:${compact ? '3mm' : '6mm'}; font-size:${compact ? '10.5pt' : '14pt'};">คณะกรรมการเริ่มทำการตรวจสอบวันที่ ${start} เสร็จวันที่ ${end}</div>`;
 }
 function committeeSignBlockHtml(compact) {
-  const c = getAuditCommittee();
-  const [head, m1, m2, sec] = c;
+  const [head, m1, m2, sec] = getAuditCommittee();
 
-  const headGap  = compact ? '22mm' : '32mm';
-  const memberGap = compact ? '16mm' : '22mm';
-  const headFs   = compact ? '10.5pt' : '14pt';
-  const memberFs = compact ? '9.5pt'  : '12.5pt';
-  const topMt    = compact ? '4mm' : '10mm';
-  const gridMt   = compact ? '5mm' : '12mm';
-  const cellPad  = compact ? '2mm 2mm' : '6mm 2mm';
+  /* ===== ปรับขนาดที่เว้นไว้ตรงนี้ =====
+     headSig/memSig = ความกว้างเส้นเซ็นชื่อ (หัวหน้า+เลขาฯ / กรรมการ 2 คนที่อยู่คู่กัน)
+     sigH           = ความสูงที่เว้นให้เซ็นชื่อ (เหนือเส้นประ) */
+  const S = compact
+    ? { headSig:'38mm', memSig:'28mm', sigH:'9mm',  headFs:'10.5pt', memFs:'9.5pt', topMt:'4mm',  gridMt:'5mm',  cellPad:'2mm 1mm' }
+    : { headSig:'50mm', memSig:'30mm', sigH:'13mm', headFs:'14pt',   memFs:'12pt',  topMt:'10mm', gridMt:'12mm', cellPad:'6mm 1mm' };
 
-  const dottedGap = (w) => `<span style="display:inline-block; width:${w}; border-bottom:1px dotted #000; vertical-align:middle; margin:0 1.5mm;">&nbsp;</span>`;
-
-  const line = (m, gapW, fs) => {
-    const rank = toThaiNumber(escapeHtml(m.rank)) || '.....................';
-    const name = toThaiNumber(escapeHtml(m.name)) || '.....................................';
+  const block = (m, sigW, fs) => {
+    const rank = toThaiNumber(escapeHtml(m.rank)) || '........';
+    const name = toThaiNumber(escapeHtml(m.name)) || '..........................';
     const position = toThaiNumber(escapeHtml(m.position)) || '&nbsp;';
     const role = toThaiNumber(escapeHtml(m.role));
     return `
-      <div style="text-align:center; font-size:${fs};">
-        <div style="white-space:nowrap;">ลงชื่อ ${rank}${dottedGap(gapW)}เป็น${role}</div>
-        <div style="margin-top:${compact?'1.5mm':'3mm'};">( ${name} )</div>
-        <div>${position}</div>
-      </div>`;
+      <table style="border-collapse:collapse; margin:0 auto; font-size:${fs}; color:#000;">
+        <tr>
+          <td style="white-space:nowrap; text-align:right; vertical-align:bottom; padding:0 1.5mm 0 0;">ลงชื่อ ${rank}</td>
+          <td style="width:${sigW}; height:${S.sigH}; border-bottom:1px dotted #000; padding:0;">&nbsp;</td>
+          <td style="white-space:nowrap; text-align:left; vertical-align:bottom; padding:0 0 0 1.5mm;">เป็น${role}</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td style="text-align:center; white-space:nowrap; padding-top:1.5mm;">( ${name} )</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td></td>
+          <td style="text-align:center; white-space:nowrap;">${position}</td>
+          <td></td>
+        </tr>
+      </table>`;
   };
 
   return `
-    <div style="margin-top:${topMt};">${line(head, headGap, headFs)}</div>
-    <table style="width:100%; border-collapse:collapse; margin-top:${gridMt}; table-layout:fixed;">
+    <div style="margin-top:${S.topMt};">${block(head, S.headSig, S.headFs)}</div>
+    <table style="width:100%; border-collapse:collapse; margin-top:${S.gridMt}; table-layout:fixed;">
       <tr>
-        <td style="padding:${cellPad}; width:50%; vertical-align:top;">${line(m1, memberGap, memberFs)}</td>
-        <td style="padding:${cellPad}; width:50%; vertical-align:top;">${line(m2, memberGap, memberFs)}</td>
+        <td style="padding:${S.cellPad}; width:50%; vertical-align:top;">${block(m1, S.memSig, S.memFs)}</td>
+        <td style="padding:${S.cellPad}; width:50%; vertical-align:top;">${block(m2, S.memSig, S.memFs)}</td>
       </tr>
     </table>
-    <div style="margin-top:${gridMt};">${line(sec, headGap, headFs)}</div>
+    <div style="margin-top:${S.gridMt};">${block(sec, S.headSig, S.headFs)}</div>
   `;
 }
  
