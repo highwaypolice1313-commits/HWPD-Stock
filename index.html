@@ -4223,6 +4223,14 @@ function auditRow(a) {
           <button class="sheet-close" id="baClose" type="button">${ICONS.close}</button>
           <div class="sheet-handle"></div>
           <div class="sheet-title">ตรวจนับหลายรายการพร้อมกัน <small style="font-size:12px; color:var(--ink-dim); font-weight:400;">เลือกแล้ว ${selected.size} รายการ</small></div>
+            <div style="position:sticky; top:0; z-index:5; background:var(--panel); padding:4px 0 10px; margin-bottom:6px;">
+            <div class="hint" style="text-align:center; margin:0 0 8px;">เลือกรายการด้านล่าง แล้วกดปุ่มเพื่อบันทึกผลตรวจให้ทุกรายการที่เลือกพร้อมกัน</div>
+            <div class="btn-row" style="margin-top:0;">
+              <button class="audit-btn ok" id="baOk" style="flex:1; padding:13px;">พบปกติ</button>
+              <button class="audit-btn warn" id="baWarn" style="flex:1; padding:13px;">ชำรุด</button>
+              <button class="audit-btn bad" id="baBad" style="flex:1; padding:13px;">สูญหาย</button>
+            </div>
+          </div>
           <div class="search-row"><input class="input" id="baSearch" placeholder="ค้นหาชื่อหรือรหัส..." value="${escapeHtml(bQ)}"></div>
           <div class="chip-row">
             <div class="chip ${bCat==='all'?'active':''}" data-bcat="all">ทุกหมวดหมู่</div>
@@ -4246,12 +4254,6 @@ function auditRow(a) {
               <div class="status-badge ${statusClass(st)}">${st}</div>
             </label>`;
           }).join('') : emptyState('ไม่พบรายการที่ตรงกับตัวกรอง')}
-          </div>
-          <div class="hint" style="text-align:center;">เลือกรายการแล้วกดปุ่มด้านล่างเพื่อบันทึกผลตรวจให้ทุกรายการที่เลือกพร้อมกัน</div>
-          <div class="btn-row">
-            <button class="audit-btn ok" id="baOk" style="flex:1; padding:13px;">พบปกติ</button>
-            <button class="audit-btn warn" id="baWarn" style="flex:1; padding:13px;">ชำรุด</button>
-            <button class="audit-btn bad" id="baBad" style="flex:1; padding:13px;">สูญหาย</button>
           </div>
         </div>
       </div>`;
