@@ -4199,7 +4199,7 @@ function auditRow(a) {
     </div>
   </div>`;
 }
-   function openBulkAuditModal() {
+function openBulkAuditModal() {
   const selected = new Set();
   let bCat = 'all', bQ = '', bPendingOnly = true;
   const root = document.createElement('div');
@@ -4214,6 +4214,10 @@ function auditRow(a) {
   }
 
   function draw() {
+    // จำตำแหน่งเลื่อนไว้ก่อนวาดใหม่ เพื่อไม่ให้หน้าเด้งกลับไปบนสุดทุกครั้งที่ติ๊ก
+    const prevSheet = root.querySelector('.sheet');
+    const prevScroll = prevSheet ? prevSheet.scrollTop : 0;
+
     const list = filteredList();
     const allChecked = list.length > 0 && list.every(a => selected.has(a['รหัสครุภัณฑ์']));
     const catCounts = getCategories().map(c => ({ c, n: state.assets.filter(a => a['หมวดหมู่']===c).length })).filter(x => x.n);
@@ -4222,41 +4226,54 @@ function auditRow(a) {
         <div class="sheet" style="max-height:92vh;">
           <button class="sheet-close" id="baClose" type="button">${ICONS.close}</button>
           <div class="sheet-handle"></div>
-          <div class="sheet-title">ตรวจนับหลายรายการพร้อมกัน <small style="font-size:12px; color:var(--ink-dim); font-weight:400;">เลือกแล้ว ${selected.size} รายการ</small></div>
-            <div style="position:sticky; top:0; z-index:5; background:var(--panel); padding:4px 0 10px; margin-bottom:6px;">
-            <div class="hint" style="text-align:center; margin:0 0 8px;">เลือกรายการด้านล่าง แล้วกดปุ่มเพื่อบันทึกผลตรวจให้ทุกรายการที่เลือกพร้อมกัน</div>
+          <div class="sheet-title">ตรวจนับหลายรายการพร้อมกัน</div>
+
+          <div class="mf-section">
+            <div class="mf-section-title"><span class="mf-step">1</span> ค้นหา / กรองรายการ</div>
+            <div class="search-row"><input class="input" id="baSearch" placeholder="ค้นหาชื่อหรือรหัส..." value="${escapeHtml(bQ)}"></div>
+            <div class="chip-row">
+              <div class="chip ${bCat==='all'?'active':''}" data-bcat="all">ทุกหมวดหมู่</div>
+              ${catCounts.map(x => `<div class="chip ${bCat===x.c?'active':''}" data-bcat="${escapeHtml(x.c)}">${escapeHtml(x.c)}</div>`).join('')}
+            </div>
+            <div class="chip-row">
+              <div class="chip ${bPendingOnly?'active':''}" id="baPendingChip">เฉพาะที่ยังไม่ตรวจ</div>
+            </div>
+          </div>
+
+          <div class="mf-section">
+            <div class="mf-section-title"><span class="mf-step">2</span> เลือกรายการ <small style="font-weight:400; color:var(--ink-dim);">เลือกแล้ว ${selected.size} รายการ</small></div>
+            <label class="glass list-item" style="cursor:pointer; margin-bottom:9px;">
+              <input type="checkbox" id="baSelectAll" ${allChecked?'checked':''} style="width:18px;height:18px;flex:none;">
+              <div class="li-body"><div class="li-title">เลือกทั้งหมดในรายการนี้ (${list.length} รายการ)</div></div>
+            </label>
+            <div id="baList">${list.length ? list.map(a => {
+              const rec = auditRecordFor(a['รหัสครุภัณฑ์']);
+              const st = rec ? rec['ผล'] : 'ยังไม่ตรวจ';
+              return `
+              <label class="glass list-item" style="cursor:pointer;">
+                <input type="checkbox" class="ba-chk" data-id="${escapeHtml(a['รหัสครุภัณฑ์'])}" ${selected.has(a['รหัสครุภัณฑ์'])?'checked':''} style="width:18px;height:18px;flex:none;">
+                <div class="li-icon">${catIcon(a['หมวดหมู่'])}</div>
+                <div class="li-body"><div class="li-title">${escapeHtml(a['ชื่อครุภัณฑ์'])}</div><div class="li-sub">${escapeHtml(a['รหัสครุภัณฑ์'])}</div></div>
+                <div class="status-badge ${statusClass(st)}">${st}</div>
+              </label>`;
+            }).join('') : emptyState('ไม่พบรายการที่ตรงกับตัวกรอง')}
+            </div>
+          </div>
+
+          <div style="position:sticky; bottom:0; z-index:5; background:var(--panel); border-top:1px solid var(--panel-line); padding:10px 0 4px;">
+            <div class="mf-section-title" style="margin-bottom:8px;"><span class="mf-step">3</span> บันทึกผลตรวจให้ ${selected.size} รายการที่เลือก</div>
             <div class="btn-row" style="margin-top:0;">
               <button class="audit-btn ok" id="baOk" style="flex:1; padding:13px;">พบปกติ</button>
               <button class="audit-btn warn" id="baWarn" style="flex:1; padding:13px;">ชำรุด</button>
               <button class="audit-btn bad" id="baBad" style="flex:1; padding:13px;">สูญหาย</button>
             </div>
           </div>
-          <div class="search-row"><input class="input" id="baSearch" placeholder="ค้นหาชื่อหรือรหัส..." value="${escapeHtml(bQ)}"></div>
-          <div class="chip-row">
-            <div class="chip ${bCat==='all'?'active':''}" data-bcat="all">ทุกหมวดหมู่</div>
-            ${catCounts.map(x => `<div class="chip ${bCat===x.c?'active':''}" data-bcat="${escapeHtml(x.c)}">${escapeHtml(x.c)}</div>`).join('')}
-          </div>
-          <div class="chip-row" style="margin-bottom:6px;">
-            <div class="chip ${bPendingOnly?'active':''}" id="baPendingChip">เฉพาะที่ยังไม่ตรวจ</div>
-          </div>
-          <label class="glass list-item" style="cursor:pointer; margin-bottom:9px;">
-            <input type="checkbox" id="baSelectAll" ${allChecked?'checked':''} style="width:18px;height:18px;flex:none;">
-            <div class="li-body"><div class="li-title">เลือกทั้งหมดในรายการนี้ (${list.length} รายการ)</div></div>
-          </label>
-          <div id="baList">${list.length ? list.map(a => {
-            const rec = auditRecordFor(a['รหัสครุภัณฑ์']);
-            const st = rec ? rec['ผล'] : 'ยังไม่ตรวจ';
-            return `
-            <label class="glass list-item" style="cursor:pointer;">
-              <input type="checkbox" class="ba-chk" data-id="${escapeHtml(a['รหัสครุภัณฑ์'])}" ${selected.has(a['รหัสครุภัณฑ์'])?'checked':''} style="width:18px;height:18px;flex:none;">
-              <div class="li-icon">${catIcon(a['หมวดหมู่'])}</div>
-              <div class="li-body"><div class="li-title">${escapeHtml(a['ชื่อครุภัณฑ์'])}</div><div class="li-sub">${escapeHtml(a['รหัสครุภัณฑ์'])}</div></div>
-              <div class="status-badge ${statusClass(st)}">${st}</div>
-            </label>`;
-          }).join('') : emptyState('ไม่พบรายการที่ตรงกับตัวกรอง')}
-          </div>
         </div>
       </div>`;
+
+    const newSheet = root.querySelector('.sheet');
+    if (newSheet) newSheet.scrollTop = prevScroll;
+
     document.getElementById('baClose').onclick = closeModal;
     const searchEl = document.getElementById('baSearch');
     searchEl.oninput = (e) => { bQ = e.target.value; const pos = e.target.selectionStart; draw(); const again = document.getElementById('baSearch'); if (again) { again.focus(); try { again.setSelectionRange(pos, pos); } catch(err){} } };
