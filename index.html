@@ -1471,13 +1471,6 @@ function thaiDateAbbr(v) {
   const year = toThaiNumber(d.getFullYear() + 543);
   return day + ' ' + TH_MONTHS_ABBR[d.getMonth()] + ' ' + year;
 }
-function toThaiNumber(input) {
-  if (input === null || input === undefined) return '';
-  const arabicNumbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-  const thaiNumbers = ['๐', '๑', '๒', '๓', '๔', '๕', '๖', '๗', '๘', '๙'];
-  const str = String(input);
-  return str.replace(/[0-9]/g, (match) => thaiNumbers[parseInt(match, 10)]);
-}
 function isoDate(v) {
   const d = v ? toDate(v) : new Date();
   const p = n => String(n).padStart(2, '0');
@@ -1737,6 +1730,7 @@ function renderAssets() {
           <button id="btnViewGrid" class="${isGrid ? 'active' : ''}" title="มุมมองการ์ด">${ICONS.gridView}</button>
         </div>
         <button class="icon-btn" id="btnScanQr" title="สแกน QR/บาร์โค้ด">${ICONS.scan}</button>
+        <button class="icon-btn" id="btnPrintQrBatch" title="พิมพ์ QR ทั้งหมดตามตัวกรอง">${ICONS.print}</button>        
         <button class="icon-btn" id="btnExportAssets" title="ส่งออก CSV">${ICONS.download}</button>
       </span>
     </div>
@@ -1781,6 +1775,7 @@ function renderAssets() {
   document.getElementById('assetSortSelect').onchange = (e) => { state.assetSort = e.target.value; renderAssets(); };
   document.getElementById('btnExportAssets').onclick = () => exportCsv('ครุภัณฑ์.csv', ['รหัสครุภัณฑ์','ชื่อครุภัณฑ์','หมวดหมู่','ยี่ห้อ/รุ่น','หมายเลขเครื่อง','วันที่รับเข้า','มูลค่า(บาท)','สถานะ','ผู้ครอบครอง/หน่วยงาน','หน่วยงาน','วันครบกำหนดตรวจสภาพ/ต่อทะเบียน','หมายเหตุ'], filtered);
   document.getElementById('btnScanQr').onclick = openScannerSheet;
+  document.getElementById('btnPrintQrBatch').onclick = () => printQrBatch(filtered);
   document.getElementById('btnViewList').onclick = () => { state.assetView = 'list'; setAssetView('list'); renderAssets(); };
   document.getElementById('btnViewGrid').onclick = () => { state.assetView = 'grid'; setAssetView('grid'); renderAssets(); };
   document.querySelectorAll('#view-assets .chip[data-cat]').forEach(c => c.onclick = () => { state.assetFilter = c.dataset.cat; state.assetPage = 1; renderAssets(); });
@@ -1977,6 +1972,40 @@ function openQuickStatusForm(a) {
     try { await apiPost('updateAsset', { id: a['รหัสครุภัณฑ์'], status: val('qs_status') }); closeSheet(); toast('เปลี่ยนสถานะแล้ว'); await reloadThen(renderAssets); }
     catch (err) { toast(err.message || 'เปลี่ยนสถานะไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(btn, false); }
   };
+}
+   async function printQrBatch(list) {
+  if (!list.length) { toast('ไม่มีรายการให้พิมพ์ QR'); return; }
+  if (typeof QRCode === 'undefined') { toast('ไม่พบไฟล์ qrcode.min.js'); return; }
+  if (list.length > 60 && !confirm('จะพิมพ์ QR ' + list.length + ' ใบ ต้องการดำเนินการต่อหรือไม่?')) return;
+  setLoading(true, 'กำลังสร้าง QR โค้ด...');
+  const tmp = document.createElement('div');
+  tmp.style.cssText = 'position:fixed;left:-9999px;top:0;';
+  document.body.appendChild(tmp);
+  const cells = [];
+  try {
+    for (const a of list) {
+      const holder = document.createElement('div');
+      tmp.appendChild(holder);
+      new QRCode(holder, { text: a['รหัสครุภัณฑ์'], width: 160, height: 160, colorDark: '#17324f', colorLight: '#ffffff' });
+      await new Promise(r => setTimeout(r, 20));
+      const cv = holder.querySelector('canvas'), im = holder.querySelector('img');
+      const src = cv ? cv.toDataURL('image/png') : (im ? im.src : '');
+      if (!src) continue;
+      cells.push(`<div class="qr-cell"><img src="${src}" style="width:36mm;height:36mm;max-width:none;">
+        <div style="font-size:10pt;font-weight:600;margin-top:2mm;">${escapeHtml(a['ชื่อครุภัณฑ์'])}</div>
+        <div style="font-size:9pt;">${escapeHtml(a['รหัสครุภัณฑ์'])}</div></div>`);
+    }
+  } finally {
+    document.body.removeChild(tmp);
+    setLoading(false);
+  }
+  const pa = document.getElementById('printArea');
+  pa.classList.add('report-print-area');
+  pa.innerHTML = `<style>@page{size:A4;margin:10mm;}
+    .qr-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4mm;font-family:'Kanit',sans-serif;}
+    .qr-cell{text-align:center;border:1px dashed #999;padding:3mm;break-inside:avoid;}</style>
+    <div class="qr-grid">${cells.join('')}</div>`;
+  triggerPrint(() => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; });
 }
 function openQrView(a) {
   showSheet(`
@@ -2769,26 +2798,38 @@ async function renderUsers() {
 }
 function drawUsers() {
   const el = document.getElementById('view-users');
+  if (state.userSearch === undefined) state.userSearch = '';
   const isGrid = state.usersView === 'grid';
+  const q = state.userSearch.toLowerCase();
+  const shown = state.users.filter(u => !q ||
+    officerFullName(u).toLowerCase().includes(q) || String(u['ตำแหน่ง'] || '').toLowerCase().includes(q));
   el.innerHTML = `
     <div class="section-title">
-      รายชื่อข้าราชการตำรวจในสังกัด <small>${state.users.length} คน</small>
+      รายชื่อข้าราชการตำรวจในสังกัด <small>${shown.length} / ${state.users.length} คน</small>
       <span class="section-actions">
         ${viewToggleHtml('users', state.usersView)}
         <button class="icon-btn" id="btnAddUser" title="เพิ่มรายชื่อ"><svg viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
       </span>
     </div>
+    <div class="search-row"><input class="input" id="userSearchInput" placeholder="ค้นหาชื่อหรือตำแหน่ง..." value="${escapeHtml(state.userSearch)}"></div>
     <div class="hint" style="margin-top:0;">ทำเนียบนี้ใช้สำหรับเลือกชื่อแบบดรอปดาวน์ในหน้าเบิก-ยืม และบันทึกขอเบิกพัสดุ ไม่ได้ผูกกับการเข้าสู่ระบบ — กำหนด "บทบาทในบันทึกเบิก-ยืม" ให้แต่ละคนเพื่อให้ระบบเลือกผู้อนุมัติ/ผู้จ่ายพัสดุอัตโนมัติตอนพิมพ์บันทึกข้อความ</div>
-    <div id="userList" class="${isGrid ? 'asset-grid' : ''}">${state.users.length ? state.users.map(isGrid ? userCard : userRow).join('') : emptyState('ยังไม่มีรายชื่อ จนท.ในสังกัด')}</div>
+    <div id="userList" class="${isGrid ? 'asset-grid' : ''}">${shown.length ? shown.map(isGrid ? userCard : userRow).join('') : emptyState(state.users.length ? 'ไม่พบรายชื่อที่ค้นหา' : 'ยังไม่มีรายชื่อ จนท.ในสังกัด')}</div>
     <div class="section-title">บันทึกกิจกรรมล่าสุด</div>
     <div>${state.activity.length ? state.activity.slice(0, 40).map(activityRow).join('') : emptyState('ยังไม่มีบันทึกกิจกรรม')}</div>
   `;
   document.getElementById('btnAddUser').onclick = () => openUserForm();
+  document.getElementById('userSearchInput').oninput = (e) => {
+    state.userSearch = e.target.value;
+    const pos = e.target.selectionStart;
+    drawUsers();
+    const again = document.getElementById('userSearchInput');
+    if (again) { again.focus(); try { again.setSelectionRange(pos, pos); } catch (err) {} }
+  };
   document.querySelectorAll('.user-item').forEach(it => it.onclick = () => {
     const u = state.users.find(u => officerId(u) === it.dataset.id || (!officerId(u) && (u['LINEUserId'] || u['ชื่อผู้ใช้'] || u['ชื่อ-สกุล']) === it.dataset.id));
     if (u) openOfficerProfile(u);
   });
-    wireViewToggle(drawUsers, '#view-users', 'usersView');
+  wireViewToggle(drawUsers, '#view-users', 'usersView');
 }
 function userCard(u) {
   const idf = officerId(u) || u['LINEUserId'] || u['ชื่อผู้ใช้'] || u['ชื่อ-สกุล'] || '';
@@ -3749,6 +3790,14 @@ function auditIsChecked(a) {
   return !!(r && r['ผล'] && r['ผล'] !== 'ยังไม่ตรวจ');
 }
 
+  function auditYearOptions() {
+  const now = new Date().getFullYear();
+  const years = [];
+  for (let y = now; y >= now - 4; y--) years.push(y);
+  if (!years.includes(state.auditYear)) years.unshift(state.auditYear);
+  return years.map(y => `<option value="${y}" ${y === state.auditYear ? 'selected' : ''}>พ.ศ. ${toThaiNumber(y + 543)}</option>`).join('');
+}
+   
 function drawAuditView() {
   const el = document.getElementById('view-audit');
   if (state.auditCat === undefined) state.auditCat = 'all';
@@ -3777,7 +3826,9 @@ function drawAuditView() {
     : 'ยังไม่มีครุภัณฑ์ในหมวดนี้';
 
   el.innerHTML = `
-    <div class="section-title">ตรวจนับพัสดุประจำปี <small>ปี พ.ศ. ${toThaiNumber(state.auditYear + 543)}</small></div>
+     <div class="section-title">ตรวจนับพัสดุประจำปี
+      <span class="section-actions"><select class="input sort-select" id="auditYearSelect" style="min-width:130px;">${auditYearOptions()}</select></span>
+    </div>
 
     <div class="glass" style="padding:18px; margin-bottom:14px;">
       <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:8px;">
@@ -3830,7 +3881,9 @@ function drawAuditView() {
      const vBtn = document.getElementById('btnPrintVehicleReport');
      if (vBtn) vBtn.onclick = printVehicleAuditReport;
   document.querySelectorAll('[data-vehicle-audit]').forEach(x => x.onclick = () => openVehicleAuditForm(x.dataset.vehicleAudit));
+  document.getElementById('auditYearSelect').onchange = (e) => { state.auditYear = Number(e.target.value); renderAudit(); };
 }
+   
 function auditRow(a) {
   const rec = auditRecordFor(a['รหัสครุภัณฑ์']);
   const status = rec ? rec['ผล'] : 'ยังไม่ตรวจ';
@@ -4406,7 +4459,13 @@ function renderSettings() {
   };
 
   document.getElementById('btnExportAll').onclick = () => {
-    const data = { assets: state.assets, borrow: state.borrow, maint: state.maint, components: state.components, memos: state.memos, exportedAt: new Date().toISOString() };
+        const data = {
+      assets: state.assets, borrow: state.borrow, maint: state.maint, components: state.components,
+      memos: state.memos, users: state.users, activity: state.activity,
+      settings: state.settings, auditRecords: state.auditRecords, auditYear: state.auditYear,
+      note: 'auditRecords มีเฉพาะปี พ.ศ. ' + (state.auditYear + 543) + ' ที่เปิดล่าสุด — ถ้าต้องการปีอื่น ให้เลือกปีในหน้าตรวจนับแล้วดาวน์โหลดซ้ำ',
+      exportedAt: new Date().toISOString()
+    };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a'); a.href = url; a.download = 'สำรองข้อมูลระบบพัสดุ.json';
