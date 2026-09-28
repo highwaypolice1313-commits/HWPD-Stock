@@ -13,6 +13,9 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-helpers.js"></script>
 <style>
+@font-face{ font-family:'TH Sarabun New'; src:url('THSarabunNew.ttf') format('truetype'); font-weight:400; font-style:normal; font-display:block; }
+@font-face{ font-family:'TH Sarabun New'; src:url('THSarabunNew-Bold.ttf') format('truetype'); font-weight:700; font-style:normal; font-display:block; }
+html{ -webkit-text-size-adjust:100%; text-size-adjust:100%; }  
 /* =========================================================
    DESIGN TOKENS — "รุ่งอรุณ ทางหลวง" (dawn patrol)
    ========================================================= */
@@ -886,18 +889,15 @@ function applyTheme(id) {
 applyTheme(currentTheme());
 
 function detectPaperFont() {
-  let has = false;
-  try {
-    const c = document.createElement('canvas').getContext('2d');
-    const txt = 'ภาษาไทยทดสอบ กขคง ABC 123';
-    c.font = '40px monospace';
-    const base = c.measureText(txt).width;
-    ['TH Sarabun New', 'THSarabunNew', 'TH SarabunPSK', 'THSarabunPSK'].forEach(f => {
-      c.font = "40px '" + f + "', monospace";
-      if (c.measureText(txt).width !== base) has = true;
-    });
-  } catch (e) {}
-  document.documentElement.classList.toggle('has-thsarabun', has);
+  const root = document.documentElement;
+  if (!document.fonts || !document.fonts.load) { root.classList.add('has-thsarabun'); return; }
+  Promise.all([
+    document.fonts.load("16pt 'TH Sarabun New'", 'ภาษาไทย'),
+    document.fonts.load("700 16pt 'TH Sarabun New'", 'ภาษาไทย')
+  ]).then(res => {
+    root.classList.toggle('has-thsarabun', res[0].length > 0);
+    if (typeof refitAllPapers === 'function') refitAllPapers();
+  }).catch(() => { root.classList.remove('has-thsarabun'); });
 }
 detectPaperFont();
 
@@ -2024,8 +2024,10 @@ function triggerPrint(cleanupFn) {
     img.addEventListener('load', done);
     img.addEventListener('error', done);
   });
-  if (remaining <= 0) setTimeout(start, 50);
-  setTimeout(start, 1500);
+  const fontsReady = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
+fontsReady.then(() => {
+  if (remaining === 0) setTimeout(start, 60); else setTimeout(start, 2500);
+});
 }
    
    async function printQrBatch(list) {
