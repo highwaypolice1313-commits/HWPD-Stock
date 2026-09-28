@@ -684,6 +684,37 @@ html:not(.has-thsarabun) .pf-title{ font-size:26pt; line-height:30pt; }
 .audit-btn.active-ok{ background:var(--ok-wash); border-color:transparent; font-weight:600; }
 .audit-btn.active-warn{ background:var(--warn-wash); border-color:transparent; font-weight:600; }
 .audit-btn.active-bad{ background:var(--bad-wash); border-color:transparent; font-weight:600; }
+/* ========================= หน้ารายงานสรุป ========================= */
+.rp-kpis{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-bottom:14px; }
+@media (min-width:700px){ .rp-kpis{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+@media (min-width:1100px){ .rp-kpis{ grid-template-columns:repeat(6,minmax(0,1fr)); } }
+.rp-kpi{ padding:14px 15px; }
+.rp-kpi .k-num{ font-family:var(--font-num); font-size:22px; font-weight:700; line-height:1.1; font-variant-numeric:tabular-nums; }
+.rp-kpi .k-label{ font-size:11.5px; color:var(--ink-dim); margin-top:5px; }
+.rp-kpi .k-sub{ font-size:10.5px; color:var(--ink-faint); margin-top:2px; }
+.rp-kpi.ok .k-num{ color:var(--ok); } .rp-kpi.warn .k-num{ color:var(--warn); }
+.rp-kpi.bad .k-num{ color:var(--bad); } .rp-kpi.info .k-num{ color:var(--info); }
+.rp-kpi.gold .k-num{ color:var(--gold-deep); }
+.rp-grid2{ display:grid; grid-template-columns:1fr; gap:12px; }
+@media (min-width:900px){ .rp-grid2{ grid-template-columns:1fr 1fr; } }
+.rp-card{ padding:18px; margin-bottom:12px; }
+.rp-card h4{ margin:0 0 12px; font-size:14px; font-weight:600; display:flex; justify-content:space-between; align-items:baseline; gap:8px; flex-wrap:wrap; }
+.rp-card h4 small{ font-size:11px; color:var(--ink-dim); font-weight:400; }
+.rp-bar-row{ margin-bottom:11px; }
+.rp-bar-head{ display:flex; justify-content:space-between; gap:8px; font-size:12.5px; margin-bottom:5px; }
+.rp-bar-head span:first-child{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.rp-bar-head small{ color:var(--ink-dim); }
+.rp-track{ height:8px; border-radius:99px; background:var(--panel-line); overflow:hidden; }
+.rp-fill{ height:100%; border-radius:99px; background:var(--navy); }
+.rp-fill.ok{ background:var(--ok); } .rp-fill.warn{ background:var(--warn); }
+.rp-fill.bad{ background:var(--bad); } .rp-fill.info{ background:var(--info); } .rp-fill.gold{ background:var(--gold); }
+.rp-table-wrap{ overflow-x:auto; }
+table.rp-table{ width:100%; border-collapse:collapse; font-size:12.5px; }
+table.rp-table th{ text-align:left; color:var(--ink-dim); font-weight:500; padding:9px 10px; border-bottom:1px solid var(--panel-line); white-space:nowrap; }
+table.rp-table td{ padding:9px 10px; border-bottom:1px solid var(--panel-line); vertical-align:top; }
+table.rp-table th.num, table.rp-table td.num{ text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+table.rp-table tfoot td{ font-weight:600; border-bottom:none; background:var(--panel-soft); }
+   
 </style>
 </head>
 <body>
@@ -3594,47 +3625,278 @@ function openPrintMemoForm(opts) {
 }
 
 /* ========================================================= REPORTS */
-/* ========================================================= REPORTS */
+/* ========================================================= REPORTS (v2) */
+function rpMonthKey(v) { const d = toDate(v); if (isNaN(d)) return ''; return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
+function rpLastMonths(n) {
+  const out = [], now = new Date();
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    out.push({ key: d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'), label: TH_MONTHS_ABBR[d.getMonth()] });
+  }
+  return out;
+}
+function rpInPeriod(v) {
+  const p = state.rpPeriod || 'all';
+  if (p === 'all') return true;
+  const d = toDate(v);
+  return !isNaN(d) && (Date.now() - d.getTime()) <= Number(p) * 86400000;
+}
+function rpActiveBorrow(b) { return !['คืนแล้ว', 'รออนุมัติ', 'ถูกปฏิเสธ'].includes(b['สถานะ']); }
+function rpTop(list, keyFn, n) {
+  const m = {};
+  list.forEach(x => { const k = keyFn(x); if (k) m[k] = (m[k] || 0) + 1; });
+  return Object.entries(m).sort((a, b) => b[1] - a[1]).slice(0, n);
+}
+function rpKpi(num, label, cls, sub) {
+  return `<div class="glass rp-kpi ${cls || ''}"><div class="k-num">${num}</div><div class="k-label">${label}</div>${sub ? `<div class="k-sub">${sub}</div>` : ''}</div>`;
+}
+function rpBars(items, denom) {
+  if (!items.length) return '<div class="hint" style="margin-top:0;">ไม่มีข้อมูล</div>';
+  return items.map(it => {
+    const w = denom ? Math.min(100, Math.round(it.n / denom * 100)) : 0;
+    return `<div class="rp-bar-row"><div class="rp-bar-head"><span>${escapeHtml(it.label)}</span><span><b>${Number(it.n).toLocaleString()}</b>${it.note ? ` <small>${it.note}</small>` : ''}</span></div><div class="rp-track"><div class="rp-fill ${it.cls || ''}" style="width:${w}%"></div></div></div>`;
+  }).join('');
+}
+function rpTable(cols, rows, foot) {
+  if (!rows.length) return '<div class="hint" style="margin-top:0;">ไม่มีข้อมูล</div>';
+  const cls = i => cols[i][1] ? 'num' : '';
+  return `<div class="rp-table-wrap"><table class="rp-table">
+    <thead><tr>${cols.map(c => `<th class="${c[1] ? 'num' : ''}">${c[0]}</th>`).join('')}</tr></thead>
+    <tbody>${rows.map(r => `<tr>${r.map((c, i) => `<td class="${cls(i)}">${c}</td>`).join('')}</tr>`).join('')}</tbody>
+    ${foot ? `<tfoot><tr>${foot.map((c, i) => `<td class="${cls(i)}">${c}</td>`).join('')}</tr></tfoot>` : ''}
+  </table></div>`;
+}
+const RP_STATUS_CLS = { 'พร้อมใช้งาน': 'ok', 'กำลังยืม': 'warn', 'ซ่อมบำรุง': 'bad', 'จำหน่ายแล้ว': '', 'รอซ่อม': 'bad', 'กำลังซ่อม': 'warn', 'ซ่อมเสร็จ': 'ok' };
+
 function renderReports() {
   const el = document.getElementById('view-reports');
-  const d = state.dashboard;
-  if (!d) { el.innerHTML = emptyState('ยังไม่มีข้อมูลรายงาน — กดปุ่มรีเฟรชด้านบน'); return; }
+  if (!state.assets.length && !state.dashboard) { el.innerHTML = emptyState('ยังไม่มีข้อมูลรายงาน — กดปุ่มรีเฟรชด้านบน'); return; }
+  if (!state.rpTab) state.rpTab = 'overview';
+  if (!state.rpPeriod) state.rpPeriod = 'all';
+  const TABS = [['overview', 'ภาพรวม'], ['assets', 'ครุภัณฑ์'], ['borrow', 'ยืม-คืน'], ['maint', 'ซ่อมบำรุง'], ['official', 'พิมพ์ & ส่งออก']];
+  const PERIODS = [['all', 'ทั้งหมด'], ['30', '30 วันล่าสุด'], ['90', '90 วันล่าสุด'], ['365', '1 ปีล่าสุด']];
+  const showPeriod = state.rpTab === 'borrow' || state.rpTab === 'maint';
   el.innerHTML = `
-    <div class="section-title full-width">รายงานสรุป</div>
-    <div class="glass chart-card"><h4>จำนวนครุภัณฑ์ตามสถานะ</h4><div class="chart-wrap"><canvas id="statusChart"></canvas></div></div>
-    <div class="glass chart-card"><h4>จำนวนครุภัณฑ์ตามหมวดหมู่</h4><div class="chart-wrap"><canvas id="catChart2"></canvas></div></div>
-    <div class="glass chart-card full-width"><h4>แนวโน้มการยืมย้อนหลัง 6 เดือน</h4><div class="chart-wrap"><canvas id="trendChart2"></canvas></div></div>
-    
-    <!-- เพิ่มการ์ดสำหรับรายงานรูปแบบราชการ ตรงนี้ -->
-    <div class="glass chart-card full-width">
-      <h4>รายงานรูปแบบราชการ</h4>
-      <div class="hint" style="margin-top:0; margin-bottom:12px;">พิมพ์บัญชีครุภัณฑ์ประจำปีตามแบบฟอร์มทางราชการสำหรับตรวจสอบพัสดุประจำปี</div>
-      <div class="btn-row" style="margin-top:0;">
-        <button class="btn btn-primary" id="btnPrintOfficialAssetReport">พิมพ์บัญชีครุภัณฑ์ประจำปี (รูปแบบราชการ)</button>
+    <div class="rp-root">
+      <div class="section-title">รายงานสรุป <small>ข้อมูล ณ วันที่ ${thaiDateLong()}</small></div>
+      <div class="chip-row" id="rpTabs">${TABS.map(t => `<div class="chip ${state.rpTab === t[0] ? 'active' : ''}" data-rptab="${t[0]}">${t[1]}</div>`).join('')}</div>
+      ${showPeriod ? `<div class="hint" style="margin:0 0 6px;">ช่วงเวลา (นับจาก${state.rpTab === 'borrow' ? 'วันที่ยืม' : 'วันที่แจ้งซ่อม'})</div>
+      <div class="chip-row" id="rpPeriods">${PERIODS.map(p => `<div class="chip ${state.rpPeriod === p[0] ? 'active' : ''}" data-rpp="${p[0]}">${p[1]}</div>`).join('')}</div>` : ''}
+      <div id="rpBody"></div>
+    </div>`;
+  document.querySelectorAll('[data-rptab]').forEach(c => c.onclick = () => { state.rpTab = c.dataset.rptab; renderReports(); });
+  document.querySelectorAll('[data-rpp]').forEach(c => c.onclick = () => { state.rpPeriod = c.dataset.rpp; renderReports(); });
+  const body = document.getElementById('rpBody');
+  ({ overview: rpOverview, assets: rpAssets, borrow: rpBorrow, maint: rpMaint, official: rpOfficial })[state.rpTab](body);
+}
+
+/* ---------- แท็บ: ภาพรวม ---------- */
+function rpOverview(body) {
+  const A = state.assets, total = A.length;
+  const cnt = s => A.filter(a => a['สถานะ'] === s).length;
+  const value = A.reduce((s, a) => s + (Number(a['มูลค่า(บาท)']) || 0), 0);
+  const ready = cnt('พร้อมใช้งาน'), readyPct = total ? Math.round(ready / total * 100) : 0;
+  const active = state.borrow.filter(rpActiveBorrow);
+  const overdue = active.filter(b => effectiveBorrowStatus(b) === 'เกินกำหนด').length;
+  const pending = state.borrow.filter(b => b['สถานะ'] === 'รออนุมัติ').length;
+  const openMaint = state.maint.filter(m => m['สถานะ'] !== 'ซ่อมเสร็จ').length;
+  const win = renewalWindowDays();
+  const renewals = A.filter(a => { const d = daysUntil(a['วันครบกำหนดตรวจสภาพ/ต่อทะเบียน']); return d !== null && d <= win && a['สถานะ'] !== 'จำหน่ายแล้ว'; }).length;
+
+  const alerts = [];
+  if (overdue) alerts.push(['bad', ICONS.warn, `มีครุภัณฑ์เกินกำหนดคืน ${overdue} รายการ`, 'borrow', 'ดูรายการ']);
+  if (isAdmin() && pending) alerts.push(['warn', ICONS.clock, `มีคำขอยืมรออนุมัติ ${pending} รายการ`, 'borrow', 'ตรวจสอบ']);
+  if (renewals) alerts.push(['warn', ICONS.warn, `ใกล้ครบกำหนดตรวจสภาพ/ต่อทะเบียน ${renewals} รายการ (ภายใน ${win} วัน หรือเลยกำหนดแล้ว)`, 'assets', 'ดูรายการ']);
+  if (openMaint) alerts.push(['warn', ICONS.wrench, `มีงานซ่อมค้าง ${openMaint} รายการ`, 'maint', 'ดูรายการ']);
+
+  const catObj = {};
+  A.forEach(a => { const c = a['หมวดหมู่'] || 'ไม่ระบุ'; catObj[c] = (catObj[c] || 0) + 1; });
+  const trend = {};
+  rpLastMonths(6).forEach(m => trend[m.key] = 0);
+  state.borrow.forEach(b => { const k = rpMonthKey(b['วันที่ยืม']); if (k in trend) trend[k]++; });
+
+  body.innerHTML = `
+    <div class="rp-kpis">
+      ${rpKpi(total.toLocaleString(), 'ครุภัณฑ์ทั้งหมด (รายการ)', '')}
+      ${rpKpi(value.toLocaleString(), 'มูลค่ารวม (บาท)', 'gold')}
+      ${rpKpi(readyPct + '%', 'พร้อมใช้งาน', 'ok', ready + ' จาก ' + total + ' รายการ')}
+      ${rpKpi(cnt('กำลังยืม'), 'กำลังถูกยืม', 'warn')}
+      ${rpKpi(overdue, 'เกินกำหนดคืน', overdue ? 'bad' : '')}
+      ${rpKpi(cnt('ซ่อมบำรุง'), 'อยู่ระหว่างซ่อม', 'info')}
+    </div>
+    ${alerts.length ? `<div class="section-title" style="font-size:14px; margin:4px 2px 10px;">เรื่องที่ต้องดำเนินการ</div>` +
+      alerts.map(a => `<div class="alert-banner ${a[0]}">${a[1]}<span>${a[2]}</span><span class="alert-link" onclick="renderTab('${a[3]}')">${a[4]}</span></div>`).join('') : ''}
+    <div class="rp-grid2">
+      <div class="glass rp-card"><h4>สถานะครุภัณฑ์ <small>${total} รายการ</small></h4>
+        ${rpBars(ASSET_STATUSES.map(s => ({ label: s, n: cnt(s), cls: RP_STATUS_CLS[s], note: '(' + (total ? Math.round(cnt(s) / total * 100) : 0) + '%)' })), total)}
+      </div>
+      <div class="glass rp-card"><h4>สัดส่วนตามหมวดหมู่</h4><div class="chart-wrap"><canvas id="rpCat"></canvas></div></div>
+    </div>
+    <div class="glass rp-card"><h4>แนวโน้มการยืมย้อนหลัง 6 เดือน <small>จำนวนรายการยืมต่อเดือน</small></h4><div class="chart-wrap"><canvas id="rpTrend"></canvas></div></div>`;
+  drawDoughnut('rpCat', catObj);
+  drawLine('rpTrend', trend);
+}
+
+/* ---------- แท็บ: ครุภัณฑ์ ---------- */
+function rpAssets(body) {
+  const A = state.assets;
+  const cats = Array.from(new Set(getCategories().concat(A.map(a => a['หมวดหมู่']).filter(Boolean))));
+  const rows = cats.map(c => {
+    const l = A.filter(a => a['หมวดหมู่'] === c), n = s => l.filter(a => a['สถานะ'] === s).length;
+    return { c, n: l.length, v: l.reduce((s, a) => s + (Number(a['มูลค่า(บาท)']) || 0), 0), r: n('พร้อมใช้งาน'), b: n('กำลังยืม'), m: n('ซ่อมบำรุง'), d: n('จำหน่ายแล้ว') };
+  }).filter(x => x.n > 0).sort((a, b) => b.n - a.n);
+  const sum = k => rows.reduce((s, x) => s + x[k], 0);
+  const top = A.filter(a => Number(a['มูลค่า(บาท)']) > 0).sort((a, b) => Number(b['มูลค่า(บาท)']) - Number(a['มูลค่า(บาท)'])).slice(0, 10);
+  const win = renewalWindowDays();
+  const due = A.map(a => ({ a, d: daysUntil(a['วันครบกำหนดตรวจสภาพ/ต่อทะเบียน']) }))
+    .filter(x => x.d !== null && x.d <= win && x.a['สถานะ'] !== 'จำหน่ายแล้ว').sort((x, y) => x.d - y.d);
+  const noSerial = A.filter(a => !a['หมายเลขเครื่อง']).length;
+  const noValue = A.filter(a => !(Number(a['มูลค่า(บาท)']) > 0)).length;
+  const noHolder = A.filter(a => !a['ผู้ครอบครอง/หน่วยงาน']).length;
+
+  body.innerHTML = `
+    <div class="glass rp-card"><h4>สรุปแยกตามหมวดหมู่</h4>
+      ${rpTable([['หมวดหมู่'], ['จำนวน', 1], ['มูลค่า (บาท)', 1], ['พร้อมใช้', 1], ['ยืม', 1], ['ซ่อม', 1], ['จำหน่าย', 1]],
+        rows.map(x => [escapeHtml(x.c), x.n, x.v.toLocaleString(), x.r, x.b, x.m, x.d]),
+        ['รวม', sum('n'), sum('v').toLocaleString(), sum('r'), sum('b'), sum('m'), sum('d')])}
+    </div>
+    <div class="rp-grid2">
+      <div class="glass rp-card"><h4>10 อันดับครุภัณฑ์มูลค่าสูงสุด</h4>
+        ${rpTable([['ชื่อครุภัณฑ์'], ['หมวดหมู่'], ['มูลค่า (บาท)', 1]],
+          top.map(a => [escapeHtml(a['ชื่อครุภัณฑ์']) + '<div class="hint" style="margin:2px 0 0;">' + escapeHtml(a['รหัสครุภัณฑ์']) + '</div>', escapeHtml(a['หมวดหมู่']), Number(a['มูลค่า(บาท)']).toLocaleString()]))}
+      </div>
+      <div class="glass rp-card"><h4>ใกล้ครบกำหนดตรวจสภาพ/ต่อทะเบียน <small>ภายใน ${win} วัน</small></h4>
+        ${rpTable([['ครุภัณฑ์'], ['ครบกำหนด'], ['เหลือ', 1]],
+          due.map(x => [escapeHtml(x.a['ชื่อครุภัณฑ์']), thaiDate(x.a['วันครบกำหนดตรวจสภาพ/ต่อทะเบียน']),
+            x.d < 0 ? `<span class="status-badge status-overdue">เลย ${toThaiNumber(-x.d)} วัน</span>` : `<span class="status-badge status-borrowed">อีก ${toThaiNumber(x.d)} วัน</span>`]))}
       </div>
     </div>
+    <div class="glass rp-card"><h4>ตรวจความครบถ้วนของข้อมูล <small>ช่วยให้รายงานราชการไม่มีช่องว่าง</small></h4>
+      ${rpBars([
+        { label: 'ยังไม่ระบุหมายเลขเครื่อง/serial', n: noSerial, cls: noSerial ? 'warn' : 'ok', note: '(จาก ' + A.length + ')' },
+        { label: 'ยังไม่ระบุมูลค่า', n: noValue, cls: noValue ? 'warn' : 'ok', note: '(จาก ' + A.length + ')' },
+        { label: 'ยังไม่ระบุผู้ครอบครอง/หน่วยงาน', n: noHolder, cls: noHolder ? 'warn' : 'ok', note: '(จาก ' + A.length + ')' }
+      ], A.length)}
+    </div>`;
+}
 
-    <div class="glass chart-card full-width">
-      <h4>ค่าใช้จ่ายซ่อมบำรุงสะสม</h4>
-      <div class="hero-num hero-num--sm" style="margin-bottom:10px; color:var(--gold-deep);">${Number(d.maintCostTotal||0).toLocaleString()}<span class="hero-unit" style="color:var(--ink-dim);">บาท</span></div>
-      <div class="btn-row" style="margin-top:0;">
-        <button class="btn btn-ghost" id="btnExportAssetsRpt">ส่งออกครุภัณฑ์ (CSV)</button>
-        <button class="btn btn-ghost" id="btnExportBorrowRpt">ส่งออกยืม-คืน (CSV)</button>
-        <button class="btn btn-ghost" id="btnExportMaintRpt">ส่งออกซ่อมบำรุง (CSV)</button>
+/* ---------- แท็บ: ยืม-คืน ---------- */
+function rpBorrow(body) {
+  const P = state.borrow.filter(b => rpInPeriod(b['วันที่ยืม']));
+  const returned = P.filter(b => b['สถานะ'] === 'คืนแล้ว');
+  const stillOut = P.filter(rpActiveBorrow);
+  let onTime = 0, dayList = [];
+  returned.forEach(b => {
+    const due = toDate(b['กำหนดคืน']), ret = toDate(b['วันที่คืนจริง']), out = toDate(b['วันที่ยืม']);
+    if (!isNaN(due) && !isNaN(ret) && ret.setHours(0, 0, 0, 0) <= due.setHours(0, 0, 0, 0)) onTime++;
+    const r2 = toDate(b['วันที่คืนจริง']);
+    if (!isNaN(r2) && !isNaN(out)) dayList.push((r2 - out) / 86400000);
+  });
+  const onTimePct = returned.length ? Math.round(onTime / returned.length * 100) : null;
+  const avgDays = dayList.length ? (dayList.reduce((s, x) => s + x, 0) / dayList.length).toFixed(1) : null;
+  const overdueAll = state.borrow.filter(b => rpActiveBorrow(b) && effectiveBorrowStatus(b) === 'เกินกำหนด')
+    .map(b => ({ b, days: -daysUntil(b['กำหนดคืน']) })).sort((x, y) => y.days - x.days);
+  const topPeople = rpTop(P, b => b['ผู้ยืม'], 8), topAssets = rpTop(P, b => b['ชื่อครุภัณฑ์'], 8);
+  const trend = {};
+  rpLastMonths(6).forEach(m => trend[m.key] = 0);
+  state.borrow.forEach(b => { const k = rpMonthKey(b['วันที่ยืม']); if (k in trend) trend[k]++; });
+
+  body.innerHTML = `
+    <div class="rp-kpis">
+      ${rpKpi(P.length.toLocaleString(), 'รายการยืมในช่วงนี้', '')}
+      ${rpKpi(stillOut.length, 'ยังไม่คืน', 'warn')}
+      ${rpKpi(returned.length, 'คืนแล้ว', 'ok')}
+      ${rpKpi(overdueAll.length, 'ค้างเกินกำหนด (ทั้งระบบ)', overdueAll.length ? 'bad' : '')}
+      ${rpKpi(onTimePct === null ? '-' : onTimePct + '%', 'คืนตรงเวลา', onTimePct !== null && onTimePct < 80 ? 'warn' : 'ok', returned.length ? onTime + ' จาก ' + returned.length + ' รายการ' : '')}
+      ${rpKpi(avgDays === null ? '-' : avgDays, 'ระยะเวลายืมเฉลี่ย (วัน)', 'info')}
+    </div>
+    <div class="glass rp-card"><h4>รายการค้างเกินกำหนดคืน <small>เรียงจากเกินนานที่สุด</small></h4>
+      ${rpTable([['ผู้ยืม'], ['ครุภัณฑ์'], ['กำหนดคืน'], ['เกิน', 1]],
+        overdueAll.map(x => [escapeHtml(x.b['ผู้ยืม']), escapeHtml(x.b['ชื่อครุภัณฑ์']), thaiDate(x.b['กำหนดคืน']), `<span class="status-badge status-overdue">${toThaiNumber(x.days)} วัน</span>`]))}
+    </div>
+    <div class="rp-grid2">
+      <div class="glass rp-card"><h4>ผู้ยืมบ่อยที่สุด <small>ครั้ง</small></h4>${rpBars(topPeople.map(x => ({ label: x[0], n: x[1] })), topPeople.length ? topPeople[0][1] : 0)}</div>
+      <div class="glass rp-card"><h4>ครุภัณฑ์ถูกยืมบ่อยที่สุด <small>ครั้ง</small></h4>${rpBars(topAssets.map(x => ({ label: x[0], n: x[1], cls: 'gold' })), topAssets.length ? topAssets[0][1] : 0)}</div>
+    </div>
+    <div class="glass rp-card"><h4>แนวโน้มการยืมย้อนหลัง 6 เดือน</h4><div class="chart-wrap"><canvas id="rpBorrowTrend"></canvas></div></div>
+    <div class="btn-row" style="margin-top:0;"><button class="btn btn-ghost" id="btnRpExportBorrow">ส่งออกรายการยืม-คืนช่วงนี้ (CSV)</button></div>`;
+  drawLine('rpBorrowTrend', trend);
+  document.getElementById('btnRpExportBorrow').onclick = () => exportCsv('ยืมคืน.csv', ['รหัสรายการ', 'รหัสครุภัณฑ์', 'ชื่อครุภัณฑ์', 'ผู้ยืม', 'วันที่ยืม', 'กำหนดคืน', 'วันที่คืนจริง', 'สถานะ', 'ผู้อนุมัติ', 'หมายเหตุ'], P);
+}
+
+/* ---------- แท็บ: ซ่อมบำรุง ---------- */
+function rpMaint(body) {
+  const M = state.maint.filter(m => rpInPeriod(m['วันที่แจ้ง']));
+  const cost = m => Number(m['ค่าใช้จ่าย(บาท)']) || 0;
+  const done = M.filter(m => m['สถานะ'] === 'ซ่อมเสร็จ'), open = M.filter(m => m['สถานะ'] !== 'ซ่อมเสร็จ');
+  const totalCost = M.reduce((s, m) => s + cost(m), 0);
+  const costed = M.filter(m => cost(m) > 0);
+  const avgCost = costed.length ? Math.round(totalCost / costed.length) : 0;
+  const byAsset = {};
+  M.forEach(m => { const k = m['ชื่อครุภัณฑ์'] || 'ไม่ระบุ'; (byAsset[k] = byAsset[k] || { n: 0, c: 0 }); byAsset[k].n++; byAsset[k].c += cost(m); });
+  const topAssets = Object.entries(byAsset).sort((a, b) => b[1].c - a[1].c || b[1].n - a[1].n).slice(0, 8);
+  const openList = open.map(m => ({ m, wait: -daysUntil(m['วันที่แจ้ง']) })).sort((x, y) => y.wait - x.wait);
+  const monthCost = {};
+  const months = rpLastMonths(6);
+  months.forEach(x => monthCost[x.key] = 0);
+  state.maint.forEach(m => { const k = rpMonthKey(m['วันที่ซ่อมเสร็จ'] || m['วันที่แจ้ง']); if (k in monthCost) monthCost[k] += cost(m); });
+  const barObj = {};
+  months.forEach(x => barObj[x.label] = monthCost[x.key]);
+  const st = s => M.filter(m => m['สถานะ'] === s).length;
+
+  body.innerHTML = `
+    <div class="rp-kpis">
+      ${rpKpi(M.length, 'งานซ่อมในช่วงนี้', '')}
+      ${rpKpi(open.length, 'ค้างซ่อม', open.length ? 'warn' : '')}
+      ${rpKpi(done.length, 'ซ่อมเสร็จแล้ว', 'ok')}
+      ${rpKpi(totalCost.toLocaleString(), 'ค่าใช้จ่ายรวม (บาท)', 'gold')}
+      ${rpKpi(avgCost.toLocaleString(), 'ค่าใช้จ่ายเฉลี่ยต่องาน (บาท)', 'info', costed.length ? 'จาก ' + costed.length + ' งานที่ระบุราคา' : '')}
+    </div>
+    <div class="rp-grid2">
+      <div class="glass rp-card"><h4>สถานะงานซ่อม</h4>
+        ${rpBars(['รอซ่อม', 'กำลังซ่อม', 'ซ่อมเสร็จ'].map(s => ({ label: s, n: st(s), cls: RP_STATUS_CLS[s], note: '(' + (M.length ? Math.round(st(s) / M.length * 100) : 0) + '%)' })), M.length)}
+      </div>
+      <div class="glass rp-card"><h4>ค่าใช้จ่ายรายเดือน <small>6 เดือนล่าสุด (บาท)</small></h4><div class="chart-wrap"><canvas id="rpMaintCost"></canvas></div></div>
+    </div>
+    <div class="glass rp-card"><h4>งานที่ยังค้างอยู่ <small>เรียงจากรอนานที่สุด</small></h4>
+      ${rpTable([['ครุภัณฑ์'], ['อาการ/ปัญหา'], ['แจ้งเมื่อ'], ['สถานะ'], ['รอมา', 1]],
+        openList.map(x => [escapeHtml(x.m['ชื่อครุภัณฑ์']), escapeHtml(x.m['อาการ/ปัญหา']), thaiDate(x.m['วันที่แจ้ง']),
+          `<span class="status-badge ${statusClass(x.m['สถานะ'])}">${escapeHtml(x.m['สถานะ'])}</span>`, toThaiNumber(x.wait) + ' วัน']))}
+    </div>
+    <div class="glass rp-card"><h4>ครุภัณฑ์ที่ซ่อมบ่อย/ค่าใช้จ่ายสูง <small>8 อันดับ</small></h4>
+      ${rpTable([['ครุภัณฑ์'], ['จำนวนครั้ง', 1], ['ค่าใช้จ่าย (บาท)', 1]], topAssets.map(x => [escapeHtml(x[0]), x[1].n, x[1].c.toLocaleString()]))}
+    </div>
+    <div class="btn-row" style="margin-top:0;"><button class="btn btn-ghost" id="btnRpExportMaint">ส่งออกงานซ่อมช่วงนี้ (CSV)</button></div>`;
+  drawBar('rpMaintCost', barObj);
+  document.getElementById('btnRpExportMaint').onclick = () => exportCsv('ซ่อมบำรุง.csv', ['รหัสรายการ', 'รหัสครุภัณฑ์', 'ชื่อครุภัณฑ์', 'วันที่แจ้ง', 'อาการ/ปัญหา', 'ผู้แจ้ง', 'สถานะ', 'วันที่ซ่อมเสร็จ', 'ค่าใช้จ่าย(บาท)', 'ผู้รับผิดชอบ', 'หมายเหตุ'], M);
+}
+
+/* ---------- แท็บ: พิมพ์ & ส่งออก ---------- */
+function rpOfficial(body) {
+  const hasComms = state.assets.some(a => a['หมวดหมู่'] === 'สื่อสาร');
+  const hasVeh = state.assets.some(a => a['หมวดหมู่'] === 'ยานพาหนะ');
+  body.innerHTML = `
+    <div class="glass rp-card"><h4>รายงานรูปแบบราชการ <small>ประจำปี พ.ศ. ${toThaiNumber(state.auditYear + 543)}</small></h4>
+      <div class="hint" style="margin-top:0;">ช่องผลตรวจ (ดี/ชำรุด) ดึงจากผลตรวจนับประจำปีที่ระบุ หากช่องว่างทั้งหมด ให้เปิดหน้า "ตรวจนับประจำปี" ของปีนั้นก่อน แล้วกลับมาพิมพ์</div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="btnRpGeneral">ครุภัณฑ์ทั่วไป</button>
+        ${hasComms ? `<button class="btn btn-ghost" id="btnRpComms">เครื่องมือสื่อสาร</button>` : ''}
+        ${hasVeh ? `<button class="btn btn-ghost" id="btnRpVehicle">ยานพาหนะ (แบบ บชก.3)</button>` : ''}
       </div>
     </div>
-  `;
-  
-  drawBar('statusChart', d.byStatus || {});
-  drawDoughnut('catChart2', d.byCategory || {});
-  drawLine('trendChart2', d.monthTrend || {});
-  
-  document.getElementById('btnExportAssetsRpt').onclick = () => exportCsv('ครุภัณฑ์.csv', ['รหัสครุภัณฑ์','ชื่อครุภัณฑ์','หมวดหมู่','ยี่ห้อ/รุ่น','หมายเลขเครื่อง','วันที่รับเข้า','มูลค่า(บาท)','สถานะ','ผู้ครอบครอง/หน่วยงาน','หน่วยงาน','วันครบกำหนดตรวจสภาพ/ต่อทะเบียน','หมายเหตุ'], state.assets);
-  document.getElementById('btnExportBorrowRpt').onclick = () => exportCsv('ยืมคืน.csv', ['รหัสรายการ','รหัสครุภัณฑ์','ชื่อครุภัณฑ์','ผู้ยืม','วันที่ยืม','กำหนดคืน','วันที่คืนจริง','สถานะ','ผู้อนุมัติ','หมายเหตุ'], state.borrow);
-  document.getElementById('btnExportMaintRpt').onclick = () => exportCsv('ซ่อมบำรุง.csv', ['รหัสรายการ','รหัสครุภัณฑ์','ชื่อครุภัณฑ์','วันที่แจ้ง','อาการ/ปัญหา','ผู้แจ้ง','สถานะ','วันที่ซ่อมเสร็จ','ค่าใช้จ่าย(บาท)','ผู้รับผิดชอบ','หมายเหตุ'], state.maint);
-
-  // นำคำสั่งผูกปุ่มมาวางไว้บรรทัดสุดท้ายในฟังก์ชัน renderReports() ตรงนี้ครับ
-  document.getElementById('btnPrintOfficialAssetReport').onclick = printOfficialGeneralReport;
+    <div class="glass rp-card"><h4>ส่งออกข้อมูล (CSV)</h4>
+      <div class="btn-row" style="margin-top:0;">
+        <button class="btn btn-ghost" id="btnRpExA">ครุภัณฑ์ทั้งหมด</button>
+        <button class="btn btn-ghost" id="btnRpExB">ยืม-คืนทั้งหมด</button>
+        <button class="btn btn-ghost" id="btnRpExM">ซ่อมบำรุงทั้งหมด</button>
+      </div>
+    </div>`;
+  document.getElementById('btnRpGeneral').onclick = printOfficialGeneralReport;
+  const c = document.getElementById('btnRpComms'); if (c) c.onclick = printCommsAuditReport;
+  const v = document.getElementById('btnRpVehicle'); if (v) v.onclick = printVehicleAuditReport;
+  document.getElementById('btnRpExA').onclick = () => exportCsv('ครุภัณฑ์.csv', ['รหัสครุภัณฑ์', 'ชื่อครุภัณฑ์', 'หมวดหมู่', 'ยี่ห้อ/รุ่น', 'หมายเลขเครื่อง', 'วันที่รับเข้า', 'มูลค่า(บาท)', 'สถานะ', 'ผู้ครอบครอง/หน่วยงาน', 'หน่วยงาน', 'วันครบกำหนดตรวจสภาพ/ต่อทะเบียน', 'หมายเหตุ'], state.assets);
+  document.getElementById('btnRpExB').onclick = () => exportCsv('ยืมคืน.csv', ['รหัสรายการ', 'รหัสครุภัณฑ์', 'ชื่อครุภัณฑ์', 'ผู้ยืม', 'วันที่ยืม', 'กำหนดคืน', 'วันที่คืนจริง', 'สถานะ', 'ผู้อนุมัติ', 'หมายเหตุ'], state.borrow);
+  document.getElementById('btnRpExM').onclick = () => exportCsv('ซ่อมบำรุง.csv', ['รหัสรายการ', 'รหัสครุภัณฑ์', 'ชื่อครุภัณฑ์', 'วันที่แจ้ง', 'อาการ/ปัญหา', 'ผู้แจ้ง', 'สถานะ', 'วันที่ซ่อมเสร็จ', 'ค่าใช้จ่าย(บาท)', 'ผู้รับผิดชอบ', 'หมายเหตุ'], state.maint);
 }
 
  function printOfficialGeneralReport() {
