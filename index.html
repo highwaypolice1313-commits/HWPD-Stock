@@ -2081,7 +2081,7 @@ function openQrView(a) {
     pa.innerHTML = `<img src="${src}" style="width:60mm;height:60mm;max-width:none;">
       <div style="font-size:14pt;font-weight:600;margin-top:4mm;">${escapeHtml(a['ชื่อครุภัณฑ์'])}</div>
       <div style="font-size:12pt;">${escapeHtml(a['รหัสครุภัณฑ์'])}</div>`;
-    setTimeout(() => { window.print(); pa.classList.remove('qr-print-area'); pa.innerHTML = ''; }, 80);
+    triggerPrint(() => { pa.classList.remove('qr-print-area'); pa.innerHTML = ''; });
   };
 }
 function componentsSection(assetId) {
@@ -2975,7 +2975,7 @@ function printOfficerPortfolio(u, holdings) {
     </div>`;
   const pa = document.getElementById('printArea');
   pa.innerHTML = html;
-  setTimeout(() => { window.print(); pa.innerHTML = ''; }, 80);
+  triggerPrint(() => { pa.innerHTML = ''; });
 }
    
 function userRow(u) {
@@ -3318,7 +3318,7 @@ desk.addEventListener('focusout', () => {
   document.getElementById('btnMemoPrint').onclick = () => {
   const b = getBody();
   if (b) document.getElementById('printArea').innerHTML = thaiifyHtml(b.outerHTML);
-  setTimeout(() => window.print(), 80);
+  triggerPrint(() => { document.getElementById('printArea').innerHTML = ''; });
 };
   document.getElementById('btnMemoSave').onclick = async () => {
     const b = getBody();
@@ -3974,7 +3974,7 @@ function rpOfficial(body) {
   const pa = document.getElementById('printArea');
   pa.classList.add('report-print-area');
   pa.innerHTML = html;
-  setTimeout(() => { window.print(); pa.classList.remove('report-print-area'); pa.innerHTML = ''; }, 80);
+  triggerPrint(() => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; });
 }
  
 /* ---- 2.5 รายงานเครื่องมือสื่อสาร (ฟังก์ชันใหม่) ---- */
@@ -4053,7 +4053,7 @@ function printCommsAuditReport() {
   const pa = document.getElementById('printArea');
   pa.classList.add('report-print-area');
   pa.innerHTML = html;
-  setTimeout(() => { window.print(); pa.classList.remove('report-print-area'); pa.innerHTML = ''; }, 80);
+  triggerPrint(() => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; });
 }
  
    /* ========================= ฟีเจอร์ ๔: ตรวจนับพัสดุประจำปี ========================= */
@@ -4382,7 +4382,7 @@ function auditRow(a) {
   const pa = document.getElementById('printArea');
   pa.classList.add('report-print-area');
   pa.innerHTML = html;
-  setTimeout(() => { window.print(); pa.classList.remove('report-print-area'); pa.innerHTML = ''; }, 80);
+  triggerPrint(() => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; });
 }
    
 async function setAuditStatus(assetId, status) {
@@ -4431,7 +4431,7 @@ function printAuditReport() {
     </div>`;
   const pa = document.getElementById('printArea');
   pa.innerHTML = html;
-  setTimeout(() => { window.print(); pa.innerHTML = ''; }, 80);
+  triggerPrint(() => { pa.innerHTML = ''; });
 }
 
    function openVehicleAuditForm(assetId) {
