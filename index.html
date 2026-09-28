@@ -1046,7 +1046,7 @@ function auditPeriodLineHtml(compact) {
   const s = state.settings || {};
   const start = s.auditPeriodStart ? escapeHtml(thaiDateLong(s.auditPeriodStart)) : '..........................';
   const end = s.auditPeriodEnd ? escapeHtml(thaiDateLong(s.auditPeriodEnd)) : '..........................';
-  return `<div style="margin-top:${compact ? '3mm' : '6mm'}; font-size:${compact ? '10.5pt' : '14pt'};">คณะกรรมการเริ่มทำการตรวจสอบวันที่ ${start} เสร็จวันที่ ${end}</div>`;
+  return `<div style="margin-top:${compact ? '1mm' : '4mm'}; font-size:${compact ? '10.5pt' : '14pt'};">คณะกรรมการเริ่มทำการตรวจสอบวันที่ ${start} เสร็จวันที่ ${end}</div>`;
 }
 function committeeSignBlockHtml(compact) {
   const [head, m1, m2, sec] = getAuditCommittee();
@@ -1054,11 +1054,11 @@ function committeeSignBlockHtml(compact) {
   /* ===== ปรับขนาดที่เว้นไว้ตรงนี้ =====
      headSig/memSig = ความกว้างเส้นเซ็นชื่อ (หัวหน้า+เลขาฯ / กรรมการ 2 คนที่อยู่คู่กัน)
      sigH           = ความสูงที่เว้นให้เซ็นชื่อ (เหนือเส้นประ) */
-  const S = compact
-    ? { headSig:'38mm', memSig:'28mm', sigH:'9mm',  headFs:'10.5pt', memFs:'9.5pt', topMt:'4mm',  gridMt:'5mm',  cellPad:'2mm 1mm' }
-    : { headSig:'50mm', memSig:'30mm', sigH:'13mm', headFs:'14pt',   memFs:'12pt',  topMt:'10mm', gridMt:'12mm', cellPad:'6mm 1mm' };
-
-  const block = (m, sigW, fs) => {
+   const S = compact
+    ? { headSig:'38mm', memSig:'28mm', sigH:'6mm', headFs:'10.5pt', memFs:'9.5pt', topMt:'2mm', gridMt:'2mm', cellPad:'0.5mm 1mm' }
+    : { headSig:'50mm', memSig:'30mm', sigH:'9mm', headFs:'14pt',   memFs:'12pt',  topMt:'4mm', gridMt:'5mm', cellPad:'2mm 1mm' };
+   
+   const block = (m, sigW, fs) => {
     const rank = toThaiNumber(escapeHtml(m.rank)) || '........';
     const name = toThaiNumber(escapeHtml(m.name)) || '..........................';
     const position = toThaiNumber(escapeHtml(m.position)) || '&nbsp;';
@@ -4384,7 +4384,7 @@ function auditRow(a) {
         <div><b>หมายเหตุ ผลการตรวจสอบ ระบุสถานะ:</b> A อยู่ระหว่างการใช้งาน (${toThaiNumber(countA)})&nbsp;&nbsp; D เสนอขออนุมัติแทงจำหน่ายและรอจำหน่าย/สูญไป (${toThaiNumber(countD)})</div>
         <div><b>หลักเกณฑ์สภาพเป็นดัชนี:</b> ๕ เครื่องใหม่ &nbsp; ๔ สภาพใช้งานได้ดี &nbsp; ๓ ใช้งานได้แต่ต้องซ่อมบำรุง (Minor Repair) &nbsp; ๒ ต้องซ่อมใหญ่ (Major Repair) &nbsp; ๑ ต้องซ่อมปรับปรุงทั้งคัน &nbsp; ๐ สภาพสมควรจำหน่าย/ซ่อมไม่ได้</div>
       </div>
-      <div style="margin-top:4mm;">
+      <div style="margin-top:2mm;">
         ${auditPeriodLineHtml(true)}
         ${committeeSignBlockHtml(true)}
       </div>
