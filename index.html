@@ -1462,7 +1462,7 @@ async function refreshData() {
 }
 
 function componentsOf(assetId) { return state.components.filter(c => c['รหัสครุภัณฑ์หลัก'] === assetId); }
-   const compQty = c => Math.max(1, Number(c['จำนวน']) || 1);
+const compQty = c => Math.max(1, Number(c['จำนวน']) || 1);
 const compOut = c => Math.max(0, Number(c['จำนวนที่ยืมอยู่']) || 0);
 const compAvail = c => c['สถานะ'] === 'พร้อมใช้งาน' ? Math.max(0, compQty(c) - compOut(c)) : 0;
    
@@ -2710,7 +2710,6 @@ function refreshComponentPicker() {
         </div>`;
       }).join('')
     : `<div class="hint">ยังไม่มีส่วนควบที่พร้อมใช้งานสำหรับอาวุธปืนนี้</div>`);
-
   wrap.querySelectorAll('.f_comp_chk').forEach(chk => chk.onchange = () => {
     const q = wrap.querySelector('.f_comp_qty[data-for="' + chk.value + '"]');
     if (q) q.style.display = (chk.checked && Number(q.max) > 1) ? 'block' : 'none';
