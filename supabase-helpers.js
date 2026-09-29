@@ -342,7 +342,7 @@ async function sBorrowAsset(p, actor, directApprove) {
   if (error) throw new Error('บันทึกการยืมไม่สำเร็จ: ' + error.message);
   if (directApprove) {
     await sb.from('assets').update({ status: 'กำลังยืม', holder: p.borrower }).eq('id', p.assetId);
-    await setComponentsStatusSb(componentIds, 'กำลังยืม');
+    await adjustComponentsSb(parseCompRefs(componentIds.join(',')), +1);
   }
   await logActivitySb(actor, directApprove ? 'บันทึกการยืม (โดยแอดมิน)' : 'ขอยืมครุภัณฑ์', (p.assetName || '') + ' → ' + p.borrower);
   return { id, status };
@@ -353,8 +353,7 @@ async function sApproveBorrow(p, actor) {
   const { error } = await sb.from('borrow').update({ status: 'กำลังยืม', approver: actor }).eq('id', p.borrowId);
   if (error) throw new Error(error.message);
   await sb.from('assets').update({ status: 'กำลังยืม', holder: b.borrower }).eq('id', b.asset_id);
-  const compIds = String(b.component_ids || '').split(',').map(s => s.trim()).filter(Boolean);
-  await setComponentsStatusSb(compIds, 'กำลังยืม');
+  await adjustComponentsSb(parseCompRefs(b.component_ids), +1);
   await logActivitySb(actor, 'อนุมัติการยืม', p.borrowId);
   return { approved: true };
 }
@@ -372,8 +371,7 @@ async function sReturnAsset(p, actor) {
   const { error } = await sb.from('borrow').update(upd).eq('id', p.borrowId);
   if (error) throw new Error(error.message);
   await sb.from('assets').update({ status: 'พร้อมใช้งาน', holder: '' }).eq('id', b.asset_id);
-  const compIds = String(b.component_ids || '').split(',').map(s => s.trim()).filter(Boolean);
-  await setComponentsStatusSb(compIds, 'พร้อมใช้งาน');
+  await adjustComponentsSb(parseCompRefs(b.component_ids), -1);
   await logActivitySb(actor, 'บันทึกการคืน', p.borrowId);
   return { returned: true };
 }
@@ -413,8 +411,7 @@ async function sDeleteBorrow(p, actor) {
   // ไม่งั้นครุภัณฑ์จะค้างสถานะ "กำลังยืม" ตลอดไปทั้งที่ไม่มีรายการยืมอ้างอิงอยู่แล้ว
   if (b.status === 'กำลังยืม') {
     await sb.from('assets').update({ status: 'พร้อมใช้งาน', holder: '' }).eq('id', b.asset_id);
-    const compIds = String(b.component_ids || '').split(',').map(s => s.trim()).filter(Boolean);
-    await setComponentsStatusSb(compIds, 'พร้อมใช้งาน');
+    await adjustComponentsSb(parseCompRefs(b.component_ids), -1);
   }
 
   const { error } = await sb.from('borrow').delete().eq('id', p.id);
