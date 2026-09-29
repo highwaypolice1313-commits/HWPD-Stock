@@ -1053,7 +1053,18 @@ function getCategories() {
   } catch (e) {}
   return DEFAULT_CATS.slice();
 }
-const COMPONENT_TYPES = ['ซองกระสุน/แม็กกาซีน','ศูนย์เล็ง/กล้อง','ไฟฉายติดปืน','สายสะพาย','ซองพกพา','อุปกรณ์ทำความสะอาด','อื่นๆ'];
+// ประเภทส่วนควบ — ตอนนี้ใช้ "ประเภท" เป็นชื่อส่วนควบเลย (ไม่มีช่องกรอกชื่อแยกแล้ว)
+// TODO: เพิ่ม/ลดประเภทได้ตรงนี้ (แยก "ซองกระสุน" กับ "แม็กกาซีน" ออกจากกันแล้ว)
+const COMPONENT_TYPES = ['ซองกระสุน','แม็กกาซีน','ศูนย์เล็ง/กล้อง','ไฟฉายติดปืน','สายสะพาย','ซองพกพา','อุปกรณ์ทำความสะอาด','อื่นๆ'];
+
+// ตัวช่วย: ชื่อที่จะแสดงของส่วนควบ (ถ้าไม่มีชื่อให้ใช้ประเภทแทน)
+function compDisplayName(c) { return c['ชื่อส่วนควบ'] || c['ประเภท'] || '-'; }
+// ตัวช่วย: ข้อความประเภทในวงเล็บ — แสดงเฉพาะเมื่อประเภทต่างจากชื่อ (กันชื่อซ้ำ เช่น "แม็กกาซีน (แม็กกาซีน)")
+function compTypeSuffix(c) {
+  const t = String(c['ประเภท'] || '').trim();
+  const n = String(c['ชื่อส่วนควบ'] || '').trim();
+  return (t && t !== n) ? t : '';
+}
 const ASSET_STATUSES = ['พร้อมใช้งาน','กำลังยืม','ซ่อมบำรุง','จำหน่ายแล้ว'];
 const TH_MONTHS_FULL = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 const TH_MONTHS_ABBR = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
@@ -2377,11 +2388,14 @@ function componentsSection(assetId) {
       <span>ส่วนควบของอาวุธปืนนี้ (${comps.length})</span>
       ${isAdmin() ? '<span class="btnAddComponent" style="color:var(--gold-deep); cursor:pointer; font-weight:500;">+ เพิ่มส่วนควบ</span>' : ''}
     </div>
-    ${comps.length ? comps.map(c => `
+    ${comps.length ? comps.map(c => {
+      const suffix = compTypeSuffix(c); // แสดงประเภทเฉพาะเมื่อต่างจากชื่อ
+      return `
       <div class="detail-row comp-item" data-id="${escapeHtml(c['รหัสส่วนควบ'])}" style="cursor:${isAdmin() ? 'pointer' : 'default'};">
-        <span>${escapeHtml(c['ชื่อส่วนควบ'])} <b>× ${compQty(c)}</b> <span style="color:var(--ink-dim); font-size:11px;">(${escapeHtml(c['ประเภท'] || '-')})${compOut(c) > 0 ? ' · ยืมอยู่ ' + compOut(c) : ''}</span></span>
+        <span>${escapeHtml(compDisplayName(c))} <b>× ${compQty(c)}</b> <span style="color:var(--ink-dim); font-size:11px;">${suffix ? '(' + escapeHtml(suffix) + ')' : ''}${compOut(c) > 0 ? ' · ยืมอยู่ ' + compOut(c) : ''}</span></span>
         <span class="status-badge ${statusClass(c['สถานะ'])}">${escapeHtml(c['สถานะ'])}</span>
-      </div>`).join('') : `<div class="hint">ยังไม่มีข้อมูลส่วนควบ</div>`}
+      </div>`;
+    }).join('') : `<div class="hint">ยังไม่มีข้อมูลส่วนควบ</div>`}
   `;
 }
 function openAssetForm(a) {
@@ -2426,22 +2440,45 @@ toggleVehicleFields();
 }
 function openComponentForm(parentId, c) {
   const editing = !!c;
+  const curType = c ? String(c['ประเภท'] || '') : COMPONENT_TYPES[0];
+
+  // ถ้าข้อมูลเก่ามีประเภทที่ไม่อยู่ในรายการใหม่ (เช่น "ซองกระสุน/แม็กกาซีน") ให้เพิ่มเป็นตัวเลือกไว้ก่อน จะได้ไม่หาย
+  const typeOptions = COMPONENT_TYPES.slice();
+  if (curType && typeOptions.indexOf(curType) === -1) typeOptions.unshift(curType);
+
+  // ชื่อเดิมที่พิมพ์เอง (ใช้ตอนประเภท = อื่นๆ เท่านั้น)
+  const otherNameDefault = (c && curType === 'อื่นๆ' && c['ชื่อส่วนควบ'] && c['ชื่อส่วนควบ'] !== 'อื่นๆ') ? c['ชื่อส่วนควบ'] : '';
+
   showSheet(`
     <div class="sheet-title">${editing ? 'แก้ไขส่วนควบ' : 'เพิ่มส่วนควบ'}</div>
-    <div class="field"><label>ชื่อส่วนควบ</label><input class="input" id="c_name" value="${c ? escapeHtml(c['ชื่อส่วนควบ']) : ''}"></div>
-    <div class="field"><label>ประเภท</label><select class="input" id="c_type">${COMPONENT_TYPES.map(t => `<option ${c && c['ประเภท']===t?'selected':''}>${t}</option>`).join('')}</select></div>
+    <div class="field"><label>ประเภทส่วนควบ (ระบบจะใช้ชื่อประเภทเป็นชื่อให้อัตโนมัติ)</label>
+      <select class="input" id="c_type">${typeOptions.map(t => `<option value="${escapeHtml(t)}" ${curType === t ? 'selected' : ''}>${escapeHtml(t)}</option>`).join('')}</select>
+    </div>
+    <!-- ช่องกรอกชื่อ: โชว์เฉพาะตอนเลือกประเภท "อื่นๆ" -->
+    <div class="field" id="c_nameWrap" style="display:none;"><label>ระบุชื่อส่วนควบ</label><input class="input" id="c_name" value="${escapeHtml(otherNameDefault)}" placeholder="เช่น ขาทราย"></div>
     <div class="field"><label>จำนวน</label><input class="input" type="number" min="1" id="c_qty" value="${c ? compQty(c) : 1}"></div>
     <div class="field"><label>หมายเลข/ซีเรียล</label><input class="input" id="c_serial" value="${c ? escapeHtml(c['หมายเลข/ซีเรียล'])||'' : ''}"></div>
     <div class="field"><label>หมายเหตุ</label><input class="input" id="c_note" value="${c ? escapeHtml(c['หมายเหตุ'])||'' : ''}"></div>
     <div class="btn-row"><button class="btn btn-ghost" id="btnCancel">ยกเลิก</button><button class="btn btn-primary" id="btnSave">บันทึก</button></div>
     ${editing ? `<div class="btn-row"><button class="btn btn-danger" id="btnDeleteComp">ลบส่วนควบนี้</button></div>` : ''}
   `);
+
+  // แสดง/ซ่อนช่องชื่อ ตามประเภทที่เลือก
+  function toggleNameField() {
+    document.getElementById('c_nameWrap').style.display = (val('c_type') === 'อื่นๆ') ? 'block' : 'none';
+  }
+  document.getElementById('c_type').onchange = toggleNameField;
+  toggleNameField();
+
   document.getElementById('btnCancel').onclick = closeSheet;
   document.getElementById('btnSave').onclick = async () => {
-    if (!val('c_name')) { toast('กรุณากรอกชื่อส่วนควบ'); return; }
+    const type = val('c_type');
+    // ชื่อ = ชื่อประเภท (ยกเว้น "อื่นๆ" ให้ใช้ชื่อที่กรอก ถ้าไม่กรอกใช้คำว่า "อื่นๆ")
+    const name = (type === 'อื่นๆ') ? (val('c_name').trim() || 'อื่นๆ') : type;
+    if (!type) { toast('กรุณาเลือกประเภทส่วนควบ'); return; }
     const qty = Math.max(1, parseInt(val('c_qty'), 10) || 1);
-   if (editing && qty < compOut(c)) { toast('จำนวนต้องไม่น้อยกว่าที่ถูกยืมอยู่ (' + compOut(c) + ')'); return; }
-    const payload = { id: c ? c['รหัสส่วนควบ'] : undefined, parentId, name: val('c_name'), type: val('c_type'), serial: val('c_serial'), note: val('c_note'), qty };
+    if (editing && qty < compOut(c)) { toast('จำนวนต้องไม่น้อยกว่าที่ถูกยืมอยู่ (' + compOut(c) + ')'); return; }
+    const payload = { id: c ? c['รหัสส่วนควบ'] : undefined, parentId, name, type, serial: val('c_serial'), note: val('c_note'), qty };
     const saveBtn = document.getElementById('btnSave'); if (saveBtn.disabled) return; setButtonBusy(saveBtn, true); setLoading(true, 'กำลังบันทึกส่วนควบ...');
     try { await apiPost(editing ? 'updateComponent' : 'addComponent', payload); closeSheet(); toast('บันทึกส่วนควบแล้ว'); await reloadThen(() => openAssetDetail(parentId)); }
     catch (err) { toast(err.message || 'บันทึกส่วนควบไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(saveBtn, false); }
@@ -2869,10 +2906,11 @@ function refreshComponentPicker() {
   wrap.innerHTML = `<label>ส่วนควบที่ยืมไปด้วย</label>` + (comps.length
     ? comps.map(c => {
         const av = compAvail(c);
+        const suffix = compTypeSuffix(c); // แสดงประเภทเฉพาะเมื่อต่างจากชื่อ
         return `<div style="display:flex; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
           <label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:400; margin:0; color:var(--ink); flex:1 1 180px;">
             <input type="checkbox" class="f_comp_chk" value="${escapeHtml(c['รหัสส่วนควบ'])}" style="width:16px;height:16px;">
-            ${escapeHtml(c['ชื่อส่วนควบ'])} <span style="color:var(--ink-dim); font-size:11px;">(${escapeHtml(c['ประเภท'] || '-')} · เหลือ ${av})</span>
+            ${escapeHtml(compDisplayName(c))} <span style="color:var(--ink-dim); font-size:11px;">(${suffix ? escapeHtml(suffix) + ' · ' : ''}เหลือ ${av})</span>
           </label>
           <input type="number" class="input f_comp_qty" data-for="${escapeHtml(c['รหัสส่วนควบ'])}" min="1" max="${av}" value="${av}" style="width:80px; display:none;" title="จำนวนที่ยืม">
         </div>`;
