@@ -128,7 +128,8 @@ const maintToThai = r => ({
 });
 const componentToThai = r => ({
   'รหัสส่วนควบ': r.id, 'รหัสครุภัณฑ์หลัก': r.parent_id, 'ชื่อส่วนควบ': r.name, 'ประเภท': r.type,
-  'หมายเลข/ซีเรียล': r.serial, 'สถานะ': r.status, 'หมายเหตุ': r.note, 'วันที่บันทึก': r.created_at
+  'หมายเลข/ซีเรียล': r.serial, 'สถานะ': r.status, 'หมายเหตุ': r.note, 'วันที่บันทึก': r.created_at,
+  'จำนวน': r.qty, 'จำนวนที่ยืมอยู่': r.qty_out
 });
 const userToThai = r => ({
   'รหัสจนท.': r.id, 'LINEUserId': r.line_user_id, 'ชื่อ-สกุล': r.name, 'ตำแหน่ง': r.position,
@@ -271,9 +272,23 @@ async function supaApiGet(action, params) {
 }
 
 // ==================== POST-side actions ====================
-async function setComponentsStatusSb(ids, status) {
-  if (!ids || !ids.length) return;
-  await sb.from('components').update({ status }).in('id', ids);
+// "CMP-123:2,CMP-456" -> [{id:'CMP-123', n:2}, {id:'CMP-456', n:1}]
+function parseCompRefs(str) {
+  return String(str || '').split(',').map(s => s.trim()).filter(Boolean).map(s => {
+    const [id, n] = s.split(':');
+    return { id: id.trim(), n: Math.max(1, parseInt(n, 10) || 1) };
+  });
+}
+// sign = +1 ตอนยืม, -1 ตอนคืน/ลบรายการ
+async function adjustComponentsSb(refs, sign) {
+  if (!refs || !refs.length) return;
+  const { data } = await sb.from('components').select('id,qty,qty_out').in('id', refs.map(r => r.id));
+  for (const c of (data || [])) {
+    const r = refs.find(x => x.id === c.id);
+    const q = c.qty || 1;
+    const out = Math.min(q, Math.max(0, (c.qty_out || 0) + sign * r.n));
+    await sb.from('components').update({ qty_out: out, status: out >= q ? 'กำลังยืม' : 'พร้อมใช้งาน' }).eq('id', c.id);
+  }
 }
 
 async function sAddAsset(p, actor) {
@@ -460,17 +475,26 @@ async function sUpdateMaint(p, actor) {
   await logActivitySb(actor, 'อัปเดตงานซ่อม', p.id);
   return { updated: true };
 }
-
 async function sAddComponent(p, actor) {
   const id = genId('CMP');
-  const { error } = await sb.from('components').insert({ id, parent_id: p.parentId, name: p.name, type: p.type || '', serial: p.serial || '', status: 'พร้อมใช้งาน', note: p.note || '' });
+  const qty = Math.max(1, parseInt(p.qty, 10) || 1);
+  const { error } = await sb.from('components').insert({ id, parent_id: p.parentId, name: p.name, type: p.type || '', serial: p.serial || '', status: 'พร้อมใช้งาน', note: p.note || '', qty, qty_out: 0 });
   if (error) throw new Error(error.message);
-  await logActivitySb(actor, 'เพิ่มส่วนควบ', p.name);
+  await logActivitySb(actor, 'เพิ่มส่วนควบ', p.name + ' x' + qty);
   return { id };
 }
 async function sUpdateComponent(p, actor) {
   const upd = {};
   ['name', 'type', 'serial', 'status', 'note'].forEach(k => { if (p[k] !== undefined) upd[k] = p[k]; });
+  if (p.qty !== undefined) {
+    const qty = Math.max(1, parseInt(p.qty, 10) || 1);
+    upd.qty = qty;
+    const { data: cur } = await sb.from('components').select('qty_out').eq('id', p.id).single();
+    const out = Math.min(qty, (cur && cur.qty_out) || 0);
+    upd.qty_out = out;
+    if (out >= qty) upd.status = 'กำลังยืม';
+    else if (out < qty && upd.status === undefined) upd.status = 'พร้อมใช้งาน';
+  }
   const { error } = await sb.from('components').update(upd).eq('id', p.id);
   if (error) throw new Error(error.message);
   await logActivitySb(actor, 'แก้ไขส่วนควบ', p.id);
