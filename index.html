@@ -2020,6 +2020,7 @@ function renderAssets() {
           <button id="btnViewGrid" class="${isGrid ? 'active' : ''}" title="มุมมองการ์ด">${ICONS.gridView}</button>
         </div>
         <button class="icon-btn" id="btnScanQr" title="สแกน QR/บาร์โค้ด" aria-label="สแกน QR">${ICONS.scan}</button>
+        <button class="icon-btn" id="btnPrintQrBatch" title="พิมพ์ QR ทั้งหมดตามตัวกรอง" aria-label="พิมพ์ QR ทั้งหมด">${ICONS.print}</button>
       </span>
     </div>
 
@@ -2048,6 +2049,7 @@ function renderAssets() {
   };
   document.getElementById('btnAssetFilter').onclick = openAssetFilterSheet;
   document.getElementById('btnScanQr').onclick = openScannerSheet;
+  document.getElementById('btnPrintQrBatch').onclick = () => printQrBatch(assetFiltered());
   document.getElementById('btnViewList').onclick = () => { state.assetView = 'list'; setAssetView('list'); renderAssets(); };
   document.getElementById('btnViewGrid').onclick = () => { state.assetView = 'grid'; setAssetView('grid'); renderAssets(); };
   // กดปุ่มหมวดหมู่ -> กรองทันที
