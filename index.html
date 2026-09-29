@@ -2275,7 +2275,17 @@ function openAssetDetail(id) {
     </div>` : ''}
   `);
   document.getElementById('btnShowQr').onclick = () => openQrView(a);
-  document.getElementById('btnPrintAssetForm').onclick = () => openPrintMemoForm({ items: [a], components: componentsOf(id) });
+  document.getElementById('btnPrintAssetForm').onclick = () => {
+  // หารายการยืมที่ยังไม่คืนของครุภัณฑ์ชิ้นนี้
+  const activeBorrow = state.borrow.find(b =>
+    b['รหัสครุภัณฑ์'] === id && (b['สถานะ'] === 'กำลังยืม' || b['สถานะ'] === 'เกินกำหนด'));
+  if (activeBorrow) {
+    // ส่ง borrow เข้าไป ฟอร์มจะดึงชื่อผู้ยืม / ผู้อนุมัติ / กำหนดคืน ให้อัตโนมัติ
+    openPrintMemoForm({ borrow: activeBorrow });
+  } else {
+    openPrintMemoForm({ items: [a], components: componentsOf(id) });
+  }
+};
   if (isAdmin()) {
     document.getElementById('btnQuickStatus').onclick = () => openQuickStatusForm(a);
     document.getElementById('btnEditAsset').onclick = () => { closeSheet(); openAssetForm(a); };
