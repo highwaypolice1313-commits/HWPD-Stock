@@ -735,26 +735,69 @@ table.rp-table td{ padding:9px 10px; border-bottom:1px solid var(--panel-line); 
 table.rp-table th.num, table.rp-table td.num{ text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
 table.rp-table tfoot td{ font-weight:600; border-bottom:none; background:var(--panel-soft); }
 
-   /* ===== ทะเบียนครุภัณฑ์ (แบบเรียบง่าย) ===== */
-.as-serial{ font-family:var(--font-num); font-weight:600; color:var(--navy); letter-spacing:.01em; }
-.as-serial.none{ font-family:var(--font-th); font-weight:400; color:var(--ink-faint); }
-.as-filter-row{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
-.as-filter-row .input{ flex:1 1 140px; width:auto; }
-.as-summary{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; }
-.as-summary .chip{ display:inline-flex; align-items:center; gap:6px; }
-.as-summary .chip b{ font-family:var(--font-num); }
-.as-summary .chip.active b{ color:#fff; }
-.as-more{ position:relative; }
-.as-more-menu{
-  position:absolute; right:0; top:44px; z-index:30; min-width:190px; padding:6px;
-  background:var(--panel); border:1px solid var(--panel-line); border-radius:14px; box-shadow:var(--shadow-lg);
+/* ===== ทะเบียนครุภัณฑ์ (ชุดพื้นฐาน) ===== */
+.ax-top{ display:flex; gap:10px; align-items:center; margin-bottom:14px; }
+.ax-search{ position:relative; flex:1; min-width:0; }
+.ax-search > svg{ position:absolute; left:16px; top:50%; transform:translateY(-50%); width:18px; height:18px; color:var(--ink-faint); pointer-events:none; }
+.ax-search .input{ height:50px; padding:0 18px 0 46px; border-radius:99px; background:var(--panel); border:1px solid var(--panel-line); box-shadow:var(--shadow-sm); }
+.ax-round{
+  position:relative; flex:none; width:50px; height:50px; border-radius:50%; border:1px solid var(--panel-line);
+  background:var(--panel); color:var(--navy); display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:var(--shadow-sm);
 }
-.as-more-menu button{
-  display:flex; align-items:center; gap:10px; width:100%; padding:10px 12px; border:none; background:none;
-  color:var(--ink); font-size:13px; border-radius:10px; cursor:pointer; text-align:left;
+.ax-round svg{ width:20px; height:20px; }
+.ax-round .ax-badge{
+  position:absolute; top:-2px; right:-2px; min-width:18px; height:18px; padding:0 5px; border-radius:99px;
+  background:var(--gold); color:#fff; font-size:10.5px; font-weight:600; display:flex; align-items:center; justify-content:center; font-family:var(--font-num);
 }
-.as-more-menu button:hover{ background:var(--gold-wash); }
-.as-more-menu svg{ width:16px; height:16px; }
+.ax-pills{ display:flex; gap:8px; overflow-x:auto; padding:2px 0 14px; scrollbar-width:none; }
+.ax-pill{
+  flex:none; display:inline-flex; align-items:center; gap:7px; padding:9px 16px; border-radius:99px; cursor:pointer;
+  background:var(--panel); border:1px solid var(--panel-line); color:var(--ink-dim); font-size:13px; white-space:nowrap;
+}
+.ax-pill b{ font-family:var(--font-num); font-weight:600; color:var(--ink); }
+.ax-pill.active{ background:var(--navy); border-color:var(--navy); color:#fff; box-shadow:0 6px 16px rgba(23,50,79,.22); }
+.ax-pill.active b{ color:#fff; }
+.ax-count{ font-size:12px; color:var(--ink-dim); margin:0 4px 10px; }
+.ax-ico{ width:46px; height:46px; border-radius:15px; flex:none; display:flex; align-items:center; justify-content:center; background:var(--navy-wash); color:var(--navy); }
+.ax-ico svg{ width:21px; height:21px; }
+.ax-sn{ margin-top:3px; font-size:13.5px; }
+.ax-serial{ font-family:var(--font-num); font-weight:600; color:var(--navy); letter-spacing:.01em; }
+.ax-sn .none{ font-weight:400; color:var(--ink-faint); font-family:var(--font-th); }
+.ax-meta{ margin-top:2px; font-size:11.5px; color:var(--ink-dim); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ax-warn{ margin-top:5px; font-size:11.5px; font-weight:500; color:var(--warn); }
+.ax-warn.bad{ color:var(--bad); }
+.ax-st{ flex:none; display:flex; align-items:center; gap:6px; font-size:12px; font-weight:500; color:var(--c, var(--ink-dim)); }
+.ax-st::before{ content:""; width:8px; height:8px; border-radius:50%; background:var(--c, var(--ink-dim)); box-shadow:0 0 0 3px color-mix(in srgb, var(--c, #888) 18%, transparent); }
+.ax-more{ display:block; margin:16px auto 4px; padding:12px 28px; border-radius:99px; border:1px solid var(--panel-line); background:var(--panel); color:var(--ink); font-size:13px; cursor:pointer; }
+.ax-fsheet-actions{ display:flex; gap:10px; flex-wrap:wrap; }
+.ax-fsheet-actions .btn{ flex:1 1 140px; }
+
+   /* ===== ทะเบียนครุภัณฑ์ v4 (จัดกลุ่มตามชื่อ + สลับมุมมอง) ===== */
+.ax-glist{ display:grid; grid-template-columns:1fr; gap:10px; align-items:start; }
+@media (min-width:900px){ .ax-glist{ grid-template-columns:1fr 1fr; gap:12px; } }
+.ax-grp{ overflow:hidden; }
+.ax-ghead{ display:flex; align-items:center; gap:13px; padding:14px 16px; cursor:pointer; user-select:none; }
+.ax-gname{ font-size:15px; font-weight:600; line-height:1.3; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ax-gsub{ font-size:11.5px; color:var(--ink-dim); margin-top:1px; }
+.ax-gcount{ margin-left:auto; flex:none; font-size:12px; font-weight:500; padding:3px 11px; border-radius:99px; background:var(--gold-wash); color:var(--gold-deep); font-family:var(--font-num); }
+.ax-caret{ width:16px; height:16px; flex:none; color:var(--ink-faint); transition:transform .15s ease; }
+.ax-grp.open .ax-caret{ transform:rotate(90deg); }
+.ax-gbody{ display:none; padding:0 16px 6px; }
+.ax-grp.open .ax-gbody{ display:block; }
+.ax-grow{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 0; border-top:1px solid var(--panel-line); cursor:pointer; }
+.ax-grow .ax-sn{ font-size:15px; margin-top:0; }
+
+.ax-ggrid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:12px; align-items:start; }
+.ax-gcard{ padding:16px; display:flex; flex-direction:column; gap:12px; }
+.ax-gcard .ax-ghead{ padding:0; cursor:default; }
+.ax-chips{ display:flex; flex-wrap:wrap; gap:7px; }
+.ax-chip-sn{
+  display:inline-flex; align-items:center; gap:7px; padding:7px 12px; border-radius:99px; cursor:pointer;
+  background:var(--navy-wash); color:var(--navy); font-family:var(--font-num); font-weight:600; font-size:12.5px;
+}
+.ax-chip-sn:hover{ background:var(--gold-wash); }
+.ax-chip-sn.none{ font-family:var(--font-th); font-weight:400; color:var(--ink-faint); }
+.ax-cdot{ width:8px; height:8px; border-radius:50%; background:var(--c, var(--off)); flex:none; }
    
 </style>
 </head>
@@ -967,10 +1010,9 @@ ICONS.print = '<svg viewBox="0 0 20 20" fill="none"><path d="M5 7V3.5a1 1 0 011-
 const state = {
   user: null, role: 'guest', sessionToken: null,
   assets: [], borrow: [], maint: [], components: [], users: [], activity: [], memos: [], dashboard: null, settings: {},
-  tab: 'dashboard', assetFilter: 'all', assetStatusFilter: 'all', assetSearch: '', assetSort: 'name_asc', assetPage: 1,
+  tab: 'dashboard', assetFilter: 'all', assetStatusFilter: 'all', assetSearch: '', assetSort: 'name_asc',
   auditYear: new Date().getFullYear(), auditRecords: []
 };
-const PAGE_SIZE = 12;
 const ASSET_VIEW_KEY = 'hpAssetViewV1';
    function getViewMode(key, def) {
   try { return localStorage.getItem('hpView_' + key) || (def || 'list'); } catch (e) { return def || 'list'; }
@@ -1784,136 +1826,247 @@ function sortAssets(list) {
     return 0;
   });
 }
+const ASSET_STATUS_COLOR = { 'พร้อมใช้งาน':'var(--ok)', 'กำลังยืม':'var(--warn)', 'ซ่อมบำรุง':'var(--bad)', 'จำหน่ายแล้ว':'var(--off)' };
+const ASSET_STEP = 20; // จำนวน "กลุ่ม" ต่อการแสดงหนึ่งครั้ง
+
 function assetSerialHtml(a) {
   const serial = String(a['หมายเลขเครื่อง'] || '').trim();
   const plate = String(a['ทะเบียนรถ'] || '').trim();
-  if (serial) return `<span class="as-serial">S/N ${escapeHtml(serial)}</span>`;
-  if (plate) return `<span class="as-serial">ทะเบียน ${escapeHtml(plate)}</span>`;
-  return `<span class="as-serial none">ไม่ระบุหมายเลขเครื่อง</span>`;
+  if (serial) return `<span class="ax-serial">S/N ${escapeHtml(serial)}</span>`;
+  if (plate) return `<span class="ax-serial">ทะเบียน ${escapeHtml(plate)}</span>`;
+  return `<span class="none">ไม่ระบุหมายเลขเครื่อง</span>`;
+}
+function assetSerialText(a) {
+  return String(a['หมายเลขเครื่อง'] || '').trim() || String(a['ทะเบียนรถ'] || '').trim() || '';
+}
+function assetWarnHtml(a) {
+  const dleft = daysUntil(a['วันครบกำหนดตรวจสภาพ/ต่อทะเบียน']);
+  if (dleft === null || dleft > renewalWindowDays() || a['สถานะ'] === 'จำหน่ายแล้ว') return '';
+  return `<div class="ax-warn ${dleft < 0 ? 'bad' : ''}">${dleft < 0 ? 'เลยกำหนดตรวจสภาพ/ต่อทะเบียน' : 'ใกล้ครบกำหนดอีก ' + dleft + ' วัน'}</div>`;
+}
+
+function assetFiltered() {
+  const q = (state.assetSearch || '').trim().toLowerCase();
+  const list = state.assets.filter(a => {
+    if (state.assetFilter !== 'all' && a['หมวดหมู่'] !== state.assetFilter) return false;
+    if (state.assetStatusFilter !== 'all' && a['สถานะ'] !== state.assetStatusFilter) return false;
+    if (!q) return true;
+    return [a['ชื่อครุภัณฑ์'], a['รหัสครุภัณฑ์'], a['หมายเลขเครื่อง'], a['ทะเบียนรถ'], a['ยี่ห้อ/รุ่น']]
+      .map(x => String(x || '').toLowerCase()).join(' | ').includes(q);
+  });
+  return sortAssets(list);
+}
+function assetGroups(list) {
+  const m = new Map();
+  list.forEach(a => {
+    const k = String(a['ชื่อครุภัณฑ์'] || 'ไม่ระบุชื่อ').trim();
+    if (!m.has(k)) m.set(k, []);
+    m.get(k).push(a);
+  });
+  return Array.from(m, ([name, items]) => ({
+    name,
+    cat: items[0]['หมวดหมู่'],
+    items: items.slice().sort((x, y) => assetSerialText(x).localeCompare(assetSerialText(y), 'th', { numeric: true }))
+  }));
+}
+const AX_CARET = '<svg class="ax-caret" viewBox="0 0 20 20" fill="none"><path d="M7 4l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+function assetItemRow(a) {
+  return `<div class="ax-grow asset-item" data-id="${escapeHtml(a['รหัสครุภัณฑ์'])}">
+    <div style="min-width:0;">
+      <div class="ax-sn">${assetSerialHtml(a)}</div>
+      <div class="ax-meta">${escapeHtml(a['ผู้ครอบครอง/หน่วยงาน'] || 'คลังพัสดุ')}</div>
+      ${assetWarnHtml(a)}
+    </div>
+    <div class="ax-st" style="--c:${ASSET_STATUS_COLOR[a['สถานะ']] || 'var(--ink-dim)'};">${escapeHtml(a['สถานะ'])}</div>
+  </div>`;
+}
+function assetGroupList(g, open) {
+  return `<div class="glass ax-grp ${open ? 'open' : ''}" data-gname="${escapeHtml(g.name)}">
+    <div class="ax-ghead">
+      <div class="ax-ico">${catIcon(g.cat)}</div>
+      <div style="min-width:0;">
+        <div class="ax-gname">${escapeHtml(g.name)}</div>
+        <div class="ax-gsub">${escapeHtml(g.cat || '')}</div>
+      </div>
+      <span class="ax-gcount">${g.items.length}</span>${AX_CARET}
+    </div>
+    <div class="ax-gbody">${g.items.map(assetItemRow).join('')}</div>
+  </div>`;
+}
+function assetGroupCard(g) {
+  const chips = g.items.map(a => {
+    const t = assetSerialText(a);
+    return `<span class="ax-chip-sn asset-item ${t ? '' : 'none'}" data-id="${escapeHtml(a['รหัสครุภัณฑ์'])}" style="--c:${ASSET_STATUS_COLOR[a['สถานะ']] || 'var(--ink-dim)'};" title="${escapeHtml(a['สถานะ'])}"><i class="ax-cdot"></i>${t ? escapeHtml(t) : 'ไม่ระบุ'}</span>`;
+  }).join('');
+  return `<div class="glass ax-gcard">
+    <div class="ax-ghead">
+      <div class="ax-ico">${catIcon(g.cat)}</div>
+      <div style="min-width:0;">
+        <div class="ax-gname">${escapeHtml(g.name)}</div>
+        <div class="ax-gsub">${escapeHtml(g.cat || '')}</div>
+      </div>
+      <span class="ax-gcount">${g.items.length}</span>
+    </div>
+    <div class="ax-chips">${chips}</div>
+  </div>`;
+}
+
+function drawAssetList() {
+  const listEl = document.getElementById('assetList');
+  if (!listEl) return;
+  if (!state.assetOpen) state.assetOpen = new Set();
+  if (!state.assetClosed) state.assetClosed = new Set();
+  const isGrid = state.assetView === 'grid';
+  const q = (state.assetSearch || '').trim();
+  const all = assetFiltered();
+  const groups = assetGroups(all);
+  const limit = state.assetLimit || ASSET_STEP;
+  const shown = groups.slice(0, limit);
+  const isOpen = g => {
+    if (state.assetClosed.has(g.name)) return false;
+    if (state.assetOpen.has(g.name)) return true;
+    return !!q || groups.length === 1;
+  };
+
+  const cnt = document.getElementById('assetCount');
+  if (cnt) cnt.textContent = 'พบ ' + all.length + ' รายการ ใน ' + groups.length + ' กลุ่ม';
+
+  listEl.className = isGrid ? 'ax-ggrid' : 'ax-glist';
+  listEl.innerHTML = shown.length
+    ? shown.map(g => isGrid ? assetGroupCard(g) : assetGroupList(g, isOpen(g))).join('')
+    : `<div class="glass empty-state" style="grid-column:1/-1;">ไม่พบครุภัณฑ์ที่ค้นหา</div>`;
+
+  const moreEl = document.getElementById('assetMoreWrap');
+  if (moreEl) {
+    moreEl.innerHTML = groups.length > shown.length
+      ? `<button class="ax-more" id="btnAssetMoreItems">แสดงเพิ่ม (อีก ${groups.length - shown.length} กลุ่ม)</button>` : '';
+    const b = document.getElementById('btnAssetMoreItems');
+    if (b) b.onclick = () => { state.assetLimit = limit + ASSET_STEP; drawAssetList(); };
+  }
+
+  listEl.querySelectorAll('.ax-ghead').forEach(h => {
+    const grp = h.closest('.ax-grp');
+    if (!grp) return; // มุมมองการ์ดไม่มีการพับ/เปิด
+    h.onclick = () => {
+      const name = grp.dataset.gname;
+      const nowOpen = !grp.classList.contains('open');
+      grp.classList.toggle('open', nowOpen);
+      if (nowOpen) { state.assetOpen.add(name); state.assetClosed.delete(name); }
+      else { state.assetClosed.add(name); state.assetOpen.delete(name); }
+    };
+  });
+  listEl.querySelectorAll('.asset-item').forEach(it => it.onclick = () => openAssetDetail(it.dataset.id));
+}
+
+function openAssetFilterSheet() {
+  showSheet(`
+    <div class="sheet-title">ตัวกรอง</div>
+    <div class="field"><label>หมวดหมู่</label>
+      <select class="input" id="fx_cat">
+        <option value="all">ทุกหมวดหมู่</option>
+        ${getCategories().map(c => `<option value="${escapeHtml(c)}" ${state.assetFilter === c ? 'selected' : ''}>${escapeHtml(c)}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field"><label>เรียงลำดับ</label>
+      <select class="input" id="fx_sort">
+        <option value="name_asc" ${state.assetSort === 'name_asc' ? 'selected' : ''}>ชื่อ ก-ฮ</option>
+        <option value="name_desc" ${state.assetSort === 'name_desc' ? 'selected' : ''}>ชื่อ ฮ-ก</option>
+        <option value="date_desc" ${state.assetSort === 'date_desc' ? 'selected' : ''}>รับเข้าล่าสุด</option>
+        <option value="date_asc" ${state.assetSort === 'date_asc' ? 'selected' : ''}>รับเข้าเก่าสุด</option>
+        <option value="value_desc" ${state.assetSort === 'value_desc' ? 'selected' : ''}>มูลค่ามาก-น้อย</option>
+      </select>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="fx_reset">ล้างตัวกรอง</button>
+      <button class="btn btn-primary" id="fx_apply">ดูผลลัพธ์</button>
+    </div>
+    <div class="memo-section-label">เครื่องมือ</div>
+    <div class="ax-fsheet-actions">
+      <button class="btn btn-ghost" id="fx_qr">พิมพ์ QR ตามตัวกรอง</button>
+      <button class="btn btn-ghost" id="fx_csv">ส่งออก CSV</button>
+    </div>
+  `);
+  document.getElementById('fx_apply').onclick = () => {
+    state.assetFilter = val('fx_cat'); state.assetSort = val('fx_sort'); state.assetLimit = ASSET_STEP;
+    closeSheet(); renderAssets();
+  };
+  document.getElementById('fx_reset').onclick = () => {
+    state.assetFilter = 'all'; state.assetSort = 'name_asc'; state.assetStatusFilter = 'all'; state.assetSearch = ''; state.assetLimit = ASSET_STEP;
+    closeSheet(); renderAssets();
+  };
+  document.getElementById('fx_qr').onclick = () => {
+    state.assetFilter = val('fx_cat'); state.assetSort = val('fx_sort');
+    const list = assetFiltered(); closeSheet(); printQrBatch(list);
+  };
+  document.getElementById('fx_csv').onclick = () => {
+    state.assetFilter = val('fx_cat'); state.assetSort = val('fx_sort');
+    const list = assetFiltered(); closeSheet();
+    exportCsv('ครุภัณฑ์.csv', ['รหัสครุภัณฑ์','ชื่อครุภัณฑ์','หมวดหมู่','ยี่ห้อ/รุ่น','หมายเลขเครื่อง','วันที่รับเข้า','มูลค่า(บาท)','สถานะ','ผู้ครอบครอง/หน่วยงาน','หน่วยงาน','วันครบกำหนดตรวจสภาพ/ต่อทะเบียน','หมายเหตุ'], list);
+  };
 }
 
 function renderAssets() {
   const el = document.getElementById('view-assets');
+  if (!state.assetLimit) state.assetLimit = ASSET_STEP;
   if (state.assetView === undefined) state.assetView = getAssetView();
-
-  let filtered = state.assets.filter(a => {
-    const matchCat = state.assetFilter === 'all' || a['หมวดหมู่'] === state.assetFilter;
-    const matchStatus = state.assetStatusFilter === 'all' || a['สถานะ'] === state.assetStatusFilter;
-    const q = state.assetSearch;
-    const hay = [a['ชื่อครุภัณฑ์'], a['รหัสครุภัณฑ์'], a['หมายเลขเครื่อง'], a['ทะเบียนรถ'], a['ยี่ห้อ/รุ่น']]
-      .map(x => String(x || '').toLowerCase()).join(' | ');
-    return matchCat && matchStatus && (!q || hay.includes(q));
-  });
-  filtered = sortAssets(filtered);
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  if (state.assetPage > totalPages) state.assetPage = totalPages;
-  const pageItems = filtered.slice((state.assetPage - 1) * PAGE_SIZE, state.assetPage * PAGE_SIZE);
-
-  const countByStatus = s => state.assets.filter(a => a['สถานะ'] === s).length;
   const isGrid = state.assetView === 'grid';
-  const summary = [
+  const countBy = s => state.assets.filter(a => a['สถานะ'] === s).length;
+  const pills = [
     { v: 'all', label: 'ทั้งหมด', n: state.assets.length },
-    { v: 'พร้อมใช้งาน', label: 'พร้อมใช้', n: countByStatus('พร้อมใช้งาน') },
-    { v: 'กำลังยืม', label: 'ยืม', n: countByStatus('กำลังยืม') },
-    { v: 'ซ่อมบำรุง', label: 'ซ่อม', n: countByStatus('ซ่อมบำรุง') }
+    { v: 'พร้อมใช้งาน', label: 'พร้อมใช้', n: countBy('พร้อมใช้งาน') },
+    { v: 'กำลังยืม', label: 'ยืม', n: countBy('กำลังยืม') },
+    { v: 'ซ่อมบำรุง', label: 'ซ่อม', n: countBy('ซ่อมบำรุง') }
   ];
+  const activeFilters = (state.assetFilter !== 'all' ? 1 : 0) + (state.assetSort !== 'name_asc' ? 1 : 0);
 
   el.innerHTML = `
     <div class="section-title">
-      ทะเบียนครุภัณฑ์ <small>${filtered.length} / ${state.assets.length} รายการ</small>
+      ทะเบียนครุภัณฑ์
       <span class="section-actions">
         <div class="view-toggle">
           <button id="btnViewList" class="${!isGrid ? 'active' : ''}" title="มุมมองรายการ">${ICONS.listView}</button>
           <button id="btnViewGrid" class="${isGrid ? 'active' : ''}" title="มุมมองการ์ด">${ICONS.gridView}</button>
         </div>
-        <button class="icon-btn" id="btnScanQr" title="สแกน QR/บาร์โค้ด">${ICONS.scan}</button>
-        <div class="as-more">
-          <button class="icon-btn" id="btnAssetMore" title="เพิ่มเติม" aria-label="เพิ่มเติม"><svg viewBox="0 0 20 20" fill="currentColor"><circle cx="4.5" cy="10" r="1.5"/><circle cx="10" cy="10" r="1.5"/><circle cx="15.5" cy="10" r="1.5"/></svg></button>
-          <div class="as-more-menu" id="assetMoreMenu" style="display:none;">
-            <button id="btnPrintQrBatch">${ICONS.print} พิมพ์ QR ตามตัวกรอง</button>
-            <button id="btnExportAssets">${ICONS.download} ส่งออก CSV</button>
-          </div>
-        </div>
+        <button class="icon-btn" id="btnScanQr" title="สแกน QR/บาร์โค้ด" aria-label="สแกน QR">${ICONS.scan}</button>
       </span>
     </div>
 
-    <div class="search-row">
-      <input class="input" id="assetSearchInput" placeholder="ค้นหาชื่อ / รหัส / หมายเลขเครื่อง / ทะเบียน..." value="${escapeHtml(state.assetSearch)}">
+    <div class="ax-top">
+      <div class="ax-search">
+        <svg viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.8" stroke="currentColor" stroke-width="1.6"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <input class="input" id="assetSearchInput" placeholder="ค้นหาชื่อ / หมายเลขเครื่อง / ทะเบียน" value="${escapeHtml(state.assetSearch)}" autocomplete="off">
+      </div>
+      <button class="ax-round" id="btnAssetFilter" title="ตัวกรอง" aria-label="ตัวกรอง">
+        <svg viewBox="0 0 20 20" fill="none"><path d="M3 5h14M6 10h8M9 15h2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        ${activeFilters ? `<span class="ax-badge">${activeFilters}</span>` : ''}
+      </button>
     </div>
 
-    <div class="as-filter-row">
-      <select class="input" id="assetCatSelect">
-        <option value="all">ทุกหมวดหมู่</option>
-        ${getCategories().map(c => `<option value="${escapeHtml(c)}" ${state.assetFilter===c?'selected':''}>${escapeHtml(c)}</option>`).join('')}
-      </select>
-      <select class="input" id="assetSortSelect">
-        <option value="name_asc" ${state.assetSort==='name_asc'?'selected':''}>ชื่อ ก-ฮ</option>
-        <option value="name_desc" ${state.assetSort==='name_desc'?'selected':''}>ชื่อ ฮ-ก</option>
-        <option value="date_desc" ${state.assetSort==='date_desc'?'selected':''}>รับเข้าล่าสุด</option>
-        <option value="date_asc" ${state.assetSort==='date_asc'?'selected':''}>รับเข้าเก่าสุด</option>
-        <option value="value_desc" ${state.assetSort==='value_desc'?'selected':''}>มูลค่ามาก-น้อย</option>
-      </select>
+    <div class="ax-pills">
+      ${pills.map(p => `<div class="ax-pill ${state.assetStatusFilter === p.v ? 'active' : ''}" data-status="${p.v}">${p.label} <b>${p.n}</b></div>`).join('')}
     </div>
 
-    <div class="as-summary">
-      ${summary.map(s => `<div class="chip ${state.assetStatusFilter===s.v?'active':''}" data-status="${s.v}">${s.label} <b>${s.n}</b></div>`).join('')}
-    </div>
-
-    <div id="assetList" class="${isGrid ? 'asset-grid' : ''}">${pageItems.length ? pageItems.map(isGrid ? assetCard : assetRow).join('') : emptyState('ไม่พบครุภัณฑ์ที่ค้นหา')}</div>
-    ${filtered.length ? `<div class="pagination">
-      <button id="assetPrevPage" ${state.assetPage<=1?'disabled':''}>ก่อนหน้า</button>
-      <span>หน้า ${state.assetPage} / ${totalPages}</span>
-      <button id="assetNextPage" ${state.assetPage>=totalPages?'disabled':''}>ถัดไป</button>
-    </div>` : ''}
+    <div class="ax-count" id="assetCount"></div>
+    <div id="assetList"></div>
+    <div id="assetMoreWrap"></div>
   `;
 
-  const searchInput = document.getElementById('assetSearchInput');
-  searchInput.oninput = (e) => {
-    state.assetSearch = e.target.value.toLowerCase(); state.assetPage = 1;
-    const pos = e.target.selectionStart;
-    renderAssets();
-    const again = document.getElementById('assetSearchInput');
-    if (again) { again.focus(); try { again.setSelectionRange(pos, pos); } catch (err) {} }
+  document.getElementById('assetSearchInput').oninput = (e) => {
+    state.assetSearch = e.target.value; state.assetLimit = ASSET_STEP; drawAssetList();
   };
-  document.getElementById('assetCatSelect').onchange = (e) => { state.assetFilter = e.target.value; state.assetPage = 1; renderAssets(); };
-  document.getElementById('assetSortSelect').onchange = (e) => { state.assetSort = e.target.value; renderAssets(); };
-  document.querySelectorAll('#view-assets .as-summary .chip').forEach(c => c.onclick = () => { state.assetStatusFilter = c.dataset.status; state.assetPage = 1; renderAssets(); });
-
-  const menu = document.getElementById('assetMoreMenu');
-  document.getElementById('btnAssetMore').onclick = (e) => { e.stopPropagation(); menu.style.display = menu.style.display === 'none' ? 'block' : 'none'; };
-  document.addEventListener('click', function hideMenu(ev) {
-    if (!document.body.contains(menu)) { document.removeEventListener('click', hideMenu); return; }
-    if (!menu.contains(ev.target)) menu.style.display = 'none';
-  });
-  document.getElementById('btnExportAssets').onclick = () => { menu.style.display = 'none'; exportCsv('ครุภัณฑ์.csv', ['รหัสครุภัณฑ์','ชื่อครุภัณฑ์','หมวดหมู่','ยี่ห้อ/รุ่น','หมายเลขเครื่อง','วันที่รับเข้า','มูลค่า(บาท)','สถานะ','ผู้ครอบครอง/หน่วยงาน','หน่วยงาน','วันครบกำหนดตรวจสภาพ/ต่อทะเบียน','หมายเหตุ'], filtered); };
-  document.getElementById('btnPrintQrBatch').onclick = () => { menu.style.display = 'none'; printQrBatch(filtered); };
+  document.getElementById('btnAssetFilter').onclick = openAssetFilterSheet;
   document.getElementById('btnScanQr').onclick = openScannerSheet;
   document.getElementById('btnViewList').onclick = () => { state.assetView = 'list'; setAssetView('list'); renderAssets(); };
   document.getElementById('btnViewGrid').onclick = () => { state.assetView = 'grid'; setAssetView('grid'); renderAssets(); };
-  document.querySelectorAll('.asset-item, .asset-card').forEach(it => it.onclick = () => openAssetDetail(it.dataset.id));
-  const prevBtn = document.getElementById('assetPrevPage'); if (prevBtn) prevBtn.onclick = () => { state.assetPage--; renderAssets(); };
-  const nextBtn = document.getElementById('assetNextPage'); if (nextBtn) nextBtn.onclick = () => { state.assetPage++; renderAssets(); };
+  el.querySelectorAll('.ax-pill').forEach(p => p.onclick = () => {
+    state.assetStatusFilter = p.dataset.status; state.assetLimit = ASSET_STEP; renderAssets();
+  });
+  drawAssetList();
 }
-   
+
 function emptyState(msg) { return `<div class="glass empty-state">${msg}</div>`; }
-function assetCard(a) {
-  const dleft = daysUntil(a['วันครบกำหนดตรวจสภาพ/ต่อทะเบียน']);
-  const renewalTag = (dleft !== null && dleft <= renewalWindowDays() && a['สถานะ'] !== 'จำหน่ายแล้ว')
-    ? `<div class="status-badge ${dleft < 0 ? 'status-overdue' : 'status-borrowed'}">${dleft < 0 ? 'เลยกำหนด' : 'ใกล้ครบ ' + dleft + ' วัน'}</div>` : '';
-  return `<div class="glass asset-card" data-id="${escapeHtml(a['รหัสครุภัณฑ์'])}">
-    <div class="asset-card-top">
-      <div class="asset-card-icon">${catIcon(a['หมวดหมู่'])}</div>
-      <div class="status-badge ${statusClass(a['สถานะ'])}">${escapeHtml(a['สถานะ'])}</div>
-    </div>
-    <div>
-      <div class="asset-card-title">${escapeHtml(a['ชื่อครุภัณฑ์'])}</div>
-      <div class="asset-card-sub" style="font-size:12px;margin-top:5px;">${assetSerialHtml(a)}</div>
-      <div class="asset-card-sub">${escapeHtml(a['รหัสครุภัณฑ์'])}</div>
-    </div>
-    ${renewalTag}
-  </div>`;
-}
-   
+
 /* ========================= ฟีเจอร์ ๓: สแกน QR/บาร์โค้ด ========================= */
 let activeHtml5Qr = null;
 function stopScanner() {
@@ -1969,24 +2122,6 @@ function openScannerSheet() {
   });
 }
    
-function assetRow(a) {
-  const dleft = daysUntil(a['วันครบกำหนดตรวจสภาพ/ต่อทะเบียน']);
-  const renewalTag = (dleft !== null && dleft <= renewalWindowDays() && a['สถานะ'] !== 'จำหน่ายแล้ว')
-    ? `<div class="status-badge ${dleft < 0 ? 'status-overdue' : 'status-borrowed'}" style="margin-top:4px;">${dleft < 0 ? 'เลยกำหนด' : 'ใกล้ครบ ' + dleft + ' วัน'}</div>` : '';
-  return `<div class="glass list-item asset-item" data-id="${escapeHtml(a['รหัสครุภัณฑ์'])}">
-    <div class="li-icon">${catIcon(a['หมวดหมู่'])}</div>
-    <div class="li-body">
-      <div class="li-title">${escapeHtml(a['ชื่อครุภัณฑ์'])}</div>
-      <div class="li-sub" style="font-size:12.5px;">${assetSerialHtml(a)}</div>
-      <div class="li-sub">${escapeHtml(a['รหัสครุภัณฑ์'])} · ${escapeHtml(a['ผู้ครอบครอง/หน่วยงาน'] || 'คลังพัสดุ')}</div>
-    </div>
-    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
-      <div class="status-badge ${statusClass(a['สถานะ'])}">${escapeHtml(a['สถานะ'])}</div>
-      ${renewalTag}
-    </div>
-  </div>`;
-}
-
 function openAssetPickerSheet(currentId, onPick, onlyAvailable = true) {
   const available = onlyAvailable ? state.assets.filter(a => a['สถานะ'] === 'พร้อมใช้งาน') : state.assets.slice();
   let pickCat = 'all', pickQ = '';
