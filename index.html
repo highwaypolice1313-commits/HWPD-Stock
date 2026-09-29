@@ -798,6 +798,14 @@ table.rp-table tfoot td{ font-weight:600; border-bottom:none; background:var(--p
 .ax-chip-sn:hover{ background:var(--gold-wash); }
 .ax-chip-sn.none{ font-family:var(--font-th); font-weight:400; color:var(--ink-faint); }
 .ax-cdot{ width:8px; height:8px; border-radius:50%; background:var(--c, var(--off)); flex:none; }
+
+   /* ===== ปุ่มหมวดหมู่ใหญ่ (หน้าทะเบียนครุภัณฑ์) ===== */
+.ax-pill svg{ width:16px; height:16px; flex:none; }
+.ax-pill.active svg{ color:#fff; }
+/* จอ PC: ให้ปุ่มหมวดหมู่ขึ้นบรรทัดใหม่ ไม่ต้องเลื่อนแนวนอน */
+@media (min-width:900px){
+  .ax-pills{ flex-wrap:wrap; overflow:visible; }
+}
    
 </style>
 </head>
@@ -1816,18 +1824,24 @@ function drawLine(id, dataObj) {
 }
 
 /* ========================================================= ASSETS */
+/* ========================================================= ASSETS (v5: หมวดใหญ่เป็นปุ่ม + รายการ/การ์ดแบบรายชิ้น) */
 function sortAssets(list) {
   const [field, dir] = state.assetSort.split('_');
   const mul = dir === 'desc' ? -1 : 1;
   return [...list].sort((a, b) => {
-    if (field === 'name') return mul * String(a['ชื่อครุภัณฑ์'] || '').localeCompare(String(b['ชื่อครุภัณฑ์'] || ''), 'th');
+    if (field === 'name') {
+      const c = String(a['ชื่อครุภัณฑ์'] || '').localeCompare(String(b['ชื่อครุภัณฑ์'] || ''), 'th');
+      // ชื่อเหมือนกัน -> เรียงตามหมายเลขเครื่อง/ทะเบียนต่อ เพื่อให้ของชนิดเดียวกันอยู่ติดกันและเรียงสวย
+      if (c !== 0) return mul * c;
+      return assetSerialText(a).localeCompare(assetSerialText(b), 'th', { numeric: true });
+    }
     if (field === 'value') return mul * ((Number(a['มูลค่า(บาท)']) || 0) - (Number(b['มูลค่า(บาท)']) || 0));
     if (field === 'date') return mul * (toDate(a['วันที่รับเข้า'] || 0) - toDate(b['วันที่รับเข้า'] || 0));
     return 0;
   });
 }
 const ASSET_STATUS_COLOR = { 'พร้อมใช้งาน':'var(--ok)', 'กำลังยืม':'var(--warn)', 'ซ่อมบำรุง':'var(--bad)', 'จำหน่ายแล้ว':'var(--off)' };
-const ASSET_STEP = 20; // จำนวน "กลุ่ม" ต่อการแสดงหนึ่งครั้ง
+const ASSET_STEP = 30; // TODO: ปรับจำนวน "รายการ" ที่แสดงต่อครั้งได้ตามต้องการ (เดิมนับเป็นกลุ่ม ตอนนี้นับเป็นชิ้น)
 
 function assetSerialHtml(a) {
   const serial = String(a['หมายเลขเครื่อง'] || '').trim();
@@ -1845,6 +1859,7 @@ function assetWarnHtml(a) {
   return `<div class="ax-warn ${dleft < 0 ? 'bad' : ''}">${dleft < 0 ? 'เลยกำหนดตรวจสภาพ/ต่อทะเบียน' : 'ใกล้ครบกำหนดอีก ' + dleft + ' วัน'}</div>`;
 }
 
+/* กรองตามหมวดหมู่ + สถานะ + คำค้น แล้วเรียงลำดับ */
 function assetFiltered() {
   const q = (state.assetSearch || '').trim().toLowerCase();
   const list = state.assets.filter(a => {
@@ -1856,106 +1871,64 @@ function assetFiltered() {
   });
   return sortAssets(list);
 }
-function assetGroups(list) {
-  const m = new Map();
-  list.forEach(a => {
-    const k = String(a['ชื่อครุภัณฑ์'] || 'ไม่ระบุชื่อ').trim();
-    if (!m.has(k)) m.set(k, []);
-    m.get(k).push(a);
-  });
-  return Array.from(m, ([name, items]) => ({
-    name,
-    cat: items[0]['หมวดหมู่'],
-    items: items.slice().sort((x, y) => assetSerialText(x).localeCompare(assetSerialText(y), 'th', { numeric: true }))
-  }));
-}
-const AX_CARET = '<svg class="ax-caret" viewBox="0 0 20 20" fill="none"><path d="M7 4l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
-function assetItemRow(a) {
-  return `<div class="ax-grow asset-item" data-id="${escapeHtml(a['รหัสครุภัณฑ์'])}">
-    <div style="min-width:0;">
+/* มุมมองรายการ: 1 แถว = 1 ครุภัณฑ์ */
+function assetRowHtml(a) {
+  const c = ASSET_STATUS_COLOR[a['สถานะ']] || 'var(--ink-dim)';
+  return `<div class="glass list-item asset-item" data-id="${escapeHtml(a['รหัสครุภัณฑ์'])}">
+    <div class="ax-ico">${catIcon(a['หมวดหมู่'])}</div>
+    <div class="li-body">
+      <div class="li-title">${escapeHtml(a['ชื่อครุภัณฑ์'])}</div>
       <div class="ax-sn">${assetSerialHtml(a)}</div>
       <div class="ax-meta">${escapeHtml(a['ผู้ครอบครอง/หน่วยงาน'] || 'คลังพัสดุ')}</div>
       ${assetWarnHtml(a)}
     </div>
-    <div class="ax-st" style="--c:${ASSET_STATUS_COLOR[a['สถานะ']] || 'var(--ink-dim)'};">${escapeHtml(a['สถานะ'])}</div>
+    <div class="ax-st" style="--c:${c};">${escapeHtml(a['สถานะ'])}</div>
   </div>`;
 }
-function assetGroupList(g, open) {
-  return `<div class="glass ax-grp ${open ? 'open' : ''}" data-gname="${escapeHtml(g.name)}">
-    <div class="ax-ghead">
-      <div class="ax-ico">${catIcon(g.cat)}</div>
-      <div style="min-width:0;">
-        <div class="ax-gname">${escapeHtml(g.name)}</div>
-        <div class="ax-gsub">${escapeHtml(g.cat || '')}</div>
-      </div>
-      <span class="ax-gcount">${g.items.length}</span>${AX_CARET}
+
+/* มุมมองการ์ด: 1 การ์ด = 1 ครุภัณฑ์ */
+function assetCardHtml(a) {
+  const c = ASSET_STATUS_COLOR[a['สถานะ']] || 'var(--ink-dim)';
+  return `<div class="glass asset-card asset-item" data-id="${escapeHtml(a['รหัสครุภัณฑ์'])}">
+    <div class="asset-card-top">
+      <div class="asset-card-icon">${catIcon(a['หมวดหมู่'])}</div>
+      <div class="ax-st" style="--c:${c};">${escapeHtml(a['สถานะ'])}</div>
     </div>
-    <div class="ax-gbody">${g.items.map(assetItemRow).join('')}</div>
-  </div>`;
-}
-function assetGroupCard(g) {
-  const chips = g.items.map(a => {
-    const t = assetSerialText(a);
-    return `<span class="ax-chip-sn asset-item ${t ? '' : 'none'}" data-id="${escapeHtml(a['รหัสครุภัณฑ์'])}" style="--c:${ASSET_STATUS_COLOR[a['สถานะ']] || 'var(--ink-dim)'};" title="${escapeHtml(a['สถานะ'])}"><i class="ax-cdot"></i>${t ? escapeHtml(t) : 'ไม่ระบุ'}</span>`;
-  }).join('');
-  return `<div class="glass ax-gcard">
-    <div class="ax-ghead">
-      <div class="ax-ico">${catIcon(g.cat)}</div>
-      <div style="min-width:0;">
-        <div class="ax-gname">${escapeHtml(g.name)}</div>
-        <div class="ax-gsub">${escapeHtml(g.cat || '')}</div>
-      </div>
-      <span class="ax-gcount">${g.items.length}</span>
+    <div>
+      <div class="asset-card-title">${escapeHtml(a['ชื่อครุภัณฑ์'])}</div>
+      <div class="ax-sn">${assetSerialHtml(a)}</div>
+      <div class="asset-card-sub">${escapeHtml(a['ผู้ครอบครอง/หน่วยงาน'] || 'คลังพัสดุ')}</div>
+      ${assetWarnHtml(a)}
     </div>
-    <div class="ax-chips">${chips}</div>
   </div>`;
 }
 
 function drawAssetList() {
   const listEl = document.getElementById('assetList');
   if (!listEl) return;
-  if (!state.assetOpen) state.assetOpen = new Set();
-  if (!state.assetClosed) state.assetClosed = new Set();
   const isGrid = state.assetView === 'grid';
-  const q = (state.assetSearch || '').trim();
   const all = assetFiltered();
-  const groups = assetGroups(all);
   const limit = state.assetLimit || ASSET_STEP;
-  const shown = groups.slice(0, limit);
-  const isOpen = g => {
-    if (state.assetClosed.has(g.name)) return false;
-    if (state.assetOpen.has(g.name)) return true;
-    return !!q || groups.length === 1;
-  };
+  const shown = all.slice(0, limit);
 
   const cnt = document.getElementById('assetCount');
-  if (cnt) cnt.textContent = 'พบ ' + all.length + ' รายการ ใน ' + groups.length + ' กลุ่ม';
+  if (cnt) cnt.textContent = 'พบ ' + all.length + ' รายการ';
 
-  listEl.className = isGrid ? 'ax-ggrid' : 'ax-glist';
+  // รายการ = แถวเรียงต่อกัน / การ์ด = กริดการ์ด
+  listEl.className = isGrid ? 'asset-grid' : '';
   listEl.innerHTML = shown.length
-    ? shown.map(g => isGrid ? assetGroupCard(g) : assetGroupList(g, isOpen(g))).join('')
-    : `<div class="glass empty-state" style="grid-column:1/-1;">ไม่พบครุภัณฑ์ที่ค้นหา</div>`;
+    ? shown.map(isGrid ? assetCardHtml : assetRowHtml).join('')
+    : `<div class="glass empty-state">ไม่พบครุภัณฑ์ที่ค้นหา</div>`;
 
   const moreEl = document.getElementById('assetMoreWrap');
   if (moreEl) {
-    moreEl.innerHTML = groups.length > shown.length
-      ? `<button class="ax-more" id="btnAssetMoreItems">แสดงเพิ่ม (อีก ${groups.length - shown.length} กลุ่ม)</button>` : '';
+    moreEl.innerHTML = all.length > shown.length
+      ? `<button class="ax-more" id="btnAssetMoreItems">แสดงเพิ่ม (อีก ${all.length - shown.length} รายการ)</button>` : '';
     const b = document.getElementById('btnAssetMoreItems');
     if (b) b.onclick = () => { state.assetLimit = limit + ASSET_STEP; drawAssetList(); };
   }
 
-  listEl.querySelectorAll('.ax-ghead').forEach(h => {
-    const grp = h.closest('.ax-grp');
-    if (!grp) return; // มุมมองการ์ดไม่มีการพับ/เปิด
-    h.onclick = () => {
-      const name = grp.dataset.gname;
-      const nowOpen = !grp.classList.contains('open');
-      grp.classList.toggle('open', nowOpen);
-      if (nowOpen) { state.assetOpen.add(name); state.assetClosed.delete(name); }
-      else { state.assetClosed.add(name); state.assetOpen.delete(name); }
-    };
-  });
   listEl.querySelectorAll('.asset-item').forEach(it => it.onclick = () => openAssetDetail(it.dataset.id));
 }
 
@@ -1966,6 +1939,12 @@ function openAssetFilterSheet() {
       <select class="input" id="fx_cat">
         <option value="all">ทุกหมวดหมู่</option>
         ${getCategories().map(c => `<option value="${escapeHtml(c)}" ${state.assetFilter === c ? 'selected' : ''}>${escapeHtml(c)}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field"><label>สถานะ</label>
+      <select class="input" id="fx_status">
+        <option value="all">ทุกสถานะ</option>
+        ${ASSET_STATUSES.map(s => `<option value="${escapeHtml(s)}" ${state.assetStatusFilter === s ? 'selected' : ''}>${escapeHtml(s)}</option>`).join('')}
       </select>
     </div>
     <div class="field"><label>เรียงลำดับ</label>
@@ -1988,7 +1967,7 @@ function openAssetFilterSheet() {
     </div>
   `);
   document.getElementById('fx_apply').onclick = () => {
-    state.assetFilter = val('fx_cat'); state.assetSort = val('fx_sort'); state.assetLimit = ASSET_STEP;
+    state.assetFilter = val('fx_cat'); state.assetStatusFilter = val('fx_status'); state.assetSort = val('fx_sort'); state.assetLimit = ASSET_STEP;
     closeSheet(); renderAssets();
   };
   document.getElementById('fx_reset').onclick = () => {
@@ -1996,14 +1975,75 @@ function openAssetFilterSheet() {
     closeSheet(); renderAssets();
   };
   document.getElementById('fx_qr').onclick = () => {
-    state.assetFilter = val('fx_cat'); state.assetSort = val('fx_sort');
+    state.assetFilter = val('fx_cat'); state.assetStatusFilter = val('fx_status'); state.assetSort = val('fx_sort');
     const list = assetFiltered(); closeSheet(); printQrBatch(list);
   };
   document.getElementById('fx_csv').onclick = () => {
-    state.assetFilter = val('fx_cat'); state.assetSort = val('fx_sort');
+    state.assetFilter = val('fx_cat'); state.assetStatusFilter = val('fx_status'); state.assetSort = val('fx_sort');
     const list = assetFiltered(); closeSheet();
     exportCsv('ครุภัณฑ์.csv', ['รหัสครุภัณฑ์','ชื่อครุภัณฑ์','หมวดหมู่','ยี่ห้อ/รุ่น','หมายเลขเครื่อง','วันที่รับเข้า','มูลค่า(บาท)','สถานะ','ผู้ครอบครอง/หน่วยงาน','หน่วยงาน','วันครบกำหนดตรวจสภาพ/ต่อทะเบียน','หมายเหตุ'], list);
   };
+}
+
+function renderAssets() {
+  const el = document.getElementById('view-assets');
+  if (!state.assetLimit) state.assetLimit = ASSET_STEP;
+  if (state.assetView === undefined) state.assetView = getAssetView();
+  const isGrid = state.assetView === 'grid';
+
+  // ปุ่มหมวดหมู่ใหญ่ — นับจำนวนตามสถานะที่กรองอยู่ เพื่อให้ตัวเลขตรงกับผลลัพธ์
+  const baseList = state.assets.filter(a => state.assetStatusFilter === 'all' || a['สถานะ'] === state.assetStatusFilter);
+  const catPills = [{ v: 'all', label: 'ทั้งหมด', n: baseList.length, icon: ICONS.other }]
+    .concat(getCategories().map(c => ({ v: c, label: c, n: baseList.filter(a => a['หมวดหมู่'] === c).length, icon: catIcon(c) })))
+    .filter(p => p.v === 'all' || p.n > 0 || p.v === state.assetFilter); // ซ่อนหมวดที่ว่าง (ยกเว้นหมวดที่เลือกอยู่)
+
+  // ป้ายตัวเลขบนปุ่มตัวกรอง: นับเฉพาะสถานะ/การเรียง (หมวดหมู่เห็นจากปุ่มบนหน้าอยู่แล้ว)
+  const activeFilters = (state.assetStatusFilter !== 'all' ? 1 : 0) + (state.assetSort !== 'name_asc' ? 1 : 0);
+
+  el.innerHTML = `
+    <div class="section-title">
+      ทะเบียนครุภัณฑ์
+      <span class="section-actions">
+        <div class="view-toggle">
+          <button id="btnViewList" class="${!isGrid ? 'active' : ''}" title="มุมมองรายการ">${ICONS.listView}</button>
+          <button id="btnViewGrid" class="${isGrid ? 'active' : ''}" title="มุมมองการ์ด">${ICONS.gridView}</button>
+        </div>
+        <button class="icon-btn" id="btnScanQr" title="สแกน QR/บาร์โค้ด" aria-label="สแกน QR">${ICONS.scan}</button>
+      </span>
+    </div>
+
+    <div class="ax-top">
+      <div class="ax-search">
+        <svg viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.8" stroke="currentColor" stroke-width="1.6"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <input class="input" id="assetSearchInput" placeholder="ค้นหาชื่อ / หมายเลขเครื่อง / ทะเบียน" value="${escapeHtml(state.assetSearch)}" autocomplete="off">
+      </div>
+      <button class="ax-round" id="btnAssetFilter" title="ตัวกรอง" aria-label="ตัวกรอง">
+        <svg viewBox="0 0 20 20" fill="none"><path d="M3 5h14M6 10h8M9 15h2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        ${activeFilters ? `<span class="ax-badge">${activeFilters}</span>` : ''}
+      </button>
+    </div>
+
+    <div class="ax-pills">
+      ${catPills.map(p => `<div class="ax-pill ${state.assetFilter === p.v ? 'active' : ''}" data-cat="${escapeHtml(p.v)}">${p.icon}${escapeHtml(p.label)} <b>${p.n}</b></div>`).join('')}
+    </div>
+
+    <div class="ax-count" id="assetCount"></div>
+    <div id="assetList"></div>
+    <div id="assetMoreWrap"></div>
+  `;
+
+  document.getElementById('assetSearchInput').oninput = (e) => {
+    state.assetSearch = e.target.value; state.assetLimit = ASSET_STEP; drawAssetList();
+  };
+  document.getElementById('btnAssetFilter').onclick = openAssetFilterSheet;
+  document.getElementById('btnScanQr').onclick = openScannerSheet;
+  document.getElementById('btnViewList').onclick = () => { state.assetView = 'list'; setAssetView('list'); renderAssets(); };
+  document.getElementById('btnViewGrid').onclick = () => { state.assetView = 'grid'; setAssetView('grid'); renderAssets(); };
+  // กดปุ่มหมวดหมู่ -> กรองทันที
+  el.querySelectorAll('.ax-pill').forEach(p => p.onclick = () => {
+    state.assetFilter = p.dataset.cat; state.assetLimit = ASSET_STEP; renderAssets();
+  });
+  drawAssetList();
 }
 
 function renderAssets() {
