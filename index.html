@@ -234,7 +234,24 @@ input[type="date"]::-webkit-date-and-time-value{ text-align:left; }
 .asset-card-icon{ width:42px; height:42px; border-radius:13px; display:flex; align-items:center; justify-content:center; background:var(--navy-wash); color:var(--navy); flex:none; }
 .asset-card-title{ font-size:13.5px; font-weight:600; line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 .asset-card-sub{ font-size:11px; color:var(--ink-dim); margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-
+.ap-group{ margin-bottom:10px; }
+.ap-group-head{
+  display:flex; align-items:center; gap:10px; padding:11px 14px; cursor:pointer;
+  border-radius:var(--r-md); background:var(--navy-wash); border:1px solid var(--panel-line);
+  font-size:13.5px; font-weight:600; color:var(--navy); user-select:none;
+}
+.ap-group-head .ap-count{
+  margin-left:auto; font-size:11px; font-weight:500; padding:3px 10px; border-radius:var(--r-tag);
+  background:var(--gold-wash); color:var(--gold-deep); flex:none;
+}
+.ap-group-head .ap-caret{ width:16px; height:16px; flex:none; transition:transform .15s ease; }
+.ap-group.open .ap-caret{ transform:rotate(90deg); }
+.ap-group-body{ display:none; padding-top:8px; }
+.ap-group.open .ap-group-body{ display:block; }
+.ap-group-name{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ap-serial{ font-family:var(--font-num); font-weight:600; letter-spacing:.01em; }
+.ap-serial.none{ color:var(--ink-faint); font-family:var(--font-th); font-weight:400; }
+   
 @media (min-width:900px){
   .asset-grid{ grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:14px; }
   .asset-card{ padding:16px; border-radius:18px; }
@@ -1915,47 +1932,134 @@ function assetRow(a) {
 }
 
 function openAssetPickerSheet(currentId, onPick, onlyAvailable = true) {
-  // onlyAvailable=true (ค่าเริ่มต้น สำหรับหน้ายืม): แสดงเฉพาะครุภัณฑ์ที่ "พร้อมใช้งาน"
-  // onlyAvailable=false (ใช้ในหน้าซ่อมบำรุง): แสดงครุภัณฑ์ทุกสถานะ พร้อมป้ายสถานะกำกับให้เห็นชัด
   const available = onlyAvailable ? state.assets.filter(a => a['สถานะ'] === 'พร้อมใช้งาน') : state.assets.slice();
   let pickCat = 'all', pickQ = '';
+  const openGroups = new Set();          // กลุ่มที่ผู้ใช้กดเปิดเอง
+  const closedGroups = new Set();        // กลุ่มที่ผู้ใช้กดพับเอง
   const pickerRoot = document.createElement('div');
   document.body.appendChild(pickerRoot);
 
+  const CARET = '<svg class="ap-caret" viewBox="0 0 20 20" fill="none"><path d="M7 4l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+  function matches(a, q) {
+    const hay = [
+      a['ชื่อครุภัณฑ์'], a['รหัสครุภัณฑ์'], a['หมายเลขเครื่อง'], a['ยี่ห้อ/รุ่น'],
+      a['ทะเบียนรถ'], a['หมายเลขตัวถัง'], a['ผู้ครอบครอง/หน่วยงาน']
+    ].map(x => String(x || '').toLowerCase()).join(' | ');
+    return hay.includes(q);
+  }
+
+  function itemHtml(a) {
+    const serial = String(a['หมายเลขเครื่อง'] || '').trim();
+    const plate = String(a['ทะเบียนรถ'] || '').trim();
+    const titleHtml = serial
+      ? `<span class="ap-serial">S/N ${escapeHtml(serial)}</span>`
+      : (plate ? `<span class="ap-serial">ทะเบียน ${escapeHtml(plate)}</span>` : `<span class="ap-serial none">ไม่ระบุหมายเลขเครื่อง</span>`);
+    const subParts = [a['รหัสครุภัณฑ์'], a['ยี่ห้อ/รุ่น'], (serial && plate) ? 'ทะเบียน ' + plate : '']
+      .filter(Boolean).map(escapeHtml).join(' · ');
+    const badge = a['รหัสครุภัณฑ์'] === currentId
+      ? `<div class="status-badge status-ready">เลือกอยู่</div>`
+      : (!onlyAvailable ? `<div class="status-badge ${statusClass(a['สถานะ'])}">${escapeHtml(a['สถานะ'])}</div>` : '');
+    return `
+      <div class="glass list-item ap-item" data-id="${escapeHtml(a['รหัสครุภัณฑ์'])}">
+        <div class="li-icon">${catIcon(a['หมวดหมู่'])}</div>
+        <div class="li-body">
+          <div class="li-title">${titleHtml}</div>
+          <div class="li-sub">${subParts}</div>
+        </div>
+        ${badge}
+      </div>`;
+  }
+
   function draw() {
+    const prevSheet = pickerRoot.querySelector('.sheet');
+    const prevScroll = prevSheet ? prevSheet.scrollTop : 0;
+
+    const q = pickQ.trim().toLowerCase();
     let list = available.filter(a => pickCat === 'all' || a['หมวดหมู่'] === pickCat);
-    const q = pickQ.toLowerCase();
-    if (q) list = list.filter(a => String(a['ชื่อครุภัณฑ์']||'').toLowerCase().includes(q) || String(a['รหัสครุภัณฑ์']||'').toLowerCase().includes(q));
-    const catCounts = getCategories().map(c => ({ c, n: available.filter(a => a['หมวดหมู่']===c).length })).filter(x => x.n);
+    if (q) list = list.filter(a => matches(a, q));
+
+    // จัดกลุ่มตามชื่อครุภัณฑ์
+    const groupsMap = new Map();
+    list.forEach(a => {
+      const key = String(a['ชื่อครุภัณฑ์'] || 'ไม่ระบุชื่อ').trim();
+      if (!groupsMap.has(key)) groupsMap.set(key, []);
+      groupsMap.get(key).push(a);
+    });
+    const groups = Array.from(groupsMap.entries())
+      .sort((x, y) => x[0].localeCompare(y[0], 'th'))
+      .map(([name, items]) => ({
+        name,
+        items: items.sort((a, b) => String(a['หมายเลขเครื่อง'] || a['รหัสครุภัณฑ์'] || '').localeCompare(String(b['หมายเลขเครื่อง'] || b['รหัสครุภัณฑ์'] || ''), 'th', { numeric: true })),
+        cat: items[0]['หมวดหมู่']
+      }));
+
+    // กลุ่มจะเปิดอัตโนมัติเมื่อ: กำลังค้นหา / มีกลุ่มเดียว / รายการทั้งหมดน้อย / มีตัวที่เลือกอยู่ข้างใน
+    const autoOpen = !!q || groups.length === 1 || list.length <= 8;
+    const isOpen = g => {
+      if (closedGroups.has(g.name)) return false;
+      if (openGroups.has(g.name)) return true;
+      if (g.items.some(a => a['รหัสครุภัณฑ์'] === currentId)) return true;
+      return autoOpen;
+    };
+
+    const catCounts = getCategories().map(c => ({ c, n: available.filter(a => a['หมวดหมู่'] === c).length })).filter(x => x.n);
+
     pickerRoot.innerHTML = `
       <div class="overlay" style="z-index:95;">
         <div class="sheet" style="max-height:92vh;">
           <button class="sheet-close" id="apClose" type="button">${ICONS.close}</button>
           <div class="sheet-handle"></div>
           <div class="sheet-title">เลือกครุภัณฑ์</div>
-          <div class="search-row"><input class="input" id="apSearch" placeholder="ค้นหาชื่อหรือรหัส..." value="${escapeHtml(pickQ)}" autofocus></div>
+          <div class="search-row"><input class="input" id="apSearch" placeholder="ค้นหาชื่อ / รหัส / หมายเลขเครื่อง / ทะเบียน..." value="${escapeHtml(pickQ)}" autocomplete="off"></div>
           <div class="chip-row">
-            <div class="chip ${pickCat==='all'?'active':''}" data-pcat="all">ทั้งหมด (${available.length})</div>
-            ${catCounts.map(x => `<div class="chip ${pickCat===x.c?'active':''}" data-pcat="${escapeHtml(x.c)}">${escapeHtml(x.c)} (${x.n})</div>`).join('')}
+            <div class="chip ${pickCat === 'all' ? 'active' : ''}" data-pcat="all">ทั้งหมด (${available.length})</div>
+            ${catCounts.map(x => `<div class="chip ${pickCat === x.c ? 'active' : ''}" data-pcat="${escapeHtml(x.c)}">${escapeHtml(x.c)} (${x.n})</div>`).join('')}
           </div>
-          <div>${list.length ? list.map(a => `
-            <div class="glass list-item ap-item" data-id="${escapeHtml(a['รหัสครุภัณฑ์'])}">
-              <div class="li-icon">${catIcon(a['หมวดหมู่'])}</div>
-              <div class="li-body"><div class="li-title">${escapeHtml(a['ชื่อครุภัณฑ์'])}</div><div class="li-sub">${escapeHtml(a['รหัสครุภัณฑ์'])}${a['ยี่ห้อ/รุ่น'] ? ' · ' + escapeHtml(a['ยี่ห้อ/รุ่น']) : ''}</div></div>
-              ${a['รหัสครุภัณฑ์']===currentId ? `<div class="status-badge status-ready">เลือกอยู่</div>` : (!onlyAvailable ? `<div class="status-badge ${statusClass(a['สถานะ'])}">${escapeHtml(a['สถานะ'])}</div>` : '')}
+          <div class="hint" style="margin:0 0 10px;">พบ ${list.length} รายการ ใน ${groups.length} กลุ่ม</div>
+          <div>${groups.length ? groups.map(g => `
+            <div class="ap-group ${isOpen(g) ? 'open' : ''}" data-gname="${escapeHtml(g.name)}">
+              <div class="ap-group-head">
+                ${CARET}
+                <span class="ap-group-name">${escapeHtml(g.name)}${pickCat === 'all' ? ` <small style="font-weight:400;color:var(--ink-dim);">· ${escapeHtml(g.cat)}</small>` : ''}</span>
+                <span class="ap-count">${g.items.length} รายการ</span>
+              </div>
+              <div class="ap-group-body">${g.items.map(itemHtml).join('')}</div>
             </div>`).join('') : emptyState('ไม่พบครุภัณฑ์ที่ค้นหา')}
           </div>
         </div>
       </div>`;
+
+    const newSheet = pickerRoot.querySelector('.sheet');
+    if (newSheet) newSheet.scrollTop = prevScroll;
+
     document.getElementById('apClose').onclick = closePicker;
     const searchEl = document.getElementById('apSearch');
-    searchEl.oninput = (e) => { pickQ = e.target.value; const pos = e.target.selectionStart; draw(); const again = document.getElementById('apSearch'); again.focus(); try { again.setSelectionRange(pos, pos); } catch(err){} };
-    document.querySelectorAll('[data-pcat]').forEach(c => c.onclick = () => { pickCat = c.dataset.pcat; draw(); });
+    searchEl.oninput = (e) => {
+      pickQ = e.target.value;
+      const pos = e.target.selectionStart;
+      draw();
+      const again = document.getElementById('apSearch');
+      if (again) { again.focus(); try { again.setSelectionRange(pos, pos); } catch (err) {} }
+    };
+    document.querySelectorAll('[data-pcat]').forEach(c => c.onclick = () => {
+      pickCat = c.dataset.pcat; openGroups.clear(); closedGroups.clear(); draw();
+      const s = pickerRoot.querySelector('.sheet'); if (s) s.scrollTop = 0;
+    });
+    document.querySelectorAll('.ap-group-head').forEach(h => h.onclick = () => {
+      const grp = h.closest('.ap-group');
+      const name = grp.dataset.gname;
+      const nowOpen = !grp.classList.contains('open');
+      grp.classList.toggle('open', nowOpen);
+      if (nowOpen) { openGroups.add(name); closedGroups.delete(name); }
+      else { closedGroups.add(name); openGroups.delete(name); }
+    });
     document.querySelectorAll('.ap-item').forEach(it => it.onclick = () => { onPick(it.dataset.id); closePicker(); });
   }
   function closePicker() { pickerRoot.remove(); }
   draw();
 }
+   
 function openAssetDetail(id) {
   const a = state.assets.find(x => x['รหัสครุภัณฑ์'] === id);
   if (!a) return;
@@ -2589,15 +2693,18 @@ function openBorrowForm() {
       : `<div class="hint">ยังไม่มีส่วนควบที่พร้อมใช้งานสำหรับอาวุธปืนนี้</div>`);
   }
 
-  function selectAsset(id) {
-    const asset = state.assets.find(a => a['รหัสครุภัณฑ์'] === id);
-    if (!asset) return;
-    document.getElementById('f_asset').value = id;
-    document.getElementById('f_assetIcon').innerHTML = catIcon(asset['หมวดหมู่']);
-    document.getElementById('f_assetName').textContent = asset['ชื่อครุภัณฑ์'];
-    document.getElementById('f_assetSub').textContent = asset['หมวดหมู่'] + (asset['ยี่ห้อ/รุ่น'] ? ' · ' + asset['ยี่ห้อ/รุ่น'] : '');
-    refreshComponentPicker();
-  }
+function selectAsset(id) {
+  const asset = state.assets.find(a => a['รหัสครุภัณฑ์'] === id);
+  if (!asset) return;
+  document.getElementById('f_asset').value = id;
+  document.getElementById('f_assetIcon').innerHTML = catIcon(asset['หมวดหมู่']);
+  document.getElementById('f_assetName').textContent = asset['ชื่อครุภัณฑ์'];
+  document.getElementById('f_assetSub').textContent =
+    [asset['หมายเลขเครื่อง'] ? 'S/N ' + asset['หมายเลขเครื่อง'] : '', asset['รหัสครุภัณฑ์'], asset['ยี่ห้อ/รุ่น']]
+      .filter(Boolean).join(' · ');
+  refreshComponentPicker();
+}
+   
   document.getElementById('f_assetTrigger').onclick = () => openAssetPickerSheet(val('f_asset'), selectAsset);
   if (available.length) selectAsset(available[0]['รหัสครุภัณฑ์']);
 
@@ -2811,14 +2918,16 @@ function openMaintForm() {
   `);
 
   // เลือกครุภัณฑ์ผ่านการ์ดค้นหา+หมวดหมู่แบบเดียวกับหน้ายืม แต่เปิดให้เลือกได้ทุกสถานะ (onlyAvailable=false)
-  function selectAsset(id) {
-    const asset = state.assets.find(a => a['รหัสครุภัณฑ์'] === id);
-    if (!asset) return;
-    document.getElementById('f_asset').value = id;
-    document.getElementById('f_assetIcon').innerHTML = catIcon(asset['หมวดหมู่']);
-    document.getElementById('f_assetName').textContent = asset['ชื่อครุภัณฑ์'];
-    document.getElementById('f_assetSub').textContent = asset['หมวดหมู่'] + (asset['ยี่ห้อ/รุ่น'] ? ' · ' + asset['ยี่ห้อ/รุ่น'] : '') + ' · ' + asset['สถานะ'];
-  }
+function selectAsset(id) {
+  const asset = state.assets.find(a => a['รหัสครุภัณฑ์'] === id);
+  if (!asset) return;
+  document.getElementById('f_asset').value = id;
+  document.getElementById('f_assetIcon').innerHTML = catIcon(asset['หมวดหมู่']);
+  document.getElementById('f_assetName').textContent = asset['ชื่อครุภัณฑ์'];
+  document.getElementById('f_assetSub').textContent =
+    [asset['หมายเลขเครื่อง'] ? 'S/N ' + asset['หมายเลขเครื่อง'] : '', asset['รหัสครุภัณฑ์'], asset['สถานะ']]
+      .filter(Boolean).join(' · ');
+}
   document.getElementById('f_assetTrigger').onclick = () => openAssetPickerSheet(val('f_asset'), selectAsset, false);
   if (state.assets.length) selectAsset(state.assets[0]['รหัสครุภัณฑ์']);
 
