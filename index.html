@@ -2046,65 +2046,6 @@ function renderAssets() {
   drawAssetList();
 }
 
-function renderAssets() {
-  const el = document.getElementById('view-assets');
-  if (!state.assetLimit) state.assetLimit = ASSET_STEP;
-  if (state.assetView === undefined) state.assetView = getAssetView();
-  const isGrid = state.assetView === 'grid';
-  const countBy = s => state.assets.filter(a => a['สถานะ'] === s).length;
-  const pills = [
-    { v: 'all', label: 'ทั้งหมด', n: state.assets.length },
-    { v: 'พร้อมใช้งาน', label: 'พร้อมใช้', n: countBy('พร้อมใช้งาน') },
-    { v: 'กำลังยืม', label: 'ยืม', n: countBy('กำลังยืม') },
-    { v: 'ซ่อมบำรุง', label: 'ซ่อม', n: countBy('ซ่อมบำรุง') }
-  ];
-  const activeFilters = (state.assetFilter !== 'all' ? 1 : 0) + (state.assetSort !== 'name_asc' ? 1 : 0);
-
-  el.innerHTML = `
-    <div class="section-title">
-      ทะเบียนครุภัณฑ์
-      <span class="section-actions">
-        <div class="view-toggle">
-          <button id="btnViewList" class="${!isGrid ? 'active' : ''}" title="มุมมองรายการ">${ICONS.listView}</button>
-          <button id="btnViewGrid" class="${isGrid ? 'active' : ''}" title="มุมมองการ์ด">${ICONS.gridView}</button>
-        </div>
-        <button class="icon-btn" id="btnScanQr" title="สแกน QR/บาร์โค้ด" aria-label="สแกน QR">${ICONS.scan}</button>
-      </span>
-    </div>
-
-    <div class="ax-top">
-      <div class="ax-search">
-        <svg viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.8" stroke="currentColor" stroke-width="1.6"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-        <input class="input" id="assetSearchInput" placeholder="ค้นหาชื่อ / หมายเลขเครื่อง / ทะเบียน" value="${escapeHtml(state.assetSearch)}" autocomplete="off">
-      </div>
-      <button class="ax-round" id="btnAssetFilter" title="ตัวกรอง" aria-label="ตัวกรอง">
-        <svg viewBox="0 0 20 20" fill="none"><path d="M3 5h14M6 10h8M9 15h2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-        ${activeFilters ? `<span class="ax-badge">${activeFilters}</span>` : ''}
-      </button>
-    </div>
-
-    <div class="ax-pills">
-      ${pills.map(p => `<div class="ax-pill ${state.assetStatusFilter === p.v ? 'active' : ''}" data-status="${p.v}">${p.label} <b>${p.n}</b></div>`).join('')}
-    </div>
-
-    <div class="ax-count" id="assetCount"></div>
-    <div id="assetList"></div>
-    <div id="assetMoreWrap"></div>
-  `;
-
-  document.getElementById('assetSearchInput').oninput = (e) => {
-    state.assetSearch = e.target.value; state.assetLimit = ASSET_STEP; drawAssetList();
-  };
-  document.getElementById('btnAssetFilter').onclick = openAssetFilterSheet;
-  document.getElementById('btnScanQr').onclick = openScannerSheet;
-  document.getElementById('btnViewList').onclick = () => { state.assetView = 'list'; setAssetView('list'); renderAssets(); };
-  document.getElementById('btnViewGrid').onclick = () => { state.assetView = 'grid'; setAssetView('grid'); renderAssets(); };
-  el.querySelectorAll('.ax-pill').forEach(p => p.onclick = () => {
-    state.assetStatusFilter = p.dataset.status; state.assetLimit = ASSET_STEP; renderAssets();
-  });
-  drawAssetList();
-}
-
 function emptyState(msg) { return `<div class="glass empty-state">${msg}</div>`; }
 
 /* ========================= ฟีเจอร์ ๓: สแกน QR/บาร์โค้ด ========================= */
