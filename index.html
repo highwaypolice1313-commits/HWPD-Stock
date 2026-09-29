@@ -1462,6 +1462,10 @@ async function refreshData() {
 }
 
 function componentsOf(assetId) { return state.components.filter(c => c['รหัสครุภัณฑ์หลัก'] === assetId); }
+   const compQty = c => Math.max(1, Number(c['จำนวน']) || 1);
+const compOut = c => Math.max(0, Number(c['จำนวนที่ยืมอยู่']) || 0);
+const compAvail = c => c['สถานะ'] === 'พร้อมใช้งาน' ? Math.max(0, compQty(c) - compOut(c)) : 0;
+   
 function updateBorrowDot() {
   const pending = state.borrow.filter(b => b['สถานะ'] === 'รออนุมัติ').length;
   document.getElementById('borrowTabDot').style.display = (isAdmin() && pending > 0) ? 'block' : 'none';
@@ -2207,7 +2211,7 @@ function componentsSection(assetId) {
     </div>
     ${comps.length ? comps.map(c => `
       <div class="detail-row comp-item" data-id="${escapeHtml(c['รหัสส่วนควบ'])}" style="cursor:${isAdmin() ? 'pointer' : 'default'};">
-        <span>${escapeHtml(c['ชื่อส่วนควบ'])} <span style="color:var(--ink-dim); font-size:11px;">(${escapeHtml(c['ประเภท'] || '-')})</span></span>
+        <span>${escapeHtml(c['ชื่อส่วนควบ'])} <b>× ${compQty(c)}</b> <span style="color:var(--ink-dim); font-size:11px;">(${escapeHtml(c['ประเภท'] || '-')})${compOut(c) > 0 ? ' · ยืมอยู่ ' + compOut(c) : ''}</span></span>
         <span class="status-badge ${statusClass(c['สถานะ'])}">${escapeHtml(c['สถานะ'])}</span>
       </div>`).join('') : `<div class="hint">ยังไม่มีข้อมูลส่วนควบ</div>`}
   `;
@@ -2258,6 +2262,7 @@ function openComponentForm(parentId, c) {
     <div class="sheet-title">${editing ? 'แก้ไขส่วนควบ' : 'เพิ่มส่วนควบ'}</div>
     <div class="field"><label>ชื่อส่วนควบ</label><input class="input" id="c_name" value="${c ? escapeHtml(c['ชื่อส่วนควบ']) : ''}"></div>
     <div class="field"><label>ประเภท</label><select class="input" id="c_type">${COMPONENT_TYPES.map(t => `<option ${c && c['ประเภท']===t?'selected':''}>${t}</option>`).join('')}</select></div>
+    <div class="field"><label>จำนวน</label><input class="input" type="number" min="1" id="c_qty" value="${c ? compQty(c) : 1}"></div>
     <div class="field"><label>หมายเลข/ซีเรียล</label><input class="input" id="c_serial" value="${c ? escapeHtml(c['หมายเลข/ซีเรียล'])||'' : ''}"></div>
     <div class="field"><label>หมายเหตุ</label><input class="input" id="c_note" value="${c ? escapeHtml(c['หมายเหตุ'])||'' : ''}"></div>
     <div class="btn-row"><button class="btn btn-ghost" id="btnCancel">ยกเลิก</button><button class="btn btn-primary" id="btnSave">บันทึก</button></div>
@@ -2266,7 +2271,9 @@ function openComponentForm(parentId, c) {
   document.getElementById('btnCancel').onclick = closeSheet;
   document.getElementById('btnSave').onclick = async () => {
     if (!val('c_name')) { toast('กรุณากรอกชื่อส่วนควบ'); return; }
-    const payload = { id: c ? c['รหัสส่วนควบ'] : undefined, parentId, name: val('c_name'), type: val('c_type'), serial: val('c_serial'), note: val('c_note') };
+    const qty = Math.max(1, parseInt(val('c_qty'), 10) || 1);
+   if (editing && qty < compOut(c)) { toast('จำนวนต้องไม่น้อยกว่าที่ถูกยืมอยู่ (' + compOut(c) + ')'); return; }
+    const payload = { id: c ? c['รหัสส่วนควบ'] : undefined, parentId, name: val('c_name'), type: val('c_type'), serial: val('c_serial'), note: val('c_note'), qty };
     const saveBtn = document.getElementById('btnSave'); if (saveBtn.disabled) return; setButtonBusy(saveBtn, true); setLoading(true, 'กำลังบันทึกส่วนควบ...');
     try { await apiPost(editing ? 'updateComponent' : 'addComponent', payload); closeSheet(); toast('บันทึกส่วนควบแล้ว'); await reloadThen(() => openAssetDetail(parentId)); }
     catch (err) { toast(err.message || 'บันทึกส่วนควบไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(saveBtn, false); }
@@ -2404,8 +2411,11 @@ function borrowedComponentIds(b) { return String(b['รหัสส่วนค�
 function openBorrowDetail(id) {
   const b = state.borrow.find(x => x['รหัสรายการ'] === id);
   if (!b) return;
-  const compIds = borrowedComponentIds(b);
-  const compNames = compIds.map(cid => { const c = state.components.find(x => x['รหัสส่วนควบ'] === cid); return c ? c['ชื่อส่วนควบ'] : cid; });
+  const compRefs = parseCompRefs(b['รหัสส่วนควบที่ยืม']);
+const compNames = compRefs.map(r => {
+  const c = state.components.find(x => x['รหัสส่วนควบ'] === r.id);
+  return (c ? c['ชื่อส่วนควบ'] : r.id) + (r.n > 1 ? ' ×' + r.n : '');
+});
   const status = b['สถานะ'];
   const eff = effectiveBorrowStatus(b);
   const info = borrowDaysInfo(b);
@@ -2683,15 +2693,29 @@ function openBorrowForm() {
   }
   if (admin) wirePicker('f_approverPick', 'f_approver');
 
-  function refreshComponentPicker() {
-    const asset = state.assets.find(a => a['รหัสครุภัณฑ์'] === val('f_asset'));
-    const wrap = document.getElementById('f_compWrap');
-    if (!asset || asset['หมวดหมู่'] !== GUN_CATEGORY) { wrap.innerHTML = ''; return; }
-    const comps = componentsOf(asset['รหัสครุภัณฑ์']).filter(c => c['สถานะ'] === 'พร้อมใช้งาน');
-    wrap.innerHTML = `<label>ส่วนควบที่ยืมไปด้วย</label>` + (comps.length
-      ? comps.map(c => `<label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:400; margin-bottom:7px; color:var(--ink);"><input type="checkbox" class="f_comp_chk" value="${escapeHtml(c['รหัสส่วนควบ'])}" style="width:16px;height:16px;"> ${escapeHtml(c['ชื่อส่วนควบ'])} <span style="color:var(--ink-dim); font-size:11px;">(${escapeHtml(c['ประเภท'] || '-')})</span></label>`).join('')
-      : `<div class="hint">ยังไม่มีส่วนควบที่พร้อมใช้งานสำหรับอาวุธปืนนี้</div>`);
-  }
+function refreshComponentPicker() {
+  const asset = state.assets.find(a => a['รหัสครุภัณฑ์'] === val('f_asset'));
+  const wrap = document.getElementById('f_compWrap');
+  if (!asset || asset['หมวดหมู่'] !== GUN_CATEGORY) { wrap.innerHTML = ''; return; }
+  const comps = componentsOf(asset['รหัสครุภัณฑ์']).filter(c => compAvail(c) > 0);
+  wrap.innerHTML = `<label>ส่วนควบที่ยืมไปด้วย</label>` + (comps.length
+    ? comps.map(c => {
+        const av = compAvail(c);
+        return `<div style="display:flex; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
+          <label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:400; margin:0; color:var(--ink); flex:1 1 180px;">
+            <input type="checkbox" class="f_comp_chk" value="${escapeHtml(c['รหัสส่วนควบ'])}" style="width:16px;height:16px;">
+            ${escapeHtml(c['ชื่อส่วนควบ'])} <span style="color:var(--ink-dim); font-size:11px;">(${escapeHtml(c['ประเภท'] || '-')} · เหลือ ${av})</span>
+          </label>
+          <input type="number" class="input f_comp_qty" data-for="${escapeHtml(c['รหัสส่วนควบ'])}" min="1" max="${av}" value="${av}" style="width:80px; display:none;" title="จำนวนที่ยืม">
+        </div>`;
+      }).join('')
+    : `<div class="hint">ยังไม่มีส่วนควบที่พร้อมใช้งานสำหรับอาวุธปืนนี้</div>`);
+
+  wrap.querySelectorAll('.f_comp_chk').forEach(chk => chk.onchange = () => {
+    const q = wrap.querySelector('.f_comp_qty[data-for="' + chk.value + '"]');
+    if (q) q.style.display = (chk.checked && Number(q.max) > 1) ? 'block' : 'none';
+  });
+}
 
 function selectAsset(id) {
   const asset = state.assets.find(a => a['รหัสครุภัณฑ์'] === id);
@@ -2727,7 +2751,12 @@ function selectAsset(id) {
     if (!val('f_borrower').trim()) { toast('กรุณาเลือกหรือกรอกชื่อผู้ยืม'); return; }
     if (!val('f_borrowdate') || !val('f_duedate')) { toast('กรุณาระบุวันที่ยืมและกำหนดคืน'); return; }
     if (val('f_duedate') < val('f_borrowdate')) { toast('กำหนดคืนต้องไม่ก่อนวันที่ยืม'); return; }
-    const componentIds = Array.from(document.querySelectorAll('.f_comp_chk:checked')).map(el => el.value);
+    const componentIds = Array.from(document.querySelectorAll('.f_comp_chk:checked')).map(el => {
+  const q = document.querySelector('.f_comp_qty[data-for="' + el.value + '"]');
+  const max = q ? Number(q.max) : 1;
+  const n = Math.min(max, Math.max(1, parseInt(q ? q.value : 1, 10) || 1));
+  return el.value + ':' + n;
+});
     const saveBtn = document.getElementById('btnSave');
     if (saveBtn.disabled) return;
     setButtonBusy(saveBtn, true);
