@@ -734,6 +734,27 @@ table.rp-table th{ text-align:left; color:var(--ink-dim); font-weight:500; paddi
 table.rp-table td{ padding:9px 10px; border-bottom:1px solid var(--panel-line); vertical-align:top; }
 table.rp-table th.num, table.rp-table td.num{ text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
 table.rp-table tfoot td{ font-weight:600; border-bottom:none; background:var(--panel-soft); }
+
+   /* ===== ทะเบียนครุภัณฑ์ (แบบเรียบง่าย) ===== */
+.as-serial{ font-family:var(--font-num); font-weight:600; color:var(--navy); letter-spacing:.01em; }
+.as-serial.none{ font-family:var(--font-th); font-weight:400; color:var(--ink-faint); }
+.as-filter-row{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+.as-filter-row .input{ flex:1 1 140px; width:auto; }
+.as-summary{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; }
+.as-summary .chip{ display:inline-flex; align-items:center; gap:6px; }
+.as-summary .chip b{ font-family:var(--font-num); }
+.as-summary .chip.active b{ color:#fff; }
+.as-more{ position:relative; }
+.as-more-menu{
+  position:absolute; right:0; top:44px; z-index:30; min-width:190px; padding:6px;
+  background:var(--panel); border:1px solid var(--panel-line); border-radius:14px; box-shadow:var(--shadow-lg);
+}
+.as-more-menu button{
+  display:flex; align-items:center; gap:10px; width:100%; padding:10px 12px; border:none; background:none;
+  color:var(--ink); font-size:13px; border-radius:10px; cursor:pointer; text-align:left;
+}
+.as-more-menu button:hover{ background:var(--gold-wash); }
+.as-more-menu svg{ width:16px; height:16px; }
    
 </style>
 </head>
@@ -1763,6 +1784,14 @@ function sortAssets(list) {
     return 0;
   });
 }
+function assetSerialHtml(a) {
+  const serial = String(a['หมายเลขเครื่อง'] || '').trim();
+  const plate = String(a['ทะเบียนรถ'] || '').trim();
+  if (serial) return `<span class="as-serial">S/N ${escapeHtml(serial)}</span>`;
+  if (plate) return `<span class="as-serial">ทะเบียน ${escapeHtml(plate)}</span>`;
+  return `<span class="as-serial none">ไม่ระบุหมายเลขเครื่อง</span>`;
+}
+
 function renderAssets() {
   const el = document.getElementById('view-assets');
   if (state.assetView === undefined) state.assetView = getAssetView();
@@ -1771,20 +1800,26 @@ function renderAssets() {
     const matchCat = state.assetFilter === 'all' || a['หมวดหมู่'] === state.assetFilter;
     const matchStatus = state.assetStatusFilter === 'all' || a['สถานะ'] === state.assetStatusFilter;
     const q = state.assetSearch;
-    const matchSearch = !q || String(a['ชื่อครุภัณฑ์'] || '').toLowerCase().includes(q) || String(a['รหัสครุภัณฑ์'] || '').toLowerCase().includes(q);
-    return matchCat && matchStatus && matchSearch;
+    const hay = [a['ชื่อครุภัณฑ์'], a['รหัสครุภัณฑ์'], a['หมายเลขเครื่อง'], a['ทะเบียนรถ'], a['ยี่ห้อ/รุ่น']]
+      .map(x => String(x || '').toLowerCase()).join(' | ');
+    return matchCat && matchStatus && (!q || hay.includes(q));
   });
   filtered = sortAssets(filtered);
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   if (state.assetPage > totalPages) state.assetPage = totalPages;
   const pageItems = filtered.slice((state.assetPage - 1) * PAGE_SIZE, state.assetPage * PAGE_SIZE);
 
-  // สรุปจำนวนตามสถานะ — ดูภาพรวมทั้งระบบได้ทันที ไม่ขึ้นกับตัวกรองที่เลือกอยู่
   const countByStatus = s => state.assets.filter(a => a['สถานะ'] === s).length;
   const isGrid = state.assetView === 'grid';
+  const summary = [
+    { v: 'all', label: 'ทั้งหมด', n: state.assets.length },
+    { v: 'พร้อมใช้งาน', label: 'พร้อมใช้', n: countByStatus('พร้อมใช้งาน') },
+    { v: 'กำลังยืม', label: 'ยืม', n: countByStatus('กำลังยืม') },
+    { v: 'ซ่อมบำรุง', label: 'ซ่อม', n: countByStatus('ซ่อมบำรุง') }
+  ];
 
   el.innerHTML = `
-   <div class="section-title">
+    <div class="section-title">
       ทะเบียนครุภัณฑ์ <small>${filtered.length} / ${state.assets.length} รายการ</small>
       <span class="section-actions">
         <div class="view-toggle">
@@ -1792,18 +1827,26 @@ function renderAssets() {
           <button id="btnViewGrid" class="${isGrid ? 'active' : ''}" title="มุมมองการ์ด">${ICONS.gridView}</button>
         </div>
         <button class="icon-btn" id="btnScanQr" title="สแกน QR/บาร์โค้ด">${ICONS.scan}</button>
-        <button class="icon-btn" id="btnPrintQrBatch" title="พิมพ์ QR ทั้งหมดตามตัวกรอง">${ICONS.print}</button>        
-        <button class="icon-btn" id="btnExportAssets" title="ส่งออก CSV">${ICONS.download}</button>
+        <div class="as-more">
+          <button class="icon-btn" id="btnAssetMore" title="เพิ่มเติม" aria-label="เพิ่มเติม"><svg viewBox="0 0 20 20" fill="currentColor"><circle cx="4.5" cy="10" r="1.5"/><circle cx="10" cy="10" r="1.5"/><circle cx="15.5" cy="10" r="1.5"/></svg></button>
+          <div class="as-more-menu" id="assetMoreMenu" style="display:none;">
+            <button id="btnPrintQrBatch">${ICONS.print} พิมพ์ QR ตามตัวกรอง</button>
+            <button id="btnExportAssets">${ICONS.download} ส่งออก CSV</button>
+          </div>
+        </div>
       </span>
     </div>
-    <div class="stat-grid" style="margin-bottom:14px;">
-      <div class="stat-card ok"><div class="stat-num">${countByStatus('พร้อมใช้งาน')}</div><div class="stat-label">พร้อมใช้งาน</div></div>
-      <div class="stat-card warn"><div class="stat-num">${countByStatus('กำลังยืม')}</div><div class="stat-label">กำลังยืม</div></div>
-      <div class="stat-card bad"><div class="stat-num">${countByStatus('ซ่อมบำรุง')}</div><div class="stat-label">ซ่อมบำรุง</div></div>
-    </div>
+
     <div class="search-row">
-      <input class="input" id="assetSearchInput" placeholder="ค้นหาชื่อหรือรหัสครุภัณฑ์..." value="${escapeHtml(state.assetSearch)}">
-      <select class="input sort-select" id="assetSortSelect">
+      <input class="input" id="assetSearchInput" placeholder="ค้นหาชื่อ / รหัส / หมายเลขเครื่อง / ทะเบียน..." value="${escapeHtml(state.assetSearch)}">
+    </div>
+
+    <div class="as-filter-row">
+      <select class="input" id="assetCatSelect">
+        <option value="all">ทุกหมวดหมู่</option>
+        ${getCategories().map(c => `<option value="${escapeHtml(c)}" ${state.assetFilter===c?'selected':''}>${escapeHtml(c)}</option>`).join('')}
+      </select>
+      <select class="input" id="assetSortSelect">
         <option value="name_asc" ${state.assetSort==='name_asc'?'selected':''}>ชื่อ ก-ฮ</option>
         <option value="name_desc" ${state.assetSort==='name_desc'?'selected':''}>ชื่อ ฮ-ก</option>
         <option value="date_desc" ${state.assetSort==='date_desc'?'selected':''}>รับเข้าล่าสุด</option>
@@ -1811,14 +1854,11 @@ function renderAssets() {
         <option value="value_desc" ${state.assetSort==='value_desc'?'selected':''}>มูลค่ามาก-น้อย</option>
       </select>
     </div>
-    <div class="chip-row">
-      <div class="chip ${state.assetFilter==='all'?'active':''}" data-cat="all">ทุกหมวดหมู่</div>
-      ${getCategories().map(c => `<div class="chip ${state.assetFilter===c?'active':''}" data-cat="${escapeHtml(c)}">${escapeHtml(c)}</div>`).join('')}
+
+    <div class="as-summary">
+      ${summary.map(s => `<div class="chip ${state.assetStatusFilter===s.v?'active':''}" data-status="${s.v}">${s.label} <b>${s.n}</b></div>`).join('')}
     </div>
-    <div class="chip-row">
-      <div class="chip ${state.assetStatusFilter==='all'?'active':''}" data-status="all">ทุกสถานะ</div>
-      ${ASSET_STATUSES.map(s => `<div class="chip ${state.assetStatusFilter===s?'active':''}" data-status="${s}">${s}</div>`).join('')}
-    </div>
+
     <div id="assetList" class="${isGrid ? 'asset-grid' : ''}">${pageItems.length ? pageItems.map(isGrid ? assetCard : assetRow).join('') : emptyState('ไม่พบครุภัณฑ์ที่ค้นหา')}</div>
     ${filtered.length ? `<div class="pagination">
       <button id="assetPrevPage" ${state.assetPage<=1?'disabled':''}>ก่อนหน้า</button>
@@ -1826,6 +1866,7 @@ function renderAssets() {
       <button id="assetNextPage" ${state.assetPage>=totalPages?'disabled':''}>ถัดไป</button>
     </div>` : ''}
   `;
+
   const searchInput = document.getElementById('assetSearchInput');
   searchInput.oninput = (e) => {
     state.assetSearch = e.target.value.toLowerCase(); state.assetPage = 1;
@@ -1834,18 +1875,26 @@ function renderAssets() {
     const again = document.getElementById('assetSearchInput');
     if (again) { again.focus(); try { again.setSelectionRange(pos, pos); } catch (err) {} }
   };
+  document.getElementById('assetCatSelect').onchange = (e) => { state.assetFilter = e.target.value; state.assetPage = 1; renderAssets(); };
   document.getElementById('assetSortSelect').onchange = (e) => { state.assetSort = e.target.value; renderAssets(); };
-  document.getElementById('btnExportAssets').onclick = () => exportCsv('ครุภัณฑ์.csv', ['รหัสครุภัณฑ์','ชื่อครุภัณฑ์','หมวดหมู่','ยี่ห้อ/รุ่น','หมายเลขเครื่อง','วันที่รับเข้า','มูลค่า(บาท)','สถานะ','ผู้ครอบครอง/หน่วยงาน','หน่วยงาน','วันครบกำหนดตรวจสภาพ/ต่อทะเบียน','หมายเหตุ'], filtered);
+  document.querySelectorAll('#view-assets .as-summary .chip').forEach(c => c.onclick = () => { state.assetStatusFilter = c.dataset.status; state.assetPage = 1; renderAssets(); });
+
+  const menu = document.getElementById('assetMoreMenu');
+  document.getElementById('btnAssetMore').onclick = (e) => { e.stopPropagation(); menu.style.display = menu.style.display === 'none' ? 'block' : 'none'; };
+  document.addEventListener('click', function hideMenu(ev) {
+    if (!document.body.contains(menu)) { document.removeEventListener('click', hideMenu); return; }
+    if (!menu.contains(ev.target)) menu.style.display = 'none';
+  });
+  document.getElementById('btnExportAssets').onclick = () => { menu.style.display = 'none'; exportCsv('ครุภัณฑ์.csv', ['รหัสครุภัณฑ์','ชื่อครุภัณฑ์','หมวดหมู่','ยี่ห้อ/รุ่น','หมายเลขเครื่อง','วันที่รับเข้า','มูลค่า(บาท)','สถานะ','ผู้ครอบครอง/หน่วยงาน','หน่วยงาน','วันครบกำหนดตรวจสภาพ/ต่อทะเบียน','หมายเหตุ'], filtered); };
+  document.getElementById('btnPrintQrBatch').onclick = () => { menu.style.display = 'none'; printQrBatch(filtered); };
   document.getElementById('btnScanQr').onclick = openScannerSheet;
-  document.getElementById('btnPrintQrBatch').onclick = () => printQrBatch(filtered);
   document.getElementById('btnViewList').onclick = () => { state.assetView = 'list'; setAssetView('list'); renderAssets(); };
   document.getElementById('btnViewGrid').onclick = () => { state.assetView = 'grid'; setAssetView('grid'); renderAssets(); };
-  document.querySelectorAll('#view-assets .chip[data-cat]').forEach(c => c.onclick = () => { state.assetFilter = c.dataset.cat; state.assetPage = 1; renderAssets(); });
-  document.querySelectorAll('#view-assets .chip[data-status]').forEach(c => c.onclick = () => { state.assetStatusFilter = c.dataset.status; state.assetPage = 1; renderAssets(); });
   document.querySelectorAll('.asset-item, .asset-card').forEach(it => it.onclick = () => openAssetDetail(it.dataset.id));
   const prevBtn = document.getElementById('assetPrevPage'); if (prevBtn) prevBtn.onclick = () => { state.assetPage--; renderAssets(); };
   const nextBtn = document.getElementById('assetNextPage'); if (nextBtn) nextBtn.onclick = () => { state.assetPage++; renderAssets(); };
 }
+   
 function emptyState(msg) { return `<div class="glass empty-state">${msg}</div>`; }
 function assetCard(a) {
   const dleft = daysUntil(a['วันครบกำหนดตรวจสภาพ/ต่อทะเบียน']);
@@ -1858,12 +1907,13 @@ function assetCard(a) {
     </div>
     <div>
       <div class="asset-card-title">${escapeHtml(a['ชื่อครุภัณฑ์'])}</div>
+      <div class="asset-card-sub" style="font-size:12px;margin-top:5px;">${assetSerialHtml(a)}</div>
       <div class="asset-card-sub">${escapeHtml(a['รหัสครุภัณฑ์'])}</div>
-      ${a['ยี่ห้อ/รุ่น'] ? `<div class="asset-card-sub">${escapeHtml(a['ยี่ห้อ/รุ่น'])}</div>` : ''}
     </div>
     ${renewalTag}
   </div>`;
 }
+   
 /* ========================= ฟีเจอร์ ๓: สแกน QR/บาร์โค้ด ========================= */
 let activeHtml5Qr = null;
 function stopScanner() {
@@ -1918,14 +1968,16 @@ function openScannerSheet() {
     activeHtml5Qr = null; // สำคัญ: เคลียร์ตัวแปรเมื่อเปิดกล้องไม่สำเร็จ กันปุ่มปิดหน้าต่างค้าง
   });
 }
+   
 function assetRow(a) {
   const dleft = daysUntil(a['วันครบกำหนดตรวจสภาพ/ต่อทะเบียน']);
   const renewalTag = (dleft !== null && dleft <= renewalWindowDays() && a['สถานะ'] !== 'จำหน่ายแล้ว')
-    ? `<div class="status-badge ${dleft < 0 ? 'status-overdue' : 'status-borrowed'}" style="margin-top:4px;">${dleft < 0 ? 'เลยกำหนดตรวจสภาพ' : 'ใกล้ครบกำหนด ' + dleft + ' วัน'}</div>` : '';
+    ? `<div class="status-badge ${dleft < 0 ? 'status-overdue' : 'status-borrowed'}" style="margin-top:4px;">${dleft < 0 ? 'เลยกำหนด' : 'ใกล้ครบ ' + dleft + ' วัน'}</div>` : '';
   return `<div class="glass list-item asset-item" data-id="${escapeHtml(a['รหัสครุภัณฑ์'])}">
     <div class="li-icon">${catIcon(a['หมวดหมู่'])}</div>
     <div class="li-body">
       <div class="li-title">${escapeHtml(a['ชื่อครุภัณฑ์'])}</div>
+      <div class="li-sub" style="font-size:12.5px;">${assetSerialHtml(a)}</div>
       <div class="li-sub">${escapeHtml(a['รหัสครุภัณฑ์'])} · ${escapeHtml(a['ผู้ครอบครอง/หน่วยงาน'] || 'คลังพัสดุ')}</div>
     </div>
     <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
