@@ -3228,6 +3228,7 @@ function drawUsers() {
       รายชื่อข้าราชการตำรวจในสังกัด <small>${shown.length} / ${state.users.length} คน</small>
       <span class="section-actions">
         ${viewToggleHtml('users', state.usersView)}
+        <button class="icon-btn" id="btnPrintAllUsers" title="พิมพ์รายชื่อทั้งหมด" aria-label="พิมพ์รายชื่อทั้งหมด">${ICONS.print}</button>
         <button class="icon-btn" id="btnAddUser" title="เพิ่มรายชื่อ"><svg viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
       </span>
     </div>
@@ -3238,6 +3239,7 @@ function drawUsers() {
     <div>${state.activity.length ? state.activity.slice(0, 40).map(activityRow).join('') : emptyState('ยังไม่มีบันทึกกิจกรรม')}</div>
   `;
   document.getElementById('btnAddUser').onclick = () => openUserForm();
+  document.getElementById('btnPrintAllUsers').onclick = printAllOfficers;
   document.getElementById('userSearchInput').oninput = (e) => {
     state.userSearch = e.target.value;
     const pos = e.target.selectionStart;
@@ -3373,7 +3375,60 @@ function printOfficerPortfolio(u, holdings) {
   pa.innerHTML = html;
   triggerPrint(() => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; });
 }
-   
+
+   function printAllOfficers() {
+  const users = state.users || [];
+  if (!users.length) { toast('ยังไม่มีรายชื่อให้พิมพ์'); return; }
+  const orgName = (state.settings && state.settings.orgName) || ORG_NAME;
+  const cell = 'border:1px solid #000; padding:5px 7px; vertical-align:top;';
+
+  const rows = users.map((u, i) => {
+    const fullName = officerFullName(u);
+    const holdings = state.borrow.filter(b => eqCiJs_(b['ผู้ยืม'], fullName) &&
+      (effectiveBorrowStatus(b) === 'กำลังยืม' || effectiveBorrowStatus(b) === 'เกินกำหนด'));
+    const holdHtml = holdings.length
+      ? holdings.map(b => {
+          const comps = borrowCompLabels(b);
+          return '• ' + escapeHtml(b['ชื่อครุภัณฑ์']) + (comps.length ? ' (' + comps.map(escapeHtml).join(', ') + ')' : '');
+        }).join('<br>')
+      : '-';
+    const memoRole = (u['บทบาทเบิก-ยืม'] && u['บทบาทเบิก-ยืม'] !== 'ไม่ระบุ (เลือกเองตอนพิมพ์)') ? u['บทบาทเบิก-ยืม'] : '-';
+    return `<tr>
+      <td style="${cell} text-align:center;">${toThaiNumber(i + 1)}</td>
+      <td style="${cell}">${escapeHtml(fullName)}</td>
+      <td style="${cell}">${toThaiNumber(escapeHtml(u['ตำแหน่ง'] || '-'))}</td>
+      <td style="${cell}">${toThaiNumber(escapeHtml(u['หน่วยงาน'] || '-'))}</td>
+      <td style="${cell}">${escapeHtml(memoRole)}</td>
+      <td style="${cell}">${toThaiNumber(holdHtml)}</td>
+    </tr>`;
+  }).join('');
+
+  const html = `
+    <style>@page{ size:A4; margin:12mm; } table{ page-break-inside:auto; } tr{ page-break-inside:avoid; }</style>
+    <div style="font-family:'TH Sarabun New','Sarabun','Kanit',sans-serif; font-size:14pt; color:#000;">
+      <div style="text-align:center; font-weight:700; font-size:18pt;">รายชื่อข้าราชการตำรวจในสังกัด</div>
+      <div style="text-align:center; margin-bottom:6mm;">${toThaiNumber(escapeHtml(orgName))} · จำนวน ${toThaiNumber(users.length)} นาย</div>
+      <table style="width:100%; border-collapse:collapse; table-layout:fixed; font-size:12.5pt;">
+        <thead>
+          <tr style="background:#f2f2f2; text-align:center; font-weight:700;">
+            <th style="border:1px solid #000; padding:5px; width:5%;">ที่</th>
+            <th style="border:1px solid #000; padding:5px; width:22%;">ยศ ชื่อ-สกุล</th>
+            <th style="border:1px solid #000; padding:5px; width:20%;">ตำแหน่ง</th>
+            <th style="border:1px solid #000; padding:5px; width:15%;">หน่วยงาน</th>
+            <th style="border:1px solid #000; padding:5px; width:13%;">บทบาทเบิก-ยืม</th>
+            <th style="border:1px solid #000; padding:5px; width:25%;">พัสดุในความครอบครอง</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div style="margin-top:6mm; font-size:11pt; text-align:right;">วันที่พิมพ์รายงาน: ${escapeHtml(thaiDateLong())}</div>
+    </div>`;
+
+  const pa = document.getElementById('printArea');
+  pa.classList.add('report-print-area');
+  pa.innerHTML = html;
+  triggerPrint(() => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; });
+}
 function userRow(u) {
   const idf = officerId(u) || u['LINEUserId'] || u['ชื่อผู้ใช้'] || u['ชื่อ-สกุล'] || '';
   const memoRole = u['บทบาทเบิก-ยืม'];
