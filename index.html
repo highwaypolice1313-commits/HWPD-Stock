@@ -2553,6 +2553,7 @@ function renderBorrow() {
       รายการยืม-คืน <small>${active.length} รายการค้างคืน${overdueCount ? ' · เกินกำหนด ' + overdueCount : ''}</small>
       <span class="section-actions">
         ${viewToggleHtml('borrow', state.borrowView)}
+        <button class="icon-btn" id="btnPrintAllBorrow" title="พิมพ์รายการยืม-คืนทั้งหมด" aria-label="พิมพ์รายการยืม-คืนทั้งหมด">${ICONS.print}</button>
         <button class="icon-btn" id="btnExportBorrow" title="ส่งออก CSV">${ICONS.download}</button>
       </span>
     </div>
@@ -2579,6 +2580,7 @@ function renderBorrow() {
   `;
   document.querySelectorAll('.borrow-item').forEach(it => it.onclick = () => openBorrowDetail(it.dataset.id));
   document.getElementById('btnExportBorrow').onclick = () => exportCsv('ยืมคืน.csv', ['รหัสรายการ','รหัสครุภัณฑ์','ชื่อครุภัณฑ์','ผู้ยืม','วันที่ยืม','กำหนดคืน','วันที่คืนจริง','สถานะ','ผู้อนุมัติ','หมายเหตุ'], state.borrow);
+  document.getElementById('btnPrintAllBorrow').onclick = printAllBorrow;
   document.querySelectorAll('[data-btab]').forEach(c => c.onclick = () => { state.borrowTab = c.dataset.btab; renderBorrow(); });
   const searchInput = document.getElementById('borrowSearchInput');
   searchInput.oninput = (e) => {
@@ -2623,6 +2625,77 @@ function borrowRow(b) {
     </div>
     <div class="status-badge ${statusClass(eff)}">${escapeHtml(eff)}</div>
   </div>`;
+}
+   function printAllBorrow() {
+  const all = state.borrow || [];
+  if (!all.length) { toast('ยังไม่มีรายการยืม-คืนให้พิมพ์'); return; }
+  const orgName = (state.settings && state.settings.orgName) || ORG_NAME;
+  const cell = 'border:1px solid #000; padding:4px 5px; vertical-align:top;';
+
+  // จัดกลุ่ม: รออนุมัติ(0) → ค้างคืน(1) → ประวัติ(2)
+  const groupOf = b => {
+    if (b['สถานะ'] === 'รออนุมัติ') return 0;
+    if (b['สถานะ'] === 'คืนแล้ว' || b['สถานะ'] === 'ถูกปฏิเสธ') return 2;
+    return 1;
+  };
+  const list = [...all].sort((a, b) => {
+    const g = groupOf(a) - groupOf(b);
+    if (g !== 0) return g;
+    if (groupOf(a) === 2) return toDate(b['วันที่ยืม'] || 0) - toDate(a['วันที่ยืม'] || 0); // ประวัติ: ล่าสุดก่อน
+    return toDate(a['กำหนดคืน'] || 0) - toDate(b['กำหนดคืน'] || 0);                          // อื่นๆ: ใกล้ครบกำหนดก่อน
+  });
+
+  const cntPending = all.filter(b => groupOf(b) === 0).length;
+  const activeList = all.filter(b => groupOf(b) === 1);
+  const cntOverdue = activeList.filter(b => effectiveBorrowStatus(b) === 'เกินกำหนด').length;
+  const cntHistory = all.filter(b => groupOf(b) === 2).length;
+
+  const rows = list.map((b, i) => {
+    const eff = effectiveBorrowStatus(b);
+    const comps = borrowCompLabels(b);
+    const isOver = eff === 'เกินกำหนด';
+    return `<tr>
+      <td style="${cell} text-align:center;">${toThaiNumber(i + 1)}</td>
+      <td style="${cell}">${toThaiNumber(escapeHtml(b['ชื่อครุภัณฑ์']))}${comps.length ? `<div style="font-size:10.5pt;">ส่วนควบ: ${comps.map(x => toThaiNumber(escapeHtml(x))).join(', ')}</div>` : ''}</td>
+      <td style="${cell}">${escapeHtml(b['ผู้ยืม'])}</td>
+      <td style="${cell} text-align:center;">${thaiDate(b['วันที่ยืม'])}</td>
+      <td style="${cell} text-align:center;">${thaiDate(b['กำหนดคืน'])}</td>
+      <td style="${cell} text-align:center;">${b['วันที่คืนจริง'] ? thaiDate(b['วันที่คืนจริง']) : '-'}</td>
+      <td style="${cell} text-align:center;${isOver ? ' font-weight:700;' : ''}">${escapeHtml(eff)}</td>
+      <td style="${cell}">${escapeHtml(b['ผู้อนุมัติ'] || '-')}</td>
+    </tr>`;
+  }).join('');
+
+  const html = `
+    <style>@page{ size:A4; margin:12mm; } table{ page-break-inside:auto; } tr{ page-break-inside:avoid; } thead{ display:table-header-group; }</style>
+    <div style="font-family:'TH Sarabun New','Sarabun','Kanit',sans-serif; font-size:14pt; color:#000;">
+      <div style="text-align:center; font-weight:700; font-size:18pt;">รายงานรายการยืม-คืนครุภัณฑ์</div>
+      <div style="text-align:center; margin-bottom:3mm;">${toThaiNumber(escapeHtml(orgName))}</div>
+      <div style="margin-bottom:4mm; font-size:12.5pt;">
+        ทั้งหมด ${toThaiNumber(all.length)} รายการ · รออนุมัติ ${toThaiNumber(cntPending)} · ค้างคืน ${toThaiNumber(activeList.length)} (เกินกำหนด ${toThaiNumber(cntOverdue)}) · คืนแล้ว/ถูกปฏิเสธ ${toThaiNumber(cntHistory)}
+      </div>
+      <table style="width:100%; border-collapse:collapse; table-layout:fixed; font-size:11.5pt;">
+        <thead>
+          <tr style="background:#f2f2f2; text-align:center; font-weight:700;">
+            <th style="border:1px solid #000; padding:4px; width:5%;">ที่</th>
+            <th style="border:1px solid #000; padding:4px; width:26%;">ครุภัณฑ์</th>
+            <th style="border:1px solid #000; padding:4px; width:17%;">ผู้ยืม</th>
+            <th style="border:1px solid #000; padding:4px; width:11%;">วันที่ยืม</th>
+            <th style="border:1px solid #000; padding:4px; width:11%;">กำหนดคืน</th>
+            <th style="border:1px solid #000; padding:4px; width:11%;">วันที่คืนจริง</th>
+            <th style="border:1px solid #000; padding:4px; width:9%;">สถานะ</th>
+            <th style="border:1px solid #000; padding:4px; width:10%;">ผู้อนุมัติ</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div style="margin-top:6mm; font-size:11pt; text-align:right;">วันที่พิมพ์รายงาน: ${escapeHtml(thaiDateLong())}</div>
+    </div>`;
+
+  const pa = document.getElementById('printArea');
+  pa.classList.add('report-print-area');
+  pa.innerHTML = html;
+  triggerPrint(() => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; });
 }
 function borrowedComponentIds(b) { return String(b['รหัสส่วนควบที่ยืม'] || '').split(',').map(s => s.trim()).filter(Boolean); }
 function openBorrowDetail(id) {
