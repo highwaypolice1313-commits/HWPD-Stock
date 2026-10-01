@@ -3453,6 +3453,49 @@ html{scroll-behavior:smooth;}
 
 
 /* ===== MONTHLY V3 — LIST = polished cards / GRID = Tinder review ===== */
+
+/* ===== MONTHLY V3.1 — centered Tinder workspace ===== */
+#view-monthly .mc-grid.mc-swipe-mode{
+  display:block !important;
+  width:100%;
+  max-width:1180px;
+  margin-left:auto !important;
+  margin-right:auto !important;
+}
+#view-monthly .mc-grid.mc-swipe-mode .mc-swipe-stage{
+  width:100%;
+  max-width:900px;
+  margin:0 auto;
+}
+#view-monthly .mc-grid.mc-swipe-mode .mc-swipe-card-wrap{
+  width:100%;
+  display:flex;
+  justify-content:center;
+}
+#view-monthly .mc-grid.mc-swipe-mode .mc-swipe-card{
+  width:100%;
+  max-width:900px;
+}
+#view-monthly .mc-grid.mc-swipe-mode .mc-card-grid{
+  width:100%;
+  min-width:0;
+}
+@media (min-width:900px){
+  #view-monthly .mc-grid.mc-swipe-mode .mc-swipe-stage{
+    max-width:900px;
+  }
+}
+@media (max-width:899px){
+  #view-monthly .mc-grid.mc-swipe-mode{
+    max-width:none;
+  }
+  #view-monthly .mc-grid.mc-swipe-mode .mc-swipe-stage,
+  #view-monthly .mc-grid.mc-swipe-mode .mc-swipe-card{
+    max-width:none;
+  }
+}
+
+
 #view-monthly .mc-swipe-nav{display:none;}
 #view-monthly .mc-swipe-stage{display:none;}
 #view-monthly .mc-swipe-card{touch-action:pan-y;user-select:none;cursor:grab;position:relative;overflow:hidden;}
@@ -9364,13 +9407,39 @@ function policeRankIndex(rank) {
   const r = normalizePoliceRank(rank);
   return Object.prototype.hasOwnProperty.call(POLICE_RANK_INDEX, r) ? POLICE_RANK_INDEX[r] : 999;
 }
+function normalizePolicePosition(position) {
+  return String(position || '').trim().replace(/\s+/g, ' ');
+}
+function comparePolicePositions(a, b) {
+  const pa = normalizePolicePosition(a);
+  const pb = normalizePolicePosition(b);
+  if (pa === pb) return 0;
+
+  // ให้ตำแหน่งหลักมาก่อนตำแหน่งที่เป็นรูปแบบย่อยในวงเล็บ
+  // เช่น "รอง สว." ต้องมาก่อน "รอง สว.(ป.)"
+  const ma = pa.match(/^(.*?)(\s*\([^)]*\))?$/u);
+  const mb = pb.match(/^(.*?)(\s*\([^)]*\))?$/u);
+  const baseA = (ma && ma[1] ? ma[1] : pa).trim();
+  const baseB = (mb && mb[1] ? mb[1] : pb).trim();
+  const suffixA = (ma && ma[2] ? ma[2] : '').trim();
+  const suffixB = (mb && mb[2] ? mb[2] : '').trim();
+
+  if (baseA === baseB) {
+    // ชื่อหลักมาก่อน variant ในวงเล็บเสมอ
+    if (!suffixA && suffixB) return -1;
+    if (suffixA && !suffixB) return 1;
+    return suffixA.localeCompare(suffixB, 'th', {numeric:true, sensitivity:'base'});
+  }
+
+  return pa.localeCompare(pb, 'th', {numeric:true, sensitivity:'base'});
+}
 function comparePoliceOfficers(a, b) {
   const ra = policeRankIndex(a && a['ยศ']);
   const rb = policeRankIndex(b && b['ยศ']);
   if (ra !== rb) return ra - rb;
-  const pc = String(a && a['ตำแหน่ง'] || '').trim().localeCompare(String(b && b['ตำแหน่ง'] || '').trim(), 'th');
+  const pc = comparePolicePositions(a && a['ตำแหน่ง'], b && b['ตำแหน่ง']);
   if (pc) return pc;
-  return officerFullName(a).localeCompare(officerFullName(b), 'th');
+  return officerFullName(a).localeCompare(officerFullName(b), 'th', {sensitivity:'base'});
 }
 function compareMonthlyOfficers(a, b) {
   const ua = a && a.u ? a.u : a;
@@ -10026,6 +10095,7 @@ function compareMonthlyOfficers(a, b) {
     const list=mcMonthlyVisibleList();
     const mode=mcViewMode();
     grid.className='mc-grid mc-grid-'+(mode==='list'?'list':'cards');
+    if(mode==='grid') grid.classList.add('mc-swipe-mode');
 
     const navWrap=document.getElementById('mcSwipeNavWrap');
     if(mode==='grid'){
