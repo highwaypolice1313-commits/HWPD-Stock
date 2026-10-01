@@ -2074,6 +2074,39 @@ textarea.input{
 /* =========================================================
    EMPTY STATE / MAINTENANCE CENTERING
    ========================================================= */
+   /* =========================================================
+   FINAL FIX — icon size + responsive dashboard
+   ========================================================= */
+
+/* ไทม์ไลน์/ไอคอนในหน้ารายละเอียด */
+.asset-timeline{ max-width:100%; overflow:hidden; }
+.timeline-title svg{ width:16px !important; height:16px !important; flex:none; }
+.timeline-dot svg{ width:13px !important; height:13px !important; }
+.timeline-dot{ flex:none; overflow:hidden; }
+.sheet svg{ max-width:100%; }
+.sheet .confirm-icon svg{ width:26px !important; height:26px !important; }
+
+/* จอกลาง 900–1199px: ให้ฝั่งขวาเรียงเป็นคอลัมน์เดียว ไม่เหลือช่องว่าง */
+@media (min-width:900px) and (max-width:1199px){
+  #view-dashboard .dashboard-right{ display:flex !important; flex-direction:column; gap:0; }
+  #view-dashboard .dashboard-right .cat-card{ grid-column:auto; }
+  #view-dashboard .dashboard-right .stat-grid{
+    display:grid !important; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px;
+  }
+  #view-dashboard .stat-card{ flex-direction:column; align-items:flex-start; justify-content:center; gap:6px; padding:14px; }
+  #view-dashboard .stat-card > div:last-child{ display:none; }
+  #view-dashboard .hero-num{ font-size:32px; }
+  #view-dashboard .hero-num--sm{ font-size:22px; }
+  #view-reports{ grid-template-columns:1fr; }
+}
+
+/* จอแคบ/บีบหน้าต่าง: กันของล้นและกราฟบีบ */
+@media (max-width:899px){
+  .chart-wrap{ max-width:100%; }
+  .hero-num{ font-size:26px; }
+  .detail-row{ font-size:12.5px; }
+  .asset-timeline .timeline-note{ word-break:break-word; }
+}
 .empty-state{
   width:100% !important;min-height:200px !important;height:auto !important;
   display:flex !important;align-items:center !important;justify-content:center !important;
@@ -2332,7 +2365,14 @@ const ICONS = {
 };
 
 ICONS.print = '<svg viewBox="0 0 20 20" fill="none"><path d="M5 7V3.5a1 1 0 011-1h8a1 1 0 011 1V7" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><rect x="3" y="7" width="14" height="7" rx="1.2" stroke="currentColor" stroke-width="1.4"/><rect x="6" y="12" width="8" height="5.5" rx="0.8" stroke="currentColor" stroke-width="1.4"/></svg>';
-
+/* ใส่ width/height ให้ทุกไอคอน — CSS ที่กำหนดขนาดไว้แล้วยังชนะตามเดิม
+   แต่ถ้าที่ไหนไม่มี CSS ก็จะไม่ขยายเต็มจออีก */
+Object.keys(ICONS).forEach(k => {
+  if (typeof ICONS[k] === 'string' && !/<svg[^>]*\swidth=/.test(ICONS[k])) {
+    ICONS[k] = ICONS[k].replace('<svg ', '<svg width="20" height="20" ');
+  }
+});
+   
 /* PREMIUM TOUCH FEEDBACK */
 document.addEventListener('pointerdown', e => {
   const el = e.target.closest('.btn-primary,.btn-danger,.btn-ok,.fab,.icon-btn,.refresh-btn,.list-item,.asset-card');
