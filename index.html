@@ -2809,6 +2809,356 @@ html{scroll-behavior:smooth;}
 .mc-note{ font-size:12px; color:var(--bad); background:var(--bad-wash); padding:7px 10px; border-radius:10px; word-break:break-word; }
 @media (max-width:520px){ .mc-grid{ grid-template-columns:1fr; } }   
    
+
+/* =========================================================
+   [ENHANCED] ตรวจประจำเดือน — UI / Theme / View / Print
+   ต่อท้าย CSS เดิมเพื่อไม่ตัดของเดิมออก
+   ========================================================= */
+.mc-toolbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+  margin:0 0 14px;
+}
+.mc-toolbar-left,.mc-toolbar-right{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.mc-period{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:7px;
+  border-radius:18px;
+  background:var(--navy-wash);
+  border:1px solid var(--panel-line);
+}
+.mc-period .input{
+  width:auto;
+  min-width:130px;
+  min-height:40px;
+  padding:9px 12px;
+  border:0;
+  background:var(--panel);
+}
+.mc-period .input:first-child{min-width:145px;}
+.mc-tool-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  min-height:42px;
+  padding:9px 13px;
+  border:1px solid var(--panel-line);
+  border-radius:14px;
+  background:var(--panel);
+  color:var(--ink);
+  box-shadow:var(--shadow-sm);
+  cursor:pointer;
+  font-family:inherit;
+  font-size:12.5px;
+  font-weight:500;
+  transition:transform .16s ease,border-color .16s ease,background .16s ease;
+}
+.mc-tool-btn:hover{
+  transform:translateY(-1px);
+  border-color:var(--gold-line);
+  background:var(--gold-wash);
+}
+.mc-tool-btn svg{width:17px;height:17px;}
+.mc-tool-btn.primary{
+  color:#fff;
+  border-color:transparent;
+  background:linear-gradient(150deg,var(--navy),var(--navy-deep));
+  box-shadow:0 8px 20px rgba(23,50,79,.2);
+}
+.mc-tool-btn.primary:hover{background:linear-gradient(150deg,var(--gold),var(--gold-deep));}
+.mc-view-wrap{display:inline-flex;align-items:center;gap:7px;}
+.mc-view-label{font-size:11px;color:var(--ink-dim);}
+.mc-view-toggle{display:inline-flex;border:1px solid var(--panel-line);border-radius:14px;overflow:hidden;background:var(--panel);box-shadow:var(--shadow-sm);}
+.mc-view-toggle button{
+  width:42px;height:40px;border:0;background:transparent;color:var(--ink-dim);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+}
+.mc-view-toggle button svg{width:17px;height:17px;}
+.mc-view-toggle button.active{background:var(--navy);color:#fff;}
+.mc-view-toggle button:hover:not(.active){background:var(--gold-wash);color:var(--ink);}
+
+.mc-summary{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+  margin-bottom:14px;
+}
+.mc-summary-card{
+  padding:14px 16px;
+  border-radius:18px;
+  border:1px solid var(--panel-line);
+  background:var(--panel);
+  box-shadow:var(--shadow-sm);
+}
+.mc-summary-card .num{
+  font-family:var(--font-num);
+  font-size:24px;
+  font-weight:700;
+  line-height:1.1;
+}
+.mc-summary-card .lbl{
+  margin-top:5px;
+  font-size:11.5px;
+  color:var(--ink-dim);
+}
+.mc-summary-card.ok .num{color:var(--ok);}
+.mc-summary-card.bad .num{color:var(--bad);}
+.mc-summary-card.pending .num{color:var(--warn);}
+
+.mc-progress-card{
+  padding:16px;
+  margin-bottom:14px;
+  border-radius:20px;
+  border:1px solid var(--panel-line);
+  background:linear-gradient(135deg,var(--panel),var(--panel-soft));
+  box-shadow:var(--shadow-sm);
+}
+.mc-progress-top{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:10px;
+}
+.mc-progress-main{font-size:13px;font-weight:500;}
+.mc-progress-main b{font-family:var(--font-num);font-size:19px;color:var(--navy);}
+.mc-progress-note{font-size:11.5px;color:var(--ink-dim);text-align:right;}
+.mc-progress-note.bad{color:var(--bad);font-weight:600;}
+
+.mc-search-wrap{position:relative;flex:1 1 260px;min-width:220px;}
+.mc-search-wrap svg{
+  position:absolute;left:13px;top:50%;transform:translateY(-50%);
+  width:17px;height:17px;color:var(--ink-faint);pointer-events:none;
+}
+.mc-search-wrap .input{padding-left:40px;}
+
+.mc-grid.mc-grid-list{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.mc-grid.mc-grid-list .mc-card{
+  display:grid;
+  grid-template-columns:minmax(220px,1.1fr) minmax(230px,1.25fr) minmax(220px,.9fr) auto;
+  align-items:center;
+  gap:14px;
+  padding:14px 16px;
+}
+.mc-grid.mc-grid-list .mc-head{min-width:0;}
+.mc-grid.mc-grid-list .mc-hold{min-width:0;}
+.mc-grid.mc-grid-list .mc-actions{grid-column:auto;min-width:205px;}
+.mc-grid.mc-grid-list .mc-note{grid-column:2 / -1;}
+.mc-grid.mc-grid-list .mc-meta{grid-column:2 / -1;}
+
+.mc-grid.mc-grid-cards{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(290px,1fr));
+  gap:14px;
+}
+.mc-grid.mc-grid-cards .mc-card{
+  min-width:0;
+  padding:16px;
+}
+
+.mc-card{
+  position:relative;
+  overflow:hidden;
+  transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease;
+}
+.mc-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);}
+.mc-card.done-ok{
+  border-color:color-mix(in srgb,var(--ok) 48%,var(--panel-line)) !important;
+  background:linear-gradient(145deg,var(--panel),var(--ok-wash));
+}
+.mc-card.done-bad{
+  border-color:color-mix(in srgb,var(--bad) 48%,var(--panel-line)) !important;
+  background:linear-gradient(145deg,var(--panel),var(--bad-wash));
+}
+.mc-card.done-ok::before,.mc-card.done-bad::before{
+  content:"";position:absolute;left:0;top:0;bottom:0;width:4px;
+  background:var(--ok);
+}
+.mc-card.done-bad::before{background:var(--bad);}
+
+.mc-status{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  width:max-content;
+  max-width:100%;
+  padding:5px 10px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:600;
+  background:var(--off-wash);
+  color:var(--off);
+}
+.mc-status.ok{background:var(--ok-wash);color:var(--ok);}
+.mc-status.bad{background:var(--bad-wash);color:var(--bad);}
+.mc-status.pending{background:var(--warn-wash);color:var(--warn);}
+
+.mc-hold-title{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  margin-bottom:5px;
+  color:var(--navy);
+  font-size:11px;
+  font-weight:600;
+}
+.mc-hold-title svg{width:14px;height:14px;}
+.mc-serial-list{
+  display:flex;
+  flex-wrap:wrap;
+  gap:5px;
+  margin-top:7px;
+}
+.mc-serial-pill{
+  display:inline-flex;
+  align-items:center;
+  max-width:100%;
+  padding:4px 8px;
+  border-radius:9px;
+  background:var(--navy-wash);
+  color:var(--navy);
+  border:1px solid var(--navy-line);
+  font-family:var(--font-num);
+  font-size:10.5px;
+  font-weight:600;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.mc-serial-pill.none{
+  font-family:var(--font-th);
+  color:var(--ink-faint);
+  background:var(--off-wash);
+  border-color:transparent;
+  font-weight:400;
+}
+.mc-item-count{font-size:10.5px;color:var(--ink-dim);}
+
+.mc-actions{
+  background:var(--panel-soft);
+  border:1px solid var(--panel-line);
+  padding:6px;
+  border-radius:16px;
+}
+.mc-btn{
+  position:relative;
+  min-height:50px;
+  border-radius:12px;
+  border:1px solid var(--panel-line);
+  background:var(--panel);
+  box-shadow:none;
+  transition:transform .14s ease,box-shadow .14s ease,background .14s ease,border-color .14s ease;
+}
+.mc-btn:hover{transform:translateY(-1px);box-shadow:var(--shadow-sm);}
+.mc-btn.ok{
+  color:var(--ok);
+  border-color:color-mix(in srgb,var(--ok) 30%,var(--panel-line));
+  background:linear-gradient(180deg,var(--panel),var(--ok-wash));
+}
+.mc-btn.bad{
+  color:var(--bad);
+  border-color:color-mix(in srgb,var(--bad) 30%,var(--panel-line));
+  background:linear-gradient(180deg,var(--panel),var(--bad-wash));
+}
+.mc-btn.ok.on{
+  color:#fff;
+  border-color:var(--ok);
+  background:linear-gradient(150deg,var(--ok),color-mix(in srgb,var(--ok) 78%,#000));
+  box-shadow:0 7px 18px var(--ok-wash);
+}
+.mc-btn.bad.on{
+  color:#fff;
+  border-color:var(--bad);
+  background:linear-gradient(150deg,var(--bad),color-mix(in srgb,var(--bad) 78%,#000));
+  box-shadow:0 7px 18px var(--bad-wash);
+}
+.mc-btn .mc-btn-sub{display:block;font-size:9.5px;font-weight:400;opacity:.72;margin-top:1px;}
+
+.mc-clear{
+  display:inline-flex;
+  align-items:center;
+  padding:4px 8px;
+  border-radius:8px;
+  background:var(--off-wash);
+  text-decoration:none !important;
+  cursor:pointer;
+}
+.mc-clear:hover{background:var(--bad-wash);color:var(--bad) !important;}
+
+.mc-checklist-head{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:12px 14px;margin-bottom:10px;border-radius:14px;
+  background:var(--navy-wash);border:1px solid var(--panel-line);
+}
+.mc-checklist-count{font-size:12px;color:var(--ink-dim);}
+.mc-checklist-count b{font-family:var(--font-num);font-size:16px;color:var(--navy);}
+.ck-row{
+  display:flex !important;align-items:center;gap:10px !important;
+  padding:11px 2px !important;border-bottom:1px solid var(--panel-line) !important;
+}
+.ck-row:last-child{border-bottom:0 !important;}
+.ck-row > div:first-child{padding:3px 0;}
+.ck-serial{
+  display:inline-flex;align-items:center;gap:5px;margin-top:3px;
+  color:var(--navy);font-family:var(--font-num);font-size:10.5px;font-weight:600;
+}
+.ck-row .mc-btn{min-height:42px;padding:7px 11px;font-size:12px;}
+
+@media (max-width:1100px){
+  .mc-grid.mc-grid-list .mc-card{
+    grid-template-columns:minmax(190px,1fr) minmax(210px,1fr);
+  }
+  .mc-grid.mc-grid-list .mc-actions{grid-column:2;}
+  .mc-grid.mc-grid-list .mc-note,.mc-grid.mc-grid-list .mc-meta{grid-column:1 / -1;}
+}
+@media (max-width:760px){
+  .mc-toolbar{align-items:stretch;}
+  .mc-toolbar-left,.mc-toolbar-right{width:100%;}
+  .mc-period{width:100%;}
+  .mc-period .input{flex:1;min-width:0;}
+  .mc-toolbar-right > *{flex:1;}
+  .mc-view-wrap{justify-content:space-between;}
+  .mc-summary{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .mc-grid.mc-grid-list .mc-card{
+    display:flex;
+    flex-direction:column;
+    align-items:stretch;
+  }
+  .mc-grid.mc-grid-list .mc-actions{min-width:0;}
+}
+@media (max-width:520px){
+  .mc-summary{gap:8px;}
+  .mc-summary-card{padding:12px;}
+  .mc-summary-card .num{font-size:21px;}
+  .mc-period{display:grid;grid-template-columns:1fr 1fr;}
+  .mc-period .input{width:100%;min-width:0;}
+  .mc-search-wrap{min-width:100%;}
+  .mc-toolbar-right{display:grid;grid-template-columns:1fr 1fr;}
+  .mc-view-wrap{grid-column:1 / -1;}
+  .mc-view-toggle{margin-left:auto;}
+}
+
+/* Print preview / report */
+.mc-print-only{display:none;}
+@media print{
+  .mc-print-only{display:block;}
+}
+
 </style>
 </head>
 <body>
@@ -8573,6 +8923,492 @@ function renderSettings() {
     document.body.appendChild(pa);   // ย้ายออกจาก #app ไปไว้ท้าย body
   }
 })();
+
+
+/* =========================================================
+   [ENHANCED] Override หน้า "ตรวจประจำเดือน"
+   - ไม่ลบระบบเดิม
+   - แสดงหมายเลขเครื่อง / Serial แทนรหัสครุภัณฑ์ในหน้านี้
+   - เพิ่ม List / Card view
+   - เพิ่มพิมพ์รายงาน
+   ========================================================= */
+(function installEnhancedMonthlyPage(){
+  const MC_VIEW_KEY = 'hpMonthlyCheckViewV2';
+
+  function mcViewMode(){
+    try { return localStorage.getItem(MC_VIEW_KEY) || 'grid'; }
+    catch(e){ return 'grid'; }
+  }
+  function setMcViewMode(v){
+    try { localStorage.setItem(MC_VIEW_KEY, v); } catch(e){}
+  }
+
+  function mcAssetByBorrow(b){
+    return (state.assets || []).find(a => a['รหัสครุภัณฑ์'] === b['รหัสครุภัณฑ์']) || null;
+  }
+
+  function mcSerialTextFromBorrow(b){
+    const a = mcAssetByBorrow(b);
+    const serial = String(a && a['หมายเลขเครื่อง'] || '').trim();
+    const plate = String(a && a['ทะเบียนรถ'] || '').trim();
+    if (serial) return serial;
+    if (plate) return 'ทะเบียน ' + plate;
+    return 'ไม่ระบุหมายเลขเครื่อง';
+  }
+
+  function mcSerialHtmlFromBorrow(b){
+    const a = mcAssetByBorrow(b);
+    const serial = String(a && a['หมายเลขเครื่อง'] || '').trim();
+    const plate = String(a && a['ทะเบียนรถ'] || '').trim();
+    if (serial) return `<span class="mc-serial-pill">S/N ${escapeHtml(serial)}</span>`;
+    if (plate) return `<span class="mc-serial-pill">ทะเบียน ${escapeHtml(plate)}</span>`;
+    return `<span class="mc-serial-pill none">ไม่ระบุหมายเลขเครื่อง</span>`;
+  }
+
+  function mcHoldingsTextEnhanced(u){
+    const hold = mcHoldingsOf(u);
+    const byCat = {};
+    let comps = 0;
+    hold.forEach(b => {
+      const a = mcAssetByBorrow(b);
+      const cat = a ? (MC_SHORT[a['หมวดหมู่']] || a['หมวดหมู่'] || 'อื่นๆ') : 'อื่นๆ';
+      byCat[cat] = (byCat[cat] || 0) + 1;
+      parseCompRefs(b['รหัสส่วนควบที่ยืม']).forEach(r => { comps += r.n; });
+    });
+    const parts = Object.entries(byCat).map(([k,v]) => `${k} ${v}`);
+    if (comps) parts.push('ส่วนควบ ' + comps);
+    return parts.join(', ');
+  }
+
+  function mcSerialsFor(u){
+    return mcHoldingsOf(u).map(b => ({
+      name: b['ชื่อครุภัณฑ์'] || '-',
+      serial: mcSerialTextFromBorrow(b)
+    }));
+  }
+
+  function mcPrintButtonHtml(){
+    return `<button type="button" class="mc-tool-btn primary" id="mcPrintReport" title="พิมพ์รายงานผลตรวจประจำเดือน">
+      ${ICONS.print}<span>พิมพ์รายงาน</span>
+    </button>`;
+  }
+
+  function mcViewToggleEnhanced(){
+    const v = mcViewMode();
+    return `<div class="mc-view-wrap">
+      <span class="mc-view-label">มุมมอง</span>
+      <div class="mc-view-toggle" role="group" aria-label="เลือกมุมมอง">
+        <button type="button" class="${v==='list'?'active':''}" data-mcv="list" title="มุมมองรายการ">${ICONS.listView}</button>
+        <button type="button" class="${v==='grid'?'active':''}" data-mcv="grid" title="มุมมองการ์ด">${ICONS.gridView}</button>
+      </div>
+    </div>`;
+  }
+
+  function mcStatusHtml(rec){
+    if (!rec) return `<span class="mc-status pending">● ยังไม่ตรวจ</span>`;
+    if (rec['ผล'] === 'มีปัญหา') return `<span class="mc-status bad">● มีปัญหา</span>`;
+    return `<span class="mc-status ok">● ครบ</span>`;
+  }
+
+  function mcCardHtmlEnhanced({u,sum,rec}){
+    const r = rec ? rec['ผล'] : '';
+    const photo = u['รูปถ่าย']
+      ? `<img class="mc-avatar" src="${u['รูปถ่าย']}" alt="">`
+      : `<div class="mc-avatar-ph">${ICONS.user}</div>`;
+    const serials = mcSerialsFor(u);
+    const holdCount = sum.hold.length;
+
+    const serialHtml = serials.length
+      ? `<div class="mc-serial-list">${serials.map(x => mcSerialHtmlFromBorrow(
+          sum.hold.find(b => (b['ชื่อครุภัณฑ์'] || '-') === x.name) || {}
+        )).join('')}</div>`
+      : `<span class="mc-serial-pill none">ไม่มีพัสดุในความครอบครอง</span>`;
+
+    const note = r === 'มีปัญหา' && rec['หมายเหตุ']
+      ? `<div class="mc-note">${escapeHtml(rec['หมายเหตุ'])}</div>` : '';
+
+    return `<div class="glass mc-card ${r === 'ครบ' ? 'done-ok' : (r === 'มีปัญหา' ? 'done-bad' : '')}"
+      data-key="${escapeHtml(mcKey(u))}">
+      <div class="mc-head">
+        ${photo}
+        <div style="min-width:0; flex:1;">
+          <div class="mc-name">${escapeHtml(officerFullName(u))}</div>
+          <div class="mc-pos">${escapeHtml(u['ตำแหน่ง'] || 'ไม่ระบุตำแหน่ง')}</div>
+        </div>
+        ${mcStatusHtml(rec)}
+      </div>
+
+      <div class="mc-hold">
+        <div class="mc-hold-title">
+          <svg viewBox="0 0 20 20" fill="none"><path d="M4 5.5h12M5.5 5.5v9h9v-9M7.5 3.5h5l1 2H6.5l1-2zM8 8.5h4M8 11h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          พัสดุที่อยู่ในความครอบครอง · ${holdCount} รายการ
+        </div>
+        <div>${escapeHtml(mcHoldingsTextEnhanced(u) || 'ไม่มีพัสดุในความครอบครองขณะนี้')}</div>
+        ${serialHtml}
+        <small>แสดงหมายเลขเครื่อง / Serial แทนรหัสครุภัณฑ์</small>
+      </div>
+
+      <div class="mc-actions">
+        <button type="button" class="mc-btn ok mc-ok ${r === 'ครบ' ? 'on' : ''}">
+          ✓ ครบ
+          <span class="mc-btn-sub">ตรวจครบทุกชิ้น</span>
+        </button>
+        <button type="button" class="mc-btn bad mc-bad ${r === 'มีปัญหา' ? 'on' : ''}">
+          ⚠ มีปัญหา
+          <span class="mc-btn-sub">มีรายการไม่ครบ/ผิดปกติ</span>
+        </button>
+      </div>
+
+      ${note}
+      ${rec ? `<div class="mc-meta">
+        <span>ตรวจโดย ${escapeHtml(rec['ผู้ตรวจ'] || '-')} · ${thaiDateTime(rec['วันที่ตรวจ'])}</span>
+        <span class="link-btn mc-clear">ล้างผล</span>
+      </div>` : ''}
+    </div>`;
+  }
+
+  function mcChecklistSheetEnhanced(u){
+    const items = [];
+    mcHoldingsOf(u).forEach(b => {
+      const asset = mcAssetByBorrow(b);
+      items.push({
+        label: b['ชื่อครุภัณฑ์'] || '-',
+        serial: mcSerialTextFromBorrow(b),
+        sub: asset && asset['ยี่ห้อ/รุ่น'] ? asset['ยี่ห้อ/รุ่น'] : ''
+      });
+      parseCompRefs(b['รหัสส่วนควบที่ยืม']).forEach(r => {
+        const c = state.components.find(x => x['รหัสส่วนควบ'] === r.id);
+        items.push({
+          label: 'ส่วนควบ: ' + (c ? compDisplayName(c) : r.id),
+          serial: '',
+          sub: r.n > 1 ? 'จำนวน × ' + r.n : ''
+        });
+      });
+    });
+
+    if (!items.length) { mcProblemSheet(u); return; }
+
+    const rec = mcRecordFor(u);
+    const st = items.map(() => 0);
+
+    showSheet(`
+      <div class="sheet-title">ตรวจพัสดุ · ${escapeHtml(officerFullName(u))}</div>
+      <div class="mc-checklist-head">
+        <div>
+          <div style="font-weight:600;">รายการที่ต้องตรวจ</div>
+          <div class="hint" style="margin:2px 0 0;">ใช้หมายเลขเครื่อง / Serial เป็นตัวระบุหลัก</div>
+        </div>
+        <div class="mc-checklist-count" id="ckCount">0/${items.length}</div>
+      </div>
+      <div id="ckList" style="max-height:50vh;overflow:auto;">
+        ${items.map((it,i)=>`
+          <div class="ck-row" data-i="${i}">
+            <div style="flex:1;min-width:0;">
+              <div style="font-weight:600;">${escapeHtml(it.label)}</div>
+              ${it.serial ? `<div class="ck-serial">S/N ${escapeHtml(it.serial)}</div>` : ''}
+              ${it.sub ? `<small style="display:block;color:var(--ink-dim);margin-top:2px;">${escapeHtml(it.sub)}</small>` : ''}
+            </div>
+            <button type="button" class="mc-btn ok ck-ok">✓ ครบ</button>
+            <button type="button" class="mc-btn bad ck-bad">✗ ไม่ครบ</button>
+          </div>`).join('')}
+      </div>
+      <div class="field" id="ckNoteWrap" style="margin-top:10px;display:none;">
+        <label>รายละเอียดเพิ่มเติม</label>
+        <textarea class="input" id="ckNote" rows="2" placeholder="เช่น สภาพชำรุด, หมายเลขเครื่องไม่ตรง, สูญหาย">${escapeHtml(rec && rec['ผล']==='มีปัญหา' ? rec['หมายเหตุ'] : '')}</textarea>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" id="ckCancel">ยกเลิก</button>
+        <button class="btn btn-primary" id="ckSave" disabled>ตรวจให้ครบทุกชิ้นก่อน</button>
+      </div>
+    `);
+
+    const refresh = () => {
+      const done = st.filter(Boolean).length;
+      const bad = st.filter(s => s === 2).length;
+      const counter = document.getElementById('ckCount');
+      const noteWrap = document.getElementById('ckNoteWrap');
+      const save = document.getElementById('ckSave');
+      if (counter) counter.innerHTML = `<b>${done}</b>/${items.length}${bad ? ' · ไม่ครบ ' + bad : ''}`;
+      if (noteWrap) noteWrap.style.display = bad ? '' : 'none';
+      if (save) {
+        save.disabled = done < items.length;
+        save.textContent = done < items.length ? 'ตรวจให้ครบทุกชิ้นก่อน' : (bad ? 'บันทึก "มีปัญหา"' : 'บันทึก "ครบ"');
+        save.className = 'btn ' + (bad ? 'btn-danger' : 'btn-primary');
+      }
+    };
+
+    document.querySelectorAll('#ckList .ck-row').forEach(row => {
+      const i = Number(row.dataset.i);
+      const ok = row.querySelector('.ck-ok');
+      const bad = row.querySelector('.ck-bad');
+      const set = v => {
+        st[i] = v;
+        ok.classList.toggle('on', v === 1);
+        bad.classList.toggle('on', v === 2);
+        refresh();
+      };
+      ok.onclick = () => set(1);
+      bad.onclick = () => set(2);
+    });
+    refresh();
+
+    document.getElementById('ckCancel').onclick = closeSheet;
+    document.getElementById('ckSave').onclick = async () => {
+      const btn = document.getElementById('ckSave');
+      if (!btn || btn.disabled) return;
+      const badItems = items.filter((_,i)=>st[i]===2);
+      setButtonBusy(btn, true);
+      if (!badItems.length) {
+        await mcSave(u, 'ครบ', '');
+      } else {
+        const extra = (document.getElementById('ckNote').value || '').trim();
+        const serialProblems = badItems.map(it => it.serial ? `S/N ${it.serial}` : it.label);
+        await mcSave(u, 'มีปัญหา',
+          'ไม่ครบ/ผิดปกติ: ' + serialProblems.join(', ') + (extra ? ' | ' + extra : '')
+        );
+      }
+      closeSheet();
+    };
+  }
+
+  function mcRenderPrintReport(){
+    const orgName = (state.settings && state.settings.orgName) || ORG_NAME;
+    const rowsAll = (state.users || [])
+      .map(u => ({u, sum:mcSummary(u), rec:mcRecordFor(u)}))
+      .filter(x => x.sum.hold.length > 0 || x.rec);
+
+    const rows = rowsAll.map((x,i)=>{
+      const serials = mcSerialsFor(x.u);
+      const serialText = serials.length
+        ? serials.map(s => s.serial).join(', ')
+        : '-';
+      const result = x.rec ? x.rec['ผล'] : 'ยังไม่ตรวจ';
+      const cls = result === 'ครบ' ? 'ok' : (result === 'มีปัญหา' ? 'bad' : 'pending');
+      return `<tr>
+        <td>${i+1}</td>
+        <td><strong>${escapeHtml(officerFullName(x.u))}</strong><br><small>${escapeHtml(x.u['ตำแหน่ง']||'-')}</small></td>
+        <td>${escapeHtml(serialText)}</td>
+        <td>${escapeHtml(mcHoldingsTextEnhanced(x.u)||'-')}</td>
+        <td class="${cls}">${escapeHtml(result)}</td>
+        <td>${escapeHtml(x.rec && x.rec['หมายเหตุ'] || '-')}</td>
+        <td>${escapeHtml(x.rec && x.rec['ผู้ตรวจ'] || '-')}<br>${x.rec ? escapeHtml(thaiDateTime(x.rec['วันที่ตรวจ'])) : '-'}</td>
+      </tr>`;
+    }).join('');
+
+    const done = rowsAll.filter(x=>x.rec).length;
+    const bad = rowsAll.filter(x=>x.rec && x.rec['ผล']==='มีปัญหา').length;
+    const pending = rowsAll.length - done;
+    const monthName = TH_MONTHS_FULL[(state.mcMonth||1)-1] || '';
+    const thaiYear = (Number(state.mcYear)||new Date().getFullYear()) + 543;
+
+    const html = `
+      <style>
+        @page{size:A4 landscape;margin:12mm;}
+        .mcr{font-family:'TH Sarabun New','Sarabun','Kanit',sans-serif;color:#111;font-size:11pt;}
+        .mcr h1{font-size:20pt;text-align:center;margin:0 0 2mm;}
+        .mcr .sub{text-align:center;font-size:13pt;margin-bottom:6mm;}
+        .mcr .kpis{display:flex;gap:8mm;margin-bottom:5mm;}
+        .mcr .kpi{flex:1;border:1px solid #aaa;padding:3mm;text-align:center;}
+        .mcr .kpi b{display:block;font-size:18pt;}
+        .mcr table{width:100%;border-collapse:collapse;}
+        .mcr th,.mcr td{border:1px solid #333;padding:2.2mm 2.5mm;vertical-align:top;}
+        .mcr th{background:#e9edf0;text-align:center;font-weight:700;}
+        .mcr td:first-child{text-align:center;width:8mm;}
+        .mcr .ok{color:#168052;font-weight:700;}
+        .mcr .bad{color:#b52d43;font-weight:700;}
+        .mcr .pending{color:#a86b12;font-weight:700;}
+        .mcr .foot{margin-top:5mm;font-size:10pt;color:#555;}
+      </style>
+      <div class="mcr">
+        <h1>รายงานผลการตรวจประจำเดือน ${escapeHtml(monthName)} พ.ศ. ${toThaiNumber(thaiYear)}</h1>
+        <div class="sub">${escapeHtml(orgName)}</div>
+        <div class="kpis">
+          <div class="kpi"><b>${rowsAll.length}</b>ผู้ที่ต้องตรวจ</div>
+          <div class="kpi"><b>${done}</b>ตรวจแล้ว</div>
+          <div class="kpi"><b>${bad}</b>มีปัญหา</div>
+          <div class="kpi"><b>${pending}</b>ยังไม่ตรวจ</div>
+        </div>
+        <table>
+          <thead><tr>
+            <th>ลำดับ</th><th>ผู้ครอบครอง / ตำแหน่ง</th><th>หมายเลขเครื่อง / Serial</th>
+            <th>รายการพัสดุ</th><th>ผลตรวจ</th><th>หมายเหตุ</th><th>ผู้ตรวจ / วันที่</th>
+          </tr></thead>
+          <tbody>${rows || '<tr><td colspan="7" style="text-align:center;">ไม่มีข้อมูล</td></tr>'}</tbody>
+        </table>
+        <div class="foot">
+          หมายเหตุ: รายงานนี้แสดง “หมายเลขเครื่อง / Serial” เป็นตัวระบุครุภัณฑ์หลัก และไม่แสดงรหัสครุภัณฑ์ในรายการตรวจประจำเดือน
+        </div>
+      </div>`;
+
+    const pa = document.getElementById('printArea');
+    if (!pa) return;
+    pa.className = 'report-print-area';
+    pa.innerHTML = html;
+    triggerPrint(() => {
+      pa.innerHTML = '';
+      pa.className = '';
+    });
+  }
+
+  function renderMonthlyEnhanced(){
+    if (!isAdmin()) return;
+    const el = document.getElementById('view-monthly');
+    const now = new Date();
+    if (!state.mcYear) state.mcYear = now.getFullYear();
+    if (!state.mcMonth) state.mcMonth = now.getMonth()+1;
+    if (state.mcPending === undefined) state.mcPending = false;
+    if (state.mcSearch === undefined) state.mcSearch = '';
+
+    el.innerHTML = emptyState('กำลังโหลดผลตรวจประจำเดือน...');
+    mcLoad().finally(() => {
+      const years = [];
+      for(let y=now.getFullYear(); y>=now.getFullYear()-3; y--) years.push(y);
+      if(!years.includes(state.mcYear)) years.push(state.mcYear);
+
+      el.innerHTML = `
+        <div class="section-title">
+          <span>
+            ตรวจประจำเดือน
+            <small>ติดตามผลการตรวจรายบุคคล พร้อมหมายเลขเครื่อง / Serial</small>
+          </span>
+        </div>
+
+        <div class="mc-toolbar">
+          <div class="mc-toolbar-left">
+            <div class="mc-period">
+              <select class="input" id="mcMonth">
+                ${TH_MONTHS_FULL.map((m,i)=>`<option value="${i+1}" ${state.mcMonth===i+1?'selected':''}>${m}</option>`).join('')}
+              </select>
+              <select class="input" id="mcYear">
+                ${years.map(y=>`<option value="${y}" ${state.mcYear===y?'selected':''}>พ.ศ. ${toThaiNumber(y+543)}</option>`).join('')}
+              </select>
+            </div>
+          </div>
+          <div class="mc-toolbar-right">
+            ${mcViewToggleEnhanced()}
+            ${mcPrintButtonHtml()}
+          </div>
+        </div>
+
+        <div class="mc-summary" id="mcSummary"></div>
+        <div class="mc-progress-card" id="mcProgress"></div>
+
+        <div class="search-row" style="margin-bottom:10px;">
+          <div class="mc-search-wrap">
+            <svg viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.8" stroke="currentColor" stroke-width="1.6"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            <input class="input" id="mcSearch" placeholder="ค้นหาชื่อ / ตำแหน่ง / หมายเลขเครื่อง" value="${escapeHtml(state.mcSearch)}" autocomplete="off">
+          </div>
+          <div class="chip ${state.mcPending?'active':''}" id="mcPendingChip">เฉพาะที่ยังไม่ตรวจ</div>
+        </div>
+        <div class="hint" id="mcHiddenHint" style="margin:0 0 10px;"></div>
+        <div class="mc-grid mc-grid-${mcViewMode()==='list'?'list':'cards'}" id="mcGrid"></div>
+      `;
+
+      const reload = async()=>{
+        setLoading(true,'กำลังโหลดผลตรวจ...');
+        try{ await mcLoad(); } finally{ setLoading(false); }
+        drawMonthlyBodyEnhanced();
+      };
+
+      document.getElementById('mcMonth').onchange=e=>{state.mcMonth=Number(e.target.value);reload();};
+      document.getElementById('mcYear').onchange=e=>{state.mcYear=Number(e.target.value);reload();};
+      document.getElementById('mcPendingChip').onclick=e=>{
+        state.mcPending=!state.mcPending;
+        e.currentTarget.classList.toggle('active',state.mcPending);
+        drawMonthlyBodyEnhanced();
+      };
+      document.getElementById('mcSearch').oninput=e=>{
+        state.mcSearch=e.target.value;
+        drawMonthlyBodyEnhanced();
+      };
+      document.querySelectorAll('[data-mcv]').forEach(btn=>{
+        btn.onclick=()=>{
+          setMcViewMode(btn.dataset.mcv);
+          renderMonthlyEnhanced();
+        };
+      });
+      document.getElementById('mcPrintReport').onclick=mcRenderPrintReport;
+
+      drawMonthlyBodyEnhanced();
+    });
+  }
+
+  function drawMonthlyBodyEnhanced(){
+    const grid=document.getElementById('mcGrid');
+    if(!grid) return;
+
+    const all=(state.users||[]).map(u=>({u,sum:mcSummary(u),rec:mcRecordFor(u)}));
+    const visible=all.filter(x=>x.sum.hold.length>0||x.rec);
+    const hiddenCount=all.length-visible.length;
+    const total=visible.length;
+    const done=visible.filter(x=>x.rec).length;
+    const bad=visible.filter(x=>x.rec&&x.rec['ผล']==='มีปัญหา').length;
+    const pending=total-done;
+    const pct=total?Math.round(done/total*100):0;
+
+    const sumEl=document.getElementById('mcSummary');
+    if(sumEl){
+      sumEl.innerHTML=`
+        <div class="mc-summary-card"><div class="num">${total}</div><div class="lbl">ผู้ที่ต้องตรวจ</div></div>
+        <div class="mc-summary-card ok"><div class="num">${done}</div><div class="lbl">ตรวจแล้ว</div></div>
+        <div class="mc-summary-card bad"><div class="num">${bad}</div><div class="lbl">มีปัญหา</div></div>
+        <div class="mc-summary-card pending"><div class="num">${pending}</div><div class="lbl">ยังไม่ตรวจ</div></div>`;
+    }
+
+    const progress=document.getElementById('mcProgress');
+    if(progress){
+      progress.innerHTML=`
+        <div class="mc-progress-top">
+          <div class="mc-progress-main">ความคืบหน้า <b>${done}/${total}</b> คน · ${pct}%</div>
+          <div class="mc-progress-note ${bad?'bad':''}">${bad?'พบปัญหา '+bad+' คน':'ยังไม่พบปัญหาจากผลที่บันทึก'}</div>
+        </div>
+        <div class="audit-progress-track"><div class="audit-progress-fill" style="width:${pct}%;"></div></div>`;
+    }
+
+    const hint=document.getElementById('mcHiddenHint');
+    if(hint) hint.textContent=hiddenCount
+      ? `ซ่อน ${hiddenCount} คนที่ไม่มีพัสดุในความครอบครองและยังไม่มีผลตรวจ`
+      : '';
+
+    const q=(state.mcSearch||'').trim().toLowerCase();
+    let list=visible.filter(x=>{
+      if(!q) return true;
+      const name=officerFullName(x.u).toLowerCase();
+      const pos=String(x.u['ตำแหน่ง']||'').toLowerCase();
+      const serials=mcSerialsFor(x.u).map(s=>s.serial.toLowerCase()).join(' ');
+      return name.includes(q)||pos.includes(q)||serials.includes(q);
+    });
+    if(state.mcPending) list=list.filter(x=>!x.rec);
+    list.sort((a,b)=>(!!a.rec-!!b.rec)||officerFullName(a.u).localeCompare(officerFullName(b.u),'th'));
+
+    const mode=mcViewMode();
+    grid.className='mc-grid mc-grid-'+(mode==='list'?'list':'cards');
+    grid.innerHTML=list.length
+      ? list.map(x=>mcCardHtmlEnhanced(x)).join('')
+      : emptyState(state.mcPending&&total?'ตรวจครบทุกคนแล้ว 🎉':'ไม่มีเจ้าหน้าที่ที่ตรงกับเงื่อนไข');
+
+    grid.querySelectorAll('.mc-card').forEach(card=>{
+      const u=state.users.find(x=>mcKey(x)===card.dataset.key);
+      if(!u) return;
+      card.onclick=e=>{
+        if(e.target.closest('.mc-btn,.mc-clear')) return;
+        mcChecklistSheetEnhanced(u);
+      };
+      card.querySelector('.mc-ok').onclick=()=>mcChecklistSheetEnhanced(u);
+      card.querySelector('.mc-bad').onclick=()=>mcChecklistSheetEnhanced(u);
+      const clr=card.querySelector('.mc-clear');
+      if(clr) clr.onclick=()=>mcClear(u);
+    });
+  }
+
+  // Override เฉพาะฟังก์ชันหน้าเดือน — ฟังก์ชันเดิมทั้งหมดด้านอื่นยังอยู่ครบ
+  window.renderMonthly = renderMonthlyEnhanced;
+
+  // Function declarations ใน global scope จะถูกเรียกจากระบบ navigation
+  // จึงกำหนด property ไว้ด้วยเพื่อรองรับโค้ดเดิมที่เรียกผ่าน window
+  try { renderMonthly = renderMonthlyEnhanced; } catch(e) {}
+})();
+
 
 init();   // <-- ของเดิม คงไว้ตามเดิม
 
