@@ -5223,7 +5223,6 @@ async function renderUsers() {
   el.innerHTML = emptyState('กำลังโหลดรายชื่อเจ้าหน้าที่...');
   try {
     if (!state.users.length) state.users = await apiGet('getUsers', { token: state.sessionToken });
-    state.activity = await apiGet('getActivityLog', { token: state.sessionToken });
   } catch (e) {
     toast('โหลดข้อมูลเจ้าหน้าที่ไม่สำเร็จ: ' + (e.message || ''));
   }
@@ -5248,8 +5247,7 @@ function drawUsers() {
     <div class="search-row"><input class="input" id="userSearchInput" placeholder="ค้นหาชื่อหรือตำแหน่ง..." value="${escapeHtml(state.userSearch)}"></div>
     <div class="hint" style="margin-top:0;">ทำเนียบนี้ใช้สำหรับเลือกชื่อแบบดรอปดาวน์ในหน้าเบิก-ยืม และบันทึกขอเบิกพัสดุ ไม่ได้ผูกกับการเข้าสู่ระบบ — กำหนด "บทบาทในบันทึกเบิก-ยืม" ให้แต่ละคนเพื่อให้ระบบเลือกผู้อนุมัติ/ผู้จ่ายพัสดุอัตโนมัติตอนพิมพ์บันทึกข้อความ</div>
     <div id="userList" class="${isGrid ? 'asset-grid' : ''}">${shown.length ? shown.map(isGrid ? userCard : userRow).join('') : emptyState(state.users.length ? 'ไม่พบรายชื่อที่ค้นหา' : 'ยังไม่มีรายชื่อ จนท.ในสังกัด')}</div>
-    <div class="section-title">บันทึกกิจกรรมล่าสุด</div>
-    <div>${state.activity.length ? state.activity.slice(0, 40).map(activityRow).join('') : emptyState('ยังไม่มีบันทึกกิจกรรม')}</div>
+    
   `;
   document.getElementById('btnAddUser').onclick = () => openUserForm();
   document.getElementById('btnPrintAllUsers').onclick = printAllOfficers;
@@ -6483,7 +6481,7 @@ function rpGroupSummaryHtml() {
       <div class="gs-list ${state.rpGroupAll ? 'gs-all' : ''}" id="gsList">${rpGroupRowsHtml(byName, cat === 'all', GS_LIMIT)}</div>
       ${byName.length > GS_LIMIT ? `<button class="gs-showall" id="gsShowAll" type="button">${state.rpGroupAll ? 'ย่อรายการ' : 'แสดงทั้งหมด (' + byName.length + ' ชนิด)'}</button>` : ''}
     </div>
-    ${vehicles.length ? `<div class="glass rp-card">
+        ${(cat === 'ยานพาหนะ' && vehicles.length) ? `<div class="glass rp-card">
       <h4>ยานพาหนะแยกตามประเภท <small>รวม ${vehicles.length} คัน</small></h4>
       <div class="gs-list gs-all">${rpGroupRowsHtml(byType, false, 0)}</div>
     </div>` : ''}`;
@@ -7374,7 +7372,23 @@ function wireAuditCommitteeSettingsHandlers() {
     finally { setLoading(false); setButtonBusy(btn, false); }
   };
 }
- 
+ /* [เพิ่ม] โหลดและแสดงบันทึกกิจกรรมล่าสุดในหน้าตั้งค่า (แท็บ "บันทึกกิจกรรม") */
+async function loadActivityPanel() {
+  const box = document.getElementById('activityPanelList');
+  if (!box) return;
+  box.innerHTML = emptyState('กำลังโหลดบันทึกกิจกรรม...');
+  try {
+    state.activity = await apiGet('getActivityLog', { token: state.sessionToken });
+  } catch (e) {
+    toast('โหลดบันทึกกิจกรรมไม่สำเร็จ: ' + (e.message || ''));
+  }
+  const list = state.activity || [];
+  const again = document.getElementById('activityPanelList');   // กันกรณีผู้ใช้สลับหน้าไปแล้ว
+  if (!again) return;
+  // [ปรับตรงนี้] 40 = จำนวนรายการล่าสุดที่แสดง
+  again.innerHTML = list.length ? list.slice(0, 40).map(activityRow).join('') : emptyState('ยังไม่มีบันทึกกิจกรรม');
+}
+   
 /* ---- (ข) แก้ renderSettings() ให้เป็นแบบนี้ทั้งฟังก์ชัน (แทนที่ของเดิมทั้งหมด) ---- */
 function renderSettings() {
   if (!isAdmin()) return;
@@ -7391,6 +7405,7 @@ function renderSettings() {
     { id: 'units',      label: 'หมวดหมู่ & หน่วยนับ' },
     { id: 'org',        label: 'หน่วยงาน & เอกสาร' },
     { id: 'security',   label: 'รหัสผ่าน' },
+    { id: 'activity',   label: 'บันทึกกิจกรรม' },
     { id: 'data',       label: 'ข้อมูล & สำรอง' }
   ];
 
@@ -7480,6 +7495,11 @@ function renderSettings() {
       </div>
     </div>
 
+        <div class="settings-panel" data-panel="activity" style="display:${state.settingsTab==='activity'?'block':'none'};">
+      <div class="section-title" style="margin-top:6px; font-size:14px;">บันทึกกิจกรรมล่าสุด</div>
+      <div id="activityPanelList"></div>
+    </div>
+
     <div class="settings-panel" data-panel="data" style="display:${state.settingsTab==='data'?'block':'none'};">
       <div class="section-title" style="margin-top:6px; font-size:14px;">ย้ายรูปเก่าออกจาก Google Sheets</div>
       <div class="glass" style="padding:16px; margin-bottom:16px;">
@@ -7502,6 +7522,7 @@ function renderSettings() {
       document.querySelectorAll('#settingsTabRow [data-stab]').forEach(x => x.classList.toggle('active', x.dataset.stab === state.settingsTab));
       document.querySelectorAll('.settings-panel').forEach(p => { p.style.display = (p.dataset.panel === state.settingsTab) ? 'block' : 'none'; });
       window.scrollTo({ top: 0, behavior: 'smooth' });
+        if (state.settingsTab === 'activity') loadActivityPanel();
     };
   });
 
@@ -7636,6 +7657,7 @@ function renderSettings() {
   };
 
   wireAuditCommitteeSettingsHandlers();
+   if (state.settingsTab === 'activity') loadActivityPanel();
 }
 
    /* ===== [แก้ไขพิมพ์เปล่า] ย้าย #printArea ให้เป็นลูกตรงของ <body> =====
