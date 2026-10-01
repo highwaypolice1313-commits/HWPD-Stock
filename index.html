@@ -1875,167 +1875,228 @@ textarea.input{
   }
 }
 
-/* ===== FIX EMPTY STATE CENTER ===== */
-.empty-state{
-  width:100% !important;
-  min-height:200px !important;
-  height:auto !important;
-  display:flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-  text-align:center !important;
-  padding:28px 20px !important;
-  box-sizing:border-box !important;
-}
-.empty-state-content{
-  width:100% !important;
-  display:flex !important;
-  flex-direction:column !important;
-  align-items:center !important;
-  justify-content:center !important;
-  text-align:center !important;
-  gap:8px !important;
-}
-.empty-state .empty-icon{
-  width:48px !important;
-  min-width:48px !important;
-  max-width:48px !important;
-  height:48px !important;
-  min-height:48px !important;
-  max-height:48px !important;
-  display:flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-  margin:0 auto 2px !important;
-  flex:none !important;
-}
-.empty-state .empty-icon > svg{
-  width:25px !important;
-  min-width:25px !important;
-  max-width:25px !important;
-  height:25px !important;
-  min-height:25px !important;
-  max-height:25px !important;
-  display:block !important;
-}
-.empty-state .empty-title,
-.empty-state .empty-sub{
-  width:100% !important;
-  text-align:center !important;
-  margin:0 !important;
-}
-.empty-actions{
-  width:100% !important;
-  display:flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-  margin-top:4px !important;
-}
-.empty-actions .empty-action{margin:0 !important;}
 
-/* ===== FIX QUICK SEARCH / COMMAND PALETTE ===== */
+/* =========================================================
+   PREMIUM QUICK SEARCH
+   ========================================================= */
 .command-overlay{
   position:fixed !important;
   inset:0 !important;
+  z-index:9999 !important;
   display:flex !important;
   align-items:flex-start !important;
   justify-content:center !important;
-  padding:80px 20px 24px !important;
-  z-index:200 !important;
+  padding:8vh 20px 30px !important;
+  background:rgba(11,27,43,.48) !important;
+  backdrop-filter:blur(8px) !important;
+  -webkit-backdrop-filter:blur(8px) !important;
 }
 .command-sheet{
   position:relative !important;
-  width:min(720px,calc(100vw - 40px)) !important;
-  max-width:720px !important;
-  max-height:min(620px,calc(100vh - 120px)) !important;
+  width:min(650px,calc(100vw - 40px)) !important;
+  max-width:650px !important;
+  max-height:min(680px,calc(100vh - 12vh - 30px)) !important;
   margin:0 !important;
-  padding:16px !important;
-  border-radius:24px !important;
+  padding:0 !important;
   overflow:hidden !important;
+  border:1px solid rgba(255,255,255,.85) !important;
+  border-radius:24px !important;
+  background:rgba(255,255,255,.98) !important;
+  box-shadow:0 24px 70px rgba(11,27,43,.24),0 4px 16px rgba(11,27,43,.10) !important;
   box-sizing:border-box !important;
+}
+.command-top{
+  padding:24px 58px 18px 24px !important;
+  border-bottom:1px solid rgba(16,42,67,.08) !important;
+  background:linear-gradient(180deg,#fff 0%,#fbfaf7 100%) !important;
+}
+.command-brand{
+  display:flex !important;
+  align-items:center !important;
+  gap:13px !important;
+}
+.command-brand-icon{
+  width:44px !important;height:44px !important;
+  min-width:44px !important;max-width:44px !important;
+  min-height:44px !important;max-height:44px !important;
+  display:flex !important;align-items:center !important;justify-content:center !important;
+  flex:0 0 44px !important;
+  border-radius:14px !important;
+  background:#102a43 !important;color:#fff !important;
+  box-shadow:0 7px 18px rgba(16,42,67,.16) !important;
+}
+.command-brand-icon svg{
+  width:20px !important;height:20px !important;
+  min-width:20px !important;max-width:20px !important;
+  min-height:20px !important;max-height:20px !important;
+}
+.command-title{
+  font-size:18px !important;line-height:1.25 !important;
+  font-weight:800 !important;color:#102a43 !important;
+}
+.command-subtitle{
+  margin-top:4px !important;font-size:12px !important;
+  line-height:1.45 !important;color:#71808c !important;
 }
 .command-close{
-  position:absolute !important;
-  top:12px !important;
-  right:12px !important;
-  width:34px !important;
-  height:34px !important;
-  display:flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-  z-index:20 !important;
+  position:absolute !important;top:17px !important;right:17px !important;
+  z-index:30 !important;width:34px !important;height:34px !important;
+  padding:0 !important;border:1px solid rgba(16,42,67,.10) !important;
+  border-radius:50% !important;display:flex !important;
+  align-items:center !important;justify-content:center !important;
+  background:#fff !important;color:#7a8790 !important;
+  cursor:pointer !important;box-shadow:0 2px 8px rgba(16,42,67,.05) !important;
+  transition:all .16s ease !important;
 }
-.command-close svg{width:15px !important;height:15px !important;}
-.command-head{
-  width:100% !important;
-  min-width:0 !important;
-  display:flex !important;
-  align-items:center !important;
-  gap:10px !important;
-  padding:4px 42px 12px 4px !important;
+.command-close:hover{
+  color:#102a43 !important;background:#f5f7f8 !important;
+  transform:rotate(90deg) !important;
+}
+.command-close svg{
+  width:15px !important;height:15px !important;
+  min-width:15px !important;max-width:15px !important;
+  min-height:15px !important;max-height:15px !important;
+}
+.command-searchbox{
+  position:relative !important;display:flex !important;align-items:center !important;
+  gap:10px !important;margin:18px 20px 0 !important;padding:0 12px !important;
+  height:52px !important;border:1px solid #dfe4e7 !important;
+  border-radius:15px !important;background:#f8f9f8 !important;
+  box-shadow:inset 0 1px 2px rgba(16,42,67,.025) !important;
   box-sizing:border-box !important;
+  transition:border-color .16s ease,box-shadow .16s ease,background .16s ease !important;
 }
-.command-search-icon{
-  width:22px !important;
-  min-width:22px !important;
-  max-width:22px !important;
-  height:22px !important;
-  min-height:22px !important;
-  max-height:22px !important;
-  display:flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-  flex:0 0 22px !important;
-  color:var(--ink-dim) !important;
+.command-searchbox:focus-within{
+  background:#fff !important;border-color:#9aaebd !important;
+  box-shadow:0 0 0 4px rgba(16,42,67,.07) !important;
 }
-.command-search-icon > svg{
-  width:18px !important;
-  min-width:18px !important;
-  max-width:18px !important;
-  height:18px !important;
-  min-height:18px !important;
-  max-height:18px !important;
-  display:block !important;
+.command-searchbox-icon{
+  width:20px !important;height:20px !important;
+  min-width:20px !important;max-width:20px !important;
+  min-height:20px !important;max-height:20px !important;
+  display:flex !important;align-items:center !important;justify-content:center !important;
+  flex:0 0 20px !important;color:#75838d !important;
+}
+.command-searchbox-icon svg{
+  width:18px !important;height:18px !important;
+  min-width:18px !important;max-width:18px !important;
+  min-height:18px !important;max-height:18px !important;
 }
 .command-search{
-  flex:1 1 auto !important;
-  min-width:0 !important;
-  width:auto !important;
-  height:42px !important;
-  border:none !important;
-  outline:none !important;
-  background:transparent !important;
-  box-shadow:none !important;
-  font-size:15px !important;
-  padding:8px 4px !important;
-  box-sizing:border-box !important;
+  flex:1 1 auto !important;min-width:0 !important;width:auto !important;
+  height:48px !important;padding:0 !important;border:0 !important;
+  outline:0 !important;background:transparent !important;box-shadow:none !important;
+  color:#1c2d3b !important;font-size:14px !important;line-height:48px !important;
 }
-.command-kbd{flex:none !important;white-space:nowrap !important;}
+.command-search::placeholder{color:#9aa4aa !important;}
+.command-kbd{
+  flex:0 0 auto !important;display:inline-flex !important;
+  align-items:center !important;justify-content:center !important;
+  min-width:34px !important;height:24px !important;padding:0 7px !important;
+  border:1px solid #d9dee1 !important;border-bottom-width:2px !important;
+  border-radius:7px !important;background:#fff !important;color:#87939a !important;
+  font:600 10px/1 Arial,sans-serif !important;letter-spacing:.04em !important;
+}
+.command-hint{
+  display:flex !important;align-items:center !important;gap:6px !important;
+  margin:8px 22px 14px !important;color:#98a1a6 !important;font-size:10.5px !important;
+}
+.command-hint > span:first-child{
+  width:14px !important;height:14px !important;display:flex !important;
+  align-items:center !important;justify-content:center !important;
+}
+.command-hint svg{width:12px !important;height:12px !important;}
 .command-results{
-  width:100% !important;
-  max-height:calc(min(620px,100vh - 120px) - 80px) !important;
-  overflow-y:auto !important;
-  overflow-x:hidden !important;
-  box-sizing:border-box !important;
+  width:100% !important;max-height:390px !important;padding:0 12px 14px !important;
+  overflow-y:auto !important;overflow-x:hidden !important;box-sizing:border-box !important;
 }
+.command-results::-webkit-scrollbar{width:5px !important;}
+.command-results::-webkit-scrollbar-thumb{border-radius:10px !important;background:#cbd3d7 !important;}
+.command-item{
+  width:100% !important;min-height:62px !important;margin:3px 0 !important;
+  padding:9px 11px !important;border:1px solid transparent !important;
+  border-radius:14px !important;display:flex !important;align-items:center !important;
+  gap:11px !important;text-align:left !important;background:transparent !important;
+  color:inherit !important;cursor:pointer !important;box-sizing:border-box !important;
+  transition:background .14s ease,border-color .14s ease,transform .14s ease !important;
+}
+.command-item:hover,.command-item.active{
+  background:#f5f7f7 !important;border-color:#e4e8e9 !important;
+}
+.command-item:hover{transform:translateX(2px) !important;}
 .command-item-icon{
-  width:38px !important;
-  min-width:38px !important;
-  max-width:38px !important;
-  height:38px !important;
-  min-height:38px !important;
-  max-height:38px !important;
-  display:flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-  flex:0 0 38px !important;
+  width:40px !important;height:40px !important;
+  min-width:40px !important;max-width:40px !important;
+  min-height:40px !important;max-height:40px !important;
+  flex:0 0 40px !important;display:flex !important;
+  align-items:center !important;justify-content:center !important;
+  border-radius:12px !important;background:#edf2f3 !important;color:#29465c !important;
 }
-.command-item-icon svg{width:19px !important;height:19px !important;}
+.command-item-icon svg{
+  width:18px !important;height:18px !important;
+  min-width:18px !important;max-width:18px !important;
+  min-height:18px !important;max-height:18px !important;
+}
+.command-item-main{
+  min-width:0 !important;flex:1 1 auto !important;display:flex !important;
+  flex-direction:column !important;gap:3px !important;
+}
+.command-item-title{
+  display:block !important;overflow:hidden !important;text-overflow:ellipsis !important;
+  white-space:nowrap !important;color:#203444 !important;font-size:13px !important;font-weight:700 !important;
+}
+.command-item-sub{
+  display:block !important;overflow:hidden !important;text-overflow:ellipsis !important;
+  white-space:nowrap !important;color:#89949a !important;font-size:10.5px !important;
+}
+.command-item-arrow{
+  flex:0 0 auto !important;color:#a7b0b5 !important;font-size:22px !important;
+  line-height:1 !important;padding:0 2px !important;
+}
+.command-empty{padding:42px 20px 48px !important;text-align:center !important;}
+.command-empty-icon{
+  width:46px !important;height:46px !important;margin:0 auto 11px !important;
+  display:flex !important;align-items:center !important;justify-content:center !important;
+  border-radius:14px !important;background:#f0f3f4 !important;color:#71808a !important;
+}
+.command-empty-icon svg{width:20px !important;height:20px !important;}
+.command-empty-title{color:#344957 !important;font-size:13px !important;font-weight:700 !important;}
+.command-empty-sub{margin-top:4px !important;color:#9aa4a9 !important;font-size:11px !important;}
+
 @media (max-width:899px){
-  .command-overlay{align-items:flex-start !important;padding:20px 12px !important;}
-  .command-sheet{width:100% !important;max-width:none !important;max-height:calc(100vh - 40px) !important;border-radius:22px !important;}
+  .command-overlay{padding:18px 12px 20px !important;align-items:flex-start !important;}
+  .command-sheet{width:100% !important;max-width:none !important;max-height:calc(100vh - 38px) !important;border-radius:20px !important;}
+  .command-top{padding:20px 52px 16px 18px !important;}
+  .command-searchbox{margin:14px 14px 0 !important;}
+  .command-results{padding:0 8px 10px !important;max-height:calc(100vh - 190px) !important;}
 }
 
+/* =========================================================
+   EMPTY STATE / MAINTENANCE CENTERING
+   ========================================================= */
+.empty-state{
+  width:100% !important;min-height:200px !important;height:auto !important;
+  display:flex !important;align-items:center !important;justify-content:center !important;
+  text-align:center !important;padding:28px 20px !important;box-sizing:border-box !important;
+}
+.empty-state-content{
+  width:100% !important;display:flex !important;flex-direction:column !important;
+  align-items:center !important;justify-content:center !important;text-align:center !important;gap:8px !important;
+}
+.empty-state .empty-icon{
+  width:48px !important;height:48px !important;min-width:48px !important;max-width:48px !important;
+  min-height:48px !important;max-height:48px !important;margin:0 auto 2px !important;
+  display:flex !important;align-items:center !important;justify-content:center !important;flex:0 0 48px !important;
+}
+.empty-state .empty-icon svg{
+  width:25px !important;height:25px !important;min-width:25px !important;max-width:25px !important;
+  min-height:25px !important;max-height:25px !important;display:block !important;
+}
+.empty-state .empty-title,.empty-state .empty-sub{width:100% !important;text-align:center !important;margin:0 !important;}
+.empty-actions{
+  width:100% !important;display:flex !important;align-items:center !important;justify-content:center !important;margin-top:4px !important;
+}
+.empty-actions .empty-action{margin:0 !important;}
 
 </style>
 </head>
@@ -5113,18 +5174,127 @@ function commandPaletteItems(q='') {
   return out.slice(0,30);
 }
 function openCommandPalette(initial='') {
-  const root=document.getElementById('modalRoot'); if(!root) return;
-  root.innerHTML=`<div class="overlay command-overlay" id="commandOverlay" role="dialog" aria-modal="true" aria-label="ค้นหาด่วน"><div class="sheet command-sheet"><button class="sheet-close command-close" id="commandCloseBtn" type="button" title="ปิด" aria-label="ปิด">${ICONS.close}</button><div class="command-head"><span class="command-search-icon">${ICONS.scan}</span><input class="input command-search" id="commandSearch" autocomplete="off" placeholder="ค้นหา S/N, รหัสครุภัณฑ์, ชื่อ, เจ้าหน้าที่..." value="${escapeHtml(initial)}"><span class="command-kbd">ESC</span></div><div class="command-results" id="commandResults"></div></div></div>`;
-  const input=document.getElementById('commandSearch'), results=document.getElementById('commandResults'), closeBtn=document.getElementById('commandCloseBtn'), overlay=document.getElementById('commandOverlay');
-  const close=()=>closeCommandPalette();
-  closeBtn.onclick=close;
-  overlay.onclick=e=>{if(e.target===overlay) close();};
-  const draw=()=>{ const items=commandPaletteItems(input.value); results.innerHTML=items.length?items.map((x,i)=>`<div class="command-item ${i===0?'active':''}" data-cmd-index="${i}"><div class="command-item-icon">${x.icon}</div><div class="command-item-main"><div class="command-item-title">${escapeHtml(x.title)}</div><div class="command-item-sub">${escapeHtml(x.sub)}</div></div></div>`).join(''):`<div class="command-empty">ไม่พบข้อมูลที่ตรงกับคำค้น</div>`; results.querySelectorAll('.command-item').forEach((el,i)=>el.onclick=()=>{close();items[i].run();});};
-  input.oninput=draw;
-  input.onkeydown=e=>{ if(e.key==='Escape'){e.preventDefault();close();return;} if(e.key==='Enter'){const first=results.querySelector('.command-item');if(first)first.click();} };
-  draw(); setTimeout(()=>{input.focus();input.select();},30);
+  const root = document.getElementById('modalRoot');
+  if (!root) return;
+
+  root.innerHTML = `
+    <div class="overlay command-overlay" id="commandOverlay"
+         role="dialog" aria-modal="true" aria-label="ค้นหาด่วน">
+
+      <div class="sheet command-sheet">
+
+        <button class="command-close" id="commandCloseBtn"
+                type="button" title="ปิด" aria-label="ปิด">
+          ${ICONS.close}
+        </button>
+
+        <div class="command-top">
+          <div class="command-brand">
+            <div class="command-brand-icon">
+              ${ICONS.search || ICONS.scan}
+            </div>
+            <div>
+              <div class="command-title">ค้นหาด่วน</div>
+              <div class="command-subtitle">ค้นหาครุภัณฑ์ รายการยืม-คืน และเจ้าหน้าที่</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="command-searchbox">
+          <span class="command-searchbox-icon">
+            ${ICONS.search || ICONS.scan}
+          </span>
+
+          <input class="command-search" id="commandSearch"
+                 autocomplete="off"
+                 placeholder="พิมพ์ชื่อครุภัณฑ์, รหัส, S/N หรือชื่อเจ้าหน้าที่..."
+                 value="${escapeHtml(initial)}">
+
+          <kbd class="command-kbd">ESC</kbd>
+        </div>
+
+        <div class="command-hint">
+          <span>${ICONS.scan}</span>
+          <span>พิมพ์คำค้นเพื่อค้นหาข้อมูลอย่างรวดเร็ว</span>
+        </div>
+
+        <div class="command-results" id="commandResults"></div>
+
+      </div>
+    </div>
+  `;
+
+  const input = document.getElementById('commandSearch');
+  const results = document.getElementById('commandResults');
+  const closeBtn = document.getElementById('commandCloseBtn');
+  const overlay = document.getElementById('commandOverlay');
+
+  const close = () => closeCommandPalette();
+
+  closeBtn.onclick = close;
+  overlay.onclick = (e) => {
+    if (e.target === overlay) close();
+  };
+
+  const draw = () => {
+    const items = commandPaletteItems(input.value);
+
+    results.innerHTML = items.length
+      ? items.map((x, i) => `
+          <button type="button"
+                  class="command-item ${i === 0 ? 'active' : ''}"
+                  data-cmd-index="${i}">
+            <span class="command-item-icon">${x.icon}</span>
+            <span class="command-item-main">
+              <span class="command-item-title">${escapeHtml(x.title)}</span>
+              <span class="command-item-sub">${escapeHtml(x.sub)}</span>
+            </span>
+            <span class="command-item-arrow">›</span>
+          </button>
+        `).join('')
+      : `
+          <div class="command-empty">
+            <div class="command-empty-icon">${ICONS.search || ICONS.scan}</div>
+            <div class="command-empty-title">ไม่พบข้อมูล</div>
+            <div class="command-empty-sub">ลองค้นหาด้วยชื่อ รหัสครุภัณฑ์ หรือชื่อเจ้าหน้าที่</div>
+          </div>
+        `;
+
+    results.querySelectorAll('.command-item').forEach((el, i) => {
+      el.onclick = () => {
+        close();
+        items[i].run();
+      };
+    });
+  };
+
+  input.oninput = draw;
+
+  input.onkeydown = (e) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      close();
+      return;
+    }
+
+    if (e.key === 'Enter') {
+      const first = results.querySelector('.command-item');
+      if (first) first.click();
+    }
+  };
+
+  draw();
+
+  setTimeout(() => {
+    input.focus();
+    input.select();
+  }, 40);
 }
-function closeCommandPalette(){ const root=document.getElementById('modalRoot'); if(root) root.innerHTML=''; }
+
+function closeCommandPalette() {
+  const root = document.getElementById('modalRoot');
+  if (root) root.innerHTML = '';
+}
 
 document.addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase()==='k') { e.preventDefault(); openCommandPalette(); return; }
