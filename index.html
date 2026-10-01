@@ -3300,6 +3300,76 @@ html{scroll-behavior:smooth;}
   #view-monthly .mc-toolbar-right{justify-content:flex-end;}
   #view-monthly .search-row{flex-wrap:wrap;}
   #view-monthly .search-row .mc-search-wrap{flex:1 1 100%;}
+
+  /* มือถือ: ให้ List และ Card แตกต่างกันชัดเจน */
+  #view-monthly .mc-grid.mc-grid-list{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  #view-monthly .mc-grid.mc-grid-list .mc-card{
+    display:grid !important;
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    align-items:start;
+    gap:10px;
+    padding:13px;
+  }
+  #view-monthly .mc-grid.mc-grid-list .mc-head{
+    grid-column:1;
+    min-width:0;
+  }
+  #view-monthly .mc-grid.mc-grid-list .mc-hold{
+    grid-column:2;
+    min-width:0;
+  }
+  #view-monthly .mc-grid.mc-grid-list .mc-actions{
+    grid-column:1 / -1 !important;
+    width:100%;
+    min-width:0;
+  }
+  #view-monthly .mc-grid.mc-grid-list .mc-note,
+  #view-monthly .mc-grid.mc-grid-list .mc-meta{
+    grid-column:1 / -1 !important;
+  }
+  #view-monthly .mc-grid.mc-grid-list .mc-actions{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:7px;
+  }
+
+  #view-monthly .mc-grid.mc-grid-cards{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:10px;
+  }
+  #view-monthly .mc-grid.mc-grid-cards .mc-card{
+    display:flex !important;
+    flex-direction:column;
+    align-items:stretch;
+    gap:10px;
+    padding:14px;
+  }
+  #view-monthly .mc-grid.mc-grid-cards .mc-actions{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:7px;
+    width:100%;
+  }
+}
+
+@media (max-width:430px){
+  #view-monthly .mc-grid.mc-grid-list .mc-card{
+    grid-template-columns:1fr;
+  }
+  #view-monthly .mc-grid.mc-grid-list .mc-head,
+  #view-monthly .mc-grid.mc-grid-list .mc-hold{
+    grid-column:1;
+  }
+  #view-monthly .mc-grid.mc-grid-list .mc-actions,
+  #view-monthly .mc-grid.mc-grid-list .mc-note,
+  #view-monthly .mc-grid.mc-grid-list .mc-meta{
+    grid-column:1;
+  }
 }
 
 </style>
