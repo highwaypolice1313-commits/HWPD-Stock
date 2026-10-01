@@ -6666,37 +6666,17 @@ function printAuditReport() {
   const html = `
     <style>@page{ size:A4; margin:15mm; }
 
-/* numeric rhythm */
-.num,.stat-num,.hero-num,.k-num,.ap-serial,[data-number],table td:nth-child(n){font-variant-numeric:tabular-nums;}
-
-/* =========================================================
-   PREMIUM EXPERIENCE LAYER v3 — motion / skeleton / touch / command palette
-   Theme-safe: uses existing design tokens only.
-   ========================================================= */
+/* ===== PREMIUM EXPERIENCE LAYER v3 (ย้ายมาไว้ที่ถูกต้อง) ===== */
 :root{
   --motion-ease:cubic-bezier(.22,.8,.2,1);
   --skeleton-base:color-mix(in srgb,var(--panel) 72%,var(--ink-faint) 28%);
   --skeleton-hi:color-mix(in srgb,var(--panel) 92%,var(--gold) 8%);
 }
 html{scroll-behavior:smooth;}
-@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto;}}
-
-/* press feedback */
-.btn,.list-item,.asset-card,.icon-btn,.refresh-btn,.fab,.chip,.tab,.vt-btn,.audit-btn,.role-select-card{
-  -webkit-tap-highlight-color:transparent;
-}
-.btn:active,.list-item:active,.asset-card:active,.icon-btn:active,.refresh-btn:active,.fab:active,.chip:active,.tab:active,.vt-btn:active,.audit-btn:active{
-  transform:scale(.97);
-}
-.btn,.list-item,.asset-card,.icon-btn,.refresh-btn,.fab,.chip,.tab,.vt-btn,.audit-btn{transition:transform .16s var(--motion-ease),box-shadow .18s ease,border-color .18s ease,background .18s ease;}
-
-/* staggered entrance — first 10 only */
+.stat-num,.hero-num,.k-num,.ap-serial{font-variant-numeric:tabular-nums;}
+.btn:active,.list-item:active,.asset-card:active,.icon-btn:active,.refresh-btn:active,.fab:active,.chip:active,.tab:active{transform:scale(.97);}
 @keyframes premiumItemIn{from{opacity:0;transform:translateY(8px) scale(.992)}to{opacity:1;transform:none}}
 .premium-stagger-item{animation:premiumItemIn .42s var(--motion-ease) both;animation-delay:calc(var(--stagger-index,0) * 30ms);}
-@media (prefers-reduced-motion:reduce){.premium-stagger-item{animation:none!important;}}
-
-/* count-up polish */
-.hero-num,.stat-num,.rp-kpi .k-num{font-variant-numeric:tabular-nums;}
 
 /* skeleton */
 .skeleton-page{display:grid;gap:14px;}
@@ -6706,25 +6686,17 @@ html{scroll-behavior:smooth;}
 .skeleton-list{display:grid;gap:10px;}
 .skeleton-row{height:76px;border-radius:16px;}
 .skeleton-shimmer{
-  position:relative;overflow:hidden;
+  position:relative;overflow:hidden;border:1px solid var(--premium-line);
   background:linear-gradient(110deg,var(--skeleton-base) 8%,var(--skeleton-hi) 18%,var(--skeleton-base) 33%);
   background-size:220% 100%;animation:skeletonShimmer 1.25s linear infinite;
-  border:1px solid var(--premium-line);
-  box-shadow:var(--premium-shadow-soft);
 }
 @keyframes skeletonShimmer{to{background-position:-220% 0;}}
-@media (max-width:640px){.skeleton-grid{grid-template-columns:1fr 1fr}.skeleton-hero{height:145px}.skeleton-row{height:70px;}}
-@media (prefers-reduced-motion:reduce){.skeleton-shimmer{animation:none;background:var(--skeleton-base);}}
 
-/* toast — above mobile navigation */
+/* toast */
 .toast{
-  top:auto!important;bottom:calc(92px + env(safe-area-inset-bottom))!important;
-  left:50%!important;transform:translateX(-50%) translateY(12px)!important;
-  display:flex;align-items:center;gap:9px;min-width:180px;width:max-content;max-width:min(92vw,520px);
-  padding:11px 15px!important;border-radius:16px!important;
-  border:1px solid color-mix(in srgb,#fff 12%,transparent)!important;
-  box-shadow:0 18px 45px color-mix(in srgb,var(--navy-deep) 22%,transparent),inset 0 1px 0 color-mix(in srgb,#fff 14%,transparent)!important;
-  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  top:auto!important;bottom:calc(92px + env(safe-area-inset-bottom))!important;left:50%!important;
+  transform:translateX(-50%) translateY(12px)!important;display:flex;align-items:center;gap:9px;
+  width:max-content;max-width:min(92vw,520px);padding:11px 15px!important;border-radius:16px!important;
 }
 .toast.show{opacity:1!important;transform:translateX(-50%) translateY(0)!important;}
 .toast-icon{width:20px;height:20px;display:grid;place-items:center;flex:none;border-radius:50%;}
@@ -6733,70 +6705,35 @@ html{scroll-behavior:smooth;}
 .toast.ok .toast-icon{color:var(--ok);background:var(--ok-wash);}
 .toast.warn .toast-icon{color:var(--warn);background:var(--warn-wash);}
 .toast.bad .toast-icon{color:var(--bad);background:var(--bad-wash);}
-.toast.info .toast-icon{color:var(--info);background:var(--info-wash);}
-
-/* empty state */
-.empty-state{position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;min-height:180px!important;border:1px dashed var(--panel-line);}
-.empty-icon{width:58px;height:58px;border-radius:19px;display:grid;place-items:center;color:var(--ink-faint);background:var(--panel-soft);border:1px solid var(--panel-line);}
-.empty-icon svg{width:31px;height:31px;}
-.empty-title{font-size:14px;font-weight:600;color:var(--ink);}
-.empty-sub{font-size:11.5px;color:var(--ink-dim);}
-.empty-action{margin-top:3px!important;padding:9px 14px!important;min-width:130px!important;}
+@media (min-width:900px){.toast{bottom:24px!important;}}
 
 /* confirm sheet */
 .confirm-overlay{align-items:center!important;padding:18px;}
-.confirm-sheet{width:min(440px,100%);max-width:440px!important;border-radius:26px!important;border-bottom:1px solid var(--panel-line)!important;padding:22px!important;animation:confirmIn .2s var(--motion-ease);}
-@keyframes confirmIn{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
+.confirm-sheet{width:min(440px,100%);max-width:440px!important;border-radius:26px!important;padding:22px!important;}
 .confirm-icon{width:50px;height:50px;border-radius:17px;display:grid;place-items:center;margin-bottom:14px;color:var(--warn);background:var(--warn-wash);}
 .confirm-icon svg{width:26px;height:26px;}
 .confirm-title{font-size:18px;font-weight:650;color:var(--ink);margin-bottom:7px;font-family:var(--font-disp);}
 .confirm-message{font-size:13px;line-height:1.7;color:var(--ink-dim);white-space:pre-line;}
 .confirm-actions{display:flex;gap:10px;margin-top:20px;}
-.confirm-actions .btn{min-height:44px;}
 
-/* command palette */
-.command-overlay{align-items:flex-start!important;padding:10vh 16px 24px;}
-.command-sheet{width:min(720px,100%);max-width:720px!important;border-radius:24px!important;border-bottom:1px solid var(--panel-line)!important;padding:16px!important;animation:confirmIn .2s var(--motion-ease);}
-.command-head{display:flex;align-items:center;gap:10px;padding:2px 2px 12px;}
-.command-search{flex:1;border:none!important;outline:none!important;background:transparent!important;box-shadow:none!important;font-size:16px!important;padding:10px 4px!important;}
-.command-kbd{font:11px var(--font-num);color:var(--ink-faint);border:1px solid var(--panel-line);background:var(--panel-soft);padding:4px 7px;border-radius:7px;}
-.command-results{max-height:58vh;overflow:auto;display:grid;gap:6px;}
-.command-item{display:flex;align-items:center;gap:12px;padding:12px;border-radius:15px;cursor:pointer;border:1px solid transparent;}
-.command-item:hover,.command-item.active{background:var(--gold-wash);border-color:var(--gold-line);}
-.command-item-icon{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;color:var(--navy);background:var(--navy-wash);flex:none;}
-.command-item-icon svg{width:19px;height:19px;}
-.command-item-main{min-width:0;flex:1;}
-.command-item-title{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.command-item-sub{font-size:11px;color:var(--ink-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;}
-.command-empty{padding:34px 12px;text-align:center;color:var(--ink-dim);font-size:12px;}
-
-/* timeline */
-.asset-timeline{margin:18px 0 4px;padding:2px 0 2px;}
+/* timeline (ตัวการที่ทำให้ icon ใหญ่) */
+.asset-timeline{margin:18px 0 4px;}
 .timeline-title{font-size:12px;font-weight:650;color:var(--ink);margin-bottom:12px;display:flex;align-items:center;gap:7px;}
-.timeline-title svg{width:16px;height:16px;color:var(--gold-deep);}
-.timeline{position:relative;display:grid;gap:0;}
+.timeline-title svg{width:16px!important;height:16px!important;color:var(--gold-deep);}
+.timeline{position:relative;display:grid;}
 .timeline::before{content:"";position:absolute;left:11px;top:13px;bottom:13px;width:1px;background:var(--panel-line);}
 .timeline-item{position:relative;display:grid;grid-template-columns:24px 1fr;gap:9px;padding:0 0 14px;}
 .timeline-dot{width:23px;height:23px;border-radius:50%;display:grid;place-items:center;background:var(--panel);border:1px solid var(--panel-line);color:var(--ink-dim);z-index:1;}
-.timeline-dot svg{width:13px;height:13px;}
+.timeline-dot svg{width:13px!important;height:13px!important;}
 .timeline-item.current .timeline-dot{color:var(--gold-deep);border-color:var(--gold-line);background:var(--gold-wash);}
 .timeline-content{min-width:0;padding-top:1px;}
 .timeline-event{font-size:12.5px;font-weight:600;color:var(--ink);}
 .timeline-date{font-size:10.5px;color:var(--ink-dim);margin-top:2px;}
 .timeline-note{font-size:10.5px;color:var(--ink-faint);margin-top:2px;line-height:1.45;}
 
-/* sparkline */
-.hero-sparkline{position:absolute;right:16px;bottom:13px;width:140px;height:34px;opacity:.62;pointer-events:none;}
-.hero-sparkline svg{width:100%;height:100%;overflow:visible;}
-.hero-sparkline path{fill:none;stroke:var(--gold);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
-.hero-sparkline circle{fill:var(--gold);}
-
-/* tab/page view transition */
-::view-transition-old(root),::view-transition-new(root){animation-duration:.18s;}
-
-/* desktop/mobile toast position */
-@media (min-width:900px){.toast{bottom:24px!important;}.command-overlay{padding-top:9vh;}}
-
+/* ตาราง/สรุปในหน้ารายงาน */
+.rp-filter{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;}
+.rp-filter select{max-width:240px;}
 </style>
     <div style="font-family:'TH Sarabun New','Sarabun','Kanit',sans-serif; font-size:14pt; color:#000;">
       <div style="text-align:center; font-weight:700; font-size:18pt;">รายงานผลการตรวจนับพัสดุประจำปี พ.ศ. ${toThaiNumber(state.auditYear + 543)}</div>
