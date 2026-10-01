@@ -10121,8 +10121,10 @@ function compareMonthlyOfficers(a, b) {
           @page{size:A4 portrait;margin:0;}
           html,body{margin:0 !important;padding:0 !important;}
           #printArea.report-print-area{width:210mm !important;min-width:210mm !important;max-width:210mm !important;margin:0 !important;padding:0 !important;}
-          .mcr-mobile-page{position:relative;width:210mm;height:297mm;overflow:hidden;page-break-after:always;break-after:page;}
-          .mcr-mobile-page:last-child{page-break-after:auto;break-after:auto;}
+          /* เผื่อระยะปัดเศษของ print engine บนมือถือ ป้องกันแต่ละแผ่นล้นไปสร้างหน้าว่าง */
+          .mcr-mobile-page{position:relative;display:block;width:210mm;height:296mm;min-height:296mm;max-height:296mm;margin:0;padding:0;overflow:hidden;page-break-after:auto;break-after:auto;page-break-inside:avoid;break-inside:avoid;}
+          /* ขึ้นหน้าใหม่เฉพาะก่อนแผ่นถัดไป ไม่สั่ง page-break-after เพื่อป้องกันหน้าว่างแทรก */
+          .mcr-mobile-page + .mcr-mobile-page{page-break-before:always;break-before:page;}
           .mcr-mobile-page-inner{position:absolute;top:0;left:210mm;width:297mm;height:210mm;box-sizing:border-box;padding:8mm;transform-origin:0 0;transform:rotate(90deg) scale(.94);}
           .mcr-mobile-page-inner .mcr{width:281mm;max-width:281mm;min-width:0;margin:0;}
           .mcr-mobile-page-inner table{width:281mm;max-width:281mm;min-width:0;table-layout:fixed;}
