@@ -4718,10 +4718,10 @@ function openAssetDetail(id) {
 };
   if (isAdmin()) {
     document.getElementById('btnQuickStatus').onclick = () => openQuickStatusForm(a);
-    document.getElementById('btnEditAsset').onclick = () => { closeSheet(); openAssetForm(a); };
+    document.getElementById('btnEditAsset').onclick = () => { closeAllSheets(); openAssetForm(a); }
     document.getElementById('btnDeleteAsset').onclick = async () => {
       if (!await confirmSheet('ยืนยันการลบครุภัณฑ์นี้?', {title:'ลบครุภัณฑ์', okText:'ลบรายการ', tone:'bad'})) return;
-      try { await apiPost('deleteAsset', { id }); closeSheet(); toast('ลบรายการแล้ว'); await reloadThen(renderAssets); }
+      try { await apiPost('deleteAsset', { id }); closeAllSheets(); toast('ลบรายการแล้ว'); await reloadThen(renderAssets); }
       catch (err) { toast(err.message || 'ลบไม่สำเร็จ'); }
     };
     document.querySelectorAll('.btnAddComponent').forEach(b => b.onclick = () => openComponentForm(id));
@@ -4739,7 +4739,7 @@ function openQuickStatusForm(a) {
   document.getElementById('btnCancel').onclick = closeSheet;
   document.getElementById('btnSaveStatus').onclick = async () => {
     const btn = document.getElementById('btnSaveStatus'); if (btn.disabled) return; setButtonBusy(btn, true); setLoading(true, 'กำลังบันทึกสถานะ...');
-    try { await apiPost('updateAsset', { id: a['รหัสครุภัณฑ์'], status: val('qs_status') }); closeSheet(); toast('เปลี่ยนสถานะแล้ว'); await reloadThen(renderAssets); }
+    try { await apiPost('updateAsset', { id: a['รหัสครุภัณฑ์'], status: val('qs_status') }); closeAllSheets(); toast('เปลี่ยนสถานะแล้ว'); await reloadThen(renderAssets); }
     catch (err) { toast(err.message || 'เปลี่ยนสถานะไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(btn, false); }
   };
 }
@@ -4876,7 +4876,7 @@ toggleVehicleFields();
 };
     if (!payload.name) { toast('กรุณากรอกชื่อครุภัณฑ์'); return; }
     const saveBtn = document.getElementById('btnSave'); if (saveBtn.disabled) return; setButtonBusy(saveBtn, true); setLoading(true, 'กำลังบันทึกข้อมูล...');
-    try { await apiPost(editing ? 'updateAsset' : 'addAsset', payload); closeSheet(); toast(editing ? 'แก้ไขข้อมูลแล้ว' : 'เพิ่มครุภัณฑ์แล้ว'); await reloadThen(renderAssets); }
+    try { await apiPost(editing ? 'updateAsset' : 'addAsset', payload); closeAllSheets(); toast(editing ? 'แก้ไขข้อมูลแล้ว' : 'เพิ่มครุภัณฑ์แล้ว'); await reloadThen(renderAssets); }
     catch (err) { toast(err.message || 'บันทึกไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(saveBtn, false); }
   };
 }
@@ -6195,18 +6195,56 @@ document.addEventListener('keydown', e => {
 });
 document.getElementById('commandBtn')?.addEventListener('click',()=>openCommandPalette());
 
+/* ===== ระบบซ้อนหน้า: ปิดแล้วกลับหน้าก่อนหน้า (เก็บ DOM จริง ปุ่มยังกดได้) ===== */
+const sheetStack = [];   // เก็บ element ของหน้าที่ถูกซ่อนไว้
+
 function showSheet(html, extraClass) {
-  document.getElementById('modalRoot').innerHTML = `<div class="overlay" id="overlayEl"><div class="sheet ${extraClass||''}">
-    <button class="sheet-close" id="sheetCloseBtn" type="button" title="ปิด" aria-label="ปิด">${ICONS.close}</button>
+  const root = document.getElementById('modalRoot');
+  const curOverlay = root.querySelector('.overlay');
+  // ถ้ามีหน้าเปิดอยู่ (ไม่ใช่กล่องยืนยัน/ค้นหาด่วน) ให้ซ่อนไว้ใต้หน้าใหม่ ไม่ลบทิ้ง
+  if (curOverlay && !curOverlay.classList.contains('confirm-overlay') && !curOverlay.classList.contains('command-overlay')) {
+    curOverlay.style.display = 'none';
+    curOverlay.removeAttribute('id');          // กัน id ซ้ำ
+    sheetStack.push(curOverlay);
+  } else {
+    root.innerHTML = '';
+  }
+  const wrap = document.createElement('div');
+  wrap.innerHTML = `<div class="overlay" id="overlayEl"><div class="sheet ${extraClass||''}">
+    <button class="sheet-close" type="button" title="ปิด" aria-label="ปิด">${ICONS.close}</button>
     <div class="sheet-handle"></div>${html}</div></div>`;
-  document.getElementById('sheetCloseBtn').addEventListener('click', closeSheet);
+  const overlay = wrap.firstElementChild;
+  root.appendChild(overlay);
+  overlay.querySelector('.sheet-close').addEventListener('click', closeSheet);
 }
+
+/* ปิดหน้าปัจจุบัน แล้วแสดงหน้าก่อนหน้าที่ซ่อนไว้ */
 function closeSheet() {
+  stopScanner();
+  const root = document.getElementById('modalRoot');
+  const overlays = Array.from(root.children);
+  const top = overlays[overlays.length - 1];
+  if (top) top.remove();
+  const prev = sheetStack.pop();
+  if (prev && document.body.contains(root)) {
+    prev.style.display = '';
+    prev.id = 'overlayEl';
+    return;                                    // กลับหน้าเดิม ปุ่มต่าง ๆ ยังกดได้ตามปกติ
+  }
+  root.innerHTML = '';
+  memoPreviewDesk = null;
+  paperContainers = paperContainers.filter(c => document.body.contains(c));
+}
+
+/* ปิดทุกหน้าทีเดียว (ใช้ตอนต้องการล้างทั้งหมด) */
+function closeAllSheets() {
+  sheetStack.length = 0;
   stopScanner();
   document.getElementById('modalRoot').innerHTML = '';
   memoPreviewDesk = null;
   paperContainers = paperContainers.filter(c => document.body.contains(c));
 }
+   
 function val(id) { const el = document.getElementById(id); return el ? el.value : ''; }
 
 /* ========================================================= PAPER (A4 บนโต๊ะ, ย่อ/ขยายอัตโนมัติ) */
