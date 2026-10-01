@@ -2401,6 +2401,33 @@ html{scroll-behavior:smooth;}
   background:rgba(255,255,255,.62);
 }
 :root[data-theme="frost"] .input:focus{ background:rgba(255,255,255,.9); }
+/* =========================================================
+   [แก้ไขมุมมองการ์ด] มือถือให้การ์ดเป็น 2 คอลัมน์ (เดิมถูกบังคับเหลือ 1 คอลัมน์)
+   ใช้กับหน้า ครุภัณฑ์ / ยืม-คืน / ซ่อมบำรุง / จนท.ในสังกัด / เอกสารใบเบิก
+   ========================================================= */
+@media (max-width:520px){
+  /* [ปรับตรงนี้] จำนวนคอลัมน์บนมือถือ: 2 = สองคอลัมน์, เปลี่ยนเป็น 1 ถ้าอยากกลับไปแบบเดิม */
+  .asset-grid,
+  .memo-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    gap:10px;
+  }
+
+  /* ปรับการ์ดให้พอดีกับความกว้างครึ่งจอ */
+  .asset-card{ padding:12px; gap:8px; }
+  .asset-card-top{ flex-wrap:wrap; gap:6px; }          /* ไอคอนกับสถานะตัดบรรทัดได้ ไม่ล้นการ์ด */
+  .asset-card-title{ font-size:13px; }
+  .asset-card-sub{ font-size:10.5px; }
+  .ax-st{ font-size:11px; }
+  .memo-card-body{ padding:9px 10px 11px; }
+}
+
+/* จอเล็กมาก (เช่น ≤360px) ลดช่องไฟอีกนิด */
+@media (max-width:360px){
+  .asset-grid,
+  .memo-grid{ gap:8px; }
+  .asset-card{ padding:10px; }
+}
    
 </style>
 </head>
