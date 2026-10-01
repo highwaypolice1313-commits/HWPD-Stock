@@ -3549,6 +3549,16 @@ html{scroll-behavior:smooth;}
 #view-monthly .mc-swipe-stage .mc-serial-pill{font-size:10px;padding:5px 8px;}
 #view-monthly .mc-swipe-stage .mc-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
 #view-monthly .mc-swipe-stage .mc-btn{min-height:52px;border-radius:13px;}
+/* Mobile Tinder card: allow vertical page scrolling, but reserve horizontal gesture for the card. */
+#view-monthly .mc-swipe-card{
+  touch-action:pan-y pinch-zoom;
+  -webkit-user-select:none;
+  user-select:none;
+  -webkit-touch-callout:none;
+  overscroll-behavior-x:contain;
+  cursor:grab;
+}
+#view-monthly .mc-swipe-card.dragging{cursor:grabbing;}
 
 @media (min-width:900px){
   #view-monthly .mc-grid.mc-grid-list{grid-template-columns:repeat(3,minmax(0,1fr));}
@@ -9735,13 +9745,28 @@ function compareMonthlyOfficers(a, b) {
     card.onpointermove=e=>{
       if(!card.classList.contains('dragging')) return;
       const dx=e.clientX-mcSwipeStartX, dy=e.clientY-mcSwipeStartY;
-      if(Math.abs(dx)<Math.abs(dy) && Math.abs(dy)>12) return;
-      mcSwipeDx=dx;
-      const rot=Math.max(-7,Math.min(7,dx/28));
-      card.style.transform=`translateX(${dx}px) rotate(${rot}deg)`;
-      const p=Math.min(1,Math.abs(dx)/120);
-      if(left) left.style.opacity=dx<0?p:0;
-      if(right) right.style.opacity=dx>0?p:0;
+
+      // Let the browser keep normal vertical page scrolling. Once the gesture
+      // is clearly horizontal, take ownership of it so the page cannot scroll
+      // instead of the Tinder card.
+      if(Math.abs(dx)<10 && Math.abs(dy)<10) return;
+      if(Math.abs(dy)>Math.abs(dx) && Math.abs(dy)>12){
+        card.classList.remove('dragging');
+        mcSwipeDx=0;
+        try{ card.releasePointerCapture(e.pointerId); }catch(err){}
+        reset();
+        return;
+      }
+
+      if(Math.abs(dx)>=Math.abs(dy)){
+        e.preventDefault();
+        mcSwipeDx=dx;
+        const rot=Math.max(-7,Math.min(7,dx/28));
+        card.style.transform=`translateX(${dx}px) rotate(${rot}deg)`;
+        const p=Math.min(1,Math.abs(dx)/120);
+        if(left) left.style.opacity=dx<0?p:0;
+        if(right) right.style.opacity=dx>0?p:0;
+      }
     };
     card.onpointerup=e=>{
       card.classList.remove('dragging');
