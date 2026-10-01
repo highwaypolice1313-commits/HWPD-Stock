@@ -3190,6 +3190,13 @@ html{scroll-behavior:smooth;}
 #view-monthly .mc-grid-hold-summary{font-size:12px;font-weight:600;margin:5px 0;color:var(--ink);}
 #view-monthly .mc-list-actions{min-width:0;}
 #view-monthly .mc-grid-person{display:flex;align-items:center;gap:10px;}
+#view-monthly .mc-card-grid .mc-name{
+  white-space:normal;
+  overflow:visible;
+  text-overflow:clip;
+  line-height:1.55;
+  overflow-wrap:anywhere;
+}
 #view-monthly .mc-grid-avatar{display:flex;align-items:center;justify-content:center;flex:none;}
 #view-monthly .mc-grid-divider{height:1px;background:var(--panel-line);margin:12px 0;}
 #view-monthly .mc-grid-hold{margin:0 !important;}
@@ -3581,7 +3588,48 @@ html{scroll-behavior:smooth;}
   #view-monthly .mc-grid.mc-grid-list .mc-btn-sub{display:none;}
 }
 @media (max-width:430px){
-  #view-monthly .mc-swipe-nav{gap:6px;margin:8px auto 7px;}
+  #view-monthly .mc-swipe-nav{
+    display:grid;
+    grid-template-columns:38px minmax(0,1fr) 38px;
+    align-items:center;
+    gap:6px;
+    width:100%;
+    margin:8px auto 7px;
+  }
+  #view-monthly .mc-swipe-nav .mc-swipe-nav-btn{grid-row:1;}
+  #view-monthly .mc-swipe-nav .mc-swipe-select{
+    grid-column:2;
+    grid-row:1;
+    width:100%;
+    min-width:0;
+    max-width:none;
+    height:40px;
+    font-size:12px;
+    line-height:1.35;
+    padding-left:9px;
+    padding-right:24px;
+    text-overflow:clip;
+    white-space:nowrap;
+  }
+  #view-monthly .mc-swipe-nav .mc-swipe-count{
+    grid-column:1 / -1;
+    grid-row:2;
+    font-size:9px;
+    min-width:0;
+    width:100%;
+    text-align:center;
+  }
+  #view-monthly .mc-swipe-stage .mc-card-grid{padding:14px;border-radius:18px;}
+  #view-monthly .mc-swipe-card .mc-name{
+    font-size:15px;
+    line-height:1.6;
+    white-space:normal;
+    overflow:visible;
+    text-overflow:clip;
+    word-break:normal;
+    overflow-wrap:anywhere;
+  }
+
   #view-monthly .mc-swipe-nav .mc-swipe-select{height:40px;font-size:12px;padding-left:9px;padding-right:24px;}
   #view-monthly .mc-swipe-nav .mc-swipe-nav-btn{width:38px;height:38px;min-width:38px;border-radius:11px;}
   #view-monthly .mc-swipe-nav .mc-swipe-count{font-size:9px;min-width:46px;}
@@ -10168,15 +10216,15 @@ function compareMonthlyOfficers(a, b) {
             transform-origin:0 0;
             transform:rotate(90deg);
           }
-          .mcr-mobile-page-inner .mcr{
-            width:279mm;
-            max-width:279mm;
+           .mcr-mobile-page-inner .mcr{
+            width:276mm;
+            max-width:276mm;
             min-width:0;
             margin:0;
           }
           .mcr-mobile-page-inner table{
-            width:279mm;
-            max-width:279mm;
+            width:276mm;
+            max-width:276mm;
             min-width:0;
             table-layout:fixed;
           }
