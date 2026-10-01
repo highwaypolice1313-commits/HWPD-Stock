@@ -9454,24 +9454,42 @@ function canonicalPolicePosition(position) {
   const raw = normalizePolicePosition(position);
   if (!raw) return '';
 
-  let core = stripPoliceUnitSuffix(raw);
-  /* รอง สว.(ป.) ต้องเป็นคนละตำแหน่งกับ รอง สว. และต้องอยู่หลัง */
-  core = core.replace(/\s+/g, '');
+  /*
+   * สำคัญ: ตำแหน่งจริงอาจมีหน่วยต่อท้าย เช่น
+   *   รอง สว. ส.ทล.3
+   *   รอง สว. ส.ทล.4
+   *   รอง สว.(ป.) ส.ทล.3
+   *   รอง สว.(ป.) ส.ทล.4
+   *
+   * จึงต้องหา "ชื่อ ตำแหน่ง" จากต้นข้อความก่อน แล้วไม่เอาหน่วย
+   * มาทำลายลำดับตำแหน่งอีกต่อไป
+   */
+  const compact = raw.replace(/\s+/g, '');
   const aliases = [
-    [/^รองสว\.?\(ป\.\)$/u, 'รอง สว.(ป.)'],
-    [/^รองสว\.?$/u, 'รอง สว.'],
-    [/^รองผกก\.?$/u, 'รอง ผกก.'],
-    [/^ผกก\.?$/u, 'ผกก.'],
-    [/^รองผบก\.?$/u, 'รอง ผบก.'],
-    [/^ผบก\.?$/u, 'ผบก.'],
-    [/^สวป\.?$/u, 'สวป.'],
-    [/^รองสวป\.?$/u, 'รอง สวป.'],
-    [/^สว\.?$/u, 'สว.'],
-    [/^ผบ\.หมู่\(ป\.\)$/u, 'ผบ.หมู่(ป.)'],
-    [/^ผบ\.หมู่$/u, 'ผบ.หมู่']
+    ['รอง สว.(ป.)', /^รองสว\.?(?:\(ป\.\))?/u],
+    ['รอง สว.', /^รองสว\.?/u],
+    ['รอง ผกก.', /^รองผกก\.?/u],
+    ['ผกก.', /^ผกก\.?/u],
+    ['รอง ผบก.', /^รองผบก\.?/u],
+    ['ผบก.', /^ผบก\.?/u],
+    ['รอง สวป.', /^รองสวป\.?/u],
+    ['สวป.', /^สวป\.?/u],
+    ['สว.', /^สว\.?/u],
+    ['ผบ.หมู่(ป.)', /^ผบ\.หมู่\(ป\.\)/u],
+    ['ผบ.หมู่', /^ผบ\.หมู่/u],
+    ['รอง ผบ.หมู่', /^รองผบ\.หมู่/u],
+    ['เจ้าหน้าที่', /^เจ้าหน้าที่/u],
+    ['ผู้บังคับหมู่', /^ผู้บังคับหมู่/u]
   ];
-  for (const [re, val] of aliases) if (re.test(core)) return val;
-  return core;
+
+  /* เรียงตัวเลือกจากยาวไปสั้น เพื่อให้ รอง สว.(ป.) จับก่อน รอง สว. */
+  aliases.sort((a,b) => b[0].length - a[0].length);
+  for (const [label, re] of aliases) {
+    if (re.test(compact)) return label;
+  }
+
+  /* กรณีตำแหน่งที่ยังไม่อยู่ในตาราง ให้ตัดหน่วยท้ายออกเป็น fallback */
+  return stripPoliceUnitSuffix(raw);
 }
 
 function splitPolicePosition(position) {
@@ -10048,7 +10066,30 @@ function compareMonthlyOfficers(a, b) {
     const pa = document.getElementById('printArea');
     if (!pa) return;
     pa.className = 'report-print-area';
-    pa.innerHTML = html;
+
+    /*
+     * มือถือบางรุ่น/เบราว์เซอร์บางตัวไม่ยอมรับ orientation จาก @page
+     * และยังเปิดหน้าพิมพ์เป็น Portrait แม้รายงานจะกำหนด Landscape แล้ว
+     * จึงมี fallback เฉพาะมือถือ: หมุนกระดาษด้วย CSS ให้ตารางแนวนอน
+     * และยังคงใช้ @page A4 landscape เป็นค่าหลักสำหรับเบราว์เซอร์ที่รองรับ
+     */
+    const isMobilePrint = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+      (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent));
+    if (isMobilePrint) {
+      const inner = html.replace(/@page\{[^}]*\}/g, '');
+      pa.innerHTML = `
+        <style>
+          @page{size:A4 landscape;margin:0;}
+          @media print{
+            #printArea.report-print-area{width:297mm !important;min-width:297mm !important;max-width:297mm !important;padding:0 !important;margin:0 !important;}
+            .mcr-mobile-landscape{width:297mm;height:210mm;box-sizing:border-box;overflow:hidden;padding:10mm 11mm;}
+            .mcr-mobile-landscape .mcr{width:100%;min-width:0;}
+          }
+        </style>
+        <div class="mcr-mobile-landscape">${inner}</div>`;
+    } else {
+      pa.innerHTML = html;
+    }
     triggerPrint(() => {
       pa.innerHTML = '';
       pa.className = '';
