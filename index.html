@@ -9905,7 +9905,7 @@ function compareMonthlyOfficers(a, b) {
     const thaiYear = (Number(state.mcYear)||new Date().getFullYear()) + 543;
 
     // สร้างรายการครุภัณฑ์สำหรับรายงาน: ชื่อ + หมายเลขครุภัณฑ์ + จำนวน
-    // เรียงเจ้าหน้าที่ตาม ยศ -> ตำแหน่งหลัก -> ตำแหน่งย่อย -> หน่วย -> ชื่อ
+    // แยกตามผู้ครอบครอง เพื่อให้อ่านง่ายและตรวจสอบย้อนกลับได้
     const source = (state.users || [])
       .map(u => ({u, rec:mcRecordFor(u), hold:mcHoldingsOf(u)}))
       .filter(x => x.hold.length > 0 || x.rec)
@@ -9958,56 +9958,8 @@ function compareMonthlyOfficers(a, b) {
       return `<span class="result ${cls}">${escapeHtml(result)}</span>`;
     };
 
-    const style = `
-      <style>
-        @page{size:A4 landscape;margin:11mm 12mm;}
-        .mcr{font-family:'TH Sarabun New','Sarabun','Kanit',sans-serif;color:#111;font-size:13pt;line-height:1.22;}
-        .mcr *{box-sizing:border-box;}
-        .mcr .head{text-align:center;margin-bottom:4mm;}
-        .mcr .head .title{font-size:20pt;font-weight:700;line-height:1.12;margin:0 0 1.5mm;}
-        .mcr .head .org{font-size:15pt;font-weight:600;margin:0 0 1mm;}
-        .mcr .head .period{font-size:13pt;color:#333;}
-        .mcr .summary{display:grid;grid-template-columns:repeat(4,1fr);gap:3mm;margin:0 0 4mm;}
-        .mcr .summary-box{border:1px solid #777;border-radius:2mm;padding:2mm 2.5mm;text-align:center;}
-        .mcr .summary-box b{display:block;font-size:16pt;line-height:1.05;}
-        .mcr .summary-box span{font-size:10.5pt;}
-        .mcr table{width:100%;border-collapse:collapse;table-layout:fixed;}
-        .mcr th,.mcr td{border:1px solid #333;padding:1.6mm 1.8mm;vertical-align:middle;overflow-wrap:anywhere;word-break:break-word;}
-        .mcr th{background:#e9edf0;text-align:center;font-weight:700;line-height:1.1;}
-        .mcr td.center{text-align:center;}
-        .mcr td.officer{width:18%;}
-        .mcr td.officer strong{font-size:12pt;}
-        .mcr td.officer span,.mcr td span{font-size:10pt;color:#444;}
-        .mcr .asset-no{font-weight:700;text-align:center;}
-        .mcr .qty{font-weight:700;font-size:12.5pt;}
-        .mcr .result{display:inline-block;padding:.7mm 2mm;border-radius:1.5mm;font-weight:700;white-space:nowrap;}
-        .mcr .result.ok{background:#e8f6ee;color:#126b43;}
-        .mcr .result.bad{background:#fdecef;color:#a1263b;}
-        .mcr .result.pending{background:#fff4dc;color:#8a5a00;}
-        .mcr .total td{font-weight:700;background:#f7f7f7;}
-        .mcr .note{margin-top:3mm;font-size:10.5pt;color:#555;}
-        .mcr .signatures{display:grid;grid-template-columns:1fr 1fr;gap:25mm;margin-top:9mm;page-break-inside:avoid;}
-        .mcr .sig{text-align:center;font-size:11.5pt;}
-        .mcr .sig .line{margin:0 auto 2mm;width:70%;border-bottom:1px dotted #333;height:8mm;}
-        .mcr .sig .sub{font-size:10pt;color:#555;margin-top:1mm;}
-        .mcr tr{page-break-inside:avoid;}
-        .mcr .continued{text-align:right;font-size:10pt;color:#555;margin-top:1mm;}
-      </style>`;
-
-    const tableHead = `
-      <thead><tr>
-        <th style="width:4%">ลำดับ</th>
-        <th style="width:18%">ผู้ครอบครอง / ตำแหน่ง</th>
-        <th style="width:23%">ชื่อครุภัณฑ์</th>
-        <th style="width:15%">หมายเลขครุภัณฑ์</th>
-        <th style="width:7%">จำนวน</th>
-        <th style="width:9%">ผลตรวจ</th>
-        <th style="width:13%">หมายเหตุ</th>
-        <th style="width:11%">ผู้ตรวจ / วันที่</th>
-      </tr></thead>`;
-
-    const renderRows = (arr, startIndex) => arr.map((r,localIndex)=>`<tr>
-      <td class="center">${toThaiNumber(startIndex + localIndex + 1)}</td>
+    const rows = detailRows.map((r,i)=>`<tr>
+      <td class="center">${i+1}</td>
       <td class="officer">${r.officer ? `<strong>${escapeHtml(r.officer)}</strong><br><span>${escapeHtml(r.position)}</span>` : ''}</td>
       <td>${escapeHtml(r.name)}</td>
       <td class="asset-no">${escapeHtml(r.assetNo)}</td>
@@ -10017,40 +9969,77 @@ function compareMonthlyOfficers(a, b) {
       <td>${r.inspector ? `${escapeHtml(r.inspector)}<br><span>${escapeHtml(r.checkedAt)}</span>` : ''}</td>
     </tr>`).join('');
 
-    const summaryHtml = `
-      <div class="summary">
-        <div class="summary-box"><b>${toThaiNumber(source.length)}</b><span>ผู้ที่ต้องตรวจ</span></div>
-        <div class="summary-box"><b>${toThaiNumber(done)}</b><span>ตรวจแล้ว</span></div>
-        <div class="summary-box"><b>${toThaiNumber(bad)}</b><span>มีปัญหา</span></div>
-        <div class="summary-box"><b>${toThaiNumber(totalQty)}</b><span>ครุภัณฑ์ที่ถือครอง</span></div>
-      </div>`;
-
-    const footerHtml = `
-      <tr class="total"><td colspan="4" class="center">รวม</td><td class="center">${toThaiNumber(totalQty)}</td><td colspan="3"></td></tr>
-      </tbody></table>
-      <div class="note">หมายเหตุ: รายงานนี้จัดแสดงตาม <strong>ชื่อครุภัณฑ์ + หมายเลขครุภัณฑ์ + จำนวน</strong> เพื่อให้ง่ายต่อการตรวจสอบรายการของแต่ละผู้ครอบครอง</div>
-      <div class="signatures">
-        <div class="sig"><div class="line"></div>ผู้ตรวจประจำเดือน</div>
-        <div class="sig"><div class="line"></div>ผู้รับรอง / หัวหน้าหน่วย</div>
-      </div>`;
-
-    // Desktop: แสดงตารางทั้งหมดตามปกติ ให้ browser แบ่งหน้าเองในแนวนอน
-    const allRows = renderRows(detailRows, 0);
-    const desktopHtml = `${style}
+    const html = `
+      <style>
+        @page{size:A4 landscape;margin:11mm 12mm;}
+        .mcr{font-family:'TH Sarabun New','Sarabun','Kanit',sans-serif;color:#111;font-size:13pt;line-height:1.25;}
+        .mcr *{box-sizing:border-box;}
+        .mcr .head{text-align:center;margin-bottom:5mm;}
+        .mcr .head .title{font-size:20pt;font-weight:700;line-height:1.15;margin:0 0 1.5mm;}
+        .mcr .head .org{font-size:15pt;font-weight:600;margin:0 0 1mm;}
+        .mcr .head .period{font-size:13pt;color:#333;}
+        .mcr .summary{display:grid;grid-template-columns:repeat(4,1fr);gap:4mm;margin:0 0 5mm;}
+        .mcr .summary-box{border:1px solid #777;border-radius:2mm;padding:2.5mm 3mm;text-align:center;}
+        .mcr .summary-box b{display:block;font-size:17pt;line-height:1.05;}
+        .mcr .summary-box span{font-size:11pt;}
+        .mcr table{width:100%;border-collapse:collapse;table-layout:fixed;}
+        .mcr th,.mcr td{border:1px solid #333;padding:2mm 2.2mm;vertical-align:middle;}
+        .mcr th{background:#e9edf0;text-align:center;font-weight:700;line-height:1.15;}
+        .mcr td.center{text-align:center;}
+        .mcr td.officer{width:18%;}
+        .mcr td.officer strong{font-size:12.5pt;}
+        .mcr td.officer span,.mcr td span{font-size:10.5pt;color:#444;}
+        .mcr .asset-no{font-weight:700;text-align:center;word-break:break-word;}
+        .mcr .qty{font-weight:700;font-size:13.5pt;}
+        .mcr .result{display:inline-block;padding:1mm 2.5mm;border-radius:1.5mm;font-weight:700;white-space:nowrap;}
+        .mcr .result.ok{background:#e8f6ee;color:#126b43;}
+        .mcr .result.bad{background:#fdecef;color:#a1263b;}
+        .mcr .result.pending{background:#fff4dc;color:#8a5a00;}
+        .mcr .total td{font-weight:700;background:#f7f7f7;}
+        .mcr .note{margin-top:4mm;font-size:11pt;color:#555;}
+        .mcr .signatures{display:grid;grid-template-columns:1fr 1fr;gap:25mm;margin-top:13mm;page-break-inside:avoid;}
+        .mcr .sig{text-align:center;font-size:12pt;}
+        .mcr .sig .line{margin:0 auto 2mm;width:70%;border-bottom:1px dotted #333;height:9mm;}
+        .mcr .sig .sub{font-size:10.5pt;color:#555;margin-top:1mm;}
+        .mcr tr{page-break-inside:avoid;}
+      </style>
       <div class="mcr">
         <div class="head">
           <div class="title">รายงานผลการตรวจประจำเดือน</div>
           <div class="org">${escapeHtml(orgName)}</div>
           <div class="period">ประจำเดือน ${escapeHtml(monthName)} พ.ศ. ${toThaiNumber(thaiYear)}</div>
         </div>
-        ${summaryHtml}
+
+        <div class="summary">
+          <div class="summary-box"><b>${toThaiNumber(source.length)}</b><span>ผู้ที่ต้องตรวจ</span></div>
+          <div class="summary-box"><b>${toThaiNumber(done)}</b><span>ตรวจแล้ว</span></div>
+          <div class="summary-box"><b>${toThaiNumber(bad)}</b><span>มีปัญหา</span></div>
+          <div class="summary-box"><b>${toThaiNumber(totalQty)}</b><span>ครุภัณฑ์ที่ถือครอง</span></div>
+        </div>
+
         <table>
-          ${tableHead}
-          <tbody>${allRows || '<tr><td colspan="8" class="center">ไม่มีข้อมูลครุภัณฑ์ที่ต้องตรวจ</td></tr>'}
-          ${allRows ? `<tr class="total"><td colspan="4" class="center">รวม</td><td class="center">${toThaiNumber(totalQty)}</td><td colspan="3"></td></tr>` : ''}
+          <colgroup>
+            <col style="width:4%"><col style="width:18%"><col style="width:23%"><col style="width:15%">
+            <col style="width:7%"><col style="width:9%"><col style="width:13%"><col style="width:11%">
+          </colgroup>
+          <thead><tr>
+            <th>ลำดับ</th>
+            <th>ผู้ครอบครอง / ตำแหน่ง</th>
+            <th>ชื่อครุภัณฑ์</th>
+            <th>หมายเลขครุภัณฑ์</th>
+            <th>จำนวน</th>
+            <th>ผลตรวจ</th>
+            <th>หมายเหตุ</th>
+            <th>ผู้ตรวจ / วันที่</th>
+          </tr></thead>
+          <tbody>
+            ${rows || '<tr><td colspan="8" class="center">ไม่มีข้อมูลครุภัณฑ์ที่ต้องตรวจ</td></tr>'}
+            ${rows ? `<tr class="total"><td colspan="4" class="center">รวม</td><td class="center">${toThaiNumber(totalQty)}</td><td colspan="3"></td></tr>` : ''}
           </tbody>
         </table>
+
         <div class="note">หมายเหตุ: รายงานนี้จัดแสดงตาม <strong>ชื่อครุภัณฑ์ + หมายเลขครุภัณฑ์ + จำนวน</strong> เพื่อให้ง่ายต่อการตรวจสอบรายการของแต่ละผู้ครอบครอง</div>
+
         <div class="signatures">
           <div class="sig"><div class="line"></div>ผู้ตรวจประจำเดือน</div>
           <div class="sig"><div class="line"></div>ผู้รับรอง / หัวหน้าหน่วย</div>
@@ -10061,81 +10050,33 @@ function compareMonthlyOfficers(a, b) {
     if (!pa) return;
     pa.className = 'report-print-area';
 
+    /*
+     * ใช้วิธีเดียวกับแบบ บชก.3 (ยานพาหนะ):
+     * บนมือถือให้เครื่องพิมพ์กระดาษเป็น A4 Portrait แล้วหมุน
+     * เนื้อหารายงาน 90 องศา เพื่อให้ผลลัพธ์บนกระดาษเป็นแนวนอนจริง
+     * วิธีนี้เสถียรกว่าการพึ่ง @page landscape บน mobile browser
+     */
     const isMobilePrint = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
       (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent));
-
     if (isMobilePrint) {
-      /*
-       * Mobile print: ใช้ A4 portrait เป็น physical page แล้วหมุนแต่ละ page 90°
-       * เหมือน บชก.3 แต่ต่างจากเวอร์ชันเดิมตรงที่ "ไม่ใช้ overflow:hidden กับ
-       * รายงานทั้งก้อน" เพราะจะทำให้ข้อมูลที่เกิน 1 หน้าโดนตัดหาย
-       * เราแบ่งข้อมูลเป็นหลายหน้าแนวนอนก่อน แล้วแต่ละหน้าจึงถูกหมุนแยกกัน
-       */
-      // Mobile: หน้าแรกมีหัวรายงาน + summary ส่วนหน้าถัดไปต่อด้วยแถวข้อมูลทันที
-      // เพื่อให้ใช้กระดาษน้อยที่สุด โดยไม่สร้างหัวข้อ/หัวตารางซ้ำทุกหน้า
-      const FIRST_PAGE_ROWS = 6;
-      const CONTINUATION_PAGE_ROWS = 10;
-      const chunks = [];
-      if (!detailRows.length) {
-        chunks.push([]);
-      } else {
-        chunks.push(detailRows.slice(0, FIRST_PAGE_ROWS));
-        for (let i = FIRST_PAGE_ROWS; i < detailRows.length; i += CONTINUATION_PAGE_ROWS) {
-          chunks.push(detailRows.slice(i, i + CONTINUATION_PAGE_ROWS));
-        }
-      }
-
-      const mobilePages = chunks.map((chunk, pageIndex) => {
-        const startIndex = pageIndex === 0 ? 0 : FIRST_PAGE_ROWS + (pageIndex - 1) * CONTINUATION_PAGE_ROWS;
-        const isFirst = pageIndex === 0;
-        const isLast = pageIndex === chunks.length - 1;
-        const bodyRows = renderRows(chunk, startIndex) || '<tr><td colspan="8" class="center">ไม่มีข้อมูลครุภัณฑ์ที่ต้องตรวจ</td></tr>';
-        return `
-          <div class="mcr-mobile-page">
-            <div class="mcr-mobile-page-inner">
-              <div class="mcr">
-                ${isFirst ? `
-                  <div class="head">
-                    <div class="title">รายงานผลการตรวจประจำเดือน</div>
-                    <div class="org">${escapeHtml(orgName)}</div>
-                    <div class="period">ประจำเดือน ${escapeHtml(monthName)} พ.ศ. ${toThaiNumber(thaiYear)}</div>
-                  </div>
-                  ${summaryHtml}` : ''}
-                <table>${isFirst ? tableHead : ''}<tbody>${bodyRows}${isLast ? `<tr class="total"><td colspan="4" class="center">รวม</td><td class="center">${toThaiNumber(totalQty)}</td><td colspan="3"></td></tr>` : ''}</tbody></table>
-                ${isLast ? `
-                  <div class="note">หมายเหตุ: รายงานนี้จัดแสดงตาม <strong>ชื่อครุภัณฑ์ + หมายเลขครุภัณฑ์ + จำนวน</strong> เพื่อให้ง่ายต่อการตรวจสอบรายการของแต่ละผู้ครอบครอง</div>
-                  <div class="signatures">
-                    <div class="sig"><div class="line"></div>ผู้ตรวจประจำเดือน</div>
-                    <div class="sig"><div class="line"></div>ผู้รับรอง / หัวหน้าหน่วย</div>
-                  </div>` : ''}
-              </div>
-            </div>
-          </div>`;
-      }).join('');
-
-      /* มือถือ: ใช้โครงเดียวกับแบบ บชก.3 โดยตรง และตัด @page landscape ของ desktop ออกก่อน
-         เพื่อไม่ให้กฎ landscape เดิมทำให้ Chrome mobile ขยายพื้นที่พิมพ์เกิน 1 หน้า */
-      const mobileStyle = style.replace(/@page\{[^}]*\}/g, '');
+      const inner = html.replace(/@page\{[^}]*\}/g, '');
       pa.innerHTML = `
         <style>
           @page{size:A4 portrait;margin:0;}
-          html,body{margin:0 !important;padding:0 !important;}
-          #printArea.report-print-area{width:210mm !important;min-width:210mm !important;max-width:210mm !important;margin:0 !important;padding:0 !important;}
-          /* เผื่อระยะปัดเศษของ print engine บนมือถือ ป้องกันแต่ละแผ่นล้นไปสร้างหน้าว่าง */
-          .mcr-mobile-page{position:relative;display:block;width:210mm;height:296mm;min-height:296mm;max-height:296mm;margin:0;padding:0;overflow:hidden;page-break-after:auto;break-after:auto;page-break-inside:avoid;break-inside:avoid;}
-          /* ขึ้นหน้าใหม่เฉพาะก่อนแผ่นถัดไป ไม่สั่ง page-break-after เพื่อป้องกันหน้าว่างแทรก */
-          .mcr-mobile-page + .mcr-mobile-page{page-break-before:always;break-before:page;}
-          .mcr-mobile-page-inner{position:absolute;top:0;left:210mm;width:297mm;height:210mm;box-sizing:border-box;padding:8mm;transform-origin:0 0;transform:rotate(90deg) scale(.94);}
-          .mcr-mobile-page-inner .mcr{width:281mm;max-width:281mm;min-width:0;margin:0;}
-          .mcr-mobile-page-inner table{width:281mm;max-width:281mm;min-width:0;table-layout:fixed;}
-          .mcr-mobile-page-inner th,.mcr-mobile-page-inner td{overflow-wrap:anywhere;word-break:break-word;}
+          @media print{
+            html,body{margin:0 !important;padding:0 !important;}
+            #printArea.report-print-area{width:210mm !important;height:297mm !important;min-width:210mm !important;max-width:210mm !important;padding:0 !important;margin:0 !important;overflow:hidden !important;}
+            .mcr-mobile-landscape{position:relative;width:210mm;height:297mm;overflow:hidden;box-sizing:border-box;}
+            .mcr-mobile-landscape-inner{position:absolute;top:0;left:210mm;width:297mm;height:210mm;box-sizing:border-box;padding:11mm 12mm;transform-origin:0 0;transform:rotate(90deg);overflow:hidden;}
+            .mcr-mobile-landscape-inner .mcr{width:100%;min-width:0;}
+          }
         </style>
-        ${mobileStyle}
-        ${mobilePages}`;
+        <div class="mcr-mobile-landscape">
+          <div class="mcr-mobile-landscape-inner">${inner}</div>
+        </div>`;
     } else {
-      pa.innerHTML = desktopHtml;
+      pa.innerHTML = html;
     }
-
     triggerPrint(() => {
       pa.innerHTML = '';
       pa.className = '';
