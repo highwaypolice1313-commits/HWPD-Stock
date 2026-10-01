@@ -1683,6 +1683,41 @@ textarea.input{
   }
 }
 
+
+
+/* =========================================================
+   UI CLEANUP PATCH v5 — dashboard correctness + hero cleanup
+   ========================================================= */
+.hero-row{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) 1px minmax(0,1fr) !important;
+  align-items:center !important;
+  gap:24px !important;
+  flex-wrap:nowrap !important;
+}
+.hero-row > div{
+  min-width:0 !important;
+  flex:none !important;
+}
+.hero-row .hero-divider{
+  width:1px !important;
+  min-width:1px !important;
+  height:56px !important;
+  flex:0 0 1px !important;
+  background:rgba(255,255,255,.18) !important;
+}
+.hero-card .hero-sparkline{display:none !important;}
+.hero-card::before{pointer-events:none !important;}
+
+@media (max-width:899px){
+  .hero-row{
+    grid-template-columns:minmax(0,1fr) 1px minmax(0,1fr) !important;
+    gap:14px !important;
+  }
+  .hero-row .hero-divider{
+    height:54px !important;
+  }
+}
 </style>
 </head>
 <body>
@@ -2591,19 +2626,32 @@ function animateCountUps(root=document) {
   const els = root.querySelectorAll('.hero-num,.stat-num,.rp-kpi .k-num');
   els.forEach(el => {
     if (el.dataset.countAnimated === '1') return;
+
+    // สำคัญ: ค่าเป้าหมายอยู่ใน data-count ไม่ใช่ข้อความเริ่มต้น "0"
+    // โค้ดเดิมอ่าน text node จึงอ่านได้แค่ 0 และทำให้ตัวเลขบน Dashboard ค้างที่ 0 ตลอด
+    const rawAttr = el.dataset.count;
+    const target = Number(String(rawAttr ?? '').replace(/,/g, ''));
+    if (!isFinite(target)) return;
+
     const first = Array.from(el.childNodes).find(n => n.nodeType === 3 && /\d/.test(n.nodeValue || ''));
     if (!first) return;
-    const raw = (first.nodeValue || '').replace(/[^0-9.-]/g,'');
-    const target = Number(raw);
-    if (!isFinite(target)) return;
-    const decimals = Math.max(0, (raw.split('.')[1] || '').length);
-    first.nodeValue = (0).toLocaleString('en-US', {minimumFractionDigits:decimals, maximumFractionDigits:decimals});
+
+    const decimals = Math.max(0, (String(rawAttr ?? '').split('.')[1] || '').length);
+    first.nodeValue = (0).toLocaleString('en-US', {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals
+    });
     el.dataset.countAnimated = '1';
+
     const start = performance.now(), duration = 820;
-    const ease = x => 1 - Math.pow(1-x, 3);
+    const ease = x => 1 - Math.pow(1 - x, 3);
     const tick = now => {
-      const p = Math.min(1, (now-start)/duration), v = target * ease(p);
-      first.nodeValue = v.toLocaleString('en-US', {minimumFractionDigits:decimals, maximumFractionDigits:decimals});
+      const p = Math.min(1, (now - start) / duration);
+      const v = target * ease(p);
+      first.nodeValue = v.toLocaleString('en-US', {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+      });
       if (p < 1) requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
@@ -2804,14 +2852,30 @@ function renderDashboard() {
   const d = state.dashboard;
   const el = document.getElementById('view-dashboard');
   if (!d) { el.innerHTML = emptyState('ยังไม่มีข้อมูลแดชบอร์ด — กดปุ่มรีเฟรชด้านบน'); return; }
+
+  // ใช้ค่าจาก Dashboard API ก่อน และ fallback จากข้อมูลรายการจริงใน state
+  // ป้องกันกรณี aggregate จาก backend ไม่มา/เป็น 0 แต่หน้า Assets มีข้อมูลอยู่แล้ว
+  const assetList = Array.isArray(state.assets) ? state.assets : [];
+  const borrowList = Array.isArray(state.borrow) ? state.borrow : [];
+  const assetCount = Number(d.totalAssets) > 0 ? Number(d.totalAssets) : assetList.length;
+  const totalValue = Number(d.totalValue) > 0
+    ? Number(d.totalValue)
+    : assetList.reduce((sum, a) => sum + (Number(String(a['มูลค่า(บาท)'] ?? '').replace(/,/g, '')) || 0), 0);
+  const borrowedFallback = assetList.filter(a => ['กำลังยืม','เกินกำหนด'].includes(String(a['สถานะ'] || ''))).length;
+  const overdueFallback = borrowList.filter(b => effectiveBorrowStatus(b) === 'เกินกำหนด').length;
+  const repairFallback = assetList.filter(a => ['ซ่อมบำรุง','กำลังซ่อม','รอซ่อม'].includes(String(a['สถานะ'] || ''))).length;
+  const borrowedCount = Number(d.borrowedCount) || borrowedFallback;
+  const overdueCount = Number(d.overdueCount) || overdueFallback;
+  const repairCount = Number(d.repairCount) || repairFallback;
+
   let banners = '';
-  if (d.overdueCount > 0) {
-    banners += `<div class="alert-banner bad">${ICONS.warn}<span>มีครุภัณฑ์เกินกำหนดคืน ${d.overdueCount} รายการ</span><span class="alert-link" onclick="renderTab('borrow')">ดูรายการ</span></div>`;
+  if (overdueCount > 0) {
+    banners += `<div class="alert-banner bad">${ICONS.warn}<span>มีครุภัณฑ์เกินกำหนดคืน ${overdueCount} รายการ</span><span class="alert-link" onclick="renderTab('borrow')">ดูรายการ</span></div>`;
   }
-  if (isAdmin() && d.pendingCount > 0) {
+  if (isAdmin() && Number(d.pendingCount) > 0) {
     banners += `<div class="alert-banner warn">${ICONS.clock}<span>มีคำขอยืมรออนุมัติ ${d.pendingCount} รายการ</span><span class="alert-link" onclick="renderTab('borrow')">ตรวจสอบ</span></div>`;
   }
-  if (d.dueRenewalCount > 0) {
+  if (Number(d.dueRenewalCount) > 0) {
     banners += `<div class="alert-banner warn">${ICONS.warn}<span>มีครุภัณฑ์ใกล้ครบกำหนดตรวจสภาพ/ต่อทะเบียน ${d.dueRenewalCount} รายการ (ภายใน ${renewalWindowDays()} วัน หรือเลยกำหนดแล้ว)</span><span class="alert-link" onclick="renderTab('assets')">ดูรายการ</span></div>`;
   }
   el.innerHTML = `
@@ -2821,11 +2885,10 @@ function renderDashboard() {
     <div class="dashboard-left">
       <div class="glass hero-card">
         <div class="hero-row">
-          <div><div class="hero-label">ครุภัณฑ์ทั้งหมด</div><div class="hero-num" data-count="${Number(d.totalAssets)||0}">0<span class="hero-unit">รายการ</span></div></div>
+          <div><div class="hero-label">ครุภัณฑ์ทั้งหมด</div><div class="hero-num" data-count="${assetCount}">0<span class="hero-unit">รายการ</span></div></div>
           <div class="hero-divider"></div>
-          <div><div class="hero-label">มูลค่ารวม</div><div class="hero-num hero-num--sm" data-count="${Number(d.totalValue)||0}">0<span class="hero-unit">บาท</span></div></div>
+          <div><div class="hero-label">มูลค่ารวม</div><div class="hero-num hero-num--sm" data-count="${totalValue}">0<span class="hero-unit">บาท</span></div></div>
         </div>
-        ${sparklineSvg(d.monthTrend || {})}
       </div>
       
       <div class="section-title" style="margin:4px 0 10px;">แนวโน้มการยืมย้อนหลัง 6 เดือน</div>
@@ -2835,15 +2898,15 @@ function renderDashboard() {
     <div class="dashboard-right">
       <div class="stat-grid">
         <div class="stat-card warn">
-          <div><div class="stat-num" data-count="${Number(d.borrowedCount)||0}">0</div><div class="stat-label">กำลังถูกยืม</div></div>
+          <div><div class="stat-num" data-count="${borrowedCount}">0</div><div class="stat-label">กำลังถูกยืม</div></div>
           <div style="color:var(--warn);">${ICONS.clock}</div>
         </div>
         <div class="stat-card bad">
-          <div><div class="stat-num" data-count="${Number(d.overdueCount)||0}">0</div><div class="stat-label">เกินกำหนดคืน</div></div>
+          <div><div class="stat-num" data-count="${overdueCount}">0</div><div class="stat-label">เกินกำหนดคืน</div></div>
           <div style="color:var(--bad);">${ICONS.warn}</div>
         </div>
         <div class="stat-card ok">
-          <div><div class="stat-num" data-count="${Number(d.repairCount)||0}">0</div><div class="stat-label">อยู่ระหว่างซ่อม</div></div>
+          <div><div class="stat-num" data-count="${repairCount}">0</div><div class="stat-label">อยู่ระหว่างซ่อม</div></div>
           <div style="color:var(--ok);">${ICONS.wrench}</div>
         </div>
       </div>
