@@ -6039,6 +6039,90 @@ function rpOverview(body) {
 }
 
 /* ---------- แท็บ: ครุภัณฑ์ ---------- */
+
+   /* ---------- สรุปรวมตามชื่อ + ประเภทรถ ---------- */
+// TODO: ปรับ/เพิ่มประเภทรถได้ตรงนี้ (ตรวจจากชื่อ + ยี่ห้อ/รุ่น + หมายเหตุ ตามลำดับจากบนลงล่าง)
+const RP_VEHICLE_TYPES = [
+  ['รถวิทยุ', /วิทยุ/],
+  ['รถกระบะ', /กระบะ/],
+  ['รถจักรยานยนต์', /จักรยานยนต์|มอเตอร์ไซ/],
+  ['รถตู้', /รถตู้/],
+  ['รถบรรทุก', /บรรทุก/],
+  ['รถเก๋ง/ซีดาน', /เก๋ง|ซีดาน/],
+  ['รถอเนกประสงค์ (SUV/PPV)', /SUV|PPV|อเนกประสงค์/i]
+];
+function rpNameKey(s) { return String(s == null ? '' : s).trim().replace(/\s+/g, ' '); }
+function rpVehicleType(a) {
+  const t = [a['ชื่อครุภัณฑ์'], a['ยี่ห้อ/รุ่น'], a['หมายเหตุ']].join(' ');
+  for (const [name, re] of RP_VEHICLE_TYPES) if (re.test(t)) return name;
+  return rpNameKey(a['ชื่อครุภัณฑ์']) || 'ไม่ระบุ';
+}
+function rpGroup(list, keyFn) {
+  const m = new Map();
+  list.forEach(a => {
+    const k = keyFn(a);
+    if (!m.has(k)) m.set(k, { key: k, cats: new Set(), n: 0, r: 0, b: 0, m: 0, d: 0, v: 0 });
+    const g = m.get(k);
+    g.n++; g.v += Number(a['มูลค่า(บาท)']) || 0;
+    if (a['หมวดหมู่']) g.cats.add(a['หมวดหมู่']);
+    const s = a['สถานะ'];
+    if (s === 'พร้อมใช้งาน') g.r++;
+    else if (s === 'กำลังยืม') g.b++;
+    else if (s === 'ซ่อมบำรุง') g.m++;
+    else if (s === 'จำหน่ายแล้ว') g.d++;
+  });
+  return Array.from(m.values()).sort((x, y) => y.n - x.n || x.key.localeCompare(y.key, 'th'));
+}
+function rpGroupTableHtml(groups, firstLabel, withCat) {
+  const dash = n => n ? n.toLocaleString() : '-';
+  const sum = k => groups.reduce((s, g) => s + g[k], 0);
+  const cols = [[firstLabel]].concat(withCat ? [['หมวดหมู่']] : [], [['จำนวน', 1], ['พร้อมใช้', 1], ['ยืม', 1], ['ซ่อม', 1], ['จำหน่าย', 1], ['มูลค่ารวม (บาท)', 1]]);
+  const rows = groups.map(g => [escapeHtml(g.key)]
+    .concat(withCat ? [escapeHtml(Array.from(g.cats).join(', '))] : [],
+      ['<b>' + g.n.toLocaleString() + '</b>', dash(g.r), dash(g.b), dash(g.m), dash(g.d), g.v ? g.v.toLocaleString() : '-']));
+  const foot = ['รวม (' + groups.length + ' กลุ่ม)'].concat(withCat ? [''] : [],
+    [sum('n').toLocaleString(), dash(sum('r')), dash(sum('b')), dash(sum('m')), dash(sum('d')), sum('v').toLocaleString()]);
+  return rpTable(cols, rows, foot);
+}
+function rpGroupSummaryHtml() {
+  const cat = state.rpGroupCat || 'all';
+  const cats = Array.from(new Set(getCategories().concat(state.assets.map(a => a['หมวดหมู่']).filter(Boolean))));
+  const list = state.assets.filter(a => cat === 'all' || a['หมวดหมู่'] === cat);
+  const byName = rpGroup(list, a => rpNameKey(a['ชื่อครุภัณฑ์']) || 'ไม่ระบุชื่อ');
+  const vehicles = state.assets.filter(a => a['หมวดหมู่'] === 'ยานพาหนะ');
+  const byType = rpGroup(vehicles, rpVehicleType);
+  return `
+    <div class="glass rp-card">
+      <h4>สรุปรวมตามชื่อครุภัณฑ์ <small>ชื่อเดียวกันรวมเป็นแถวเดียว</small></h4>
+      <div class="rp-filter">
+        <select class="input" id="rpGroupCat">
+          <option value="all">ทุกหมวดหมู่</option>
+          ${cats.map(c => `<option value="${escapeHtml(c)}" ${cat === c ? 'selected' : ''}>${escapeHtml(c)}</option>`).join('')}
+        </select>
+        <button class="btn btn-ghost" id="btnRpGroupCsv" style="flex:none;">ส่งออก CSV</button>
+      </div>
+      ${rpGroupTableHtml(byName, 'ชื่อครุภัณฑ์', cat === 'all')}
+    </div>
+    ${vehicles.length ? `<div class="glass rp-card">
+      <h4>สรุปยานพาหนะแยกตามประเภท <small>รวม ${vehicles.length} คัน</small></h4>
+      ${rpGroupTableHtml(byType, 'ประเภทรถ', false)}
+    </div>` : ''}`;
+}
+function rpGroupWire() {
+  const sel = document.getElementById('rpGroupCat');
+  if (sel) sel.onchange = () => { state.rpGroupCat = sel.value; renderReports(); };
+  const csv = document.getElementById('btnRpGroupCsv');
+  if (csv) csv.onclick = () => {
+    const cat = state.rpGroupCat || 'all';
+    const list = state.assets.filter(a => cat === 'all' || a['หมวดหมู่'] === cat);
+    const rows = rpGroup(list, a => rpNameKey(a['ชื่อครุภัณฑ์']) || 'ไม่ระบุชื่อ').map(g => ({
+      'ชื่อครุภัณฑ์': g.key, 'หมวดหมู่': Array.from(g.cats).join(', '), 'จำนวน': g.n,
+      'พร้อมใช้งาน': g.r, 'กำลังยืม': g.b, 'ซ่อมบำรุง': g.m, 'จำหน่ายแล้ว': g.d, 'มูลค่ารวม(บาท)': g.v
+    }));
+    exportCsv('สรุปครุภัณฑ์ตามชื่อ.csv', ['ชื่อครุภัณฑ์', 'หมวดหมู่', 'จำนวน', 'พร้อมใช้งาน', 'กำลังยืม', 'ซ่อมบำรุง', 'จำหน่ายแล้ว', 'มูลค่ารวม(บาท)'], rows);
+  };
+}
+   
 function rpAssets(body) {
   const A = state.assets;
   const cats = Array.from(new Set(getCategories().concat(A.map(a => a['หมวดหมู่']).filter(Boolean))));
@@ -6056,6 +6140,7 @@ function rpAssets(body) {
   const noHolder = A.filter(a => !a['ผู้ครอบครอง/หน่วยงาน']).length;
 
   body.innerHTML = `
+  ${rpGroupSummaryHtml()}
     <div class="glass rp-card"><h4>สรุปแยกตามหมวดหมู่</h4>
       ${rpTable([['หมวดหมู่'], ['จำนวน', 1], ['มูลค่า (บาท)', 1], ['พร้อมใช้', 1], ['ยืม', 1], ['ซ่อม', 1], ['จำหน่าย', 1]],
         rows.map(x => [escapeHtml(x.c), x.n, x.v.toLocaleString(), x.r, x.b, x.m, x.d]),
@@ -6079,6 +6164,7 @@ function rpAssets(body) {
         { label: 'ยังไม่ระบุผู้ครอบครอง/หน่วยงาน', n: noHolder, cls: noHolder ? 'warn' : 'ok', note: '(จาก ' + A.length + ')' }
       ], A.length)}
     </div>`;
+   rpGroupWire(); 
 }
 
 /* ---------- แท็บ: ยืม-คืน ---------- */
