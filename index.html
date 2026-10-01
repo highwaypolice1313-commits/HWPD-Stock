@@ -4718,7 +4718,7 @@ function openAssetDetail(id) {
 };
   if (isAdmin()) {
     document.getElementById('btnQuickStatus').onclick = () => openQuickStatusForm(a);
-    document.getElementById('btnEditAsset').onclick = () => { closeAllSheets(); openAssetForm(a); }
+    document.getElementById('btnEditAsset').onclick = () => openAssetForm(a);
     document.getElementById('btnDeleteAsset').onclick = async () => {
       if (!await confirmSheet('ยืนยันการลบครุภัณฑ์นี้?', {title:'ลบครุภัณฑ์', okText:'ลบรายการ', tone:'bad'})) return;
       try { await apiPost('deleteAsset', { id }); closeAllSheets(); toast('ลบรายการแล้ว'); await reloadThen(renderAssets); }
@@ -4876,7 +4876,7 @@ toggleVehicleFields();
 };
     if (!payload.name) { toast('กรุณากรอกชื่อครุภัณฑ์'); return; }
     const saveBtn = document.getElementById('btnSave'); if (saveBtn.disabled) return; setButtonBusy(saveBtn, true); setLoading(true, 'กำลังบันทึกข้อมูล...');
-    try { await apiPost(editing ? 'updateAsset' : 'addAsset', payload); closeAllSheets(); toast(editing ? 'แก้ไขข้อมูลแล้ว' : 'เพิ่มครุภัณฑ์แล้ว'); await reloadThen(renderAssets); }
+        try { await apiPost(editing ? 'updateAsset' : 'addAsset', payload); closeAllSheets(); toast(editing ? 'แก้ไขข้อมูลแล้ว' : 'เพิ่มครุภัณฑ์แล้ว'); await reloadThen(renderAssets); }
     catch (err) { toast(err.message || 'บันทึกไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(saveBtn, false); }
   };
 }
@@ -6218,6 +6218,24 @@ function showSheet(html, extraClass) {
   overlay.querySelector('.sheet-close').addEventListener('click', closeSheet);
 }
 
+   /* เปิดหน้าที่ใช้ HTML overlay ของตัวเอง (ฟอร์มบันทึกข้อความ / ตัวแก้เอกสาร) โดยซ้อนทับหน้าเดิม */
+function showRawSheet(overlayHtml) {
+  const root = document.getElementById('modalRoot');
+  const cur = root.querySelector('.overlay');
+  if (cur && !cur.classList.contains('confirm-overlay') && !cur.classList.contains('command-overlay')) {
+    cur.style.display = 'none';
+    cur.removeAttribute('id');
+    sheetStack.push(cur);
+  } else {
+    root.innerHTML = '';
+  }
+  const wrap = document.createElement('div');
+  wrap.innerHTML = overlayHtml;
+  const overlay = wrap.firstElementChild;
+  root.appendChild(overlay);
+  return overlay;
+}
+
 /* ปิดหน้าปัจจุบัน แล้วแสดงหน้าก่อนหน้าที่ซ่อนไว้ */
 function closeSheet() {
   stopScanner();
@@ -6400,8 +6418,8 @@ function memoCard(m) {
 /* ---------- เปิดหน้าเอกสารเพื่อแก้ไขจริง / พิมพ์ / บันทึก ---------- */
 function openMemoEditor(opts) {
   const isNew = !opts.id;
-  document.getElementById('modalRoot').innerHTML = `<div class="overlay" id="overlayEl">
-    <div class="sheet memo-doc-sheet">
+    showRawSheet(`<div class="overlay" id="overlayEl">
+    <div class="sheet memo-form-sheet">
       <button class="sheet-close" id="sheetCloseBtn" type="button" title="ปิด" aria-label="ปิด">${ICONS.close}</button>
       <div class="sheet-handle"></div>
       <div class="sheet-title" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
@@ -6424,9 +6442,10 @@ function openMemoEditor(opts) {
         <button class="btn btn-primary" id="btnMemoSave">บันทึกเอกสาร</button>
       </div>
     </div>
-  </div>`;
+  </div>`);
   document.getElementById('sheetCloseBtn').addEventListener('click', closeSheet);
   document.getElementById('btnMemoClose').onclick = closeSheet;
+  document.querySelectorAll('.mf-tabs button')
 
   const desk = document.getElementById('memoPaperDesk');
   mountPaper(desk, wrapPfDoc(opts.docHtml, true));
@@ -6658,8 +6677,8 @@ function openPrintMemoForm(opts) {
   const orgFull = phone ? (orgLine + ' โทร. ' + phone) : orgLine;
   const docPrefix = (state.settings && state.settings.docNoPrefix) || '';
 
-  document.getElementById('modalRoot').innerHTML = `<div class="overlay" id="overlayEl">
-    <div class="sheet memo-form-sheet">
+  showRawSheet(`<div class="overlay" id="overlayEl">
+    <div class="sheet memo-doc-sheet">
       <button class="sheet-close" id="sheetCloseBtn" type="button" title="ปิด" aria-label="ปิด">${ICONS.close}</button>
       <div class="sheet-handle"></div>
       <div class="sheet-title">สร้างเอกสารบันทึกข้อความ</div>
