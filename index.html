@@ -6419,7 +6419,7 @@ function memoCard(m) {
 function openMemoEditor(opts) {
   const isNew = !opts.id;
     showRawSheet(`<div class="overlay" id="overlayEl">
-    <div class="sheet memo-form-sheet">
+    <div class="sheet memo-doc-sheet">
       <button class="sheet-close" id="sheetCloseBtn" type="button" title="ปิด" aria-label="ปิด">${ICONS.close}</button>
       <div class="sheet-handle"></div>
       <div class="sheet-title" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
@@ -6445,7 +6445,6 @@ function openMemoEditor(opts) {
   </div>`);
   document.getElementById('sheetCloseBtn').addEventListener('click', closeSheet);
   document.getElementById('btnMemoClose').onclick = closeSheet;
-  document.querySelectorAll('.mf-tabs button')
 
   const desk = document.getElementById('memoPaperDesk');
   mountPaper(desk, wrapPfDoc(opts.docHtml, true));
@@ -6678,7 +6677,7 @@ function openPrintMemoForm(opts) {
   const docPrefix = (state.settings && state.settings.docNoPrefix) || '';
 
   showRawSheet(`<div class="overlay" id="overlayEl">
-    <div class="sheet memo-doc-sheet">
+    <div class="sheet memo-form-sheet">
       <button class="sheet-close" id="sheetCloseBtn" type="button" title="ปิด" aria-label="ปิด">${ICONS.close}</button>
       <div class="sheet-handle"></div>
       <div class="sheet-title">สร้างเอกสารบันทึกข้อความ</div>
@@ -6739,7 +6738,7 @@ function openPrintMemoForm(opts) {
         <button class="btn btn-primary" id="btnGenerate">เปิดเอกสารเพื่อแก้ไข/พิมพ์ →</button>
       </div>
     </div>
-  </div>`;
+  </div>`);
   document.getElementById('sheetCloseBtn').addEventListener('click', closeSheet);
 
   document.querySelectorAll('.mf-tabs button').forEach(b => b.onclick = () => {
