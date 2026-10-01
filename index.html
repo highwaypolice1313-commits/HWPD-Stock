@@ -7015,6 +7015,8 @@ const GS_CSS = `<style>
 .gs-list:not(.gs-all) .gs-more{display:none}
 .gs-showall{display:block;margin:12px auto 2px;padding:9px 24px;border-radius:99px;border:1px solid var(--panel-line);background:var(--panel);color:var(--ink);font:inherit;font-size:12.5px;cursor:pointer}
 .gs-empty{padding:26px;text-align:center;color:var(--ink-dim);font-size:13px}
+.gs-subhead{font-size:13px;font-weight:600;color:var(--ink);margin:6px 2px 2px}
+.gs-subhead small{font-weight:400;color:var(--ink-dim);margin-left:6px;font-size:11.5px}
 @media (max-width:640px){
   .gs-row{grid-template-columns:minmax(0,1fr) auto}
   .gs-mid{grid-column:1 / -1;grid-row:2}
@@ -7055,12 +7057,11 @@ function rpGroupSummaryHtml() {
 
   // การ์ด "ยานพาหนะแยกตามประเภท" — แสดงเฉพาะตอนเลือกชิป "ยานพาหนะ" และจะถูกวางไว้บนสุด
   // [ปรับตรงนี้] ถ้าเปลี่ยนชื่อหมวดยานพาหนะในหน้าตั้งค่า ให้แก้คำว่า 'ยานพาหนะ' ให้ตรงกัน
-  const vehicleCard = (cat === 'ยานพาหนะ' && vehicles.length) ? `<div class="glass rp-card">
-      <h4>ยานพาหนะแยกตามประเภท <small>รวม ${vehicles.length} คัน</small></h4>
+  const vehicleBlock = (cat === 'ยานพาหนะ' && vehicles.length) ? `
+      <div class="gs-subhead">แยกตามประเภท <small>รวม ${vehicles.length} คัน</small></div>
       <div class="gs-list gs-all">${rpGroupRowsHtml(byType, false, 0)}</div>
-    </div>` : '';
-
-  return GS_CSS + vehicleCard + `
+      <div class="gs-subhead" style="margin-top:14px;">แยกตามชื่อครุภัณฑ์ <small>รายคัน/รายรุ่น</small></div>` : '';
+  return GS_CSS + `
     <div class="glass rp-card">
       <h4>สรุปตามชื่อครุภัณฑ์ <small>ชื่อเดียวกันรวมเป็นแถวเดียว</small></h4>
       <div class="gs-chips">
@@ -7072,6 +7073,7 @@ function rpGroupSummaryHtml() {
         <div class="gs-sumc"><b>${byName.length.toLocaleString()}</b><span>ชนิด/ชื่อ</span></div>
         <div class="gs-sumc"><b style="color:var(--ok)">${readyPct}%</b><span>พร้อมใช้งาน</span></div>
       </div>
+      ${vehicleBlock}
       <div class="gs-head">
         <div class="gs-search"><input id="gsSearch" placeholder="ค้นหาชื่อครุภัณฑ์..." autocomplete="off"></div>
         <button class="gs-csv" id="btnRpGroupCsv" type="button">ส่งออก CSV</button>
@@ -8001,14 +8003,19 @@ function drawMonthlyBody() {
   grid.innerHTML = list.length ? list.map(x => mcCardHtml(x)).join('')
     : emptyState(state.mcPending && total ? 'ตรวจครบทุกคนแล้ว 🎉' : 'ไม่มีเจ้าหน้าที่ที่ถือพัสดุอยู่');
 
-  grid.querySelectorAll('.mc-card').forEach(card => {
-    const u = state.users.find(x => mcKey(x) === card.dataset.key);
-    if (!u) return;
-    card.querySelector('.mc-ok').onclick = () => mcSave(u, 'ครบ', '');
-    card.querySelector('.mc-bad').onclick = () => mcProblemSheet(u);
-    const clr = card.querySelector('.mc-clear');
-    if (clr) clr.onclick = () => mcClear(u);
-  });
+grid.querySelectorAll('.mc-card').forEach(card => {
+  const u = state.users.find(x => mcKey(x) === card.dataset.key);
+  if (!u) return;
+  // กดที่การ์ด -> เปิดหน้าต่างตรวจทีละชิ้น
+  card.onclick = (e) => {
+    if (e.target.closest('.mc-btn, .mc-clear')) return;
+    mcChecklistSheet(u);
+  };
+  card.querySelector('.mc-ok').onclick = () => mcChecklistSheet(u);   // ปุ่ม "ครบ" ก็เปิดหน้าต่างตรวจเหมือนกัน
+  card.querySelector('.mc-bad').onclick = () => mcChecklistSheet(u);
+  const clr = card.querySelector('.mc-clear');
+  if (clr) clr.onclick = () => mcClear(u);
+});
 }
 
 function mcCardHtml({ u, sum, rec }) {
@@ -8093,6 +8100,81 @@ function mcProblemSheet(u) {
     closeSheet();
   };
 }   
+
+   // รายการที่ต้องตรวจของ จนท. คนนี้ (พัสดุทีละชิ้น + ส่วนควบ)
+function mcItemsOf(u) {
+  const items = [];
+  mcHoldingsOf(u).forEach(b => {
+    items.push({ label: b['ชื่อครุภัณฑ์'] || '-', sub: b['รหัสครุภัณฑ์'] || '' });
+    parseCompRefs(b['รหัสส่วนควบที่ยืม']).forEach(r => {
+      const c = state.components.find(x => x['รหัสส่วนควบ'] === r.id);
+      items.push({ label: 'ส่วนควบ: ' + (c ? compDisplayName(c) : r.id), sub: r.n > 1 ? '× ' + r.n : '' });
+    });
+  });
+  return items;
+}
+
+function mcChecklistSheet(u) {
+  const items = mcItemsOf(u);
+  if (!items.length) { mcProblemSheet(u); return; }   // ไม่มีพัสดุ -> ใช้หน้าต่างเดิม
+  const rec = mcRecordFor(u);
+  const st = items.map(() => 0);   // 0 = ยังไม่ตรวจ, 1 = ครบ, 2 = ไม่ครบ
+
+  showSheet(`
+    <div class="sheet-title">ตรวจพัสดุ — ${escapeHtml(officerFullName(u))}</div>
+    <div class="hint" id="ckCount" style="margin-bottom:8px;"></div>
+    <div id="ckList" style="max-height:50vh; overflow:auto;">
+      ${items.map((it, i) => `
+        <div class="ck-row" data-i="${i}" style="display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid rgba(128,128,128,.2);">
+          <div style="flex:1; min-width:0;">
+            <div style="font-weight:600;">${escapeHtml(it.label)}</div>
+            ${it.sub ? `<small style="color:var(--ink-dim);">${escapeHtml(it.sub)}</small>` : ''}
+          </div>
+          <button type="button" class="mc-btn ok ck-ok">✓ ครบ</button>
+          <button type="button" class="mc-btn bad ck-bad">✗ ไม่ครบ</button>
+        </div>`).join('')}
+    </div>
+    <div class="field" id="ckNoteWrap" style="margin-top:10px; display:none;"><label>รายละเอียดเพิ่มเติม (ถ้ามี)</label>
+      <textarea class="input" id="ckNote" rows="2" placeholder="เช่น สภาพชำรุด, หาย">${escapeHtml(rec && rec['ผล'] === 'มีปัญหา' ? rec['หมายเหตุ'] : '')}</textarea>
+    </div>
+    <div class="btn-row"><button class="btn btn-ghost" id="ckCancel">ยกเลิก</button><button class="btn btn-primary" id="ckSave" disabled>บันทึก</button></div>
+  `);
+
+  const refresh = () => {
+    const done = st.filter(Boolean).length;
+    const bad = st.filter(s => s === 2).length;
+    document.getElementById('ckCount').textContent =
+      'ตรวจแล้ว ' + done + '/' + items.length + (bad ? ' · ไม่ครบ ' + bad : '');
+    document.getElementById('ckNoteWrap').style.display = bad ? '' : 'none';
+    const btn = document.getElementById('ckSave');
+    btn.disabled = done < items.length;
+    btn.textContent = done < items.length ? 'ตรวจให้ครบทุกชิ้นก่อน'
+      : (bad ? 'บันทึก "มีปัญหา"' : 'บันทึก "ครบ"');
+    btn.className = 'btn ' + (bad ? 'btn-danger' : 'btn-primary');
+  };
+  document.querySelectorAll('#ckList .ck-row').forEach(row => {
+    const i = Number(row.dataset.i);
+    const ok = row.querySelector('.ck-ok'), bd = row.querySelector('.ck-bad');
+    const set = v => { st[i] = v; ok.classList.toggle('on', v === 1); bd.classList.toggle('on', v === 2); refresh(); };
+    ok.onclick = () => set(1);
+    bd.onclick = () => set(2);
+  });
+  refresh();
+
+  document.getElementById('ckCancel').onclick = closeSheet;
+  document.getElementById('ckSave').onclick = async () => {
+    const btn = document.getElementById('ckSave'); if (btn.disabled) return;
+    const badItems = items.filter((_, i) => st[i] === 2).map(it => it.label);
+    setButtonBusy(btn, true);
+    if (!badItems.length) {
+      await mcSave(u, 'ครบ', '');
+    } else {
+      const extra = (document.getElementById('ckNote').value || '').trim();
+      await mcSave(u, 'มีปัญหา', 'ไม่ครบ: ' + badItems.join(', ') + (extra ? ' | ' + extra : ''));
+    }
+    closeSheet();
+  };
+}
    
 /* ========================================================= ตั้งค่าระบบ */
 
