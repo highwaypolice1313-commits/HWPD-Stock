@@ -3615,21 +3615,35 @@ html{scroll-behavior:smooth;}
   #view-monthly .mc-swipe-overlay{top:13px;font-size:13px;padding:6px 10px;}
 }
 
-/* PRINT: รายงานตรวจประจำเดือนต้องเป็น A4 แนวนอนทุกอุปกรณ์ที่รองรับ CSS print */
-@page{size:A4 landscape;margin:10mm 11mm;}
+/* ===== PRINT: ความกว้างตามกระดาษจริง ไม่บังคับ 297mm อีกต่อไป ===== */
 @media print{
   #printArea.report-print-area{
-    width:297mm !important;
-    min-width:297mm !important;
-    max-width:297mm !important;
-    padding:0 !important;
-    margin:0 !important;
-    overflow:visible !important;
+    width:100% !important; min-width:0 !important; max-width:none !important;
+    padding:0 !important; margin:0 !important; overflow:visible !important;
   }
-  #printArea.report-print-area .mcr{width:100%;min-width:297mm;}
-  #printArea.report-print-area .mcr table{width:100%;min-width:100%;}
-  #printArea.report-print-area .mcr .summary{grid-template-columns:repeat(4,1fr);}
+  #printArea.report-print-area table{ max-width:100%; }
 }
+
+/* ===== การ์ดปัดตรวจประจำเดือน (มือถือ) ===== */
+#view-monthly .mc-swipe-card{
+  touch-action:none !important;           /* ให้ JS คุมท่าทางทั้งหมด ไม่ถูกแย่งไปเลื่อนหน้า */
+  -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;
+  will-change:transform; cursor:grab; position:relative;
+  border-radius:24px; overflow:hidden;
+  transition:box-shadow .15s ease;
+}
+#view-monthly .mc-swipe-card.dragging{ cursor:grabbing; }
+#view-monthly .mc-swipe-card.swipe-ok { box-shadow:0 0 0 3px var(--ok),  0 16px 36px var(--ok-wash); }
+#view-monthly .mc-swipe-card.swipe-bad{ box-shadow:0 0 0 3px var(--bad), 0 16px 36px var(--bad-wash); }
+#view-monthly .mc-swipe-overlay{ z-index:6; top:16px; font-size:16px; }
+#view-monthly .mc-swipe-overlay.ok { color:var(--ok)  !important; }
+#view-monthly .mc-swipe-overlay.bad{ color:var(--bad) !important; }
+#view-monthly .mc-swipe-hint .ok  { color:var(--ok);  font-weight:700; }
+#view-monthly .mc-swipe-hint .bad { color:var(--bad); font-weight:700; }
+/* การ์ดต้องไม่มีส่วนที่เลื่อนภายใน (ไม่งั้นนิ้วไปติดกับการเลื่อนของมัน) */
+#view-monthly .mc-swipe-stage .mc-grid-hold{ max-height:none !important; overflow:visible !important; }
+#view-monthly .mc-swipe-stage .mc-serial-list{ max-height:58px !important; overflow:hidden !important; }
+
 </style>
 </head>
 <body>
@@ -5601,11 +5615,52 @@ function openQuickStatusForm(a) {
     catch (err) { toast(err.message || 'เปลี่ยนสถานะไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(btn, false); }
   };
 }
+   
 function triggerPrint(cleanupFn) {
-  const imgs = Array.from(document.querySelectorAll('#printArea img'));
+  const pa = document.getElementById('printArea');
+  const imgs = Array.from(pa.querySelectorAll('img'));
   let cleaned = false, started = false;
-  const cleanupOnce = () => { if (cleaned) return; cleaned = true; if (cleanupFn) cleanupFn(); };
+  const cleanupOnce = () => {
+    if (cleaned) return; cleaned = true;
+    const d = document.getElementById('dynPageStyle'); if (d) d.remove();
+    pa.style.removeProperty('zoom'); pa.style.removeProperty('width');
+    if (cleanupFn) cleanupFn();
+  };
+
+  const prepareLayout = () => {
+    // 1) ดึงทิศทาง/ขอบจาก @page ของรายงาน แล้วลบทิ้ง เหลือกฎเดียวที่เราสร้างเอง
+    let landscape = false, margin = '0';
+    pa.querySelectorAll('style').forEach(st => {
+      st.textContent = st.textContent.replace(/@page\s*\{([^}]*)\}/g, (m, body) => {
+        const s = /size\s*:\s*([^;]+)/.exec(body), g = /margin\s*:\s*([^;]+)/.exec(body);
+        if (s && /landscape/i.test(s[1])) landscape = true;
+        if (g) margin = g[1].trim();
+        return '';
+      });
+    });
+    const old = document.getElementById('dynPageStyle'); if (old) old.remove();
+    const dyn = document.createElement('style');
+    dyn.id = 'dynPageStyle';
+    dyn.textContent = '@page{size:A4 ' + (landscape ? 'landscape' : 'portrait') + ';margin:' + margin + ';}';
+    document.head.appendChild(dyn);
+
+    // 2) วัดว่าเนื้อหากว้างเกินพื้นที่พิมพ์ไหม ถ้าเกินให้ย่อ (zoom) พอดีหน้า
+    const parts = margin.split(/\s+/);
+    const hMm = parseFloat(parts.length === 1 ? parts[0] : parts[1]) || 0;
+    const availPx = ((landscape ? 297 : 210) - hMm * 2) * 96 / 25.4;
+    const prevStyle = pa.getAttribute('style') || '';
+    pa.style.cssText += ';display:block;position:absolute;left:-10000px;top:0;visibility:hidden;width:' + availPx + 'px;';
+    const need = pa.scrollWidth;
+    pa.setAttribute('style', prevStyle);
+    pa.style.removeProperty('zoom'); pa.style.removeProperty('width');
+    if (need > availPx + 2) {
+      pa.style.setProperty('width', need + 'px', 'important');
+      pa.style.zoom = String(availPx / need);
+    }
+  };
+
   const doPrint = () => {
+    prepareLayout();
     const onAfter = () => { window.removeEventListener('afterprint', onAfter); cleanupOnce(); };
     window.addEventListener('afterprint', onAfter);
     window.print();
@@ -5620,9 +5675,7 @@ function triggerPrint(cleanupFn) {
     img.addEventListener('error', done);
   });
   const fontsReady = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
-fontsReady.then(() => {
-  if (remaining === 0) setTimeout(start, 60); else setTimeout(start, 2500);
-});
+  fontsReady.then(() => { if (remaining === 0) setTimeout(start, 60); else setTimeout(start, 2500); });
 }
    
    async function printQrBatch(list) {
@@ -9677,16 +9730,23 @@ function compareMonthlyOfficers(a, b) {
     </div>`;
   }
 
+  /* 1 = ปัดขวา=ครบ / ปัดซ้าย=มีปัญหา (แบบ Tinder)   -1 = สลับด้าน */
+  const MC_SWIPE_OK_DIR = 1;
+
   function mcSwipeCardHtml(item){
     if(!item) return `<div class="hint mc-swipe-empty">ไม่มีผู้ที่ตรงกับเงื่อนไข</div>`;
-    const base=mcCardHtmlEnhanced(item);
+    const okR = MC_SWIPE_OK_DIR === 1;
+    const okHint  = `<span class="ok">${okR ? '' : '← '}ปัด${okR ? 'ขวา' : 'ซ้าย'} = ครบ${okR ? ' →' : ''}</span>`;
+    const badHint = `<span class="bad">${okR ? '← ' : ''}ปัด${okR ? 'ซ้าย' : 'ขวา'} = มีปัญหา${okR ? '' : ' →'}</span>`;
     return `<div class="mc-swipe-stage" id="mcSwipeStage">
       <div class="mc-swipe-card-wrap">
-        <div class="mc-swipe-overlay left" id="mcSwipeLeftLabel">ครบ</div>
-        <div class="mc-swipe-overlay right" id="mcSwipeRightLabel">มีปัญหา</div>
-        <div id="mcSwipeCard" class="mc-swipe-card">${base}</div>
+        <div id="mcSwipeCard" class="mc-swipe-card">
+          <div class="mc-swipe-overlay ok ${okR ? 'left' : 'right'}" id="mcSwipeOkLabel">✓ ครบ</div>
+          <div class="mc-swipe-overlay bad ${okR ? 'right' : 'left'}" id="mcSwipeBadLabel">⚠ มีปัญหา</div>
+          ${mcCardHtmlEnhanced(item)}
+        </div>
       </div>
-      <div class="mc-swipe-hint"><span class="left">← ปัดซ้าย = ครบ</span><span class="right">ปัดขวา = มีปัญหา →</span></div>
+      <div class="mc-swipe-hint">${okR ? badHint + okHint : okHint + badHint}</div>
     </div>`;
   }
 
@@ -9715,65 +9775,75 @@ function compareMonthlyOfficers(a, b) {
   }
 
   function bindMcSwipeGestures(list, item){
-    const card=document.getElementById('mcSwipeCard');
+    const card = document.getElementById('mcSwipeCard');
     if(!card || !item) return;
-    const left=document.getElementById('mcSwipeLeftLabel');
-    const right=document.getElementById('mcSwipeRightLabel');
-    const reset=()=>{
-      card.style.transform='';
-      card.style.transition='';
-      if(left) left.style.opacity='0';
-      if(right) right.style.opacity='0';
-    };
-    const finish=(dx)=>{
-      if(Math.abs(dx)<90){ reset(); return; }
-      const dir=dx>0?1:-1;
-      card.style.transition='transform .22s ease, opacity .22s ease';
-      card.style.transform=`translateX(${dir*110}%) rotate(${dir*7}deg)`;
-      card.style.opacity='0';
-      setTimeout(()=>{
-        reset();
-        // ปัดเป็นการเลือกผลตรวจ แล้วเปิด checklist เดิมเพื่อยืนยัน/ตรวจรายชิ้น
-        mcSwipeCommit(dir>0?'มีปัญหา':'ครบ', item);
-      },180);
-    };
-    card.onpointerdown=e=>{
-      mcSwipeStartX=e.clientX; mcSwipeStartY=e.clientY; mcSwipeDx=0;
-      card.classList.add('dragging');
-      try{ card.setPointerCapture(e.pointerId); }catch(err){}
-    };
-    card.onpointermove=e=>{
-      if(!card.classList.contains('dragging')) return;
-      const dx=e.clientX-mcSwipeStartX, dy=e.clientY-mcSwipeStartY;
+    const okL  = document.getElementById('mcSwipeOkLabel');
+    const badL = document.getElementById('mcSwipeBadLabel');
+    const THRESH = Math.max(70, Math.min(120, card.offsetWidth * 0.25));
+    let pid = null, sx = 0, sy = 0, py = 0, dx = 0, mode = null, side = '';
 
-      // Let the browser keep normal vertical page scrolling. Once the gesture
-      // is clearly horizontal, take ownership of it so the page cannot scroll
-      // instead of the Tinder card.
-      if(Math.abs(dx)<10 && Math.abs(dy)<10) return;
-      if(Math.abs(dy)>Math.abs(dx) && Math.abs(dy)>12){
-        card.classList.remove('dragging');
-        mcSwipeDx=0;
-        try{ card.releasePointerCapture(e.pointerId); }catch(err){}
-        reset();
-        return;
-      }
-
-      if(Math.abs(dx)>=Math.abs(dy)){
-        e.preventDefault();
-        mcSwipeDx=dx;
-        const rot=Math.max(-7,Math.min(7,dx/28));
-        card.style.transform=`translateX(${dx}px) rotate(${rot}deg)`;
-        const p=Math.min(1,Math.abs(dx)/120);
-        if(left) left.style.opacity=dx<0?p:0;
-        if(right) right.style.opacity=dx>0?p:0;
-      }
+    const setSide = s => {
+      if (s === side) return; side = s;
+      card.classList.toggle('swipe-ok',  s === 'ok');
+      card.classList.toggle('swipe-bad', s === 'bad');
+      if (s) { try { navigator.vibrate && navigator.vibrate(10); } catch(_){} }
     };
-    card.onpointerup=e=>{
+    const paint = x => {
+      const rot = Math.max(-10, Math.min(10, x / 22));
+      card.style.transform = `translate3d(${x}px,0,0) rotate(${rot}deg)`;
+      const p = Math.min(1, Math.abs(x) / THRESH);
+      const isOk = Math.sign(x) === MC_SWIPE_OK_DIR;
+      okL.style.opacity  = isOk ? p : 0;
+      badL.style.opacity = isOk ? 0 : p;
+      setSide(Math.abs(x) >= THRESH ? (isOk ? 'ok' : 'bad') : '');
+    };
+    const snapBack = anim => {
+      card.style.transition = anim ? 'transform .28s cubic-bezier(.2,.9,.3,1.15)' : 'none';
+      card.style.transform = ''; card.style.opacity = '';
+      okL.style.opacity = 0; badL.style.opacity = 0; setSide('');
+    };
+
+    card.addEventListener('pointerdown', e => {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      pid = e.pointerId; sx = e.clientX; sy = py = e.clientY; dx = 0; mode = null;
+      card.style.transition = 'none';
+    });
+    card.addEventListener('pointermove', e => {
+      if (e.pointerId !== pid) return;
+      const mx = e.clientX - sx, my = e.clientY - sy;
+      if (!mode) {
+        if (Math.abs(mx) < 8 && Math.abs(my) < 8) return;
+        mode = Math.abs(mx) > Math.abs(my) * 1.2 ? 'h' : 'v';
+        if (mode === 'h') { try { card.setPointerCapture(pid); } catch(_){} card.classList.add('dragging'); }
+      }
+      if (mode === 'h') { dx = mx; paint(dx); }
+      else { window.scrollBy(0, py - e.clientY); py = e.clientY; }   // เลื่อนหน้าเองเมื่อลากแนวตั้ง
+    });
+    card.addEventListener('pointerup', e => {
+      if (e.pointerId !== pid) return; pid = null;
       card.classList.remove('dragging');
-      finish(mcSwipeDx);
-    };
-    card.onpointercancel=()=>{ card.classList.remove('dragging'); reset(); };
-    card.ondblclick=()=>mcChecklistSheetEnhanced(item.u);
+      if (mode !== 'h') return;
+      window.__mcJustSwiped = true; setTimeout(() => { window.__mcJustSwiped = false; }, 400);
+      if (Math.abs(dx) < THRESH) { snapBack(true); return; }
+      const dir = Math.sign(dx);
+      const result = dir === MC_SWIPE_OK_DIR ? 'ครบ' : 'มีปัญหา';
+      card.style.transition = 'transform .22s ease-in, opacity .22s ease-in';
+      card.style.transform = `translate3d(${dir * window.innerWidth}px,0,0) rotate(${dir * 18}deg)`;
+      card.style.opacity = '0';
+      setTimeout(() => {
+        if (result === 'มีปัญหา') snapBack(false);   // การ์ดกลับมารออยู่หลังหน้ากรอกปัญหา ถ้ายกเลิกก็ไม่หาย
+        mcSwipeCommit(result, item);
+      }, 220);
+    });
+    card.addEventListener('pointercancel', e => {
+      if (e.pointerId !== pid) return; pid = null;
+      card.classList.remove('dragging');
+      if (mode === 'h') snapBack(true);
+    });
+    // กันคลิกหลุดหลังลาก (ไม่ให้เปิด checklist / กดปุ่มโดยไม่ตั้งใจ)
+    card.addEventListener('click', e => {
+      if (window.__mcJustSwiped) { e.stopPropagation(); e.preventDefault(); }
+    }, true);
   }
 
   function mcCardHtmlEnhanced({u,sum,rec}){
