@@ -2223,6 +2223,184 @@ html{scroll-behavior:smooth;}
 /* ตาราง/สรุปในหน้ารายงาน */
 .rp-filter{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;}
 .rp-filter select{max-width:240px;}
+/* =========================================================
+   ธีมใหม่ 4 แบบ: aurora / frost (กลาส) · ocean / graphite
+   [วางไว้ท้ายสุดของ <style> เสมอ]
+   ========================================================= */
+
+/* ---------- 1) ออโรร่า — กลาสโทนมืด ม่วง/เขียวมิ้นต์ ---------- */
+:root[data-theme="aurora"]{
+  --dawn-1:#2a1b5e; --dawn-2:#10424a; --dawn-3:#161233; --dawn-4:#0e2a3a;
+  --bg-0:#0b0920; --bg-1:#120e2e;
+  --panel:rgba(255,255,255,.08); --panel-soft:rgba(255,255,255,.07);
+  --panel-line:rgba(255,255,255,.16); --panel-hi:rgba(255,255,255,.13);
+  --ink:#eef0ff; --ink-dim:#b4b8d8; --ink-faint:#7c82a8;
+  /* [ปรับสีตรงนี้] navy = สีหลักปุ่ม/ไฮไลต์, gold = สีเน้น */
+  --navy:#7c6bff; --navy-deep:#4a38d6; --navy-wash:rgba(124,107,255,.18); --navy-line:rgba(124,107,255,.5);
+  --gold:#2dd4bf; --gold-deep:#5eead4; --gold-wash:rgba(45,212,191,.16); --gold-line:rgba(45,212,191,.5);
+  --ok:#4ade80; --ok-wash:rgba(74,222,128,.15);
+  --warn:#fbbf24; --warn-wash:rgba(251,191,36,.16);
+  --bad:#fb7185; --bad-wash:rgba(251,113,133,.16);
+  --off:#a5aacb; --off-wash:rgba(165,170,203,.16);
+  --info:#60a5fa; --info-wash:rgba(96,165,250,.16);
+  --side-1:rgba(40,28,100,.55); --side-2:rgba(10,8,34,.72);
+  /* ตัวแปรของกลาส */
+  --glass-blur:blur(20px) saturate(165%);
+  --glass-edge:rgba(255,255,255,.18);
+  --glass-shadow:0 8px 32px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.14);
+  --topbar-bg:rgba(16,12,42,.5);
+  --tabbar-bg:rgba(30,24,80,.6);
+  --sheet-bg:rgba(24,19,58,.82);
+  --opt-bg:#1a1540;
+}
+:root[data-theme="aurora"] body{
+  background:
+    radial-gradient(700px 500px at 10% 0%, rgba(124,107,255,.55), transparent 60%),
+    radial-gradient(650px 480px at 95% 10%, rgba(45,212,191,.38), transparent 60%),
+    radial-gradient(800px 600px at 60% 105%, rgba(236,72,153,.32), transparent 60%),
+    linear-gradient(160deg,#0b0920,#140f35 55%,#0a1f2e);
+  background-attachment:fixed;
+}
+
+/* ---------- 2) น้ำแข็งใส — กลาสโทนสว่าง ฟ้า/ชมพู/ม่วงพาสเทล ---------- */
+:root[data-theme="frost"]{
+  --dawn-1:#dbeafe; --dawn-2:#fce7f3; --dawn-3:#e0f2fe; --dawn-4:#ede9fe;
+  --bg-0:#e6eefb; --bg-1:#f3f0ff;
+  --panel:rgba(255,255,255,.55); --panel-soft:rgba(255,255,255,.42);
+  --panel-line:rgba(110,130,190,.22); --panel-hi:rgba(255,255,255,.75);
+  --ink:#1e2a44; --ink-dim:#5b6785; --ink-faint:#98a2bd;
+  /* [ปรับสีตรงนี้] */
+  --navy:#3b5bdb; --navy-deep:#1e3a8a; --navy-wash:rgba(59,91,219,.1); --navy-line:rgba(59,91,219,.3);
+  --gold:#8b5cf6; --gold-deep:#6d28d9; --gold-wash:rgba(139,92,246,.14); --gold-line:rgba(139,92,246,.4);
+  --side-1:rgba(37,55,120,.74); --side-2:rgba(24,34,90,.84);
+  --glass-blur:blur(20px) saturate(165%);
+  --glass-edge:rgba(255,255,255,.85);
+  --glass-shadow:0 8px 32px rgba(70,90,160,.14), inset 0 1px 0 rgba(255,255,255,.9);
+  --topbar-bg:rgba(255,255,255,.5);
+  --tabbar-bg:rgba(255,255,255,.62);
+  --sheet-bg:rgba(255,255,255,.76);
+}
+:root[data-theme="frost"] body{
+  background:
+    radial-gradient(700px 500px at 5% 0%, rgba(96,165,250,.55), transparent 60%),
+    radial-gradient(650px 480px at 100% 5%, rgba(244,114,182,.4), transparent 60%),
+    radial-gradient(800px 600px at 55% 105%, rgba(167,139,250,.45), transparent 60%),
+    linear-gradient(160deg,#e8f0ff,#f4eeff 55%,#e3f6ff);
+  background-attachment:fixed;
+}
+
+/* ---------- 3) ทะเลสาบ — สว่าง เขียวน้ำทะเล ---------- */
+:root[data-theme="ocean"]{
+  --dawn-1:#e0f7f5; --dawn-2:#e6f1fb; --dawn-3:#e8f4f2; --dawn-4:#dcecf3;
+  --bg-0:#e6f1f2; --bg-1:#f1f8f7;
+  --panel-line:#d6e6e6; --panel-hi:#e8f5f3;
+  --navy:#0f4c5c; --navy-deep:#0a2f3a; --navy-wash:rgba(15,76,92,.07); --navy-line:rgba(15,76,92,.22);
+  --gold:#0ea5a4; --gold-deep:#0b7a7a; --gold-wash:rgba(14,165,164,.14); --gold-line:rgba(14,165,164,.4);
+  --side-1:#0f4c5c; --side-2:#0a2f3a;
+}
+
+/* ---------- 4) ทองแดงกราไฟต์ — มืด เทาอุ่น/ทองแดง ---------- */
+:root[data-theme="graphite"]{
+  --dawn-1:#2a2623; --dawn-2:#262220; --dawn-3:#1c1a19; --dawn-4:#191716;
+  --bg-0:#121110; --bg-1:#181615;
+  --panel:#211e1c; --panel-soft:#2a2623; --panel-line:#3a3531; --panel-hi:#312c29;
+  --ink:#f1ece6; --ink-dim:#b3aaa0; --ink-faint:#80776e;
+  /* [ปรับสีตรงนี้] */
+  --navy:#c9965a; --navy-deep:#8f6335; --navy-wash:rgba(201,150,90,.16); --navy-line:rgba(201,150,90,.45);
+  --gold:#e8b774; --gold-deep:#f0c78e; --gold-wash:rgba(232,183,116,.16); --gold-line:rgba(232,183,116,.45);
+  --off:#a39a90;
+  --side-1:#1b1816; --side-2:#100e0d;
+  --sheet-bg:#211e1c;
+  --opt-bg:#211e1c;
+}
+
+/* =========================================================
+   กฎร่วมของ "ธีมมืด" (aurora, graphite) — ผ่าน data-mode="dark"
+   ========================================================= */
+:root[data-mode="dark"]{ color-scheme:dark; }   /* ให้ช่องวันที่/สกอลล์บาร์ของเบราว์เซอร์เป็นโทนมืด */
+:root[data-mode="dark"] .chip:not(.active),
+:root[data-mode="dark"] .btn-ghost,
+:root[data-mode="dark"] .icon-btn,
+:root[data-mode="dark"] .refresh-btn,
+:root[data-mode="dark"] .pagination button,
+:root[data-mode="dark"] .sheet-close,
+:root[data-mode="dark"] .zbtn,
+:root[data-mode="dark"] .mf-item,
+:root[data-mode="dark"] .mf-tabs button.active,
+:root[data-mode="dark"] .loading-card,
+:root[data-mode="dark"] .view-toggle button:not(.active),
+:root[data-mode="dark"] .audit-btn:not([class*="active-"]){
+  background:var(--panel); color:var(--ink);
+}
+:root[data-mode="dark"] .input,
+:root[data-mode="dark"] select.input{ background:var(--panel-soft); color:var(--ink); }
+:root[data-mode="dark"] .input:focus{ background:var(--panel-hi); }
+:root[data-mode="dark"] select.input option{ background:var(--opt-bg); color:var(--ink); } /* รายการดรอปดาวน์ต้องอ่านออก */
+:root[data-mode="dark"] .section-title{ color:var(--ink); }
+:root[data-mode="dark"] .loading-overlay{ background:rgba(0,0,0,.55); }
+:root[data-mode="dark"] .sheet{ background:var(--sheet-bg); color:var(--ink); }
+
+/* =========================================================
+   กฎร่วมของ "กลาส" (aurora, frost) — ผ่าน data-glass
+   หมายเหตุ: ใส่เบลอเฉพาะการ์ดใหญ่/แผงลอย ไม่ใส่ทุกแถวรายการ เพื่อไม่ให้มือถือกระตุก
+   ========================================================= */
+:root[data-glass] .glass:not(.hero-card),
+:root[data-glass] .stat-card,
+:root[data-glass] .chart-card,
+:root[data-glass] .rp-card,
+:root[data-glass] .rp-kpi,
+:root[data-glass] .memo-card{
+  background:var(--panel);
+  border-color:var(--glass-edge);
+  box-shadow:var(--glass-shadow);
+}
+:root[data-glass] .stat-card,
+:root[data-glass] .chart-card,
+:root[data-glass] .rp-card,
+:root[data-glass] .rp-kpi{
+  -webkit-backdrop-filter:var(--glass-blur);
+  backdrop-filter:var(--glass-blur);
+}
+:root[data-glass] .hero-card{
+  border:1px solid rgba(255,255,255,.22);
+  box-shadow:0 14px 40px rgba(20,20,60,.28), inset 0 1px 0 rgba(255,255,255,.3);
+}
+:root[data-glass] .topbar{
+  background:var(--topbar-bg);
+  -webkit-backdrop-filter:blur(24px) saturate(160%);
+  backdrop-filter:blur(24px) saturate(160%);
+  border-bottom-color:var(--glass-edge);
+}
+:root[data-glass] .sheet{
+  background:var(--sheet-bg);
+  -webkit-backdrop-filter:blur(30px) saturate(170%);
+  backdrop-filter:blur(30px) saturate(170%);
+  border-color:var(--glass-edge);
+}
+@media (max-width:899px){
+  /* แถบเมนูล่างบนมือถือ ให้เป็นกระจกที่มองเห็นชัด */
+  :root[data-glass] .tabbar{
+    background:var(--tabbar-bg) !important;
+    border-color:var(--glass-edge) !important;
+  }
+}
+
+/* ---------- เฉพาะน้ำแข็งใส: ปุ่ม/ช่องกรอกที่เดิมเป็นขาวทึบ ให้เป็นขาวโปร่ง ---------- */
+:root[data-theme="frost"] .chip:not(.active),
+:root[data-theme="frost"] .btn-ghost,
+:root[data-theme="frost"] .icon-btn,
+:root[data-theme="frost"] .refresh-btn,
+:root[data-theme="frost"] .pagination button,
+:root[data-theme="frost"] .sheet-close,
+:root[data-theme="frost"] .zbtn,
+:root[data-theme="frost"] .mf-item,
+:root[data-theme="frost"] .mf-tabs button.active,
+:root[data-theme="frost"] .loading-card,
+:root[data-theme="frost"] .view-toggle button:not(.active),
+:root[data-theme="frost"] .audit-btn:not([class*="active-"]){
+  background:rgba(255,255,255,.62);
+}
+:root[data-theme="frost"] .input:focus{ background:rgba(255,255,255,.9); }
    
 </style>
 </head>
@@ -2402,11 +2580,25 @@ const THEMES = [
   { id:'dawn',   name:'รุ่งอรุณ ทางหลวง', swatches:['#17324f','#bb8a3f','#fdf2e4'] },
   { id:'night',  name:'ราตรีตรวจการณ์',   swatches:['#0c1e33','#3d7bd6','#0a1420'] },
   { id:'forest', name:'มรกตพงไพร',        swatches:['#1f3d33','#3fae7a','#eef6f0'] },
-  { id:'ember',  name:'อัคคีสัญญาณ',      swatches:['#3a1f22','#d9704a','#fbeee4'] }
+  { id:'ember',  name:'อัคคีสัญญาณ',      swatches:['#3a1f22','#d9704a','#fbeee4'] },
+
+  /* ===== [ธีมใหม่] mode:'dark' = ธีมมืด / glass:true = สไตล์กระจกโปร่งแสง ===== */
+  { id:'aurora',   name:'ออโรร่า (กลาส)',    swatches:['#7c6bff','#2dd4bf','#0b0920'], mode:'dark', glass:true },
+  { id:'frost',    name:'น้ำแข็งใส (กลาส)',  swatches:['#3b5bdb','#8b5cf6','#e8f0ff'], glass:true },
+  { id:'ocean',    name:'ทะเลสาบ',           swatches:['#0f4c5c','#0ea5a4','#e0f7f5'] },
+  { id:'graphite', name:'ทองแดงกราไฟต์',     swatches:['#c9965a','#e8b774','#121110'], mode:'dark' }
 ];
+   
 function currentTheme() { try { const saved = localStorage.getItem(THEME_KEY); if (saved) return saved; return (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'night' : 'dawn'; } catch (e) { return (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'night' : 'dawn'; } }
 function applyTheme(id) {
-  document.documentElement.setAttribute('data-theme', id);
+  const root = document.documentElement;
+  root.setAttribute('data-theme', id);
+
+  // [เพิ่ม] ตั้งป้ายโหมดมืด/กลาส ให้ CSS ใช้จับกลุ่มธีม
+  const t = THEMES.find(x => x.id === id) || {};
+  if (t.mode) root.setAttribute('data-mode', t.mode); else root.removeAttribute('data-mode');
+  if (t.glass) root.setAttribute('data-glass', '1'); else root.removeAttribute('data-glass');
+
   try { localStorage.setItem(THEME_KEY, id); } catch (e) {}
 }
 applyTheme(currentTheme());
