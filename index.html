@@ -2131,6 +2131,20 @@ textarea.input{
 }
 .empty-actions .empty-action{margin:0 !important;}
 
+   /* ===== DASHBOARD SPACING ===== */
+#view-dashboard .dashboard-left > .hero-card{ margin-bottom:6px !important; }
+#view-dashboard .dashboard-left > .section-title,
+#view-dashboard .dashboard-right > .section-title{ margin:22px 2px 12px !important; }
+#view-dashboard .trend-card,
+#view-dashboard .cat-card{ margin:0 0 16px !important; }
+#view-dashboard .dashboard-right{ margin-top:18px; }
+#view-dashboard .dashboard-right > .stat-grid{ margin:0 0 6px !important; gap:12px !important; }
+#view-dashboard .stat-card{ min-height:92px; }
+@media (min-width:900px){
+  #view-dashboard .dashboard-right{ margin-top:0; }
+  #view-dashboard .dashboard-left > .section-title:first-of-type{ margin-top:22px !important; }
+}
+   
 </style>
 </head>
 <body>
@@ -2364,7 +2378,7 @@ const ICONS = {
   inbox: '<svg viewBox="0 0 20 20" fill="none"><path d="M3 5.5h14v9.8a1.2 1.2 0 01-1.2 1.2H4.2A1.2 1.2 0 013 15.3V5.5z" stroke="currentColor" stroke-width="1.4"/><path d="M3.5 12h3l1.1 1.8h4.8l1.1-1.8h3" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>'
 };
 
-ICONS.print = '<svg viewBox="0 0 20 20" fill="none"><path d="M5 7V3.5a1 1 0 011-1h8a1 1 0 011 1V7" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><rect x="3" y="7" width="14" height="7" rx="1.2" stroke="currentColor" stroke-width="1.4"/><rect x="6" y="12" width="8" height="5.5" rx="0.8" stroke="currentColor" stroke-width="1.4"/></svg>';
+ICONS.search = '<svg viewBox="0 0 20 20" fill="none"><circle cx="8.7" cy="8.7" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M12.5 12.5l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
 /* ใส่ width/height ให้ทุกไอคอน — CSS ที่กำหนดขนาดไว้แล้วยังชนะตามเดิม
    แต่ถ้าที่ไหนไม่มี CSS ก็จะไม่ขยายเต็มจออีก */
 Object.keys(ICONS).forEach(k => {
@@ -3821,9 +3835,35 @@ function assetTimelineHtml(a, id) {
     if (m['วันที่ซ่อมเสร็จ']) events.push({date:m['วันที่ซ่อมเสร็จ'], title:'ซ่อมเสร็จ', note:(m['ค่าใช้จ่าย(บาท)'] ? Number(m['ค่าใช้จ่าย(บาท)']).toLocaleString() + ' บาท' : ''), icon:ICONS.check});
   });
   (state.auditRecords || []).filter(r => r['รหัสครุภัณฑ์'] === id).forEach(r => events.push({date:r['วันที่ตรวจ'], title:'ตรวจนับประจำปี', note:r['ผล'] || '', icon:ICONS.check}));
-  events.sort((x,y)=>toDate(x.date)-toDate(y.date));
+  events.sort((x, y) => toDate(x.date) - toDate(y.date));
   if (!events.length) return '';
-  return `<div class="asset-timeline"><div class="timeline-title">${ICONS.clock} ไทม์ไลน์ครุภัณฑ์</div><div class="timeline">${events.map((e,i)=>`<div class="timeline-item ${i===events.length-1?'current':''}"><div class="timeline-dot">${e.icon}</div><div class="timeline-content"><div class="timeline-event">${escapeHtml(e.title)}</div><div class="timeline-date">${thaiDate(e.date)}</div>${e.note?`<div class="timeline-note">${escapeHtml(e.note)}</div>`:''}</div></div>`).join('')}</div></div>`;
+
+  // สไตล์ฝังในตัว: ไม่พึ่ง CSS ภายนอก และบังคับขนาด SVG ทุกตัว
+  const svgSz = (svg, px) => String(svg).replace(/<svg[^>]*?(\sviewBox="[^"]*")/, `<svg width="${px}" height="${px}"$1 style="width:${px}px;height:${px}px;display:block;"`);
+  const last = events.length - 1;
+  return `
+  <div style="margin:18px 0 6px; padding-top:14px; border-top:1px solid var(--panel-line);">
+    <div style="display:flex; align-items:center; gap:7px; font-size:13px; font-weight:600; color:var(--ink); margin-bottom:12px;">
+      <span style="width:16px;height:16px;display:inline-flex;color:var(--gold-deep);">${svgSz(ICONS.clock, 16)}</span>
+      <span>ไทม์ไลน์ครุภัณฑ์</span>
+    </div>
+    <div style="position:relative;">
+      <div style="position:absolute; left:11px; top:12px; bottom:12px; width:1px; background:var(--panel-line);"></div>
+      ${events.map((e, i) => `
+      <div style="position:relative; display:flex; gap:10px; align-items:flex-start; padding-bottom:${i === last ? 0 : 14}px;">
+        <div style="flex:none; width:23px; height:23px; border-radius:50%; display:flex; align-items:center; justify-content:center; z-index:1;
+          background:${i === last ? 'var(--gold-wash)' : 'var(--panel)'}; border:1px solid ${i === last ? 'var(--gold-line)' : 'var(--panel-line)'};
+          color:${i === last ? 'var(--gold-deep)' : 'var(--ink-dim)'}; overflow:hidden;">
+          <span style="width:13px;height:13px;display:block;">${svgSz(e.icon, 13)}</span>
+        </div>
+        <div style="min-width:0; flex:1;">
+          <div style="font-size:12.5px; font-weight:600; color:var(--ink); line-height:1.4;">${escapeHtml(e.title)}</div>
+          <div style="font-size:11px; color:var(--ink-dim); margin-top:1px;">${thaiDate(e.date)}</div>
+          ${e.note ? `<div style="font-size:11px; color:var(--ink-faint); margin-top:1px; line-height:1.45; word-break:break-word;">${escapeHtml(e.note)}</div>` : ''}
+        </div>
+      </div>`).join('')}
+    </div>
+  </div>`;
 }
 
 function openAssetDetail(id) {
