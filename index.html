@@ -2543,6 +2543,44 @@ html{scroll-behavior:smooth;}
   .memo-grid{ gap:8px; }
   .asset-card{ padding:10px; }
 }
+
+     /* =========================================================
+   ปัดแถวเพื่อเลือกคำสั่ง
+   ========================================================= */
+.sw-wrap{ position:relative; margin-bottom:9px; border-radius:var(--r-md); }
+.sw-wrap > .list-item{
+  position:relative; z-index:1; margin-bottom:0 !important;
+  touch-action:pan-y;                              /* ให้เลื่อนหน้าแนวตั้งได้ แต่แนวนอนเป็นของการปัด */
+  transition:left .24s cubic-bezier(.2,.8,.2,1);
+}
+.sw-wrap.sw-drag > .list-item{ transition:none; }  /* ระหว่างลากให้ตามนิ้วทันที */
+.sw-wrap.sw-active{ overflow:hidden; }
+
+.sw-actions{
+  position:absolute; top:0; bottom:0; z-index:0;
+  display:flex; align-items:stretch; gap:6px; padding:0 6px;
+  max-width:calc(100% - 56px); overflow-x:auto; scrollbar-width:none;
+  visibility:hidden;                               /* ซ่อนไว้จนกว่าจะเริ่มปัด (กันโผล่ทะลุธีมกลาส) */
+}
+.sw-actions::-webkit-scrollbar{ display:none; }
+.sw-wrap.sw-left .sw-actions{ left:0; }
+.sw-wrap.sw-right .sw-actions{ right:0; }
+.sw-wrap.sw-active .sw-actions{ visibility:visible; }
+
+.sw-btn{
+  flex:0 0 60px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+  border:none; border-radius:var(--r-md); color:#fff; font-family:inherit; font-size:11px; font-weight:500;
+  cursor:pointer; padding:0;
+}
+.sw-btn svg{ width:20px; height:20px; }
+.sw-btn:active{ filter:brightness(.9); }
+/* สีปุ่ม: ผสมดำเล็กน้อยเพื่อให้ตัวอักษรขาวอ่านชัดในทุกธีม */
+.sw-btn.tone-navy{ background:color-mix(in srgb, var(--navy) 78%, #000); }
+.sw-btn.tone-ok{   background:color-mix(in srgb, var(--ok) 72%, #000); }
+.sw-btn.tone-warn{ background:color-mix(in srgb, var(--warn) 70%, #000); }
+.sw-btn.tone-bad{  background:color-mix(in srgb, var(--bad) 74%, #000); }
+.sw-btn.tone-info{ background:color-mix(in srgb, var(--info) 72%, #000); } 
+
    
 </style>
 </head>
@@ -4970,7 +5008,7 @@ function openBorrowEditForm(b) {
     } catch (err) { toast(err.message || 'ยืมต่อไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(btn, false); }
   };
 }  
-function openBorrowForm() {
+function openBorrowForm(presetId) {
   const available = state.assets.filter(a => a['สถานะ'] === 'พร้อมใช้งาน');
   const admin = isAdmin();
   const defaultApproverIdx = (() => { const list = officersByMemoRole('ผู้อนุมัติ ลำดับที่ 1'); return list.length ? state.users.indexOf(list[0]) : ''; })();
@@ -5279,7 +5317,7 @@ function openMaintDetail(id) {
   }
 }
    
-function openMaintForm() {
+function openMaintForm(presetId) {
   showSheet(`
     <div class="sheet-title">แจ้งซ่อมบำรุง</div>
 
@@ -7806,43 +7844,6 @@ function renderSettings() {
   if (state.settingsTab === 'activity') loadActivityPanel();   // กรณีรีเฟรชแล้วค้างอยู่แท็บนี้
 }
 
-  /* =========================================================
-   ปัดแถวเพื่อเลือกคำสั่ง
-   ========================================================= */
-.sw-wrap{ position:relative; margin-bottom:9px; border-radius:var(--r-md); }
-.sw-wrap > .list-item{
-  position:relative; z-index:1; margin-bottom:0 !important;
-  touch-action:pan-y;                              /* ให้เลื่อนหน้าแนวตั้งได้ แต่แนวนอนเป็นของการปัด */
-  transition:left .24s cubic-bezier(.2,.8,.2,1);
-}
-.sw-wrap.sw-drag > .list-item{ transition:none; }  /* ระหว่างลากให้ตามนิ้วทันที */
-.sw-wrap.sw-active{ overflow:hidden; }
-
-.sw-actions{
-  position:absolute; top:0; bottom:0; z-index:0;
-  display:flex; align-items:stretch; gap:6px; padding:0 6px;
-  max-width:calc(100% - 56px); overflow-x:auto; scrollbar-width:none;
-  visibility:hidden;                               /* ซ่อนไว้จนกว่าจะเริ่มปัด (กันโผล่ทะลุธีมกลาส) */
-}
-.sw-actions::-webkit-scrollbar{ display:none; }
-.sw-wrap.sw-left .sw-actions{ left:0; }
-.sw-wrap.sw-right .sw-actions{ right:0; }
-.sw-wrap.sw-active .sw-actions{ visibility:visible; }
-
-.sw-btn{
-  flex:0 0 60px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
-  border:none; border-radius:var(--r-md); color:#fff; font-family:inherit; font-size:11px; font-weight:500;
-  cursor:pointer; padding:0;
-}
-.sw-btn svg{ width:20px; height:20px; }
-.sw-btn:active{ filter:brightness(.9); }
-/* สีปุ่ม: ผสมดำเล็กน้อยเพื่อให้ตัวอักษรขาวอ่านชัดในทุกธีม */
-.sw-btn.tone-navy{ background:color-mix(in srgb, var(--navy) 78%, #000); }
-.sw-btn.tone-ok{   background:color-mix(in srgb, var(--ok) 72%, #000); }
-.sw-btn.tone-warn{ background:color-mix(in srgb, var(--warn) 70%, #000); }
-.sw-btn.tone-bad{  background:color-mix(in srgb, var(--bad) 74%, #000); }
-.sw-btn.tone-info{ background:color-mix(in srgb, var(--info) 72%, #000); } 
-
    /* ===== [แก้ไขพิมพ์เปล่า] ย้าย #printArea ให้เป็นลูกตรงของ <body> =====
    เหตุผล: กฎพิมพ์ซ่อน "body > *" ทุกตัวที่ไม่ใช่ #printArea
    ถ้า #printArea ซ้อนอยู่ใน #app มันจะถูกซ่อนไปด้วย -> หน้ากระดาษว่าง */
@@ -7854,8 +7855,6 @@ function renderSettings() {
 })();
 
 init();   // <-- ของเดิม คงไว้ตามเดิม
-
-init();
 
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
