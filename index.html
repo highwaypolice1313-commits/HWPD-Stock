@@ -3496,7 +3496,7 @@ html{scroll-behavior:smooth;}
 }
 
 
-#view-monthly .mc-swipe-nav{display:none;}
+#view-monthly .mc-swipe-nav{display:flex;align-items:center;justify-content:center;gap:8px;margin:10px auto 8px;max-width:760px;}
 #view-monthly .mc-swipe-stage{display:none;}
 #view-monthly .mc-swipe-card{touch-action:pan-y;user-select:none;cursor:grab;position:relative;overflow:hidden;}
 #view-monthly .mc-swipe-card.dragging{cursor:grabbing;transition:none !important;}
@@ -3561,7 +3561,6 @@ html{scroll-behavior:smooth;}
 }
 @media (max-width:899px){
   #view-monthly .mc-grid.mc-grid-list{grid-template-columns:1fr;gap:12px;}
-  #view-monthly .mc-swipe-nav{display:flex;align-items:center;justify-content:center;gap:8px;margin:10px auto 8px;max-width:760px;}
   #view-monthly .mc-swipe-nav .mc-swipe-select{min-width:0;flex:1 1 auto;}
   #view-monthly .mc-swipe-nav .mc-swipe-nav-btn{width:42px;height:40px;min-width:42px;padding:0;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;}
   #view-monthly .mc-swipe-nav .mc-swipe-count{font-size:10px;color:var(--muted);white-space:nowrap;min-width:52px;text-align:center;}
@@ -4386,7 +4385,7 @@ async function loadAll(showLoader = false) {
     state.components = data.components || [];
     state.dashboard = data.dashboard || null;
     state.settings = data.settings || {};
-    state.users = data.users || [];
+    state.users = (data.users || []).slice().sort(comparePoliceOfficers);
     // memos/activity ถูกโหลดแบบ lazy เมื่อเปิดหน้านั้น เพื่อลดขนาดข้อมูลตอนเปิดระบบ
     if (Array.isArray(data.memos)) state.memos = data.memos;
     if (Array.isArray(data.activity)) state.activity = data.activity;
@@ -4414,7 +4413,7 @@ async function loadAll(showLoader = false) {
         state.components = d.components || state.components || [];
         state.dashboard = d.dashboard || state.dashboard || null;
         state.settings = d.settings || state.settings || {};
-        state.users = d.users || state.users || [];
+        state.users = (d.users || state.users || []).slice().sort(comparePoliceOfficers);
         setConnection(false);
         updateBorrowDot();
         toast('ใช้ข้อมูลล่าสุดที่บันทึกไว้ชั่วคราว — กำลังรอเซิร์ฟเวอร์');
@@ -4638,10 +4637,10 @@ function officerLabel(u) {
   return rank + (u['ชื่อ-สกุล'] || '') + pos;
 }
 function officerFullName(u) { return (u['ยศ'] ? u['ยศ'] + ' ' : '') + (u['ชื่อ-สกุล'] || ''); }
-function officersByMemoRole(role) { return (state.users || []).filter(u => u['บทบาทเบิก-ยืม'] === role); }
+function officersByMemoRole(role) { return (state.users || []).filter(u => u['บทบาทเบิก-ยืม'] === role).slice().sort(comparePoliceOfficers); }
 function officerId(u) { return u ? (u['รหัสจนท.'] || '') : ''; }
 function officerSelectOptions(selectedIdx) {
-  const list = state.users || [];
+  const list = (state.users || []).slice().sort(comparePoliceOfficers);
   let opts = `<option value="">-- เลือกรายชื่อ --</option>`;
   opts += list.map((u, i) => `<option value="${i}" ${String(selectedIdx) === String(i) ? 'selected' : ''}>${escapeHtml(officerLabel(u))}</option>`).join('');
   opts += `<option value="__other__" ${selectedIdx === '__other__' ? 'selected' : ''}>อื่นๆ / พิมพ์ชื่อเอง</option>`;
@@ -6560,6 +6559,7 @@ async function renderUsers() {
   el.innerHTML = emptyState('กำลังโหลดรายชื่อเจ้าหน้าที่...');
   try {
     if (!state.users.length) state.users = await apiGet('getUsers', { token: state.sessionToken });
+    state.users = (state.users || []).slice().sort(comparePoliceOfficers);
   } catch (e) {
     toast('โหลดข้อมูลเจ้าหน้าที่ไม่สำเร็จ: ' + (e.message || ''));
   }
@@ -9401,7 +9401,15 @@ const POLICE_RANK_INDEX = (() => {
   return m;
 })();
 function normalizePoliceRank(rank) {
-  return String(rank || '').trim().replace(/\s+/g, ' ').replace(/\s*หญิง\s*$/u, '').trim();
+  const r = String(rank || '').trim().replace(/\s+/g, ' ').replace(/\s*หญิง\s*$/u, '').trim();
+  const canonical = {
+    'พลตำรวจเอก':'พล.ต.อ.','พลตำรวจโท':'พล.ต.ท.','พลตำรวจตรี':'พล.ต.ต.',
+    'พันตำรวจเอก':'พ.ต.อ.','พันตำรวจโท':'พ.ต.ท.','พันตำรวจตรี':'พ.ต.ต.',
+    'ร้อยตำรวจเอก':'ร.ต.อ.','ร้อยตำรวจโท':'ร.ต.ท.','ร้อยตำรวจตรี':'ร.ต.ต.',
+    'ดาบตำรวจ':'ด.ต.','จ่าสิบตำรวจ':'จ.ส.ต.',
+    'สิบตำรวจเอก':'ส.ต.อ.','สิบตำรวจโท':'ส.ต.ท.','สิบตำรวจตรี':'ส.ต.ต.'
+  };
+  return canonical[r] || r;
 }
 function policeRankIndex(rank) {
   const r = normalizePoliceRank(rank);
@@ -9425,12 +9433,14 @@ function comparePolicePositions(a, b) {
   const suffixB = (mb && mb[2] ? mb[2] : '').trim();
 
   if (baseA === baseB) {
-    // ชื่อหลักมาก่อน variant ในวงเล็บเสมอ
+    // ตำแหน่งหลักมาก่อนตำแหน่งย่อยในวงเล็บเสมอ
+    // เช่น รอง สว. -> รอง สว.(ป.)
     if (!suffixA && suffixB) return -1;
     if (suffixA && !suffixB) return 1;
     return suffixA.localeCompare(suffixB, 'th', {numeric:true, sensitivity:'base'});
   }
 
+  // กรณียศเท่ากัน ให้เรียงตามชื่อตำแหน่งก่อน แล้วจึงชื่อบุคคล
   return pa.localeCompare(pb, 'th', {numeric:true, sensitivity:'base'});
 }
 function comparePoliceOfficers(a, b) {
@@ -9548,7 +9558,7 @@ function compareMonthlyOfficers(a, b) {
       return name.includes(q)||pos.includes(q)||serials.includes(q);
     });
     if(state.mcPending) list=list.filter(x=>!x.rec);
-    list.sort((a,b)=>(!!a.rec-!!b.rec)||compareMonthlyOfficers(a,b));
+    list.sort((a,b)=>compareMonthlyOfficers(a,b));
     return list;
   }
 
@@ -9560,7 +9570,7 @@ function compareMonthlyOfficers(a, b) {
     return `<div class="mc-swipe-nav" id="mcSwipeNav">
       <button type="button" class="btn btn-secondary mc-swipe-nav-btn" id="mcSwipePrev" title="คนก่อนหน้า" aria-label="คนก่อนหน้า">‹</button>
       <select class="input mc-swipe-select" id="mcSwipeSelect" aria-label="เลือกผู้ตรวจ">
-        ${list.map((x,i)=>`<option value="${escapeHtml(mcKey(x.u))}" ${i===idx?'selected':''}>${escapeHtml(officerFullName(x.u))} · ${escapeHtml(x.u['ตำแหน่ง']||'-')}</option>`).join('')}
+        ${list.map((x,i)=>`<option value="${escapeHtml(mcKey(x.u))}" ${i===idx?'selected':''}>${escapeHtml(officerFullName(x.u))}</option>`).join('')}
       </select>
       <div class="mc-swipe-count" id="mcSwipeCount">${idx+1} / ${list.length}</div>
       <button type="button" class="btn btn-secondary mc-swipe-nav-btn" id="mcSwipeNext" title="คนถัดไป" aria-label="คนถัดไป">›</button>
