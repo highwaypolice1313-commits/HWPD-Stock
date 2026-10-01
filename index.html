@@ -8800,8 +8800,9 @@ function drawMonthlyBody() {
   let list = visible.filter(x => !q ||
     officerFullName(x.u).toLowerCase().includes(q) || String(x.u['ตำแหน่ง'] || '').toLowerCase().includes(q));
   if (state.mcPending) list = list.filter(x => !x.rec);
-  // ยังไม่ตรวจขึ้นก่อน, เรียงตามชื่อ
-  list.sort((a, b) => (!!a.rec - !!b.rec) || compareMonthlyOfficers(a, b));
+  // ยึดลำดับเจ้าหน้าที่ตาม ยศ -> ตำแหน่ง -> ชื่อ ทุกกรณี
+  // ไม่เอาสถานะตรวจแล้ว/ยังไม่ตรวจมาแทรกก่อนลำดับยศและตำแหน่ง
+  list.sort(compareMonthlyOfficers);
 
   grid.innerHTML = list.length ? list.map(x => mcCardHtml(x)).join('')
     : emptyState(state.mcPending && total ? 'ตรวจครบทุกคนแล้ว 🎉' : 'ไม่มีเจ้าหน้าที่ที่ถือพัสดุอยู่');
@@ -9423,25 +9424,29 @@ function comparePolicePositions(a, b) {
   const pb = normalizePolicePosition(b);
   if (pa === pb) return 0;
 
-  // ให้ตำแหน่งหลักมาก่อนตำแหน่งที่เป็นรูปแบบย่อยในวงเล็บ
-  // เช่น "รอง สว." ต้องมาก่อน "รอง สว.(ป.)"
-  const ma = pa.match(/^(.*?)(\s*\([^)]*\))?$/u);
-  const mb = pb.match(/^(.*?)(\s*\([^)]*\))?$/u);
-  const baseA = (ma && ma[1] ? ma[1] : pa).trim();
-  const baseB = (mb && mb[1] ? mb[1] : pb).trim();
-  const suffixA = (ma && ma[2] ? ma[2] : '').trim();
-  const suffixB = (mb && mb[2] ? mb[2] : '').trim();
+  // แยก "ตำแหน่งหลัก" ออกจาก "ส่วนขยายในวงเล็บ" ให้ชัดเจน
+  // เช่น
+  //   รอง สว.      -> base = "รอง สว.", suffix = ""
+  //   รอง สว.(ป.)   -> base = "รอง สว.", suffix = "(ป.)"
+  // เพื่อบังคับให้ตำแหน่งหลักมาก่อนตำแหน่งย่อยเสมอ
+  const splitPosition = (value) => {
+    const m = String(value || '').match(/^(.*?)(\s*\([^)]*\))\s*$/u);
+    if (!m) return { base: String(value || '').trim(), suffix: '' };
+    return { base: m[1].trim(), suffix: m[2].trim() };
+  };
 
-  if (baseA === baseB) {
-    // ตำแหน่งหลักมาก่อนตำแหน่งย่อยในวงเล็บเสมอ
-    // เช่น รอง สว. -> รอง สว.(ป.)
-    if (!suffixA && suffixB) return -1;
-    if (suffixA && !suffixB) return 1;
-    return suffixA.localeCompare(suffixB, 'th', {numeric:true, sensitivity:'base'});
+  const A = splitPosition(pa);
+  const B = splitPosition(pb);
+
+  if (A.base === B.base) {
+    // ไม่มีวงเล็บ = ตำแหน่งหลัก จึงต้องมาก่อนทุกตำแหน่งย่อย
+    if (!A.suffix && B.suffix) return -1;
+    if (A.suffix && !B.suffix) return 1;
+    return A.suffix.localeCompare(B.suffix, 'th', {numeric:true, sensitivity:'base'});
   }
 
-  // กรณียศเท่ากัน ให้เรียงตามชื่อตำแหน่งก่อน แล้วจึงชื่อบุคคล
-  return pa.localeCompare(pb, 'th', {numeric:true, sensitivity:'base'});
+  // ถ้าฐานตำแหน่งต่างกัน ให้เรียงตามชื่อตำแหน่งก่อน แล้วค่อยใช้ชื่อบุคคล
+  return A.base.localeCompare(B.base, 'th', {numeric:true, sensitivity:'base'});
 }
 function comparePoliceOfficers(a, b) {
   const ra = policeRankIndex(a && a['ยศ']);
