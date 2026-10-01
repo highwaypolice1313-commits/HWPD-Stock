@@ -3148,9 +3148,13 @@ html{scroll-behavior:smooth;}
   .mc-period{display:grid;grid-template-columns:1fr 1fr;}
   .mc-period .input{width:100%;min-width:0;}
   .mc-search-wrap{min-width:100%;}
-  .mc-toolbar-right{display:grid;grid-template-columns:1fr 1fr;}
-  .mc-view-wrap{grid-column:1 / -1;}
-  .mc-view-toggle{margin-left:auto;}
+  .mc-toolbar-right{display:flex;flex-wrap:nowrap;align-items:center;justify-content:flex-end;gap:7px;min-width:0;}
+  .mc-view-wrap{display:inline-flex;align-items:center;gap:5px;min-width:0;}
+  .mc-view-label{display:none;}
+  .mc-view-toggle{margin-left:0;flex:0 0 auto;}
+  .mc-tool-btn.mc-print-icon{width:42px;height:40px;min-width:42px;padding:0;border-radius:14px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 42px;}
+  .mc-tool-btn.mc-print-icon span{display:none;}
+  .mc-tool-btn.mc-print-icon svg{width:18px;height:18px;}
 }
 
 /* Print preview / report */
@@ -6119,7 +6123,8 @@ function drawUsers() {
   const isGrid = state.usersView === 'grid';
   const q = state.userSearch.toLowerCase();
   const shown = state.users.filter(u => !q ||
-    officerFullName(u).toLowerCase().includes(q) || String(u['ตำแหน่ง'] || '').toLowerCase().includes(q));
+    officerFullName(u).toLowerCase().includes(q) || String(u['ตำแหน่ง'] || '').toLowerCase().includes(q))
+    .slice().sort(comparePoliceOfficers);
   el.innerHTML = `
     <div class="section-title">
       รายชื่อข้าราชการตำรวจในสังกัด <small>${shown.length} / ${state.users.length} คน</small>
@@ -6273,7 +6278,7 @@ function printOfficerPortfolio(u, holdings) {
 }
 
    function printAllOfficers() {
-  const users = state.users || [];
+  const users = (state.users || []).slice().sort(comparePoliceOfficers);
   if (!users.length) { toast('ยังไม่มีรายชื่อให้พิมพ์'); return; }
   const orgName = (state.settings && state.settings.orgName) || ORG_NAME;
   const cell = 'border:1px solid #000; padding:5px 7px; vertical-align:top;';
@@ -8348,7 +8353,7 @@ function drawMonthlyBody() {
     officerFullName(x.u).toLowerCase().includes(q) || String(x.u['ตำแหน่ง'] || '').toLowerCase().includes(q));
   if (state.mcPending) list = list.filter(x => !x.rec);
   // ยังไม่ตรวจขึ้นก่อน, เรียงตามชื่อ
-  list.sort((a, b) => (!!a.rec - !!b.rec) || officerFullName(a.u).localeCompare(officerFullName(b.u), 'th'));
+  list.sort((a, b) => (!!a.rec - !!b.rec) || compareMonthlyOfficers(a, b));
 
   grid.innerHTML = list.length ? list.map(x => mcCardHtml(x)).join('')
     : emptyState(state.mcPending && total ? 'ตรวจครบทุกคนแล้ว 🎉' : 'ไม่มีเจ้าหน้าที่ที่ถือพัสดุอยู่');
@@ -8926,6 +8931,49 @@ function renderSettings() {
 
 
 /* =========================================================
+   [ENHANCED] ลำดับยศตำรวจ — ใช้ร่วมกันทั้งทำเนียบและตรวจประจำเดือน
+   สูง -> ต่ำ ตามลำดับชั้นยศตำรวจ
+   ========================================================= */
+const POLICE_RANK_ORDER = [
+  'พลตำรวจเอก','พลตำรวจโท','พลตำรวจตรี',
+  'พล.ต.อ.','พล.ต.ท.','พล.ต.ต.',
+  'พันตำรวจเอก','พันตำรวจโท','พันตำรวจตรี',
+  'พ.ต.อ.','พ.ต.ท.','พ.ต.ต.',
+  'ร้อยตำรวจเอก','ร้อยตำรวจโท','ร้อยตำรวจตรี',
+  'ร.ต.อ.','ร.ต.ท.','ร.ต.ต.',
+  'ดาบตำรวจ','ด.ต.',
+  'จ่าสิบตำรวจ','จ.ส.ต.',
+  'สิบตำรวจเอก','ส.ต.อ.',
+  'สิบตำรวจโท','ส.ต.ท.',
+  'สิบตำรวจตรี','ส.ต.ต.'
+];
+const POLICE_RANK_INDEX = (() => {
+  const m = {};
+  POLICE_RANK_ORDER.forEach((r, i) => { m[r] = i; });
+  return m;
+})();
+function normalizePoliceRank(rank) {
+  return String(rank || '').trim().replace(/\s+/g, ' ').replace(/\s*หญิง\s*$/u, '').trim();
+}
+function policeRankIndex(rank) {
+  const r = normalizePoliceRank(rank);
+  return Object.prototype.hasOwnProperty.call(POLICE_RANK_INDEX, r) ? POLICE_RANK_INDEX[r] : 999;
+}
+function comparePoliceOfficers(a, b) {
+  const ra = policeRankIndex(a && a['ยศ']);
+  const rb = policeRankIndex(b && b['ยศ']);
+  if (ra !== rb) return ra - rb;
+  const pc = String(a && a['ตำแหน่ง'] || '').trim().localeCompare(String(b && b['ตำแหน่ง'] || '').trim(), 'th');
+  if (pc) return pc;
+  return officerFullName(a).localeCompare(officerFullName(b), 'th');
+}
+function compareMonthlyOfficers(a, b) {
+  const ua = a && a.u ? a.u : a;
+  const ub = b && b.u ? b.u : b;
+  return comparePoliceOfficers(ua, ub);
+}
+
+/* =========================================================
    [ENHANCED] Override หน้า "ตรวจประจำเดือน"
    - ไม่ลบระบบเดิม
    - แสดงหมายเลขเครื่อง / Serial แทนรหัสครุภัณฑ์ในหน้านี้
@@ -8988,8 +9036,8 @@ function renderSettings() {
   }
 
   function mcPrintButtonHtml(){
-    return `<button type="button" class="mc-tool-btn primary" id="mcPrintReport" title="พิมพ์รายงานผลตรวจประจำเดือน">
-      ${ICONS.print}<span>พิมพ์รายงาน</span>
+    return `<button type="button" class="mc-tool-btn primary mc-print-icon" id="mcPrintReport" title="พิมพ์รายงานผลตรวจประจำเดือน" aria-label="พิมพ์รายงานผลตรวจประจำเดือน">
+      ${ICONS.print}
     </button>`;
   }
 
@@ -9379,7 +9427,7 @@ function renderSettings() {
       return name.includes(q)||pos.includes(q)||serials.includes(q);
     });
     if(state.mcPending) list=list.filter(x=>!x.rec);
-    list.sort((a,b)=>(!!a.rec-!!b.rec)||officerFullName(a.u).localeCompare(officerFullName(b.u),'th'));
+    list.sort((a,b)=>(!!a.rec-!!b.rec)||compareMonthlyOfficers(a,b));
 
     const mode=mcViewMode();
     grid.className='mc-grid mc-grid-'+(mode==='list'?'list':'cards');
