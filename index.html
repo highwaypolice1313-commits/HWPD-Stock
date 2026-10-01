@@ -3169,6 +3169,73 @@ html{scroll-behavior:smooth;}
   .mc-tool-btn.mc-print-icon svg{width:18px;height:18px;}
 }
 
+
+/* ===== [FIX] ตรวจประจำเดือน — desktop layout =====
+@media (min-width:900px){
+  #view-monthly > *{
+    width:100%;
+    max-width:none;
+  }
+  #view-monthly .mc-toolbar,
+  #view-monthly .mc-summary,
+  #view-monthly .mc-progress-card,
+  #view-monthly .search-row,
+  #view-monthly .mc-grid,
+  #view-monthly .mc-hidden-hint{
+    width:100%;
+    max-width:none;
+  }
+
+  /* มุมมองรายการ: 3 ส่วนชัดเจน ไม่บีบข้อมูล และใช้พื้นที่จอเต็ม */
+  .mc-grid.mc-grid-list .mc-card{
+    grid-template-columns:minmax(260px,.95fr) minmax(360px,1.35fr) minmax(300px,.95fr);
+    gap:16px;
+    padding:16px 18px;
+    align-items:center;
+  }
+  .mc-grid.mc-grid-list .mc-actions{
+    grid-column:auto;
+    min-width:0;
+    width:100%;
+  }
+  .mc-grid.mc-grid-list .mc-note,
+  .mc-grid.mc-grid-list .mc-meta{
+    grid-column:1 / -1;
+  }
+
+  /* มุมมองการ์ด: ใช้พื้นที่กว้างขึ้น อ่านง่ายบนจอคอม */
+  .mc-grid.mc-grid-cards{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:16px;
+  }
+  .mc-grid.mc-grid-cards .mc-card{
+    min-width:0;
+  }
+}
+
+@media (min-width:900px) and (max-width:1250px){
+  .mc-grid.mc-grid-list .mc-card{
+    grid-template-columns:minmax(220px,1fr) minmax(280px,1.15fr);
+  }
+  .mc-grid.mc-grid-list .mc-actions{
+    grid-column:2;
+  }
+  .mc-grid.mc-grid-list .mc-note,
+  .mc-grid.mc-grid-list .mc-meta{
+    grid-column:1 / -1;
+  }
+  .mc-grid.mc-grid-cards{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+
+@media (min-width:900px){
+  .mc-name{font-size:15px;}
+  .mc-pos{font-size:12px;}
+  .mc-hold{font-size:13px;}
+  .mc-actions .mc-btn{min-height:48px;}
+}
+
 /* Print preview / report */
 .mc-print-only{display:none;}
 @media print{
