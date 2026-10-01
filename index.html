@@ -3588,9 +3588,68 @@ html{scroll-behavior:smooth;}
   #view-monthly .mc-grid.mc-grid-list .mc-btn-sub{display:none;}
 }
 @media (max-width:430px){
+  /* ชื่อใน Tinder card: ให้พื้นที่ข้อความเต็มและเผื่อระยะสระ/วรรณยุกต์ไทย */
+  #view-monthly .mc-swipe-stage .mc-grid-person > div:not(.mc-grid-avatar){
+    min-width:0 !important;
+    flex:1 1 auto !important;
+  }
+  #view-monthly .mc-swipe-stage .mc-name{
+    display:block !important;
+    max-width:none !important;
+    width:100% !important;
+    white-space:normal !important;
+    overflow:visible !important;
+    text-overflow:clip !important;
+    word-break:normal !important;
+    overflow-wrap:break-word !important;
+    line-height:1.8 !important;
+    padding-top:2px;
+    padding-bottom:3px;
+  }
+
+  /* ช่องเลือกรายชื่อ: ให้ชื่อมีความกว้างเต็มบรรทัด ไม่ถูกบีบระหว่างปุ่ม */
+  #view-monthly .mc-swipe-nav{
+    display:grid !important;
+    grid-template-columns:42px minmax(0,1fr) 42px !important;
+    grid-template-rows:auto auto !important;
+    align-items:center !important;
+    gap:7px !important;
+    width:100% !important;
+    max-width:none !important;
+  }
+  #view-monthly .mc-swipe-nav .mc-swipe-select{
+    grid-column:1 / -1 !important;
+    grid-row:1 !important;
+    width:100% !important;
+    min-width:0 !important;
+    height:44px !important;
+    font-size:13px !important;
+    line-height:1.45 !important;
+    padding:6px 34px 6px 12px !important;
+    text-overflow:clip !important;
+    white-space:nowrap !important;
+  }
+  #view-monthly .mc-swipe-nav .mc-swipe-nav-btn{
+    grid-row:2 !important;
+    width:42px !important;
+    height:40px !important;
+    min-width:42px !important;
+  }
+  #view-monthly .mc-swipe-nav #mcSwipePrev{grid-column:1 !important;}
+  #view-monthly .mc-swipe-nav #mcSwipeNext{grid-column:3 !important;}
+  #view-monthly .mc-swipe-nav .mc-swipe-count{
+    grid-column:2 !important;
+    grid-row:2 !important;
+    width:100% !important;
+    min-width:0 !important;
+    font-size:10px !important;
+    text-align:center !important;
+  }
+
+  /* existing small-screen rules continue below */
   #view-monthly .mc-swipe-nav{
     display:grid;
-    grid-template-columns:38px minmax(0,1fr) 38px;
+    grid-template-columns:42px minmax(0,1fr) 42px;
     align-items:center;
     gap:6px;
     width:100%;
@@ -3630,7 +3689,7 @@ html{scroll-behavior:smooth;}
     overflow-wrap:anywhere;
   }
 
-  #view-monthly .mc-swipe-nav .mc-swipe-select{height:40px;font-size:12px;padding-left:9px;padding-right:24px;}
+  #view-monthly .mc-swipe-nav .mc-swipe-select{height:44px;font-size:13px;padding-left:12px;padding-right:34px;}
   #view-monthly .mc-swipe-nav .mc-swipe-nav-btn{width:38px;height:38px;min-width:38px;border-radius:11px;}
   #view-monthly .mc-swipe-nav .mc-swipe-count{font-size:9px;min-width:46px;}
   #view-monthly .mc-swipe-stage .mc-card-grid{padding:14px;border-radius:18px;}
@@ -10217,14 +10276,14 @@ function compareMonthlyOfficers(a, b) {
             transform:rotate(90deg);
           }
            .mcr-mobile-page-inner .mcr{
-            width:276mm;
-            max-width:276mm;
+            width:272mm;
+            max-width:272mm;
             min-width:0;
             margin:0;
           }
           .mcr-mobile-page-inner table{
-            width:276mm;
-            max-width:276mm;
+            width:272mm;
+            max-width:272mm;
             min-width:0;
             table-layout:fixed;
           }
