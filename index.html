@@ -3450,6 +3450,61 @@ html{scroll-behavior:smooth;}
   #view-monthly .mc-grid.mc-grid-cards .mc-card-grid{padding:14px;}
 }
 
+
+
+/* ===== MONTHLY V2 — LIST keeps current card design / GRID becomes Tinder review ===== */
+#view-monthly .mc-swipe-nav{display:none;}
+#view-monthly .mc-swipe-stage{display:none;}
+#view-monthly .mc-swipe-card{touch-action:pan-y;user-select:none;cursor:grab;position:relative;overflow:hidden;}
+#view-monthly .mc-swipe-card.dragging{cursor:grabbing;transition:none !important;}
+#view-monthly .mc-swipe-hint{display:flex;align-items:center;justify-content:center;gap:18px;margin:8px 0 0;font-size:11px;color:var(--muted);}
+#view-monthly .mc-swipe-hint .left{color:#b4233b;font-weight:700;}
+#view-monthly .mc-swipe-hint .right{color:#13764b;font-weight:700;}
+#view-monthly .mc-swipe-overlay{position:absolute;top:18px;padding:7px 12px;border:2px solid currentColor;border-radius:10px;font-size:15px;font-weight:800;letter-spacing:.2px;opacity:0;pointer-events:none;z-index:5;background:var(--panel);}
+#view-monthly .mc-swipe-overlay.left{left:18px;color:#b4233b;transform:rotate(-8deg);}
+#view-monthly .mc-swipe-overlay.right{right:18px;color:#13764b;transform:rotate(8deg);}
+#view-monthly .mc-swipe-stage .mc-card-grid{width:100%;max-width:760px;margin:0 auto;}
+#view-monthly .mc-swipe-stage .mc-grid-hold{max-height:42vh;overflow:auto;}
+#view-monthly .mc-swipe-stage .mc-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+#view-monthly .mc-swipe-stage .mc-btn{min-height:52px;border-radius:13px;}
+#view-monthly .mc-swipe-nav{align-items:center;justify-content:center;gap:8px;margin:10px auto 8px;max-width:760px;}
+#view-monthly .mc-swipe-nav .mc-swipe-select{min-width:0;flex:1 1 auto;}
+#view-monthly .mc-swipe-nav .mc-swipe-nav-btn{width:42px;height:40px;min-width:42px;padding:0;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;}
+#view-monthly .mc-swipe-nav .mc-swipe-count{font-size:10px;color:var(--muted);white-space:nowrap;min-width:58px;text-align:center;}
+#view-monthly .mc-swipe-empty{max-width:760px;margin:0 auto;}
+
+/* LIST = the current polished card layout */
+#view-monthly .mc-grid.mc-grid-list .mc-card-list{border-radius:17px;}
+
+/* GRID/TINDER = one person at a time */
+@media (min-width:900px){
+  #view-monthly .mc-grid.mc-grid-cards{display:block;}
+  #view-monthly .mc-grid.mc-grid-cards .mc-card-grid{min-height:520px;max-width:760px;margin:0 auto;padding:24px;border-radius:22px;box-shadow:var(--shadow-md,0 14px 40px rgba(0,0,0,.12));}
+  #view-monthly .mc-swipe-stage{display:block;}
+  #view-monthly .mc-swipe-stage .mc-grid-hold{max-height:48vh;}
+}
+
+@media (max-width:899px){
+  #view-monthly .mc-swipe-nav{display:flex;}
+  #view-monthly .mc-swipe-stage{display:block;}
+  #view-monthly .mc-swipe-stage .mc-card-grid{min-height:calc(100vh - 350px);max-height:none;padding:16px;border-radius:20px;}
+  #view-monthly .mc-swipe-stage .mc-grid-hold{max-height:38vh;}
+  #view-monthly .mc-swipe-stage .mc-grid-person{padding-top:2px;}
+  #view-monthly .mc-swipe-hint{font-size:10px;margin-top:7px;}
+}
+
+@media (max-width:430px){
+  #view-monthly .mc-swipe-nav{gap:6px;margin:8px auto 7px;}
+  #view-monthly .mc-swipe-nav .mc-swipe-select{height:40px;font-size:12px;padding-left:9px;padding-right:24px;}
+  #view-monthly .mc-swipe-nav .mc-swipe-nav-btn{width:38px;height:38px;min-width:38px;border-radius:11px;}
+  #view-monthly .mc-swipe-nav .mc-swipe-count{font-size:9px;min-width:48px;}
+  #view-monthly .mc-swipe-stage .mc-card-grid{min-height:0;padding:13px;border-radius:18px;}
+  #view-monthly .mc-swipe-stage .mc-grid-hold{max-height:43vh;padding:10px !important;}
+  #view-monthly .mc-swipe-stage .mc-actions{gap:7px;}
+  #view-monthly .mc-swipe-stage .mc-btn{min-height:46px;font-size:11px;}
+  #view-monthly .mc-swipe-overlay{top:13px;font-size:13px;padding:6px 10px;}
+}
+
 </style>
 </head>
 <body>
@@ -9270,6 +9325,10 @@ function compareMonthlyOfficers(a, b) {
 (function installEnhancedMonthlyPage(){
   const MC_VIEW_KEY = 'hpMonthlyCheckViewV2';
   let mcViewModeState = 'grid';
+  let mcSwipeKey = '';
+  let mcSwipeStartX = 0;
+  let mcSwipeStartY = 0;
+  let mcSwipeDx = 0;
   try {
     const saved = localStorage.getItem(MC_VIEW_KEY);
     if (saved === 'list' || saved === 'grid') mcViewModeState = saved;
@@ -9343,6 +9402,121 @@ function compareMonthlyOfficers(a, b) {
     if (!rec) return `<span class="mc-status pending">● ยังไม่ตรวจ</span>`;
     if (rec['ผล'] === 'มีปัญหา') return `<span class="mc-status bad">● มีปัญหา</span>`;
     return `<span class="mc-status ok">● ครบ</span>`;
+  }
+
+  function mcMonthlyVisibleList(){
+    const all=(state.users||[]).map(u=>({u,sum:mcSummary(u),rec:mcRecordFor(u)}));
+    const visible=all.filter(x=>x.sum.hold.length>0||x.rec);
+    const q=(state.mcSearch||'').trim().toLowerCase();
+    let list=visible.filter(x=>{
+      if(!q) return true;
+      const name=officerFullName(x.u).toLowerCase();
+      const pos=String(x.u['ตำแหน่ง']||'').toLowerCase();
+      const serials=mcSerialsFor(x.u).map(s=>s.serial.toLowerCase()).join(' ');
+      return name.includes(q)||pos.includes(q)||serials.includes(q);
+    });
+    if(state.mcPending) list=list.filter(x=>!x.rec);
+    list.sort((a,b)=>(!!a.rec-!!b.rec)||compareMonthlyOfficers(a,b));
+    return list;
+  }
+
+  function mcSwipeSelectHtml(list){
+    if(!list.length) return '';
+    let idx=list.findIndex(x=>mcKey(x.u)===mcSwipeKey);
+    if(idx<0) idx=0;
+    mcSwipeKey=mcKey(list[idx].u);
+    return `<div class="mc-swipe-nav" id="mcSwipeNav">
+      <button type="button" class="btn btn-secondary mc-swipe-nav-btn" id="mcSwipePrev" title="คนก่อนหน้า" aria-label="คนก่อนหน้า">‹</button>
+      <select class="input mc-swipe-select" id="mcSwipeSelect" aria-label="เลือกผู้ตรวจ">
+        ${list.map((x,i)=>`<option value="${escapeHtml(mcKey(x.u))}" ${i===idx?'selected':''}>${escapeHtml(officerFullName(x.u))} · ${escapeHtml(x.u['ตำแหน่ง']||'-')}</option>`).join('')}
+      </select>
+      <div class="mc-swipe-count" id="mcSwipeCount">${idx+1} / ${list.length}</div>
+      <button type="button" class="btn btn-secondary mc-swipe-nav-btn" id="mcSwipeNext" title="คนถัดไป" aria-label="คนถัดไป">›</button>
+    </div>`;
+  }
+
+  function mcSwipeCardHtml(item){
+    if(!item) return `<div class="hint mc-swipe-empty">ไม่มีผู้ที่ตรงกับเงื่อนไข</div>`;
+    const base=mcCardHtmlEnhanced(item);
+    return `<div class="mc-swipe-stage" id="mcSwipeStage">
+      <div class="mc-swipe-card-wrap">
+        <div class="mc-swipe-overlay left" id="mcSwipeLeftLabel">มีปัญหา</div>
+        <div class="mc-swipe-overlay right" id="mcSwipeRightLabel">ครบ</div>
+        <div id="mcSwipeCard" class="mc-swipe-card">${base}</div>
+      </div>
+      <div class="mc-swipe-hint"><span class="left">← ปัดซ้าย = มีปัญหา</span><span class="right">ปัดขวา = ครบ →</span></div>
+    </div>`;
+  }
+
+  function mcSwipeMoveTo(delta, list){
+    if(!list.length) return;
+    let idx=list.findIndex(x=>mcKey(x.u)===mcSwipeKey);
+    if(idx<0) idx=0;
+    idx=(idx+delta+list.length)%list.length;
+    mcSwipeKey=mcKey(list[idx].u);
+    drawMonthlyBodyEnhanced();
+  }
+
+  async function mcSwipeCommit(result, item){
+    if(!item) return;
+    // Tinder workflow: ปัดขวา = ครบ, ปัดซ้าย = มีปัญหา
+    // กรณีมีปัญหาให้ใช้หน้ากรอกรายละเอียดเดิม เพื่อไม่ทิ้งข้อมูลสาเหตุ
+    if(result === 'มีปัญหา'){
+      mcProblemSheet(item.u);
+      return;
+    }
+    await mcSave(item.u, 'ครบ', '');
+    const list=mcMonthlyVisibleList();
+    const idx=list.findIndex(x=>mcKey(x.u)===mcKey(item.u));
+    if(idx>=0 && list.length>1) mcSwipeKey=mcKey(list[(idx+1)%list.length].u);
+    drawMonthlyBodyEnhanced();
+  }
+
+  function bindMcSwipeGestures(list, item){
+    const card=document.getElementById('mcSwipeCard');
+    if(!card || !item) return;
+    const left=document.getElementById('mcSwipeLeftLabel');
+    const right=document.getElementById('mcSwipeRightLabel');
+    const reset=()=>{
+      card.style.transform='';
+      card.style.transition='';
+      if(left) left.style.opacity='0';
+      if(right) right.style.opacity='0';
+    };
+    const finish=(dx)=>{
+      if(Math.abs(dx)<90){ reset(); return; }
+      const dir=dx>0?1:-1;
+      card.style.transition='transform .22s ease, opacity .22s ease';
+      card.style.transform=`translateX(${dir*110}%) rotate(${dir*7}deg)`;
+      card.style.opacity='0';
+      setTimeout(()=>{
+        reset();
+        // ปัดเป็นการเลือกผลตรวจ แล้วเปิด checklist เดิมเพื่อยืนยัน/ตรวจรายชิ้น
+        mcSwipeCommit(dir>0?'ครบ':'มีปัญหา', item);
+      },180);
+    };
+    card.onpointerdown=e=>{
+      mcSwipeStartX=e.clientX; mcSwipeStartY=e.clientY; mcSwipeDx=0;
+      card.classList.add('dragging');
+      try{ card.setPointerCapture(e.pointerId); }catch(err){}
+    };
+    card.onpointermove=e=>{
+      if(!card.classList.contains('dragging')) return;
+      const dx=e.clientX-mcSwipeStartX, dy=e.clientY-mcSwipeStartY;
+      if(Math.abs(dx)<Math.abs(dy) && Math.abs(dy)>12) return;
+      mcSwipeDx=dx;
+      const rot=Math.max(-7,Math.min(7,dx/28));
+      card.style.transform=`translateX(${dx}px) rotate(${rot}deg)`;
+      const p=Math.min(1,Math.abs(dx)/120);
+      if(left) left.style.opacity=dx<0?p:0;
+      if(right) right.style.opacity=dx>0?p:0;
+    };
+    card.onpointerup=e=>{
+      card.classList.remove('dragging');
+      finish(mcSwipeDx);
+    };
+    card.onpointercancel=()=>{ card.classList.remove('dragging'); reset(); };
+    card.ondblclick=()=>mcChecklistSheetEnhanced(item.u);
   }
 
   function mcCardHtmlEnhanced({u,sum,rec}){
@@ -9738,6 +9912,7 @@ function compareMonthlyOfficers(a, b) {
           <div class="chip ${state.mcPending?'active':''}" id="mcPendingChip">เฉพาะที่ยังไม่ตรวจ</div>
         </div>
         <div class="hint" id="mcHiddenHint" style="margin:0 0 10px;"></div>
+        <div id="mcSwipeNavWrap"></div>
         <div class="mc-grid mc-grid-${mcViewMode()==='list'?'list':'cards'}" id="mcGrid"></div>
       `;
 
@@ -9810,19 +9985,41 @@ function compareMonthlyOfficers(a, b) {
       ? `ซ่อน ${hiddenCount} คนที่ไม่มีพัสดุในความครอบครองและยังไม่มีผลตรวจ`
       : '';
 
-    const q=(state.mcSearch||'').trim().toLowerCase();
-    let list=visible.filter(x=>{
-      if(!q) return true;
-      const name=officerFullName(x.u).toLowerCase();
-      const pos=String(x.u['ตำแหน่ง']||'').toLowerCase();
-      const serials=mcSerialsFor(x.u).map(s=>s.serial.toLowerCase()).join(' ');
-      return name.includes(q)||pos.includes(q)||serials.includes(q);
-    });
-    if(state.mcPending) list=list.filter(x=>!x.rec);
-    list.sort((a,b)=>(!!a.rec-!!b.rec)||compareMonthlyOfficers(a,b));
-
+    const list=mcMonthlyVisibleList();
     const mode=mcViewMode();
     grid.className='mc-grid mc-grid-'+(mode==='list'?'list':'cards');
+
+    const navWrap=document.getElementById('mcSwipeNavWrap');
+    if(mode==='grid'){
+      if(!list.some(x=>mcKey(x.u)===mcSwipeKey)) mcSwipeKey=list.length?mcKey(list[0].u):'';
+      const idx=list.findIndex(x=>mcKey(x.u)===mcSwipeKey);
+      const item=idx>=0?list[idx]:null;
+      if(navWrap) navWrap.innerHTML=mcSwipeSelectHtml(list);
+      grid.innerHTML=item ? mcSwipeCardHtml(item) : `<div class="hint mc-swipe-empty">ไม่มีผู้ที่ตรงกับเงื่อนไข</div>`;
+
+      const select=document.getElementById('mcSwipeSelect');
+      if(select) select.onchange=()=>{mcSwipeKey=select.value;drawMonthlyBodyEnhanced();};
+      const prev=document.getElementById('mcSwipePrev');
+      const next=document.getElementById('mcSwipeNext');
+      if(prev) prev.onclick=()=>mcSwipeMoveTo(-1,list);
+      if(next) next.onclick=()=>mcSwipeMoveTo(1,list);
+
+      if(item){
+        const card=document.getElementById('mcSwipeCard');
+        const inner=card ? card.querySelector('.mc-card') : null;
+        if(inner){
+          const u=item.u;
+          inner.onclick=e=>{ if(e.target.closest('.mc-btn,.mc-clear')) return; mcChecklistSheetEnhanced(u); };
+          const ok=inner.querySelector('.mc-ok'); if(ok) ok.onclick=()=>mcChecklistSheetEnhanced(u);
+          const badBtn=inner.querySelector('.mc-bad'); if(badBtn) badBtn.onclick=()=>mcChecklistSheetEnhanced(u);
+          const clr=inner.querySelector('.mc-clear'); if(clr) clr.onclick=()=>mcClear(u);
+        }
+        bindMcSwipeGestures(list,item);
+      }
+      return;
+    }
+
+    if(navWrap) navWrap.innerHTML='';
     grid.innerHTML=list.length
       ? list.map(x=>mcCardHtmlEnhanced(x)).join('')
       : emptyState(state.mcPending&&total?'ตรวจครบทุกคนแล้ว 🎉':'ไม่มีเจ้าหน้าที่ที่ตรงกับเงื่อนไข');
@@ -9834,12 +10031,14 @@ function compareMonthlyOfficers(a, b) {
         if(e.target.closest('.mc-btn,.mc-clear')) return;
         mcChecklistSheetEnhanced(u);
       };
-      card.querySelector('.mc-ok').onclick=()=>mcChecklistSheetEnhanced(u);
-      card.querySelector('.mc-bad').onclick=()=>mcChecklistSheetEnhanced(u);
-      const clr=card.querySelector('.mc-clear');
-      if(clr) clr.onclick=()=>mcClear(u);
+      const ok=card.querySelector('.mc-ok'); if(ok) ok.onclick=()=>mcChecklistSheetEnhanced(u);
+      const badBtn=card.querySelector('.mc-bad'); if(badBtn) badBtn.onclick=()=>mcChecklistSheetEnhanced(u);
+      const clr=card.querySelector('.mc-clear'); if(clr) clr.onclick=()=>mcClear(u);
     });
   }
+
+  // ให้การบันทึกผลจากฟังก์ชันเดิมรีเฟรชหน้ารูปแบบใหม่ด้วย
+  try { drawMonthlyBody = drawMonthlyBodyEnhanced; } catch(e) {}
 
   // Override เฉพาะฟังก์ชันหน้าเดือน — ฟังก์ชันเดิมทั้งหมดด้านอื่นยังอยู่ครบ
   window.renderMonthly = renderMonthlyEnhanced;
