@@ -3171,288 +3171,169 @@ html{scroll-behavior:smooth;}
 
 
 
-/* ===== [FIX 2] ตรวจประจำเดือน — List / Grid คนละโครงสร้าง ===== */
-.mc-card-list{box-sizing:border-box;}
-.mc-card-grid{box-sizing:border-box;}
-.mc-list-person,.mc-list-assets,.mc-list-actions{min-width:0;}
-.mc-list-person{display:flex;align-items:center;gap:12px;}
-.mc-list-person-info{min-width:0;flex:1;}
-.mc-list-assets{padding:12px 14px;border:1px solid var(--panel-line);border-radius:14px;background:var(--panel-soft);}
-.mc-list-summary{font-size:12px;font-weight:600;margin:5px 0;color:var(--ink);}
-.mc-list-actions{min-width:220px;}
-.mc-grid-person{display:flex;align-items:center;gap:10px;min-width:0;}
-.mc-grid-avatar{display:flex;align-items:center;justify-content:center;}
-.mc-grid-divider{height:1px;background:var(--panel-line);margin:12px 0;}
-.mc-grid-hold{margin:0 !important;}
-.mc-grid-hold-summary{font-size:12px;font-weight:600;margin:5px 0;}
-.mc-card-grid .mc-actions{margin-top:12px;}
+/* ===== FINAL MONTHLY LAYOUT — clean, stable, responsive ===== */
+#view-monthly .mc-card-list,
+#view-monthly .mc-card-grid{box-sizing:border-box;min-width:0;}
 
-@media (min-width:900px){
-  #view-monthly .mc-card-list{
-    display:grid;
-    grid-template-columns:minmax(250px,.85fr) minmax(360px,1.45fr) minmax(250px,.8fr);
-    align-items:center;gap:16px;padding:16px 18px;
-  }
-  #view-monthly .mc-card-list .mc-note,
-  #view-monthly .mc-card-list .mc-meta{grid-column:1 / -1;}
-  #view-monthly .mc-card-grid{display:flex;flex-direction:column;min-height:260px;padding:18px;}
+/* shared structure */
+#view-monthly .mc-list-person,
+#view-monthly .mc-list-assets,
+#view-monthly .mc-list-actions,
+#view-monthly .mc-grid-person{min-width:0;}
+#view-monthly .mc-list-person{display:flex;align-items:center;gap:12px;}
+#view-monthly .mc-list-person-info{min-width:0;flex:1;}
+#view-monthly .mc-list-assets{
+  padding:12px 14px;border:1px solid var(--panel-line);border-radius:14px;
+  background:var(--panel-soft);min-width:0;
 }
+#view-monthly .mc-list-summary,
+#view-monthly .mc-grid-hold-summary{font-size:12px;font-weight:600;margin:5px 0;color:var(--ink);}
+#view-monthly .mc-list-actions{min-width:0;}
+#view-monthly .mc-grid-person{display:flex;align-items:center;gap:10px;}
+#view-monthly .mc-grid-avatar{display:flex;align-items:center;justify-content:center;flex:none;}
+#view-monthly .mc-grid-divider{height:1px;background:var(--panel-line);margin:12px 0;}
+#view-monthly .mc-grid-hold{margin:0 !important;}
+#view-monthly .mc-card-grid .mc-actions{margin-top:12px;}
 
-@media (max-width:760px){
-  /* LIST = compact horizontal work-row */
-  #view-monthly .mc-grid.mc-grid-list{display:flex;flex-direction:column;gap:8px;}
-  #view-monthly .mc-grid.mc-grid-list .mc-card-list{
-    display:grid !important;
-    grid-template-columns:44% 56%;
-    grid-template-areas:
-      "person assets"
-      "person actions"
-      "meta meta";
-    gap:8px;
-    align-items:start;
-    padding:10px;
-    border-radius:11px;
-  }
-  #view-monthly .mc-card-list .mc-list-person{grid-area:person;align-items:flex-start;}
-  #view-monthly .mc-card-list .mc-list-person .mc-avatar,
-  #view-monthly .mc-card-list .mc-list-person .mc-avatar-ph{width:34px;height:34px;min-width:34px;}
-  #view-monthly .mc-card-list .mc-list-assets{grid-area:assets;padding:8px 9px;border-radius:9px;}
-  #view-monthly .mc-card-list .mc-list-actions{grid-area:actions;min-width:0;}
-  #view-monthly .mc-card-list .mc-actions{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
-  #view-monthly .mc-card-list .mc-btn{min-height:36px;padding:4px 3px;font-size:10px;border-radius:8px;}
-  #view-monthly .mc-card-list .mc-btn-sub{display:none;}
-  #view-monthly .mc-card-list .mc-note,
-  #view-monthly .mc-card-list .mc-meta{grid-area:meta;width:100%;}
-
-  /* GRID = true vertical card */
-  #view-monthly .mc-grid.mc-grid-cards{display:grid;grid-template-columns:1fr;gap:12px;}
-  #view-monthly .mc-grid.mc-grid-cards .mc-card-grid{
-    display:flex !important;
-    flex-direction:column;
-    align-items:stretch;
-    min-height:0;
-    padding:15px;
-    border-radius:17px;
-    box-shadow:var(--shadow-sm);
-  }
-  #view-monthly .mc-card-grid .mc-grid-person{padding:2px 0 3px;}
-  #view-monthly .mc-card-grid .mc-grid-divider{margin:11px 0;}
-  #view-monthly .mc-card-grid .mc-grid-hold{padding:12px !important;border-radius:12px;}
-  #view-monthly .mc-card-grid .mc-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:12px;}
-  #view-monthly .mc-card-grid .mc-btn{min-height:46px;border-radius:11px;}
-  #view-monthly .mc-card-grid .mc-btn-sub{display:block;}
-}
-
-@media (max-width:430px){
-  #view-monthly .mc-grid.mc-grid-list .mc-card-list{
-    grid-template-columns:1fr;
-    grid-template-areas:"person" "assets" "actions" "meta";
-  }
-  #view-monthly .mc-card-list .mc-list-actions{width:100%;}
-}
-
-/* ===== [FIX] ตรวจประจำเดือน — desktop layout ===== */
+/* desktop: List = wide working row */
 @media (min-width:900px){
   #view-monthly > *{
-    width:100%;
-    max-width:none;
+    width:100%;max-width:none;margin-left:0;margin-right:0;box-sizing:border-box;
   }
-  #view-monthly .mc-toolbar,
-  #view-monthly .mc-summary,
+  #view-monthly .mc-toolbar{width:100%;margin-bottom:12px;}
+  #view-monthly .mc-summary{width:100%;grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:12px;}
   #view-monthly .mc-progress-card,
   #view-monthly .search-row,
-  #view-monthly .mc-grid,
-  #view-monthly .mc-hidden-hint{
-    width:100%;
-    max-width:none;
-  }
+  #view-monthly #mcHiddenHint{width:100%;}
 
-  .mc-grid.mc-grid-list .mc-card{
-    grid-template-columns:minmax(260px,.95fr) minmax(360px,1.35fr) minmax(300px,.95fr);
-    gap:16px;
-    padding:16px 18px;
+  #view-monthly .mc-grid.mc-grid-list{
+    display:flex;flex-direction:column;gap:10px;
+  }
+  #view-monthly .mc-grid.mc-grid-list .mc-card-list{
+    display:grid;
+    grid-template-columns:minmax(240px,.9fr) minmax(360px,1.45fr) minmax(260px,.9fr);
+    grid-template-areas:"person assets actions" "meta meta meta";
     align-items:center;
+    gap:14px 18px;
+    padding:16px 18px;
   }
-  .mc-grid.mc-grid-list .mc-actions{
-    grid-column:auto;
-    min-width:0;
-    width:100%;
-  }
-  .mc-grid.mc-grid-list .mc-note,
-  .mc-grid.mc-grid-list .mc-meta{
-    grid-column:1 / -1;
-  }
+  #view-monthly .mc-grid.mc-grid-list .mc-list-person{grid-area:person;}
+  #view-monthly .mc-grid.mc-grid-list .mc-list-assets{grid-area:assets;}
+  #view-monthly .mc-grid.mc-grid-list .mc-list-actions{grid-area:actions;width:100%;}
+  #view-monthly .mc-grid.mc-grid-list .mc-note,
+  #view-monthly .mc-grid.mc-grid-list .mc-meta{grid-area:meta;width:100%;}
 
-  .mc-grid.mc-grid-cards{
-    grid-template-columns:repeat(3,minmax(0,1fr));
-    gap:16px;
+  #view-monthly .mc-grid.mc-grid-cards{
+    display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;
   }
-  .mc-grid.mc-grid-cards .mc-card{
-    min-width:0;
+  #view-monthly .mc-grid.mc-grid-cards .mc-card-grid{
+    display:flex;flex-direction:column;align-items:stretch;min-width:0;
+    padding:18px;
   }
 }
 
 @media (min-width:900px) and (max-width:1250px){
-  .mc-grid.mc-grid-list .mc-card{
-    grid-template-columns:minmax(220px,1fr) minmax(280px,1.15fr);
+  #view-monthly .mc-grid.mc-grid-list .mc-card-list{
+    grid-template-columns:minmax(210px,.9fr) minmax(300px,1.2fr) minmax(230px,.9fr);
   }
-  .mc-grid.mc-grid-list .mc-actions{
-    grid-column:2;
-  }
-  .mc-grid.mc-grid-list .mc-note,
-  .mc-grid.mc-grid-list .mc-meta{
-    grid-column:1 / -1;
-  }
-  .mc-grid.mc-grid-cards{
-    grid-template-columns:repeat(2,minmax(0,1fr));
-  }
+  #view-monthly .mc-grid.mc-grid-cards{grid-template-columns:repeat(2,minmax(0,1fr));}
 }
 
-@media (min-width:900px){
-  .mc-name{font-size:15px;}
-  .mc-pos{font-size:12px;}
-  .mc-hold{font-size:13px;}
-  .mc-actions .mc-btn{min-height:48px;}
-}
+/* toolbar desktop/mobile alignment */
+#view-monthly .mc-toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;}
+#view-monthly .mc-toolbar-left{min-width:0;}
+#view-monthly .mc-toolbar-right{display:flex;align-items:center;justify-content:flex-end;flex:0 0 auto;}
+#view-monthly .mc-tool-group{display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;}
+#view-monthly .mc-view-toggle{display:inline-flex;flex:0 0 auto;}
+#view-monthly .mc-print-icon{width:42px;height:40px;min-width:42px;padding:0;display:inline-flex;align-items:center;justify-content:center;}
 
-/* Print preview / report */
-.mc-print-only{display:none;}
-@media print{
-  .mc-print-only{display:block;}
-}
-
-
-/* ===== [FINAL] ตรวจประจำเดือน — top area alignment ===== */
-#view-monthly > *{
-  width:100% !important;
-  max-width:none !important;
-  margin-left:0 !important;
-  margin-right:0 !important;
-  box-sizing:border-box;
-}
-#view-monthly > .section-title{
-  margin-top:0 !important;
-  margin-bottom:16px !important;
-}
-#view-monthly .mc-toolbar{
-  width:100%;
-  min-height:54px;
-  margin:0 0 12px;
-  padding:0;
-  align-items:center;
-}
-#view-monthly .mc-toolbar-left{flex:1 1 auto;min-width:0;}
-#view-monthly .mc-toolbar-right{flex:0 0 auto;}
-#view-monthly .mc-period{padding:5px;border-radius:14px;}
-#view-monthly .mc-period .input{min-height:40px;}
-#view-monthly .mc-summary{
-  grid-template-columns:repeat(4,minmax(0,1fr));
-  width:100%;
-  margin-bottom:12px;
-}
-#view-monthly .mc-summary-card{min-width:0;}
-#view-monthly .mc-progress-card{width:100%;margin-bottom:12px;}
-#view-monthly .search-row{
-  width:100%;
-  display:flex;
-  align-items:center;
-  gap:10px;
-  margin:0 0 6px !important;
-}
-#view-monthly .search-row .mc-search-wrap{flex:1 1 auto;min-width:0;}
-#view-monthly .search-row #mcPendingChip{flex:0 0 auto;white-space:nowrap;}
-#view-monthly #mcHiddenHint{
-  width:100%;
-  margin:0 0 10px !important;
-}
-@media (min-width:900px){
-  #view-monthly .mc-grid.mc-grid-list .mc-card{
-    grid-template-columns:minmax(250px,.9fr) minmax(360px,1.35fr) minmax(320px,.95fr);
-    gap:16px;
-  }
-}
-@media (max-width:900px){
+/* tablet/mobile */
+@media (max-width:899px){
+  #view-monthly > *{width:100%;max-width:none;box-sizing:border-box;}
   #view-monthly .mc-summary{grid-template-columns:repeat(2,minmax(0,1fr));}
-}
-@media (max-width:760px){
-  #view-monthly > *{max-width:none !important;}
-  #view-monthly .mc-toolbar{align-items:stretch;}
-  #view-monthly .mc-toolbar-left,#view-monthly .mc-toolbar-right{width:100%;}
-  #view-monthly .mc-toolbar-right{justify-content:flex-end;}
-  #view-monthly .search-row{flex-wrap:wrap;}
-  #view-monthly .search-row .mc-search-wrap{flex:1 1 100%;}
+  #view-monthly .mc-toolbar{gap:10px;}
+  #view-monthly .mc-toolbar-left{flex:1 1 auto;}
+  #view-monthly .mc-toolbar-right{flex:0 0 auto;}
 
-  /* มือถือ: แยก List / Card ให้เห็นต่างกันจริง */
+  /* LIST: compact two-column work row */
   #view-monthly .mc-grid.mc-grid-list{
-    display:flex;
-    flex-direction:column;
-    gap:8px;
+    display:flex;flex-direction:column;gap:9px;
   }
-  #view-monthly .mc-grid.mc-grid-list .mc-card{
+  #view-monthly .mc-grid.mc-grid-list .mc-card-list{
     display:grid !important;
-    grid-template-columns:44% 56%;
+    grid-template-columns:minmax(118px,.72fr) minmax(0,1.28fr);
     grid-template-areas:
-      "head hold"
-      "head actions"
+      "person assets"
+      "person actions"
       "meta meta";
     align-items:start;
     gap:8px 10px;
-    padding:11px 12px;
-    border-radius:12px;
+    padding:10px;
+    border-radius:13px;
   }
-  #view-monthly .mc-grid.mc-grid-list .mc-head{grid-area:head;min-width:0;}
-  #view-monthly .mc-grid.mc-grid-list .mc-hold{grid-area:hold;min-width:0;}
-  #view-monthly .mc-grid.mc-grid-list .mc-actions{
-    grid-area:actions;
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:5px;
-    width:100%;
-    min-width:0;
+  #view-monthly .mc-grid.mc-grid-list .mc-list-person{grid-area:person;align-items:flex-start;}
+  #view-monthly .mc-grid.mc-grid-list .mc-list-person .mc-avatar,
+  #view-monthly .mc-grid.mc-grid-list .mc-list-person .mc-avatar-ph{
+    width:34px;height:34px;min-width:34px;
   }
-  #view-monthly .mc-grid.mc-grid-list .mc-actions .mc-btn{
-    min-height:38px;padding:5px 4px;font-size:11px;border-radius:9px;
+  #view-monthly .mc-grid.mc-grid-list .mc-name{font-size:12px;line-height:1.35;}
+  #view-monthly .mc-grid.mc-grid-list .mc-pos{font-size:10px;white-space:normal;line-height:1.3;}
+  #view-monthly .mc-grid.mc-grid-list .mc-list-assets{
+    grid-area:assets;padding:8px 9px;border-radius:10px;
   }
-  #view-monthly .mc-grid.mc-grid-list .mc-actions .mc-btn-sub{display:none;}
+  #view-monthly .mc-grid.mc-grid-list .mc-list-summary{font-size:10.5px;line-height:1.4;}
+  #view-monthly .mc-grid.mc-grid-list .mc-list-actions{grid-area:actions;width:100%;}
+  #view-monthly .mc-grid.mc-grid-list .mc-actions{display:grid;grid-template-columns:1fr 1fr;gap:5px;width:100%;}
+  #view-monthly .mc-grid.mc-grid-list .mc-btn{min-height:38px;padding:4px 3px;font-size:10.5px;border-radius:9px;}
+  #view-monthly .mc-grid.mc-grid-list .mc-btn-sub{display:none;}
   #view-monthly .mc-grid.mc-grid-list .mc-note,
   #view-monthly .mc-grid.mc-grid-list .mc-meta{grid-area:meta;width:100%;}
 
-  /* Card = การ์ดแนวตั้งเต็มใบ */
+  /* GRID: completely different, vertical card */
   #view-monthly .mc-grid.mc-grid-cards{
-    display:grid;
-    grid-template-columns:1fr;
-    gap:10px;
+    display:grid;grid-template-columns:1fr;gap:12px;
   }
-  #view-monthly .mc-grid.mc-grid-cards .mc-card{
-    display:flex !important;
-    flex-direction:column;
-    align-items:stretch;
-    gap:10px;
-    padding:15px;
-    border-radius:16px;
+  #view-monthly .mc-grid.mc-grid-cards .mc-card-grid{
+    display:flex !important;flex-direction:column;align-items:stretch;
+    gap:10px;padding:15px;border-radius:17px;
   }
-  #view-monthly .mc-grid.mc-grid-cards .mc-hold{
-    padding:10px;
-    border-radius:12px;
-  }
-  #view-monthly .mc-grid.mc-grid-cards .mc-actions{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:7px;
-    width:100%;
-  }
-  #view-monthly .mc-grid.mc-grid-cards .mc-actions .mc-btn{min-height:44px;}
+  #view-monthly .mc-grid.mc-grid-cards .mc-grid-person{padding:0 0 2px;}
+  #view-monthly .mc-grid.mc-grid-cards .mc-grid-divider{margin:2px 0;}
+  #view-monthly .mc-grid.mc-grid-cards .mc-grid-hold{padding:11px !important;border-radius:12px;}
+  #view-monthly .mc-grid.mc-grid-cards .mc-grid-hold-summary{font-size:12px;line-height:1.45;}
+  #view-monthly .mc-grid.mc-grid-cards .mc-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;width:100%;margin-top:2px;}
+  #view-monthly .mc-grid.mc-grid-cards .mc-btn{min-height:45px;border-radius:11px;font-size:12px;}
+  #view-monthly .mc-grid.mc-grid-cards .mc-btn-sub{display:block;font-size:9px;margin-top:2px;}
+}
+
+@media (max-width:600px){
+  #view-monthly .mc-toolbar{align-items:center;}
+  #view-monthly .mc-toolbar-left{min-width:0;}
+  #view-monthly .mc-period{display:flex;gap:5px;}
+  #view-monthly .mc-period .input{min-width:0;width:auto;}
+  #view-monthly .mc-toolbar-right{margin-left:auto;}
+  #view-monthly .mc-tool-group{padding:2px;border-radius:14px;background:var(--navy-wash);border:1px solid var(--panel-line);}
+  #view-monthly .mc-view-toggle{box-shadow:none;}
+  #view-monthly .mc-print-icon{width:40px;height:38px;min-width:40px;}
+  #view-monthly .search-row{flex-wrap:wrap;}
+  #view-monthly .search-row .mc-search-wrap{flex:1 1 100%;}
 }
 
 @media (max-width:430px){
-  #view-monthly .mc-grid.mc-grid-list .mc-card{
+  #view-monthly .mc-toolbar{align-items:flex-start;}
+  #view-monthly .mc-period{width:100%;}
+  #view-monthly .mc-period .input:first-child{flex:1 1 auto;}
+  #view-monthly .mc-period .input:last-child{flex:1 1 auto;}
+
+  /* On very small phones, keep List readable but still distinct from Grid. */
+  #view-monthly .mc-grid.mc-grid-list .mc-card-list{
     grid-template-columns:1fr;
-    grid-template-areas:
-      "head"
-      "hold"
-      "actions"
-      "meta";
+    grid-template-areas:"person" "assets" "actions" "meta";
   }
+  #view-monthly .mc-grid.mc-grid-list .mc-list-actions{width:100%;}
+  #view-monthly .mc-grid.mc-grid-list .mc-list-assets{width:100%;}
+
+  #view-monthly .mc-grid.mc-grid-cards .mc-card-grid{padding:14px;}
 }
 
 </style>
