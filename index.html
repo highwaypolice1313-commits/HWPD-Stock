@@ -377,12 +377,21 @@ input[type="date"]::-webkit-date-and-time-value{ text-align:left; }
 #printArea{display:none;}
 @page{ size:A4; margin:0; }
 @media print{
-  html,body{ background:#fff !important; height:auto !important; width:auto !important; padding:0 !important; margin:0 !important; overflow:visible !important; }
-  body > *:not(#printArea){ display:none !important; }
-  #printArea{
-    display:block !important; position:static; width:210mm; margin:0; background:#fff; box-sizing:border-box;
-    padding:22mm 20mm 20mm 25mm; -webkit-print-color-adjust:exact; print-color-adjust:exact;
+  html,body{
+    background:#fff !important; height:auto !important; width:auto !important;
+    padding:0 !important; margin:0 !important; overflow:visible !important;
+    min-height:0 !important;
   }
+  /* ซ่อนทุกอย่างใต้ body ยกเว้น #printArea (และ style/script ที่ไม่แสดงผลอยู่แล้ว) */
+  body > *:not(#printArea):not(style):not(script){ display:none !important; }
+
+  #printArea{
+    display:block !important; visibility:visible !important; opacity:1 !important;
+    position:static !important; width:210mm; margin:0; background:#fff; color:#000;
+    box-sizing:border-box; padding:22mm 20mm 20mm 25mm;
+    -webkit-print-color-adjust:exact; print-color-adjust:exact;
+  }
+  #printArea *{ visibility:visible !important; }  /* กันกฎอื่นซ่อนเนื้อหาข้างใน */
   #printArea.qr-print-area{ padding:20mm; text-align:center; font-family:'Kanit',sans-serif; }
   #printArea.report-print-area{ width:100%; padding:0; }
 }
@@ -7389,6 +7398,18 @@ function renderSettings() {
 
   wireAuditCommitteeSettingsHandlers();
 }
+
+   /* ===== [แก้ไขพิมพ์เปล่า] ย้าย #printArea ให้เป็นลูกตรงของ <body> =====
+   เหตุผล: กฎพิมพ์ซ่อน "body > *" ทุกตัวที่ไม่ใช่ #printArea
+   ถ้า #printArea ซ้อนอยู่ใน #app มันจะถูกซ่อนไปด้วย -> หน้ากระดาษว่าง */
+(function movePrintAreaToBody() {
+  const pa = document.getElementById('printArea');
+  if (pa && pa.parentElement !== document.body) {
+    document.body.appendChild(pa);   // ย้ายออกจาก #app ไปไว้ท้าย body
+  }
+})();
+
+init();   // <-- ของเดิม คงไว้ตามเดิม
 
 init();
 
