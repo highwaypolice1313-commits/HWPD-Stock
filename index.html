@@ -10051,10 +10051,10 @@ function compareMonthlyOfficers(a, b) {
     pa.className = 'report-print-area';
 
     /*
-     * มือถือบางรุ่น/เบราว์เซอร์บางตัวไม่ยอมรับ orientation จาก @page
-     * และยังเปิดหน้าพิมพ์เป็น Portrait แม้รายงานจะกำหนด Landscape แล้ว
-     * จึงมี fallback เฉพาะมือถือ: หมุนกระดาษด้วย CSS ให้ตารางแนวนอน
-     * และยังคงใช้ @page A4 landscape เป็นค่าหลักสำหรับเบราว์เซอร์ที่รองรับ
+     * ใช้วิธีเดียวกับแบบ บชก.3 (ยานพาหนะ):
+     * บนมือถือให้เครื่องพิมพ์กระดาษเป็น A4 Portrait แล้วหมุน
+     * เนื้อหารายงาน 90 องศา เพื่อให้ผลลัพธ์บนกระดาษเป็นแนวนอนจริง
+     * วิธีนี้เสถียรกว่าการพึ่ง @page landscape บน mobile browser
      */
     const isMobilePrint = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
       (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent));
@@ -10062,14 +10062,18 @@ function compareMonthlyOfficers(a, b) {
       const inner = html.replace(/@page\{[^}]*\}/g, '');
       pa.innerHTML = `
         <style>
-          @page{size:A4 landscape;margin:0;}
+          @page{size:A4 portrait;margin:0;}
           @media print{
-            #printArea.report-print-area{width:297mm !important;min-width:297mm !important;max-width:297mm !important;padding:0 !important;margin:0 !important;}
-            .mcr-mobile-landscape{width:297mm;height:210mm;box-sizing:border-box;overflow:hidden;padding:10mm 11mm;}
-            .mcr-mobile-landscape .mcr{width:100%;min-width:0;}
+            html,body{margin:0 !important;padding:0 !important;}
+            #printArea.report-print-area{width:210mm !important;height:297mm !important;min-width:210mm !important;max-width:210mm !important;padding:0 !important;margin:0 !important;overflow:hidden !important;}
+            .mcr-mobile-landscape{position:relative;width:210mm;height:297mm;overflow:hidden;box-sizing:border-box;}
+            .mcr-mobile-landscape-inner{position:absolute;top:0;left:210mm;width:297mm;height:210mm;box-sizing:border-box;padding:11mm 12mm;transform-origin:0 0;transform:rotate(90deg);overflow:hidden;}
+            .mcr-mobile-landscape-inner .mcr{width:100%;min-width:0;}
           }
         </style>
-        <div class="mcr-mobile-landscape">${inner}</div>`;
+        <div class="mcr-mobile-landscape">
+          <div class="mcr-mobile-landscape-inner">${inner}</div>
+        </div>`;
     } else {
       pa.innerHTML = html;
     }
