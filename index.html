@@ -3190,13 +3190,6 @@ html{scroll-behavior:smooth;}
 #view-monthly .mc-grid-hold-summary{font-size:12px;font-weight:600;margin:5px 0;color:var(--ink);}
 #view-monthly .mc-list-actions{min-width:0;}
 #view-monthly .mc-grid-person{display:flex;align-items:center;gap:10px;}
-#view-monthly .mc-card-grid .mc-name{
-  white-space:normal;
-  overflow:visible;
-  text-overflow:clip;
-  line-height:1.55;
-  overflow-wrap:anywhere;
-}
 #view-monthly .mc-grid-avatar{display:flex;align-items:center;justify-content:center;flex:none;}
 #view-monthly .mc-grid-divider{height:1px;background:var(--panel-line);margin:12px 0;}
 #view-monthly .mc-grid-hold{margin:0 !important;}
@@ -3588,108 +3581,18 @@ html{scroll-behavior:smooth;}
   #view-monthly .mc-grid.mc-grid-list .mc-btn-sub{display:none;}
 }
 @media (max-width:430px){
-  /* ชื่อใน Tinder card: ให้พื้นที่ข้อความเต็มและเผื่อระยะสระ/วรรณยุกต์ไทย */
-  #view-monthly .mc-swipe-stage .mc-grid-person > div:not(.mc-grid-avatar){
-    min-width:0 !important;
-    flex:1 1 auto !important;
-  }
-  #view-monthly .mc-swipe-stage .mc-name{
-    display:block !important;
-    max-width:none !important;
-    width:100% !important;
-    white-space:normal !important;
-    overflow:visible !important;
-    text-overflow:clip !important;
-    word-break:normal !important;
-    overflow-wrap:break-word !important;
-    line-height:1.8 !important;
-    padding-top:2px;
-    padding-bottom:3px;
-  }
-
-  /* ช่องเลือกรายชื่อ: ให้ชื่อมีความกว้างเต็มบรรทัด ไม่ถูกบีบระหว่างปุ่ม */
-  #view-monthly .mc-swipe-nav{
-    display:grid !important;
-    grid-template-columns:42px minmax(0,1fr) 42px !important;
-    grid-template-rows:auto auto !important;
-    align-items:center !important;
-    gap:7px !important;
-    width:100% !important;
-    max-width:none !important;
-  }
-  #view-monthly .mc-swipe-nav .mc-swipe-select{
-    grid-column:1 / -1 !important;
-    grid-row:1 !important;
-    width:100% !important;
-    min-width:0 !important;
-    height:44px !important;
-    font-size:13px !important;
-    line-height:1.45 !important;
-    padding:6px 34px 6px 12px !important;
-    text-overflow:clip !important;
-    white-space:nowrap !important;
-  }
-  #view-monthly .mc-swipe-nav .mc-swipe-nav-btn{
-    grid-row:2 !important;
-    width:42px !important;
-    height:40px !important;
-    min-width:42px !important;
-  }
+  /* มุมมองการ์ด: ชื่อเต็ม ไม่ตัด และเผื่อพื้นที่สระ/วรรณยุกต์ไทย */
+  #view-monthly .mc-swipe-stage .mc-name{display:block !important;width:100% !important;max-width:none !important;white-space:normal !important;overflow:visible !important;text-overflow:clip !important;overflow-wrap:anywhere !important;word-break:normal !important;line-height:1.75 !important;padding:2px 0 4px !important;}
+  #view-monthly .mc-swipe-stage .mc-grid-person > div:not(.mc-grid-avatar){min-width:0 !important;flex:1 1 auto !important;}
+  #view-monthly .mc-swipe-nav{display:grid !important;grid-template-columns:40px minmax(0,1fr) 40px !important;grid-template-rows:auto auto !important;gap:6px !important;width:100% !important;max-width:none !important;}
+  #view-monthly .mc-swipe-nav .mc-swipe-select{grid-column:1 / -1 !important;grid-row:1 !important;width:100% !important;min-width:0 !important;height:46px !important;font-size:14px !important;line-height:1.4 !important;padding:7px 34px 7px 12px !important;text-overflow:clip !important;}
+  #view-monthly .mc-swipe-nav .mc-swipe-nav-btn{grid-row:2 !important;width:40px !important;height:38px !important;min-width:40px !important;}
   #view-monthly .mc-swipe-nav #mcSwipePrev{grid-column:1 !important;}
   #view-monthly .mc-swipe-nav #mcSwipeNext{grid-column:3 !important;}
-  #view-monthly .mc-swipe-nav .mc-swipe-count{
-    grid-column:2 !important;
-    grid-row:2 !important;
-    width:100% !important;
-    min-width:0 !important;
-    font-size:10px !important;
-    text-align:center !important;
-  }
-
-  /* existing small-screen rules continue below */
-  #view-monthly .mc-swipe-nav{
-    display:grid;
-    grid-template-columns:42px minmax(0,1fr) 42px;
-    align-items:center;
-    gap:6px;
-    width:100%;
-    margin:8px auto 7px;
-  }
-  #view-monthly .mc-swipe-nav .mc-swipe-nav-btn{grid-row:1;}
-  #view-monthly .mc-swipe-nav .mc-swipe-select{
-    grid-column:2;
-    grid-row:1;
-    width:100%;
-    min-width:0;
-    max-width:none;
-    height:40px;
-    font-size:12px;
-    line-height:1.35;
-    padding-left:9px;
-    padding-right:24px;
-    text-overflow:clip;
-    white-space:nowrap;
-  }
-  #view-monthly .mc-swipe-nav .mc-swipe-count{
-    grid-column:1 / -1;
-    grid-row:2;
-    font-size:9px;
-    min-width:0;
-    width:100%;
-    text-align:center;
-  }
+  #view-monthly .mc-swipe-nav .mc-swipe-count{grid-column:2 !important;grid-row:2 !important;width:100% !important;text-align:center !important;}
   #view-monthly .mc-swipe-stage .mc-card-grid{padding:14px;border-radius:18px;}
-  #view-monthly .mc-swipe-card .mc-name{
-    font-size:15px;
-    line-height:1.6;
-    white-space:normal;
-    overflow:visible;
-    text-overflow:clip;
-    word-break:normal;
-    overflow-wrap:anywhere;
-  }
-
-  #view-monthly .mc-swipe-nav .mc-swipe-select{height:44px;font-size:13px;padding-left:12px;padding-right:34px;}
+  #view-monthly .mc-swipe-nav{gap:6px;margin:8px auto 7px;}
+  #view-monthly .mc-swipe-nav .mc-swipe-select{height:40px;font-size:12px;padding-left:9px;padding-right:24px;}
   #view-monthly .mc-swipe-nav .mc-swipe-nav-btn{width:38px;height:38px;min-width:38px;border-radius:11px;}
   #view-monthly .mc-swipe-nav .mc-swipe-count{font-size:9px;min-width:46px;}
   #view-monthly .mc-swipe-stage .mc-card-grid{padding:14px;border-radius:18px;}
@@ -10166,10 +10069,29 @@ function compareMonthlyOfficers(a, b) {
     const isMobilePrint = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
       (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent));
     if (isMobilePrint) {
-      // Mobile browsers may ignore @page landscape. Build one physical A4
-      // portrait page per chunk, then rotate the report content 90 degrees.
-      // Only non-last pages get a page break, avoiding the blank page that
-      // can occur when both page-break-before and page-break-after are used.
+      const inner = html.replace(/@page\{[^}]*\}/g, '');
+      pa.innerHTML = `
+        <style>
+          @page{size:A4 portrait;margin:0;}
+          @media print{
+            html,body{margin:0 !important;padding:0 !important;}
+            #printArea.report-print-area{width:210mm !important;height:297mm !important;min-width:210mm !important;max-width:210mm !important;padding:0 !important;margin:0 !important;overflow:hidden !important;}
+            .mcr-mobile-landscape{position:relative;width:210mm;height:297mm;overflow:hidden;box-sizing:border-box;}
+            .mcr-mobile-landscape-inner{position:absolute;top:0;left:210mm;width:297mm;height:210mm;box-sizing:border-box;padding:11mm 12mm;transform-origin:0 0;transform:rotate(90deg);overflow:hidden;}
+            .mcr-mobile-landscape-inner .mcr{width:100%;min-width:0;}
+          }
+        </style>
+        <div class="mcr-mobile-landscape">
+          <div class="mcr-mobile-landscape-inner">${inner}</div>
+        </div>`;
+    } else {
+      pa.innerHTML = html;
+    }
+    const isMobilePrint = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+      (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent));
+    if (isMobilePrint) {
+      // แบ่งเป็นหน้า A4 จริงทีละหน้า แล้วหมุนเนื้อหา 90° เหมือน บชก.3
+      // ไม่ใช้ page-break-before และไม่ใช้ overflow:hidden เพื่อไม่ให้เกิดหน้าว่าง/ข้อมูลหาย
       const PAGE_ROWS = 10;
       const rowHtml = detailRows.map((r,i)=>`<tr>
         <td class="center">${i+1}</td>
@@ -10181,123 +10103,29 @@ function compareMonthlyOfficers(a, b) {
         <td>${escapeHtml(r.note || '')}</td>
         <td>${r.inspector ? `${escapeHtml(r.inspector)}<br><span>${escapeHtml(r.checkedAt)}</span>` : ''}</td>
       </tr>`);
-
-      const chunks = [];
-      for (let i=0; i<rowHtml.length; i+=PAGE_ROWS) chunks.push(rowHtml.slice(i,i+PAGE_ROWS));
-      if (!chunks.length) chunks.push([]);
-
-      const headHtml = `
-        <div class="head">
-          <div class="title">รายงานผลการตรวจประจำเดือน</div>
-          <div class="org">${escapeHtml(orgName)}</div>
-          <div class="period">ประจำเดือน ${escapeHtml(monthName)} พ.ศ. ${toThaiNumber(thaiYear)}</div>
-        </div>
-        <div class="summary">
-          <div class="summary-box"><b>${toThaiNumber(source.length)}</b><span>ผู้ที่ต้องตรวจ</span></div>
-          <div class="summary-box"><b>${toThaiNumber(done)}</b><span>ตรวจแล้ว</span></div>
-          <div class="summary-box"><b>${toThaiNumber(bad)}</b><span>มีปัญหา</span></div>
-          <div class="summary-box"><b>${toThaiNumber(totalQty)}</b><span>ครุภัณฑ์ที่ถือครอง</span></div>
-        </div>`;
-
-      const tableHead = `<thead><tr>
-        <th>ลำดับ</th>
-        <th>ผู้ครอบครอง / ตำแหน่ง</th>
-        <th>ชื่อครุภัณฑ์</th>
-        <th>หมายเลขครุภัณฑ์</th>
-        <th>จำนวน</th>
-        <th>ผลตรวจ</th>
-        <th>หมายเหตุ</th>
-        <th>ผู้ตรวจ / วันที่</th>
-      </tr></thead>`;
-
-      const pages = chunks.map((chunk, idx) => {
-        const first = idx === 0;
-        const last = idx === chunks.length - 1;
-        const body = chunk.length
-          ? chunk.join('')
-          : '<tr><td colspan="8" class="center">ไม่มีข้อมูลครุภัณฑ์ที่ต้องตรวจ</td></tr>';
-        const tail = last ? `
-          ${rowHtml.length ? `<tr class="total"><td colspan="4" class="center">รวม</td><td class="center">${toThaiNumber(totalQty)}</td><td colspan="3"></td></tr>` : ''}
-          <div class="note">หมายเหตุ: รายงานนี้จัดแสดงตาม <strong>ชื่อครุภัณฑ์ + หมายเลขครุภัณฑ์ + จำนวน</strong> เพื่อให้ง่ายต่อการตรวจสอบรายการของแต่ละผู้ครอบครอง</div>
-          <div class="signatures">
-            <div class="sig"><div class="line"></div>ผู้ตรวจประจำเดือน</div>
-            <div class="sig"><div class="line"></div>ผู้รับรอง / หัวหน้าหน่วย</div>
-          </div>` : '';
-        return `<div class="mcr-mobile-page${last ? ' last' : ''}">
-          <div class="mcr-mobile-page-inner">
-            <div class="mcr">
-              ${first ? headHtml : ''}
-              <table>
-                <colgroup>
-                  <col style="width:4%"><col style="width:18%"><col style="width:23%"><col style="width:15%">
-                  <col style="width:7%"><col style="width:9%"><col style="width:13%"><col style="width:11%">
-                </colgroup>
-                ${first ? tableHead : ''}
-                <tbody>${body}</tbody>
-              </table>
-              ${tail}
-            </div>
-          </div>
-        </div>`;
+      const chunks=[];
+      for(let i=0;i<rowHtml.length;i+=PAGE_ROWS) chunks.push(rowHtml.slice(i,i+PAGE_ROWS));
+      if(!chunks.length) chunks.push([]);
+      const headHtml=`<div class="head"><div class="title">รายงานผลการตรวจประจำเดือน</div><div class="org">${escapeHtml(orgName)}</div><div class="period">ประจำเดือน ${escapeHtml(monthName)} พ.ศ. ${toThaiNumber(thaiYear)}</div></div>
+        <div class="summary"><div class="summary-box"><b>${toThaiNumber(source.length)}</b><span>ผู้ที่ต้องตรวจ</span></div><div class="summary-box"><b>${toThaiNumber(done)}</b><span>ตรวจแล้ว</span></div><div class="summary-box"><b>${toThaiNumber(bad)}</b><span>มีปัญหา</span></div><div class="summary-box"><b>${toThaiNumber(totalQty)}</b><span>ครุภัณฑ์ที่ถือครอง</span></div></div>`;
+      const tableHead=`<thead><tr><th>ลำดับ</th><th>ผู้ครอบครอง / ตำแหน่ง</th><th>ชื่อครุภัณฑ์</th><th>หมายเลขครุภัณฑ์</th><th>จำนวน</th><th>ผลตรวจ</th><th>หมายเหตุ</th><th>ผู้ตรวจ / วันที่</th></tr></thead>`;
+      const pages=chunks.map((chunk,idx)=>{
+        const first=idx===0,last=idx===chunks.length-1;
+        const body=chunk.length?chunk.join(''):'<tr><td colspan="8" class="center">ไม่มีข้อมูลครุภัณฑ์ที่ต้องตรวจ</td></tr>';
+        const tail=last?`${rowHtml.length?`<tr class="total"><td colspan="4" class="center">รวม</td><td class="center">${toThaiNumber(totalQty)}</td><td colspan="3"></td></tr>`:''}<div class="note">หมายเหตุ: รายงานนี้จัดแสดงตาม <strong>ชื่อครุภัณฑ์ + หมายเลขครุภัณฑ์ + จำนวน</strong> เพื่อให้ง่ายต่อการตรวจสอบรายการของแต่ละผู้ครอบครอง</div><div class="signatures"><div class="sig"><div class="line"></div>ผู้ตรวจประจำเดือน</div><div class="sig"><div class="line"></div>ผู้รับรอง / หัวหน้าหน่วย</div></div>`:'';
+        return `<div class="mcr-mobile-page${last?' last':''}"><div class="mcr-mobile-page-inner"><div class="mcr">${first?headHtml:''}<table><colgroup><col style="width:4%"><col style="width:18%"><col style="width:23%"><col style="width:15%"><col style="width:7%"><col style="width:9%"><col style="width:13%"><col style="width:11%"></colgroup>${first?tableHead:''}<tbody>${body}</tbody></table>${tail}</div></div></div>`;
       }).join('');
-
-      const mobileCss = html.match(/<style>([\s\S]*?)<\/style>/)?.[1] || '';
-      pa.innerHTML = `
-        <style>
-          ${mobileCss}
-          @page{size:A4 portrait;margin:0;}
-          html,body{margin:0 !important;padding:0 !important;}
-          #printArea.report-print-area{
-            width:210mm !important;
-            min-width:210mm !important;
-            max-width:210mm !important;
-            margin:0 !important;
-            padding:0 !important;
-          }
-          .mcr-mobile-page{
-            position:relative;
-            width:210mm;
-            height:297mm;
-            margin:0 !important;
-            padding:0 !important;
-            box-sizing:border-box;
-            break-after:page;
-          }
-          .mcr-mobile-page.last{break-after:auto;}
-          .mcr-mobile-page-inner{
-            position:absolute;
-            top:0;
-            left:210mm;
-            width:297mm;
-            height:210mm;
-            box-sizing:border-box;
-            padding:8mm 9mm;
-            transform-origin:0 0;
-            transform:rotate(90deg);
-          }
-           .mcr-mobile-page-inner .mcr{
-            width:272mm;
-            max-width:272mm;
-            min-width:0;
-            margin:0;
-          }
-          .mcr-mobile-page-inner table{
-            width:272mm;
-            max-width:272mm;
-            min-width:0;
-            table-layout:fixed;
-          }
-          .mcr-mobile-page-inner th,
-          .mcr-mobile-page-inner td{
-            overflow-wrap:anywhere;
-            word-break:break-word;
-          }
-          @media print{
-            .mcr-mobile-page{break-after:page !important;}
-            .mcr-mobile-page.last{break-after:auto !important;}
-          }
-        </style>
-        ${pages}`;
+      pa.innerHTML=`<style>
+        @page{size:A4 portrait;margin:0;}
+        html,body{margin:0 !important;padding:0 !important;}
+        #printArea.report-print-area{width:210mm !important;min-width:210mm !important;max-width:210mm !important;margin:0 !important;padding:0 !important;}
+        .mcr-mobile-page{position:relative;width:210mm;height:297mm;margin:0;padding:0;box-sizing:border-box;page-break-after:always;}
+        .mcr-mobile-page.last{page-break-after:auto;}
+        .mcr-mobile-page-inner{position:absolute;top:0;left:210mm;width:297mm;height:210mm;box-sizing:border-box;padding:8mm 9mm;transform-origin:0 0;transform:rotate(90deg);}
+        .mcr-mobile-page-inner .mcr{width:272mm;max-width:272mm;min-width:0;margin:0;}
+        .mcr-mobile-page-inner table{width:272mm;max-width:272mm;min-width:0;table-layout:fixed;}
+        .mcr-mobile-page-inner th,.mcr-mobile-page-inner td{overflow-wrap:anywhere;word-break:break-word;}
+      </style>${pages}`;
     } else {
       pa.innerHTML = html;
     }
