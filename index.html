@@ -3126,13 +3126,26 @@ html{scroll-behavior:smooth;}
   .mc-grid.mc-grid-list .mc-actions{grid-column:2;}
   .mc-grid.mc-grid-list .mc-note,.mc-grid.mc-grid-list .mc-meta{grid-column:1 / -1;}
 }
+.mc-tool-group{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  flex:0 0 auto;
+  padding:3px;
+  border-radius:16px;
+  background:var(--navy-wash);
+  border:1px solid var(--panel-line);
+}
+.mc-tool-group .mc-view-toggle{box-shadow:none;}
+.mc-tool-group .mc-print-icon{box-shadow:none;}
+
 @media (max-width:760px){
   .mc-toolbar{align-items:stretch;}
   .mc-toolbar-left,.mc-toolbar-right{width:100%;}
   .mc-period{width:100%;}
   .mc-period .input{flex:1;min-width:0;}
-  .mc-toolbar-right > *{flex:1;}
-  .mc-view-wrap{justify-content:space-between;}
+  .mc-toolbar-right{justify-content:flex-end;}
+  .mc-tool-group{flex:0 0 auto;}
   .mc-summary{grid-template-columns:repeat(2,minmax(0,1fr));}
   .mc-grid.mc-grid-list .mc-card{
     display:flex;
@@ -3149,8 +3162,7 @@ html{scroll-behavior:smooth;}
   .mc-period .input{width:100%;min-width:0;}
   .mc-search-wrap{min-width:100%;}
   .mc-toolbar-right{display:flex;flex-wrap:nowrap;align-items:center;justify-content:flex-end;gap:7px;min-width:0;}
-  .mc-view-wrap{display:inline-flex;align-items:center;gap:5px;min-width:0;}
-  .mc-view-label{display:none;}
+  .mc-tool-group{gap:5px;padding:2px;border-radius:15px;}
   .mc-view-toggle{margin-left:0;flex:0 0 auto;}
   .mc-tool-btn.mc-print-icon{width:42px;height:40px;min-width:42px;padding:0;border-radius:14px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 42px;}
   .mc-tool-btn.mc-print-icon span{display:none;}
@@ -9043,12 +9055,9 @@ function compareMonthlyOfficers(a, b) {
 
   function mcViewToggleEnhanced(){
     const v = mcViewMode();
-    return `<div class="mc-view-wrap">
-      <span class="mc-view-label">มุมมอง</span>
-      <div class="mc-view-toggle" role="group" aria-label="เลือกมุมมอง">
-        <button type="button" class="${v==='list'?'active':''}" data-mcv="list" title="มุมมองรายการ">${ICONS.listView}</button>
-        <button type="button" class="${v==='grid'?'active':''}" data-mcv="grid" title="มุมมองการ์ด">${ICONS.gridView}</button>
-      </div>
+    return `<div class="mc-view-toggle" role="group" aria-label="เลือกมุมมอง">
+      <button type="button" class="${v==='list'?'active':''}" data-mcv="list" title="มุมมองรายการ" aria-label="มุมมองรายการ">${ICONS.listView}</button>
+      <button type="button" class="${v==='grid'?'active':''}" data-mcv="grid" title="มุมมองการ์ด" aria-label="มุมมองการ์ด">${ICONS.gridView}</button>
     </div>`;
   }
 
@@ -9333,8 +9342,10 @@ function compareMonthlyOfficers(a, b) {
             </div>
           </div>
           <div class="mc-toolbar-right">
-            ${mcViewToggleEnhanced()}
-            ${mcPrintButtonHtml()}
+            <div class="mc-tool-group" aria-label="เครื่องมือมุมมองและพิมพ์รายงาน">
+              ${mcViewToggleEnhanced()}
+              ${mcPrintButtonHtml()}
+            </div>
           </div>
         </div>
 
@@ -9371,11 +9382,14 @@ function compareMonthlyOfficers(a, b) {
       };
       document.querySelectorAll('[data-mcv]').forEach(btn=>{
         btn.onclick=()=>{
-          setMcViewMode(btn.dataset.mcv);
-          renderMonthlyEnhanced();
+          const mode = btn.dataset.mcv === 'list' ? 'list' : 'grid';
+          setMcViewMode(mode);
+          document.querySelectorAll('[data-mcv]').forEach(b => b.classList.toggle('active', b.dataset.mcv === mode));
+          drawMonthlyBodyEnhanced();
         };
       });
-      document.getElementById('mcPrintReport').onclick=mcRenderPrintReport;
+      const printBtn = document.getElementById('mcPrintReport');
+      if (printBtn) printBtn.onclick=mcRenderPrintReport;
 
       drawMonthlyBodyEnhanced();
     });
