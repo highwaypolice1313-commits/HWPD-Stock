@@ -3170,7 +3170,7 @@ html{scroll-behavior:smooth;}
 }
 
 
-/* ===== [FIX] ตรวจประจำเดือน — desktop layout =====
+/* ===== [FIX] ตรวจประจำเดือน — desktop layout ===== */
 @media (min-width:900px){
   #view-monthly > *{
     width:100%;
@@ -3186,7 +3186,6 @@ html{scroll-behavior:smooth;}
     max-width:none;
   }
 
-  /* มุมมองรายการ: 3 ส่วนชัดเจน ไม่บีบข้อมูล และใช้พื้นที่จอเต็ม */
   .mc-grid.mc-grid-list .mc-card{
     grid-template-columns:minmax(260px,.95fr) minmax(360px,1.35fr) minmax(300px,.95fr);
     gap:16px;
@@ -3203,7 +3202,6 @@ html{scroll-behavior:smooth;}
     grid-column:1 / -1;
   }
 
-  /* มุมมองการ์ด: ใช้พื้นที่กว้างขึ้น อ่านง่ายบนจอคอม */
   .mc-grid.mc-grid-cards{
     grid-template-columns:repeat(3,minmax(0,1fr));
     gap:16px;
@@ -3240,6 +3238,68 @@ html{scroll-behavior:smooth;}
 .mc-print-only{display:none;}
 @media print{
   .mc-print-only{display:block;}
+}
+
+
+/* ===== [FINAL] ตรวจประจำเดือน — top area alignment ===== */
+#view-monthly > *{
+  width:100% !important;
+  max-width:none !important;
+  margin-left:0 !important;
+  margin-right:0 !important;
+  box-sizing:border-box;
+}
+#view-monthly > .section-title{
+  margin-top:0 !important;
+  margin-bottom:16px !important;
+}
+#view-monthly .mc-toolbar{
+  width:100%;
+  min-height:54px;
+  margin:0 0 12px;
+  padding:0;
+  align-items:center;
+}
+#view-monthly .mc-toolbar-left{flex:1 1 auto;min-width:0;}
+#view-monthly .mc-toolbar-right{flex:0 0 auto;}
+#view-monthly .mc-period{padding:5px;border-radius:14px;}
+#view-monthly .mc-period .input{min-height:40px;}
+#view-monthly .mc-summary{
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  width:100%;
+  margin-bottom:12px;
+}
+#view-monthly .mc-summary-card{min-width:0;}
+#view-monthly .mc-progress-card{width:100%;margin-bottom:12px;}
+#view-monthly .search-row{
+  width:100%;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin:0 0 6px !important;
+}
+#view-monthly .search-row .mc-search-wrap{flex:1 1 auto;min-width:0;}
+#view-monthly .search-row #mcPendingChip{flex:0 0 auto;white-space:nowrap;}
+#view-monthly #mcHiddenHint{
+  width:100%;
+  margin:0 0 10px !important;
+}
+@media (min-width:900px){
+  #view-monthly .mc-grid.mc-grid-list .mc-card{
+    grid-template-columns:minmax(250px,.9fr) minmax(360px,1.35fr) minmax(320px,.95fr);
+    gap:16px;
+  }
+}
+@media (max-width:900px){
+  #view-monthly .mc-summary{grid-template-columns:repeat(2,minmax(0,1fr));}
+}
+@media (max-width:760px){
+  #view-monthly > *{max-width:none !important;}
+  #view-monthly .mc-toolbar{align-items:stretch;}
+  #view-monthly .mc-toolbar-left,#view-monthly .mc-toolbar-right{width:100%;}
+  #view-monthly .mc-toolbar-right{justify-content:flex-end;}
+  #view-monthly .search-row{flex-wrap:wrap;}
+  #view-monthly .search-row .mc-search-wrap{flex:1 1 100%;}
 }
 
 </style>
