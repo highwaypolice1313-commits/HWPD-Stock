@@ -2544,44 +2544,38 @@ html{scroll-behavior:smooth;}
   .asset-card{ padding:10px; }
 }
 
-     /* =========================================================
-   ปัดแถวเพื่อเลือกคำสั่ง
-   ========================================================= */
+/* ===== ปัดแถวครุภัณฑ์ (ปัดซ้าย → ปุ่มโผล่ขวา) ===== */
 .sw-wrap{ position:relative; margin-bottom:9px; border-radius:var(--r-md); }
+@media (min-width:900px){ .sw-wrap{ margin-bottom:10px; border-radius:18px; } }
 .sw-wrap > .list-item{
   position:relative; z-index:1; margin-bottom:0 !important;
-  touch-action:pan-y;                              /* ให้เลื่อนหน้าแนวตั้งได้ แต่แนวนอนเป็นของการปัด */
-  transition:left .24s cubic-bezier(.2,.8,.2,1);
+  touch-action:pan-y; user-select:none; -webkit-user-select:none;
+  transition:left .26s cubic-bezier(.2,.8,.2,1);
 }
-.sw-wrap.sw-drag > .list-item{ transition:none; }  /* ระหว่างลากให้ตามนิ้วทันที */
+.sw-wrap.sw-drag > .list-item{ transition:none; }
 .sw-wrap.sw-active{ overflow:hidden; }
 
 .sw-actions{
-  position:absolute; top:0; bottom:0; z-index:0;
-  display:flex; align-items:stretch; gap:6px; padding:0 6px;
-  max-width:calc(100% - 56px); overflow-x:auto; scrollbar-width:none;
-  visibility:hidden;                               /* ซ่อนไว้จนกว่าจะเริ่มปัด (กันโผล่ทะลุธีมกลาส) */
+  position:absolute; top:0; bottom:0; right:0; z-index:0;
+  display:flex; align-items:stretch; gap:8px;
+  width:max-content; padding:7px 8px 7px 4px;
+  visibility:hidden;
 }
-.sw-actions::-webkit-scrollbar{ display:none; }
-.sw-wrap.sw-left .sw-actions{ left:0; }
-.sw-wrap.sw-right .sw-actions{ right:0; }
 .sw-wrap.sw-active .sw-actions{ visibility:visible; }
 
 .sw-btn{
-  flex:0 0 60px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
-  border:none; border-radius:var(--r-md); color:#fff; font-family:inherit; font-size:11px; font-weight:500;
-  cursor:pointer; padding:0;
+  flex:none; width:62px; padding:0; border:none; border-radius:14px; cursor:pointer;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px;
+  color:#fff; font-family:inherit; font-size:11px; font-weight:500;
+  box-shadow:0 4px 10px rgba(0,0,0,.16), inset 0 1px 0 rgba(255,255,255,.22);
+  transition:transform .12s ease;
 }
 .sw-btn svg{ width:20px; height:20px; }
-.sw-btn:active{ filter:brightness(.9); }
-/* สีปุ่ม: ผสมดำเล็กน้อยเพื่อให้ตัวอักษรขาวอ่านชัดในทุกธีม */
-.sw-btn.tone-navy{ background:color-mix(in srgb, var(--navy) 78%, #000); }
-.sw-btn.tone-ok{   background:color-mix(in srgb, var(--ok) 72%, #000); }
-.sw-btn.tone-warn{ background:color-mix(in srgb, var(--warn) 70%, #000); }
-.sw-btn.tone-bad{  background:color-mix(in srgb, var(--bad) 74%, #000); }
-.sw-btn.tone-info{ background:color-mix(in srgb, var(--info) 72%, #000); } 
+.sw-btn:active{ transform:scale(.93); }
+.sw-btn.tone-ok  { background:linear-gradient(150deg, color-mix(in srgb,var(--ok) 88%,#fff), color-mix(in srgb,var(--ok) 70%,#000)); }
+.sw-btn.tone-bad { background:linear-gradient(150deg, color-mix(in srgb,var(--bad) 88%,#fff), color-mix(in srgb,var(--bad) 70%,#000)); }
+.sw-btn.tone-navy{ background:linear-gradient(150deg, color-mix(in srgb,var(--navy) 88%,#fff), color-mix(in srgb,var(--navy) 70%,#000)); }   
 
-   
 </style>
 </head>
 <body>
@@ -3997,47 +3991,38 @@ function drawAssetList() {
    if (!isGrid) wireSwipeRows(listEl);
 }
 
-   /* ========== ปัดแถวครุภัณฑ์เพื่อเลือกคำสั่ง ========== */
+/* ========== ปัดแถวครุภัณฑ์: ปัดซ้ายเพื่อเลือกคำสั่ง ========== */
 let swOpenWrap = null;
 function swClose(wrap) {
   if (!wrap) return;
   const row = wrap.querySelector('.list-item');
   if (row) row.style.left = '0px';
   wrap.classList.remove('sw-drag');
-  setTimeout(() => { if (!wrap.dataset.open) wrap.classList.remove('sw-active', 'sw-left', 'sw-right'); }, 260);
   delete wrap.dataset.open;
+  setTimeout(() => { if (!wrap.dataset.open) wrap.classList.remove('sw-active'); }, 270);
   if (swOpenWrap === wrap) swOpenWrap = null;
 }
 function swBtn(tone, icon, label, act) {
   return `<button type="button" class="sw-btn tone-${tone}" data-act="${act}">${icon}<span>${label}</span></button>`;
 }
 function wireSwipeRows(listEl) {
-  const rows = Array.from(listEl.querySelectorAll('.list-item.asset-item'));
-  rows.forEach(row => {
+  Array.from(listEl.querySelectorAll('.list-item.asset-item')).forEach(row => {
     const id = row.dataset.id;
     const asset = state.assets.find(a => a['รหัสครุภัณฑ์'] === id);
     if (!asset) return;
-
-    // ปุ่มฝั่งขวา (โผล่ตอนปัดซ้าย) และฝั่งซ้าย (โผล่ตอนปัดขวา)
-    const rightHtml = swBtn('ok', ICONS.swap, 'ยืม', 'borrow')
-      + (isAdmin() ? swBtn('bad', ICONS.wrench, 'แจ้งซ่อม', 'maint') : '')
-      + swBtn('navy', ICONS.scan, 'QR', 'qr');
-    const leftHtml = isAdmin()
-      ? swBtn('info', ICONS.clock, 'สถานะ', 'status') + swBtn('warn', ICONS.edit, 'แก้ไข', 'edit')
-      : swBtn('navy', ICONS.info, 'รายละเอียด', 'detail');
 
     const wrap = document.createElement('div');
     wrap.className = 'sw-wrap';
     row.parentNode.insertBefore(wrap, row);
     wrap.appendChild(row);
-    const right = document.createElement('div');
-    right.className = 'sw-actions sw-actions-right';
-    right.innerHTML = rightHtml;
-    const left = document.createElement('div');
-    left.className = 'sw-actions sw-actions-left';
-    left.innerHTML = leftHtml;
-    wrap.appendChild(right);
-    wrap.appendChild(left);
+
+    const panel = document.createElement('div');
+    panel.className = 'sw-actions';
+    panel.innerHTML =
+        swBtn('ok', ICONS.swap, 'ยืม', 'borrow')
+      + (isAdmin() ? swBtn('bad', ICONS.wrench, 'แจ้งซ่อม', 'maint') : '')
+      + swBtn('navy', ICONS.scan, 'QR', 'qr');
+    wrap.appendChild(panel);
 
     const runAct = (act) => {
       swClose(wrap);
@@ -4047,26 +4032,29 @@ function wireSwipeRows(listEl) {
       }
       else if (act === 'maint') openMaintForm(id);
       else if (act === 'qr') openQrView(asset);
-      else if (act === 'status') openQuickStatusForm(asset);
-      else if (act === 'edit') openAssetForm(asset);
-      else if (act === 'detail') openAssetDetail(id);
     };
-    wrap.querySelectorAll('.sw-btn').forEach(b => {
+    panel.querySelectorAll('.sw-btn').forEach(b => {
       b.onclick = (e) => { e.stopPropagation(); runAct(b.dataset.act); };
     });
 
-    // แตะแถวตอนที่เปิดอยู่ = ปิด ไม่เปิดรายละเอียด
+    // แตะแถวตอนที่เปิดอยู่ หรือเพิ่งลากเสร็จ = ไม่เปิดรายละเอียด
     row.addEventListener('click', (e) => {
-      if (wrap.dataset.open || row._swMoved) { e.stopImmediatePropagation(); e.preventDefault(); if (wrap.dataset.open) swClose(wrap); }
+      if (wrap.dataset.open || row._swMoved) {
+        e.stopImmediatePropagation(); e.preventDefault();
+        if (wrap.dataset.open) swClose(wrap);
+      }
     }, true);
 
-    let sx = 0, sy = 0, dx = 0, dragging = false, decided = false, startLeft = 0, pid = null;
+    let sx = 0, sy = 0, dx = 0, startX = 0, w = 0, pid = null, dragging = false, decided = false;
+    const panelW = () => Math.min(panel.offsetWidth, wrap.clientWidth * 0.8);
+
     row.addEventListener('pointerdown', (e) => {
       if (e.pointerType === 'mouse' && e.button !== 0) return;
-      sx = e.clientX; sy = e.clientY; dx = 0; dragging = false; decided = false; pid = e.pointerId;
-      startLeft = wrap.dataset.open ? (parseFloat(row.style.left) || 0) : 0;
-      row._swMoved = false;
       if (swOpenWrap && swOpenWrap !== wrap) swClose(swOpenWrap);
+      sx = e.clientX; sy = e.clientY; dx = 0; pid = e.pointerId;
+      dragging = false; decided = false; row._swMoved = false;
+      w = panelW();
+      startX = wrap.dataset.open ? -w : 0;
     });
     row.addEventListener('pointermove', (e) => {
       if (pid !== e.pointerId) return;
@@ -4075,17 +4063,14 @@ function wireSwipeRows(listEl) {
         if (Math.abs(mx) < 8 && Math.abs(my) < 8) return;
         decided = true;
         dragging = Math.abs(mx) > Math.abs(my);
-        if (dragging) { try { row.setPointerCapture(e.pointerId); } catch (_) {} wrap.classList.add('sw-drag', 'sw-active'); }
+        if (dragging) {
+          try { row.setPointerCapture(e.pointerId); } catch (_) {}
+          wrap.classList.add('sw-drag', 'sw-active');
+        }
       }
       if (!dragging) return;
       row._swMoved = true;
-      dx = startLeft + mx;
-      const side = dx < 0 ? 'right' : 'left';
-      wrap.classList.toggle('sw-right', side === 'right');
-      wrap.classList.toggle('sw-left', side === 'left');
-      const panel = side === 'right' ? right : left;
-      const maxW = Math.min(panel.scrollWidth + 12, wrap.clientWidth - 56);
-      dx = Math.max(-maxW, Math.min(maxW, dx));
+      dx = Math.max(-w, Math.min(0, startX + mx));   // ปัดได้เฉพาะทางซ้าย
       row.style.left = dx + 'px';
     });
     const end = (e) => {
@@ -4094,12 +4079,9 @@ function wireSwipeRows(listEl) {
       if (!dragging) return;
       dragging = false;
       wrap.classList.remove('sw-drag');
-      const side = dx < 0 ? 'right' : 'left';
-      const panel = side === 'right' ? right : left;
-      const w = Math.min(panel.scrollWidth + 12, wrap.clientWidth - 56);
-      if (Math.abs(dx) > 40) {
-        row.style.left = (side === 'right' ? -w : w) + 'px';
-        wrap.dataset.open = side;
+      if (dx < -Math.max(40, w * 0.35)) {
+        row.style.left = -w + 'px';
+        wrap.dataset.open = '1';
         swOpenWrap = wrap;
       } else {
         swClose(wrap);
