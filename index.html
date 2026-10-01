@@ -3,6 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="theme-color" content="#17324f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>ระบบพัสดุครุภัณฑ์ - ตำรวจทางหลวง</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Sarabun:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
@@ -1197,6 +1202,7 @@ body{
       <div class="desktop-tools">
         <span class="connection-dot" id="connectionDot" title="สถานะการเชื่อมต่อ"></span>
         <span class="last-sync" id="lastSync">ยังไม่ได้อัปเดต</span>
+        <button class="icon-btn command-trigger" id="commandBtn" type="button" title="ค้นหาด่วน (Ctrl+K)" aria-label="ค้นหาด่วน (Ctrl+K)"><svg viewBox="0 0 20 20" fill="none"><circle cx="8.7" cy="8.7" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M12.5 12.5l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
         <button class="refresh-btn" id="refreshBtn" type="button" title="รีเฟรชข้อมูล" aria-label="รีเฟรชข้อมูล">
           <svg viewBox="0 0 20 20" fill="none"><path d="M16 6.5A6.5 6.5 0 104.7 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M16 3.5v3h-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
@@ -1309,12 +1315,19 @@ const THEMES = [
   { id:'forest', name:'มรกตพงไพร',        swatches:['#1f3d33','#3fae7a','#eef6f0'] },
   { id:'ember',  name:'อัคคีสัญญาณ',      swatches:['#3a1f22','#d9704a','#fbeee4'] }
 ];
-function currentTheme() { try { return localStorage.getItem(THEME_KEY) || 'dawn'; } catch (e) { return 'dawn'; } }
+function currentTheme() { try { const saved = localStorage.getItem(THEME_KEY); if (saved) return saved; return (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'night' : 'dawn'; } catch (e) { return (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'night' : 'dawn'; } }
 function applyTheme(id) {
   document.documentElement.setAttribute('data-theme', id);
   try { localStorage.setItem(THEME_KEY, id); } catch (e) {}
 }
 applyTheme(currentTheme());
+try {
+  const mediaDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
+  mediaDark?.addEventListener?.('change', e => {
+    try { if (!localStorage.getItem(THEME_KEY)) applyTheme(e.matches ? 'night' : 'dawn'); } catch (_) {}
+  });
+} catch (_) {}
+
 
 function detectPaperFont() {
   const root = document.documentElement;
@@ -1349,9 +1362,21 @@ const ICONS = {
   checklist: '<svg viewBox="0 0 20 20" fill="none"><path d="M5 5h10M5 10h10M5 15h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="2.6" cy="5" r="0.9" fill="currentColor"/><circle cx="2.6" cy="10" r="0.9" fill="currentColor"/><circle cx="2.6" cy="15" r="0.9" fill="currentColor"/></svg>',
   gridView: '<svg viewBox="0 0 20 20" fill="none"><rect x="2.5" y="2.5" width="6" height="6" rx="1.3" stroke="currentColor" stroke-width="1.4"/><rect x="11.5" y="2.5" width="6" height="6" rx="1.3" stroke="currentColor" stroke-width="1.4"/><rect x="11.5" y="11.5" width="6" height="6" rx="1.3" stroke="currentColor" stroke-width="1.4"/><rect x="2.5" y="11.5" width="6" height="6" rx="1.3" stroke="currentColor" stroke-width="1.4"/></svg>',
   listView: '<svg viewBox="0 0 20 20" fill="none"><path d="M6.5 5h11M6.5 10h11M6.5 15h11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="2.7" cy="5" r="1" fill="currentColor"/><circle cx="2.7" cy="10" r="1" fill="currentColor"/><circle cx="2.7" cy="15" r="1" fill="currentColor"/></svg>'
+,
+  check: '<svg viewBox="0 0 20 20" fill="none"><path d="M4 10.5l3.7 3.7L16 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  info: '<svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.3" stroke="currentColor" stroke-width="1.4"/><path d="M10 8.6v5M10 6.2v.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+  inbox: '<svg viewBox="0 0 20 20" fill="none"><path d="M3 5.5h14v9.8a1.2 1.2 0 01-1.2 1.2H4.2A1.2 1.2 0 013 15.3V5.5z" stroke="currentColor" stroke-width="1.4"/><path d="M3.5 12h3l1.1 1.8h4.8l1.1-1.8h3" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>'
 };
 
 ICONS.print = '<svg viewBox="0 0 20 20" fill="none"><path d="M5 7V3.5a1 1 0 011-1h8a1 1 0 011 1V7" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><rect x="3" y="7" width="14" height="7" rx="1.2" stroke="currentColor" stroke-width="1.4"/><rect x="6" y="12" width="8" height="5.5" rx="0.8" stroke="currentColor" stroke-width="1.4"/></svg>';
+
+/* PREMIUM TOUCH FEEDBACK */
+document.addEventListener('pointerdown', e => {
+  const el = e.target.closest('.btn-primary,.btn-danger,.btn-ok,.fab,.icon-btn,.refresh-btn,.list-item,.asset-card');
+  if (!el) return;
+  try { if (navigator.vibrate && (el.matches('.btn-primary,.btn-danger,.btn-ok,.fab') || !e.target.closest('button'))) navigator.vibrate(8); } catch(_) {}
+}, {passive:true});
+
    
 /* ========================================================= STATE */
 const state = {
@@ -1607,8 +1632,8 @@ document.querySelectorAll('.role-select-card').forEach(card => {
 document.getElementById('btnBackToRoles').addEventListener('click', showRoleSelect);
 document.getElementById('rl_password').addEventListener('keydown', (e) => { if (e.key === 'Enter') doRoleLogin(); });
 document.getElementById('btnRoleLogin').addEventListener('click', doRoleLogin);
-document.getElementById('btnLogout').addEventListener('click', () => {
-  if (!confirm('ยืนยันการออกจากระบบ?')) return;
+document.getElementById('btnLogout').addEventListener('click', async () => {
+  if (!await confirmSheet('ยืนยันการออกจากระบบ?', {title:'ออกจากระบบ', okText:'ออกจากระบบ', tone:'bad'})) return;
   clearSession();
   location.reload();
 });
@@ -1808,8 +1833,23 @@ async function apiPost(action, payload) {
   return supaApiPost(action, payload, state.role, state.user && state.user.name);
 }
 
+function showDataSkeleton(tab) {
+  const pages = document.querySelectorAll('.page');
+  pages.forEach(p => { p.style.display = 'none'; });
+  const active = document.getElementById('view-' + (tab || 'dashboard')) || document.getElementById('view-dashboard');
+  if (!active) return;
+  active.style.display = 'block';
+  const kind = tab || 'dashboard';
+  if (kind === 'dashboard') {
+    active.innerHTML = `<div class="skeleton-page"><div class="skeleton-shimmer skeleton-hero"></div><div class="skeleton-grid"><div class="skeleton-shimmer skeleton-card"></div><div class="skeleton-shimmer skeleton-card"></div><div class="skeleton-shimmer skeleton-card"></div></div><div class="skeleton-shimmer" style="height:220px;border-radius:22px"></div></div>`;
+  } else {
+    active.innerHTML = `<div class="skeleton-page"><div class="skeleton-shimmer" style="height:42px;border-radius:14px"></div><div class="skeleton-grid"><div class="skeleton-shimmer skeleton-card"></div><div class="skeleton-shimmer skeleton-card"></div><div class="skeleton-shimmer skeleton-card"></div></div><div class="skeleton-list">${Array.from({length:6},()=>'<div class="skeleton-shimmer skeleton-row"></div>').join('')}</div></div>`;
+  }
+}
+function hideDataSkeleton(){ document.querySelectorAll('.skeleton-page').forEach(x => x.remove()); }
+
 async function loadAll(showLoader = false) {
-  if (showLoader) setLoading(true, 'กำลังโหลดข้อมูล...');
+  if (showLoader) { showDataSkeleton(state.tab || 'dashboard'); }
   try {
     const data = await apiGet('getAll', { token: state.sessionToken });
     state.assets = data.assets || [];
@@ -1857,7 +1897,7 @@ async function loadAll(showLoader = false) {
     setConnection(false);
     throw err;
   } finally {
-    if (showLoader) setLoading(false);
+    if (showLoader) hideDataSkeleton();
   }
 }
 
@@ -1893,11 +1933,21 @@ function updateBorrowDot() {
 }
 
 /* ========================================================= UTIL */
-function toast(msg) {
+function toast(msg, type) {
   const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
+  if (!t) return;
+  const textMsg = String(msg == null ? '' : msg);
+  if (!type) {
+    if (/ไม่สำเร็จ|ล้มเหลว|ผิดพลาด|ไม่พบ|ออฟไลน์|ไม่สามารถ/.test(textMsg)) type = 'bad';
+    else if (/ยืนยัน|เตือน|รอ|กำลัง|ช้ากว่าปกติ/.test(textMsg)) type = 'warn';
+    else type = 'ok';
+  }
+  const icon = type === 'bad' ? ICONS.warn : (type === 'warn' ? ICONS.info : ICONS.check);
+  t.className = 'toast ' + type;
+  t.innerHTML = `<span class="toast-icon">${icon}</span><span class="toast-message">${escapeHtml(textMsg)}</span>`;
+  requestAnimationFrame(() => t.classList.add('show'));
   clearTimeout(toast._t);
-  toast._t = setTimeout(() => t.classList.remove('show'), 2400);
+  toast._t = setTimeout(() => t.classList.remove('show'), 2600);
 }
 function toDate(v) {
   if (v instanceof Date) return v;
@@ -1989,6 +2039,41 @@ function cssVar(name, fallback) {
   return v || fallback;
 }
 function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
+function animateCountUps(root=document) {
+  const els = root.querySelectorAll('.hero-num,.stat-num,.rp-kpi .k-num');
+  els.forEach(el => {
+    if (el.dataset.countAnimated === '1') return;
+    const first = Array.from(el.childNodes).find(n => n.nodeType === 3 && /\d/.test(n.nodeValue || ''));
+    if (!first) return;
+    const raw = (first.nodeValue || '').replace(/[^0-9.-]/g,'');
+    const target = Number(raw);
+    if (!isFinite(target)) return;
+    const decimals = Math.max(0, (raw.split('.')[1] || '').length);
+    first.nodeValue = (0).toLocaleString('en-US', {minimumFractionDigits:decimals, maximumFractionDigits:decimals});
+    el.dataset.countAnimated = '1';
+    const start = performance.now(), duration = 820;
+    const ease = x => 1 - Math.pow(1-x, 3);
+    const tick = now => {
+      const p = Math.min(1, (now-start)/duration), v = target * ease(p);
+      first.nodeValue = v.toLocaleString('en-US', {minimumFractionDigits:decimals, maximumFractionDigits:decimals});
+      if (p < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
+}
+function applyPremiumMotion(root=document) {
+  animateCountUps(root);
+  const items = root.querySelectorAll('.list-item,.asset-card');
+  let i = 0;
+  items.forEach(el => {
+    if (i >= 10) return;
+    el.classList.remove('premium-stagger-item');
+    el.style.setProperty('--stagger-index', i++);
+    void el.offsetWidth;
+    el.classList.add('premium-stagger-item');
+  });
+}
+
 
 /* ---------- officer roster (จนท.ในสังกัด) helpers ---------- */
 function officerLabel(u) {
@@ -2044,6 +2129,17 @@ window.addEventListener('online', () => setConnection(true));
 window.addEventListener('offline', () => { setConnection(false); toast('ขณะนี้อุปกรณ์ออฟไลน์'); });
 
 function renderTab(name) {
+  if (document.startViewTransition && !renderTab._running) {
+    renderTab._running = true;
+    try {
+      const vt = document.startViewTransition(() => renderTabNow(name));
+      return vt.finished.finally(() => { renderTab._running = false; });
+    } catch (e) { renderTab._running = false; }
+  }
+  return renderTabNow(name);
+}
+
+function renderTabNow(name) {
   if ((name === 'users' || name === 'settings' || name === 'audit') && !isAdmin()) name = 'dashboard';
   state.tab = name;
   document.querySelectorAll('.tab').forEach(t => {
@@ -2076,6 +2172,7 @@ layoutNav();
   if (name === 'reports') renderReports();
   if (name === 'settings') renderSettings();
   if (name === 'audit') renderAudit();
+  requestAnimationFrame(() => applyPremiumMotion(activePage || document));
 }
 /* ---------- จัดความกว้างปุ่ม + ตำแหน่ง pill (มือถือ) ---------- */
 function layoutNav() {
@@ -2145,6 +2242,16 @@ function openMoreMenu() {
 document.getElementById('tabMore').addEventListener('click', openMoreMenu);
    
 /* ========================================================= DASHBOARD */
+function sparklineSvg(dataObj) {
+  const vals = Object.values(dataObj || {}).map(Number).filter(v => isFinite(v));
+  if (!vals.length) return '';
+  const w=140,h=34,p=3,min=Math.min(...vals),max=Math.max(...vals),range=(max-min)||1;
+  const pts=vals.map((v,i)=>[p+i*((w-p*2)/Math.max(1,vals.length-1)), h-p-((v-min)/range)*(h-p*2)]);
+  const d=pts.map((pt,i)=>(i?'L':'M')+pt[0].toFixed(1)+' '+pt[1].toFixed(1)).join(' ');
+  const last=pts[pts.length-1];
+  return `<div class="hero-sparkline" aria-hidden="true"><svg viewBox="0 0 ${w} ${h}"><path d="${d}"/><circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="2.5"/></svg></div>`;
+}
+
 function renderDashboard() {
   const d = state.dashboard;
   const el = document.getElementById('view-dashboard');
@@ -2166,10 +2273,11 @@ function renderDashboard() {
     <div class="dashboard-left">
       <div class="glass hero-card">
         <div class="hero-row">
-          <div><div class="hero-label">ครุภัณฑ์ทั้งหมด</div><div class="hero-num">${d.totalAssets}<span class="hero-unit">รายการ</span></div></div>
+          <div><div class="hero-label">ครุภัณฑ์ทั้งหมด</div><div class="hero-num" data-count="${Number(d.totalAssets)||0}">0<span class="hero-unit">รายการ</span></div></div>
           <div class="hero-divider"></div>
-          <div><div class="hero-label">มูลค่ารวม</div><div class="hero-num hero-num--sm">${Number(d.totalValue).toLocaleString()}<span class="hero-unit">บาท</span></div></div>
+          <div><div class="hero-label">มูลค่ารวม</div><div class="hero-num hero-num--sm" data-count="${Number(d.totalValue)||0}">0<span class="hero-unit">บาท</span></div></div>
         </div>
+        ${sparklineSvg(d.monthTrend || {})}
       </div>
       
       <div class="section-title" style="margin:4px 0 10px;">แนวโน้มการยืมย้อนหลัง 6 เดือน</div>
@@ -2179,15 +2287,15 @@ function renderDashboard() {
     <div class="dashboard-right">
       <div class="stat-grid">
         <div class="stat-card warn">
-          <div><div class="stat-num">${d.borrowedCount}</div><div class="stat-label">กำลังถูกยืม</div></div>
+          <div><div class="stat-num" data-count="${Number(d.borrowedCount)||0}">0</div><div class="stat-label">กำลังถูกยืม</div></div>
           <div style="color:var(--warn);">${ICONS.clock}</div>
         </div>
         <div class="stat-card bad">
-          <div><div class="stat-num">${d.overdueCount}</div><div class="stat-label">เกินกำหนดคืน</div></div>
+          <div><div class="stat-num" data-count="${Number(d.overdueCount)||0}">0</div><div class="stat-label">เกินกำหนดคืน</div></div>
           <div style="color:var(--bad);">${ICONS.warn}</div>
         </div>
         <div class="stat-card ok">
-          <div><div class="stat-num">${d.repairCount}</div><div class="stat-label">อยู่ระหว่างซ่อม</div></div>
+          <div><div class="stat-num" data-count="${Number(d.repairCount)||0}">0</div><div class="stat-label">อยู่ระหว่างซ่อม</div></div>
           <div style="color:var(--ok);">${ICONS.wrench}</div>
         </div>
       </div>
@@ -2467,9 +2575,17 @@ function renderAssets() {
     state.assetFilter = p.dataset.cat; state.assetLimit = ASSET_STEP; renderAssets();
   });
   drawAssetList();
+  requestAnimationFrame(() => applyPremiumMotion(el));
 }
 
-function emptyState(msg) { return `<div class="glass empty-state">${msg}</div>`; }
+function emptyState(msg) {
+  const text = String(msg || 'ยังไม่มีข้อมูล');
+  let action = '';
+  if (/งานซ่อม|ซ่อมค้าง|ยังไม่มีประวัติ/.test(text) && isAdmin()) action = `<button class="btn btn-primary empty-action" onclick="openMaintForm()">แจ้งซ่อม</button>`;
+  else if (/ครุภัณฑ์/.test(text) && isAdmin()) action = `<button class="btn btn-primary empty-action" onclick="openAssetForm()">เพิ่มครุภัณฑ์</button>`;
+  else if (/คำขอ|ค้างคืน/.test(text)) action = `<button class="btn btn-primary empty-action" onclick="openBorrowForm()">ขอยืมครุภัณฑ์</button>`;
+  return `<div class="glass empty-state"><div class="empty-icon">${ICONS.inbox}</div><div class="empty-title">${escapeHtml(text)}</div><div class="empty-sub">ข้อมูลจะแสดงที่นี่เมื่อมีรายการใหม่</div>${action}</div>`;
+}
 
 /* ========================= ฟีเจอร์ ๓: สแกน QR/บาร์โค้ด ========================= */
 let activeHtml5Qr = null;
@@ -2655,6 +2771,23 @@ function openAssetPickerSheet(currentId, onPick, onlyAvailable = true) {
   draw();
 }
    
+function assetTimelineHtml(a, id) {
+  const events = [];
+  if (a['วันที่รับเข้า']) events.push({date:a['วันที่รับเข้า'], title:'รับเข้าครุภัณฑ์', note:a['หน่วยงาน'] || a['ผู้ครอบครอง/หน่วยงาน'] || '', icon:ICONS.download});
+  (state.borrow || []).filter(b => b['รหัสครุภัณฑ์'] === id).forEach(b => {
+    if (b['วันที่ยืม']) events.push({date:b['วันที่ยืม'], title:'ยืมโดย ' + (b['ผู้ยืม'] || '-'), note:'สถานะ ' + (b['สถานะ'] || 'กำลังยืม'), icon:ICONS.swap});
+    if (b['วันที่คืนจริง']) events.push({date:b['วันที่คืนจริง'], title:'คืนครุภัณฑ์', note:'ผู้ยืม ' + (b['ผู้ยืม'] || '-'), icon:ICONS.check});
+  });
+  (state.maint || []).filter(m => m['รหัสครุภัณฑ์'] === id).forEach(m => {
+    if (m['วันที่แจ้ง']) events.push({date:m['วันที่แจ้ง'], title:'แจ้งซ่อม', note:m['อาการ/ปัญหา'] || m['สถานะ'] || '', icon:ICONS.wrench});
+    if (m['วันที่ซ่อมเสร็จ']) events.push({date:m['วันที่ซ่อมเสร็จ'], title:'ซ่อมเสร็จ', note:(m['ค่าใช้จ่าย(บาท)'] ? Number(m['ค่าใช้จ่าย(บาท)']).toLocaleString() + ' บาท' : ''), icon:ICONS.check});
+  });
+  (state.auditRecords || []).filter(r => r['รหัสครุภัณฑ์'] === id).forEach(r => events.push({date:r['วันที่ตรวจ'], title:'ตรวจนับประจำปี', note:r['ผล'] || '', icon:ICONS.check}));
+  events.sort((x,y)=>toDate(x.date)-toDate(y.date));
+  if (!events.length) return '';
+  return `<div class="asset-timeline"><div class="timeline-title">${ICONS.clock} ไทม์ไลน์ครุภัณฑ์</div><div class="timeline">${events.map((e,i)=>`<div class="timeline-item ${i===events.length-1?'current':''}"><div class="timeline-dot">${e.icon}</div><div class="timeline-content"><div class="timeline-event">${escapeHtml(e.title)}</div><div class="timeline-date">${thaiDate(e.date)}</div>${e.note?`<div class="timeline-note">${escapeHtml(e.note)}</div>`:''}</div></div>`).join('')}</div></div>`;
+}
+
 function openAssetDetail(id) {
   const a = state.assets.find(x => x['รหัสครุภัณฑ์'] === id);
   if (!a) return;
@@ -2673,7 +2806,7 @@ function openAssetDetail(id) {
     <div class="detail-row"><span>ครบกำหนดตรวจสภาพ/ต่อทะเบียน</span><span>${thaiDate(a['วันครบกำหนดตรวจสภาพ/ต่อทะเบียน'])}</span></div>
     <div class="detail-row"><span>หมายเหตุ</span><span>${escapeHtml(a['หมายเหตุ']) || '-'}</span></div>
     ${a['หมวดหมู่'] === GUN_CATEGORY ? componentsSection(id) : ''}
-    ${history.length ? `<div class="hint" style="margin-top:16px; font-weight:500; color:var(--ink);">ประวัติการยืม-คืนล่าสุด</div>` + history.map(h => `<div class="detail-row"><span>${escapeHtml(h['ผู้ยืม'])}</span><span>${thaiDate(h['วันที่ยืม'])} · ${escapeHtml(h['สถานะ'])}</span></div>`).join('') : ''}
+    ${assetTimelineHtml(a, id)}
     <div class="btn-row">
       <button class="btn btn-ghost" id="btnShowQr">แสดง QR โค้ด</button>
       <button class="btn btn-ghost" id="btnPrintAssetForm">พิมพ์บันทึกขอเบิก</button>
@@ -2700,7 +2833,7 @@ function openAssetDetail(id) {
     document.getElementById('btnQuickStatus').onclick = () => openQuickStatusForm(a);
     document.getElementById('btnEditAsset').onclick = () => { closeSheet(); openAssetForm(a); };
     document.getElementById('btnDeleteAsset').onclick = async () => {
-      if (!confirm('ยืนยันการลบครุภัณฑ์นี้?')) return;
+      if (!await confirmSheet('ยืนยันการลบครุภัณฑ์นี้?', {title:'ลบครุภัณฑ์', okText:'ลบรายการ', tone:'bad'})) return;
       try { await apiPost('deleteAsset', { id }); closeSheet(); toast('ลบรายการแล้ว'); await reloadThen(renderAssets); }
       catch (err) { toast(err.message || 'ลบไม่สำเร็จ'); }
     };
@@ -2750,7 +2883,7 @@ fontsReady.then(() => {
    async function printQrBatch(list) {
   if (!list.length) { toast('ไม่มีรายการให้พิมพ์ QR'); return; }
   if (typeof QRCode === 'undefined') { toast('ไม่พบไฟล์ qrcode.min.js'); return; }
-  if (list.length > 60 && !confirm('จะพิมพ์ QR ' + list.length + ' ใบ ต้องการดำเนินการต่อหรือไม่?')) return;
+  if (list.length > 60 && !await confirmSheet('จะพิมพ์ QR ' + list.length + ' ใบ ต้องการดำเนินการต่อหรือไม่?', {title:'พิมพ์ QR จำนวนมาก', okText:'พิมพ์ต่อ'})) return;
   setLoading(true, 'กำลังสร้าง QR โค้ด...');
   const tmp = document.createElement('div');
   tmp.style.cssText = 'position:fixed;left:-9999px;top:0;';
@@ -2907,7 +3040,7 @@ function openComponentForm(parentId, c) {
   };
   if (editing) {
     document.getElementById('btnDeleteComp').onclick = async () => {
-      if (!confirm('ยืนยันการลบส่วนควบนี้?')) return;
+      if (!await confirmSheet('ยืนยันการลบส่วนควบนี้?', {title:'ลบส่วนควบ', okText:'ลบรายการ', tone:'bad'})) return;
       try { await apiPost('deleteComponent', { id: c['รหัสส่วนควบ'] }); closeSheet(); toast('ลบส่วนควบแล้ว'); await reloadThen(() => openAssetDetail(parentId)); }
       catch (err) { toast(err.message || 'ลบส่วนควบไม่สำเร็จ'); }
     };
@@ -3002,6 +3135,7 @@ function renderBorrow() {
   };
   document.getElementById('borrowSortSelect').onchange = (e) => { state.borrowSort = e.target.value; renderBorrow(); };
   wireViewToggle(renderBorrow, '#view-borrow', 'borrowView');
+  requestAnimationFrame(() => applyPremiumMotion(el));
 }
 function borrowCard(b) {
   const eff = effectiveBorrowStatus(b);
@@ -3183,7 +3317,7 @@ const compNames = compRefs.map(r => {
       const confirmMsg = stillActive
         ? 'รายการนี้ยังไม่ได้คืน หากลบ ครุภัณฑ์ "' + (b['ชื่อครุภัณฑ์'] || '') + '" จะถูกปรับสถานะกลับเป็น "พร้อมใช้งาน" ทันที ยืนยันการลบ?'
         : 'ยืนยันการลบรายการยืม-คืนนี้? (ไม่สามารถกู้คืนได้)';
-      if (!confirm(confirmMsg)) return;
+      if (!await confirmSheet(confirmMsg, {title:'ลบรายการยืม-คืน', okText:'ลบรายการ', tone:'bad'})) return;
       const btn = deleteBorrowBtn;
       if (btn.disabled) return;
       setButtonBusy(btn, true, 'กำลังลบ...'); setLoading(true, 'กำลังลบรายการ...');
@@ -3201,7 +3335,7 @@ const compNames = compRefs.map(r => {
       catch (err) { toast(err.message || 'อนุมัติไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(btn, false); }
     };
     document.getElementById('btnReject').onclick = async () => {
-      if (!confirm('ยืนยันการปฏิเสธคำขอยืมนี้?')) return;
+      if (!await confirmSheet('ยืนยันการปฏิเสธคำขอยืมนี้?', {title:'ปฏิเสธคำขอยืม', okText:'ปฏิเสธ', tone:'bad'})) return;
       const btn = document.getElementById('btnReject'); if (btn.disabled) return; setButtonBusy(btn, true, 'กำลังปฏิเสธ...'); setLoading(true, 'กำลังปฏิเสธคำขอ...');
       try { await apiPost('rejectBorrowRequest', { borrowId: id }); closeSheet(); toast('ปฏิเสธคำขอแล้ว'); await reloadThen(renderBorrow); }
       catch (err) { toast(err.message || 'ปฏิเสธไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(btn, false); }
@@ -3550,6 +3684,7 @@ function renderMaint() {
   };
   document.getElementById('maintSortSelect').onchange = (e) => { state.maintSort = e.target.value; renderMaint(); };
     wireViewToggle(renderMaint, '#view-maint', 'maintView');
+  requestAnimationFrame(() => applyPremiumMotion(el));
 }
 function maintRow(m) {
   return `<div class="glass list-item maint-item" data-id="${escapeHtml(m['รหัสรายการ'])}">
@@ -3999,7 +4134,7 @@ function openUserForm(u) {
   };
   if (editing) {
     document.getElementById('btnDeleteUser').onclick = async () => {
-      if (!confirm('ยืนยันการลบรายชื่อนี้?')) return;
+      if (!await confirmSheet('ยืนยันการลบรายชื่อนี้?', {title:'ลบรายชื่อเจ้าหน้าที่', okText:'ลบรายชื่อ', tone:'bad'})) return;
       const oid = officerId(u);
       const identifier = u['LINEUserId'] || u['ชื่อผู้ใช้'] || u['ชื่อ-สกุล'];
       const deleteBtn = document.getElementById('btnDeleteUser');
@@ -4015,6 +4150,48 @@ function openUserForm(u) {
 }
 
 /* ========================================================= SHEET / MODAL */
+function confirmSheet(message, opts={}) {
+  return new Promise(resolve => {
+    const root = document.getElementById('modalRoot');
+    if (!root) return resolve(false);
+    const title = opts.title || 'ยืนยันรายการ';
+    const tone = opts.tone || 'warn';
+    const icon = tone === 'bad' ? ICONS.warn : (tone === 'info' ? ICONS.info : ICONS.warn);
+    root.innerHTML = `<div class="overlay confirm-overlay" id="confirmOverlay"><div class="sheet confirm-sheet" role="dialog" aria-modal="true" aria-labelledby="confirmTitle"><div class="confirm-icon">${icon}</div><div class="confirm-title" id="confirmTitle">${escapeHtml(title)}</div><div class="confirm-message">${escapeHtml(message)}</div><div class="confirm-actions"><button class="btn btn-ghost" id="confirmNo">ยกเลิก</button><button class="btn ${tone==='bad'?'btn-danger':'btn-primary'}" id="confirmYes">${escapeHtml(opts.okText || 'ยืนยัน')}</button></div></div></div>`;
+    const finish = value => { root.innerHTML=''; resolve(value); };
+    document.getElementById('confirmNo').onclick = () => finish(false);
+    document.getElementById('confirmYes').onclick = () => finish(true);
+    document.getElementById('confirmOverlay').addEventListener('click', e => { if (e.target.id === 'confirmOverlay') finish(false); });
+    setTimeout(()=>document.getElementById('confirmYes')?.focus(),30);
+  });
+}
+
+function commandPaletteItems(q='') {
+  const needle=String(q||'').trim().toLowerCase();
+  const out=[];
+  const push=(kind,id,title,sub,icon,run)=>{ if(!needle || (title+' '+sub).toLowerCase().includes(needle)) out.push({kind,id,title,sub,icon,run}); };
+  (state.assets||[]).forEach(a=>push('asset',a['รหัสครุภัณฑ์'],a['ชื่อครุภัณฑ์']||'-',(a['รหัสครุภัณฑ์']||'')+' · '+(a['หมายเลขเครื่อง']||a['ผู้ครอบครอง/หน่วยงาน']||''),catIcon(a['หมวดหมู่']),()=>openAssetDetail(a['รหัสครุภัณฑ์'])));
+  (state.borrow||[]).forEach(b=>push('borrow',b['รหัสรายการ'],b['ชื่อครุภัณฑ์']||'-',(b['ผู้ยืม']||'-')+' · '+(b['รหัสครุภัณฑ์']||''),ICONS.swap,()=>openBorrowDetail(b['รหัสรายการ'])));
+  (state.users||[]).forEach((u,i)=>push('user',String(i),officerFullName(u)||'-',(u['ตำแหน่ง']||'')+' · '+(u['รหัสจนท.']||''),ICONS.user,()=>{ if(isAdmin()) openUserForm(u); }));
+  return out.slice(0,30);
+}
+function openCommandPalette(initial='') {
+  const root=document.getElementById('modalRoot'); if(!root) return;
+  root.innerHTML=`<div class="overlay command-overlay" id="commandOverlay"><div class="sheet command-sheet" role="dialog" aria-modal="true" aria-label="ค้นหาด่วน"><div class="command-head"><span style="color:var(--ink-dim)">${ICONS.scan}</span><input class="input command-search" id="commandSearch" autocomplete="off" placeholder="ค้นหา S/N, รหัสครุภัณฑ์, ชื่อ, เจ้าหน้าที่..." value="${escapeHtml(initial)}"><span class="command-kbd">ESC</span></div><div class="command-results" id="commandResults"></div></div></div>`;
+  const input=document.getElementById('commandSearch'), results=document.getElementById('commandResults');
+  const draw=()=>{ const items=commandPaletteItems(input.value); results.innerHTML=items.length?items.map((x,i)=>`<div class="command-item ${i===0?'active':''}" data-cmd-index="${i}"><div class="command-item-icon">${x.icon}</div><div class="command-item-main"><div class="command-item-title">${escapeHtml(x.title)}</div><div class="command-item-sub">${escapeHtml(x.sub)}</div></div></div>`).join(''):`<div class="command-empty">ไม่พบข้อมูลที่ตรงกับคำค้น</div>`; results.querySelectorAll('.command-item').forEach((el,i)=>el.onclick=()=>{root.innerHTML='';items[i].run();});};
+  input.oninput=draw;
+  input.onkeydown=e=>{ if(e.key==='Escape'){root.innerHTML='';return;} if(e.key==='Enter'){const first=results.querySelector('.command-item');if(first)first.click();} };
+  document.getElementById('commandOverlay').onclick=e=>{if(e.target.id==='commandOverlay')root.innerHTML='';};
+  draw(); setTimeout(()=>{input.focus();input.select();},30);
+}
+function closeCommandPalette(){ const root=document.getElementById('modalRoot'); if(root) root.innerHTML=''; }
+
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase()==='k') { e.preventDefault(); openCommandPalette(); }
+});
+document.getElementById('commandBtn')?.addEventListener('click',()=>openCommandPalette());
+
 function showSheet(html, extraClass) {
   document.getElementById('modalRoot').innerHTML = `<div class="overlay" id="overlayEl"><div class="sheet ${extraClass||''}">
     <button class="sheet-close" id="sheetCloseBtn" type="button" title="ปิด" aria-label="ปิด">${ICONS.close}</button>
@@ -4280,7 +4457,7 @@ desk.addEventListener('focusout', () => {
   };
   if (!isNew && isAdmin()) {
     document.getElementById('btnMemoDelete').onclick = async () => {
-      if (!confirm('ยืนยันการลบเอกสารนี้?')) return;
+      if (!await confirmSheet('ยืนยันการลบเอกสารนี้?', {title:'ลบเอกสาร', okText:'ลบเอกสาร', tone:'bad'})) return;
       try { await apiPost('deleteMemo', { id: opts.id }); closeSheet(); toast('ลบเอกสารแล้ว'); await reloadThen(() => { if (state.tab === 'memos') renderMemos(); }); }
       catch (err) { toast(err.message || 'ลบไม่สำเร็จ'); }
     };
@@ -5222,7 +5399,7 @@ function openBulkAuditModal() {
   async function applyBulk(status) {
     const ids = Array.from(selected);
     if (!ids.length) { toast('กรุณาเลือกอย่างน้อย 1 รายการ'); return; }
-    if (!confirm('ยืนยันบันทึกผลตรวจ "' + status + '" ให้ทั้งหมด ' + ids.length + ' รายการ?')) return;
+    if (!await confirmSheet('ยืนยันบันทึกผลตรวจ "' + status + '" ให้ทั้งหมด ' + ids.length + ' รายการ?', {title:'บันทึกผลตรวจหลายรายการ', okText:'บันทึกผลตรวจ'})) return;
     setLoading(true, 'กำลังบันทึกผลตรวจ 0/' + ids.length + '...');
     const loadingText = document.getElementById('loadingText');
     let done = 0, failed = 0;
@@ -5377,7 +5554,139 @@ function printAuditReport() {
     </tr>`;
   }).join('');
   const html = `
-    <style>@page{ size:A4; margin:15mm; }</style>
+    <style>@page{ size:A4; margin:15mm; }
+
+/* numeric rhythm */
+.num,.stat-num,.hero-num,.k-num,.ap-serial,[data-number],table td:nth-child(n){font-variant-numeric:tabular-nums;}
+
+/* =========================================================
+   PREMIUM EXPERIENCE LAYER v3 — motion / skeleton / touch / command palette
+   Theme-safe: uses existing design tokens only.
+   ========================================================= */
+:root{
+  --motion-ease:cubic-bezier(.22,.8,.2,1);
+  --skeleton-base:color-mix(in srgb,var(--panel) 72%,var(--ink-faint) 28%);
+  --skeleton-hi:color-mix(in srgb,var(--panel) 92%,var(--gold) 8%);
+}
+html{scroll-behavior:smooth;}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto;}}
+
+/* press feedback */
+.btn,.list-item,.asset-card,.icon-btn,.refresh-btn,.fab,.chip,.tab,.vt-btn,.audit-btn,.role-select-card{
+  -webkit-tap-highlight-color:transparent;
+}
+.btn:active,.list-item:active,.asset-card:active,.icon-btn:active,.refresh-btn:active,.fab:active,.chip:active,.tab:active,.vt-btn:active,.audit-btn:active{
+  transform:scale(.97);
+}
+.btn,.list-item,.asset-card,.icon-btn,.refresh-btn,.fab,.chip,.tab,.vt-btn,.audit-btn{transition:transform .16s var(--motion-ease),box-shadow .18s ease,border-color .18s ease,background .18s ease;}
+
+/* staggered entrance — first 10 only */
+@keyframes premiumItemIn{from{opacity:0;transform:translateY(8px) scale(.992)}to{opacity:1;transform:none}}
+.premium-stagger-item{animation:premiumItemIn .42s var(--motion-ease) both;animation-delay:calc(var(--stagger-index,0) * 30ms);}
+@media (prefers-reduced-motion:reduce){.premium-stagger-item{animation:none!important;}}
+
+/* count-up polish */
+.hero-num,.stat-num,.rp-kpi .k-num{font-variant-numeric:tabular-nums;}
+
+/* skeleton */
+.skeleton-page{display:grid;gap:14px;}
+.skeleton-hero{height:164px;border-radius:24px;}
+.skeleton-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}
+.skeleton-card{height:92px;border-radius:18px;}
+.skeleton-list{display:grid;gap:10px;}
+.skeleton-row{height:76px;border-radius:16px;}
+.skeleton-shimmer{
+  position:relative;overflow:hidden;
+  background:linear-gradient(110deg,var(--skeleton-base) 8%,var(--skeleton-hi) 18%,var(--skeleton-base) 33%);
+  background-size:220% 100%;animation:skeletonShimmer 1.25s linear infinite;
+  border:1px solid var(--premium-line);
+  box-shadow:var(--premium-shadow-soft);
+}
+@keyframes skeletonShimmer{to{background-position:-220% 0;}}
+@media (max-width:640px){.skeleton-grid{grid-template-columns:1fr 1fr}.skeleton-hero{height:145px}.skeleton-row{height:70px;}}
+@media (prefers-reduced-motion:reduce){.skeleton-shimmer{animation:none;background:var(--skeleton-base);}}
+
+/* toast — above mobile navigation */
+.toast{
+  top:auto!important;bottom:calc(92px + env(safe-area-inset-bottom))!important;
+  left:50%!important;transform:translateX(-50%) translateY(12px)!important;
+  display:flex;align-items:center;gap:9px;min-width:180px;width:max-content;max-width:min(92vw,520px);
+  padding:11px 15px!important;border-radius:16px!important;
+  border:1px solid color-mix(in srgb,#fff 12%,transparent)!important;
+  box-shadow:0 18px 45px color-mix(in srgb,var(--navy-deep) 22%,transparent),inset 0 1px 0 color-mix(in srgb,#fff 14%,transparent)!important;
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+}
+.toast.show{opacity:1!important;transform:translateX(-50%) translateY(0)!important;}
+.toast-icon{width:20px;height:20px;display:grid;place-items:center;flex:none;border-radius:50%;}
+.toast-icon svg{width:17px;height:17px;}
+.toast-message{line-height:1.4;text-align:left;white-space:normal;}
+.toast.ok .toast-icon{color:var(--ok);background:var(--ok-wash);}
+.toast.warn .toast-icon{color:var(--warn);background:var(--warn-wash);}
+.toast.bad .toast-icon{color:var(--bad);background:var(--bad-wash);}
+.toast.info .toast-icon{color:var(--info);background:var(--info-wash);}
+
+/* empty state */
+.empty-state{position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;min-height:180px!important;border:1px dashed var(--panel-line);}
+.empty-icon{width:58px;height:58px;border-radius:19px;display:grid;place-items:center;color:var(--ink-faint);background:var(--panel-soft);border:1px solid var(--panel-line);}
+.empty-icon svg{width:31px;height:31px;}
+.empty-title{font-size:14px;font-weight:600;color:var(--ink);}
+.empty-sub{font-size:11.5px;color:var(--ink-dim);}
+.empty-action{margin-top:3px!important;padding:9px 14px!important;min-width:130px!important;}
+
+/* confirm sheet */
+.confirm-overlay{align-items:center!important;padding:18px;}
+.confirm-sheet{width:min(440px,100%);max-width:440px!important;border-radius:26px!important;border-bottom:1px solid var(--panel-line)!important;padding:22px!important;animation:confirmIn .2s var(--motion-ease);}
+@keyframes confirmIn{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
+.confirm-icon{width:50px;height:50px;border-radius:17px;display:grid;place-items:center;margin-bottom:14px;color:var(--warn);background:var(--warn-wash);}
+.confirm-icon svg{width:26px;height:26px;}
+.confirm-title{font-size:18px;font-weight:650;color:var(--ink);margin-bottom:7px;font-family:var(--font-disp);}
+.confirm-message{font-size:13px;line-height:1.7;color:var(--ink-dim);white-space:pre-line;}
+.confirm-actions{display:flex;gap:10px;margin-top:20px;}
+.confirm-actions .btn{min-height:44px;}
+
+/* command palette */
+.command-overlay{align-items:flex-start!important;padding:10vh 16px 24px;}
+.command-sheet{width:min(720px,100%);max-width:720px!important;border-radius:24px!important;border-bottom:1px solid var(--panel-line)!important;padding:16px!important;animation:confirmIn .2s var(--motion-ease);}
+.command-head{display:flex;align-items:center;gap:10px;padding:2px 2px 12px;}
+.command-search{flex:1;border:none!important;outline:none!important;background:transparent!important;box-shadow:none!important;font-size:16px!important;padding:10px 4px!important;}
+.command-kbd{font:11px var(--font-num);color:var(--ink-faint);border:1px solid var(--panel-line);background:var(--panel-soft);padding:4px 7px;border-radius:7px;}
+.command-results{max-height:58vh;overflow:auto;display:grid;gap:6px;}
+.command-item{display:flex;align-items:center;gap:12px;padding:12px;border-radius:15px;cursor:pointer;border:1px solid transparent;}
+.command-item:hover,.command-item.active{background:var(--gold-wash);border-color:var(--gold-line);}
+.command-item-icon{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;color:var(--navy);background:var(--navy-wash);flex:none;}
+.command-item-icon svg{width:19px;height:19px;}
+.command-item-main{min-width:0;flex:1;}
+.command-item-title{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.command-item-sub{font-size:11px;color:var(--ink-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;}
+.command-empty{padding:34px 12px;text-align:center;color:var(--ink-dim);font-size:12px;}
+
+/* timeline */
+.asset-timeline{margin:18px 0 4px;padding:2px 0 2px;}
+.timeline-title{font-size:12px;font-weight:650;color:var(--ink);margin-bottom:12px;display:flex;align-items:center;gap:7px;}
+.timeline-title svg{width:16px;height:16px;color:var(--gold-deep);}
+.timeline{position:relative;display:grid;gap:0;}
+.timeline::before{content:"";position:absolute;left:11px;top:13px;bottom:13px;width:1px;background:var(--panel-line);}
+.timeline-item{position:relative;display:grid;grid-template-columns:24px 1fr;gap:9px;padding:0 0 14px;}
+.timeline-dot{width:23px;height:23px;border-radius:50%;display:grid;place-items:center;background:var(--panel);border:1px solid var(--panel-line);color:var(--ink-dim);z-index:1;}
+.timeline-dot svg{width:13px;height:13px;}
+.timeline-item.current .timeline-dot{color:var(--gold-deep);border-color:var(--gold-line);background:var(--gold-wash);}
+.timeline-content{min-width:0;padding-top:1px;}
+.timeline-event{font-size:12.5px;font-weight:600;color:var(--ink);}
+.timeline-date{font-size:10.5px;color:var(--ink-dim);margin-top:2px;}
+.timeline-note{font-size:10.5px;color:var(--ink-faint);margin-top:2px;line-height:1.45;}
+
+/* sparkline */
+.hero-sparkline{position:absolute;right:16px;bottom:13px;width:140px;height:34px;opacity:.62;pointer-events:none;}
+.hero-sparkline svg{width:100%;height:100%;overflow:visible;}
+.hero-sparkline path{fill:none;stroke:var(--gold);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.hero-sparkline circle{fill:var(--gold);}
+
+/* tab/page view transition */
+::view-transition-old(root),::view-transition-new(root){animation-duration:.18s;}
+
+/* desktop/mobile toast position */
+@media (min-width:900px){.toast{bottom:24px!important;}.command-overlay{padding-top:9vh;}}
+</style>
     <div style="font-family:'TH Sarabun New','Sarabun','Kanit',sans-serif; font-size:14pt; color:#000;">
       <div style="text-align:center; font-weight:700; font-size:18pt;">รายงานผลการตรวจนับพัสดุประจำปี พ.ศ. ${toThaiNumber(state.auditYear + 543)}</div>
       <div style="text-align:center; margin-bottom:8mm;">${escapeHtml(orgName)}</div>
@@ -5679,7 +5988,7 @@ function renderSettings() {
   };
   const btnRemoveG = document.getElementById('btnRemoveGaruda');
   if (btnRemoveG) btnRemoveG.onclick = async () => {
-    if (!confirm('ยืนยันลบรูปตราครุฑ?')) return;
+    if (!await confirmSheet('ยืนยันลบรูปตราครุฑ?', {title:'ลบตราครุฑ', okText:'ลบรูป', tone:'bad'})) return;
     try { await apiPost('updateSystemSettings', { garudaLogo: '' }); toast('ลบรูปตราครุฑแล้ว'); await reloadThen(renderSettings); }
     catch (err) { toast(err.message || 'ลบไม่สำเร็จ'); }
   };
@@ -5694,14 +6003,14 @@ function renderSettings() {
   document.getElementById('btnChangePw').onclick = async () => {
     const role = val('st_pwrole'), pw = val('st_pwnew');
     if (!pw || pw.length < 4) { toast('กรุณากรอกรหัสผ่านใหม่อย่างน้อย 4 ตัวอักษร'); return; }
-    if (!confirm('ยืนยันเปลี่ยนรหัสผ่านระดับ "' + (role === 'admin' ? 'แอดมิน' : 'ดูอย่างเดียว') + '" ?')) return;
+    if (!await confirmSheet('ยืนยันเปลี่ยนรหัสผ่านระดับ "' + (role === 'admin' ? 'แอดมิน' : 'ดูอย่างเดียว') + '" ?', {title:'เปลี่ยนรหัสผ่าน', okText:'ยืนยัน'})) return;
     const btn = document.getElementById('btnChangePw'); if (btn.disabled) return; setButtonBusy(btn, true); setLoading(true, 'กำลังเปลี่ยนรหัสผ่าน...');
     try { await apiPost('changeRolePassword', { role, newPassword: pw }); document.getElementById('st_pwnew').value = ''; toast('เปลี่ยนรหัสผ่านแล้ว'); }
     catch (err) { toast(err.message || 'เปลี่ยนรหัสผ่านไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(btn, false); }
   };
   document.getElementById('btnMigrateImages').onclick = async () => {
     const btn = document.getElementById('btnMigrateImages');
-    if (!confirm('ระบบจะย้ายรูป Base64 เดิมทั้งหมดไป Google Drive แล้วเปลี่ยนค่าในชีตเป็น URL ต้องการดำเนินการหรือไม่?')) return;
+    if (!await confirmSheet('ระบบจะย้ายรูป Base64 เดิมทั้งหมดไป Google Drive แล้วเปลี่ยนค่าในชีตเป็น URL ต้องการดำเนินการหรือไม่?', {title:'ย้ายรูปไป Google Drive', okText:'เริ่มย้าย'})) return;
     setButtonBusy(btn, true, 'กำลังย้ายรูป...');
     setLoading(true, 'กำลังย้ายรูปเก่าไป Google Drive...');
     try {
@@ -5729,13 +6038,13 @@ function renderSettings() {
 
   function wireCategoryUnitRows() {
     document.querySelectorAll('.cu-del').forEach(btn => {
-      btn.onclick = () => {
+      btn.onclick = async () => {
         const row = btn.closest('.cu-row');
         const original = row.querySelector('.cu-original').value;
         // ถ้าหมวดหมู่นี้มีครุภัณฑ์ใช้อยู่แล้ว เตือนก่อนลบ เพราะครุภัณฑ์เดิมจะยังคงชื่อหมวดหมู่เก่าไว้ แต่จะไม่แสดงในตัวกรองอีกต่อไป
         if (original) {
           const count = state.assets.filter(a => a['หมวดหมู่'] === original).length;
-          if (count > 0 && !confirm('มีครุภัณฑ์ ' + count + ' รายการอยู่ในหมวดหมู่ "' + original + '" หากลบหมวดหมู่นี้ ครุภัณฑ์เดิมจะยังคงข้อมูลไว้ แต่จะไม่แสดงในตัวกรองหมวดหมู่อีกต่อไป ยืนยันการลบ?')) return;
+          if (count > 0 && !await confirmSheet('มีครุภัณฑ์ ' + count + ' รายการอยู่ในหมวดหมู่ "' + original + '" หากลบหมวดหมู่นี้ ครุภัณฑ์เดิมจะยังคงข้อมูลไว้ แต่จะไม่แสดงในตัวกรองหมวดหมู่อีกต่อไป ยืนยันการลบ?', {title:'ลบหมวดหมู่', okText:'ลบหมวดหมู่', tone:'bad'})) return;
         }
         row.remove();
       };
@@ -5793,6 +6102,10 @@ function renderSettings() {
 }
 
 init();
+
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+}
 </script>
 </body>
 </html>
