@@ -9420,132 +9420,115 @@ function normalizePolicePosition(position) {
 }
 
 /*
- * ตำแหน่งในระบบมีข้อความหน่วยต่อท้าย เช่น
- *   รอง สว. ส.ทล.3
- *   รอง สว.(ป.) ส.ทล.3
- *   รอง สว.(ป.) ส.ทล.4
+ * แยก "ตำแหน่ง" ออกจากข้อความหน่วย/สังกัดอย่างเด็ดขาด
+ * เช่น
+ *   รอง สว. ส.ทล.3        -> ตำแหน่งหลัก = รอง สว., แบบย่อย = 0
+ *   รอง สว. ส.ทล.4        -> ตำแหน่งหลัก = รอง สว., แบบย่อย = 0
+ *   รอง สว.(ป.) ส.ทล.3   -> ตำแหน่งหลัก = รอง สว., แบบย่อย = 1
+ *   รอง สว.(ป.) ส.ทล.4   -> ตำแหน่งหลัก = รอง สว., แบบย่อย = 1
  *
- * ห้ามเอาสตริงทั้งก้อนไป localeCompare เพราะจะทำให้ส่วนหน่วย
- * และข้อความในวงเล็บเข้ามาปนกับลำดับตำแหน่ง
+ * จุดสำคัญคือ "ส.ทล.3 / ส.ทล.4" ไม่เคยถูกนำมาใช้ตัดสินว่า
+ * รอง สว. หรือ รอง สว.(ป.) อันไหนมาก่อน
  */
-const POLICE_POSITION_ORDER = [
+const POLICE_POSITION_RULES = [
+  { key:'ผบก.', base:'ผบก.', variant:0, re:/^ผบก\.?/u },
+  { key:'รอง ผบก.', base:'รอง ผบก.', variant:0, re:/^รอง\s*ผบก\.?/u },
+  { key:'ผกก.', base:'ผกก.', variant:0, re:/^ผกก\.?/u },
+  { key:'รอง ผกก.', base:'รอง ผกก.', variant:0, re:/^รอง\s*ผกก\.?/u },
+  { key:'สว.', base:'สว.', variant:0, re:/^สว\.?/u },
+  { key:'รอง สว.', base:'รอง สว.', variant:0, re:/^รอง\s*สว\.?/u },
+  { key:'รอง สว.(ป.)', base:'รอง สว.', variant:1, re:/^รอง\s*สว\.?\s*\(ป\.\)/u },
+  { key:'สวป.', base:'สวป.', variant:0, re:/^สวป\.?/u },
+  { key:'รอง สวป.', base:'รอง สวป.', variant:0, re:/^รอง\s*สวป\.?/u },
+  { key:'ผบ.หมู่', base:'ผบ.หมู่', variant:0, re:/^ผบ\.?\s*หมู่/u },
+  { key:'ผบ.หมู่(ป.)', base:'ผบ.หมู่', variant:1, re:/^ผบ\.?\s*หมู่\s*\(ป\.\)/u },
+  { key:'รอง ผบ.หมู่', base:'รอง ผบ.หมู่', variant:0, re:/^รอง\s*ผบ\.?\s*หมู่/u },
+  { key:'เจ้าหน้าที่', base:'เจ้าหน้าที่', variant:0, re:/^เจ้าหน้าที่/u },
+  { key:'ผู้บังคับหมู่', base:'ผู้บังคับหมู่', variant:0, re:/^ผู้บังคับหมู่/u }
+];
+
+/* ลำดับ "ตำแหน่งหลัก" เท่านั้น — ไม่รวม (ป.) */
+const POLICE_POSITION_BASE_ORDER = [
   'ผบก.', 'รอง ผบก.',
   'ผกก.', 'รอง ผกก.',
-  'สว.', 'รอง สว.', 'รอง สว.(ป.)',
+  'สว.', 'รอง สว.',
   'สวป.', 'รอง สวป.',
-  'ผบ.หมู่', 'ผบ.หมู่(ป.)',
-  'รอง ผบ.หมู่',
+  'ผบ.หมู่', 'รอง ผบ.หมู่',
   'เจ้าหน้าที่', 'ผู้บังคับหมู่'
 ];
-const POLICE_POSITION_INDEX = (() => {
-  const m = {};
-  POLICE_POSITION_ORDER.forEach((x, i) => { m[x] = i; });
-  return m;
-})();
+const POLICE_POSITION_BASE_INDEX = Object.fromEntries(POLICE_POSITION_BASE_ORDER.map((x,i)=>[x,i]));
 
-function stripPoliceUnitSuffix(position) {
-  let s = normalizePolicePosition(position);
-  /* หน่วย/สังกัดที่พบบ่อย ให้ถือเป็นข้อมูลชั้นหลัง ไม่ใช่ชื่อตำแหน่ง */
-  s = s.replace(/\s+(?=(?:ส\.ทล\.|สภ\.|กก\.|บก\.|ภ\.จว\.|ภ\.\w+|กอง\.|ฝ่าย|งาน|ศูนย์|สภก\.)\b).+$/u, '').trim();
-  return s;
-}
-
-function canonicalPolicePosition(position) {
+function parsePolicePosition(position) {
   const raw = normalizePolicePosition(position);
-  if (!raw) return '';
+  if (!raw) return {raw:'', base:'', variant:0, unit:'', known:false};
 
-  /*
-   * สำคัญ: ตำแหน่งจริงอาจมีหน่วยต่อท้าย เช่น
-   *   รอง สว. ส.ทล.3
-   *   รอง สว. ส.ทล.4
-   *   รอง สว.(ป.) ส.ทล.3
-   *   รอง สว.(ป.) ส.ทล.4
-   *
-   * จึงต้องหา "ชื่อ ตำแหน่ง" จากต้นข้อความก่อน แล้วไม่เอาหน่วย
-   * มาทำลายลำดับตำแหน่งอีกต่อไป
-   */
-  const compact = raw.replace(/\s+/g, '');
-  const aliases = [
-    ['รอง สว.(ป.)', /^รองสว\.?(?:\(ป\.\))?/u],
-    ['รอง สว.', /^รองสว\.?/u],
-    ['รอง ผกก.', /^รองผกก\.?/u],
-    ['ผกก.', /^ผกก\.?/u],
-    ['รอง ผบก.', /^รองผบก\.?/u],
-    ['ผบก.', /^ผบก\.?/u],
-    ['รอง สวป.', /^รองสวป\.?/u],
-    ['สวป.', /^สวป\.?/u],
-    ['สว.', /^สว\.?/u],
-    ['ผบ.หมู่(ป.)', /^ผบ\.หมู่\(ป\.\)/u],
-    ['ผบ.หมู่', /^ผบ\.หมู่/u],
-    ['รอง ผบ.หมู่', /^รองผบ\.หมู่/u],
-    ['เจ้าหน้าที่', /^เจ้าหน้าที่/u],
-    ['ผู้บังคับหมู่', /^ผู้บังคับหมู่/u]
-  ];
-
-  /* เรียงตัวเลือกจากยาวไปสั้น เพื่อให้ รอง สว.(ป.) จับก่อน รอง สว. */
-  aliases.sort((a,b) => b[0].length - a[0].length);
-  for (const [label, re] of aliases) {
-    if (re.test(compact)) return label;
+  /* ตรวจแบบมี (ป.) ก่อนเสมอ เพื่อไม่ให้ regex ของ "รอง สว." จับก่อน */
+  const variantRules = POLICE_POSITION_RULES.filter(x => x.variant > 0)
+    .sort((a,b) => b.re.source.length - a.re.source.length);
+  for (const rule of variantRules) {
+    const m = raw.match(rule.re);
+    if (m) {
+      return {
+        raw,
+        base: rule.base,
+        variant: rule.variant,
+        unit: raw.slice(m[0].length).trim(),
+        known: true
+      };
+    }
   }
 
-  /* กรณีตำแหน่งที่ยังไม่อยู่ในตาราง ให้ตัดหน่วยท้ายออกเป็น fallback */
-  return stripPoliceUnitSuffix(raw);
-}
+  /* แบบปกติ */
+  const normalRules = POLICE_POSITION_RULES.filter(x => x.variant === 0)
+    .sort((a,b) => b.re.source.length - a.re.source.length);
+  for (const rule of normalRules) {
+    const m = raw.match(rule.re);
+    if (m) {
+      return {
+        raw,
+        base: rule.base,
+        variant: 0,
+        unit: raw.slice(m[0].length).trim(),
+        known: true
+      };
+    }
+  }
 
-function splitPolicePosition(position) {
-  const raw = normalizePolicePosition(position);
-  const canonical = canonicalPolicePosition(raw);
-  const parenthetical = [];
-  const m = canonical.match(/\(([^()]*)\)/u);
-  if (m) parenthetical.push(m[1].trim());
-  const base = canonical.replace(/\([^)]*\)/gu, '').trim();
-  return {
-    raw,
-    canonical,
-    base,
-    hasParenthetical: parenthetical.length > 0,
-    parenthetical: parenthetical.join(' ')
-  };
+  return {raw, base:raw, variant:0, unit:'', known:false};
 }
 
 function comparePolicePositions(a, b) {
-  const A = splitPolicePosition(a);
-  const B = splitPolicePosition(b);
+  const A = parsePolicePosition(a);
+  const B = parsePolicePosition(b);
   if (A.raw === B.raw) return 0;
 
-  /* ตำแหน่งที่รู้จัก ใช้ลำดับตำแหน่งโดยตรง ไม่ใช้ตัวอักษร */
-  const ia = Object.prototype.hasOwnProperty.call(POLICE_POSITION_INDEX, A.canonical)
-    ? POLICE_POSITION_INDEX[A.canonical] : 500;
-  const ib = Object.prototype.hasOwnProperty.call(POLICE_POSITION_INDEX, B.canonical)
-    ? POLICE_POSITION_INDEX[B.canonical] : 500;
+  const ia = Object.prototype.hasOwnProperty.call(POLICE_POSITION_BASE_INDEX, A.base)
+    ? POLICE_POSITION_BASE_INDEX[A.base] : 500;
+  const ib = Object.prototype.hasOwnProperty.call(POLICE_POSITION_BASE_INDEX, B.base)
+    ? POLICE_POSITION_BASE_INDEX[B.base] : 500;
   if (ia !== ib) return ia - ib;
 
-  /* ตำแหน่งหลักเดียวกัน: ไม่มีวงเล็บมาก่อนมีวงเล็บเสมอ */
-  if (A.base === B.base) {
-    if (!A.hasParenthetical && B.hasParenthetical) return -1;
-    if (A.hasParenthetical && !B.hasParenthetical) return 1;
+  /* ตำแหน่งหลักเดียวกัน: ตำแหน่งธรรมดามาก่อนตำแหน่งย่อย (ป.) */
+  if (A.variant !== B.variant) return A.variant - B.variant;
 
-    const pc = A.parenthetical.localeCompare(B.parenthetical, 'th', {
-      numeric: true, sensitivity: 'base'
-    });
-    if (pc !== 0) return pc;
-  }
+  /* ถ้าตำแหน่งหลัก + แบบย่อยเหมือนกัน ค่อยดูหน่วย เช่น ส.ทล.3 < ส.ทล.4 */
+  const uc = A.unit.localeCompare(B.unit, 'th', {numeric:true, sensitivity:'base'});
+  if (uc !== 0) return uc;
 
-  /* ตำแหน่งที่ไม่อยู่ในตาราง: เรียงจากชื่อฐานก่อน แล้วค่อยหน่วย/รายละเอียด */
-  const bc = A.base.localeCompare(B.base, 'th', { numeric: true, sensitivity: 'base' });
-  if (bc !== 0) return bc;
-
-  return A.raw.localeCompare(B.raw, 'th', { numeric: true, sensitivity: 'base' });
+  /* fallback สำหรับข้อมูลที่ยังไม่รู้จัก */
+  return A.raw.localeCompare(B.raw, 'th', {numeric:true, sensitivity:'base'});
 }
 
 function comparePoliceOfficers(a, b) {
   const ra = policeRankIndex(a && a['ยศ']);
   const rb = policeRankIndex(b && b['ยศ']);
   if (ra !== rb) return ra - rb;
+
   const pc = comparePolicePositions(a && a['ตำแหน่ง'], b && b['ตำแหน่ง']);
   if (pc) return pc;
+
   return officerFullName(a).localeCompare(officerFullName(b), 'th', {
-    numeric: true, sensitivity: 'base'
+    numeric:true, sensitivity:'base'
   });
 }
 function compareMonthlyOfficers(a, b) {
