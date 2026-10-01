@@ -145,6 +145,12 @@ const memoToThai = r => ({
   'วันที่สร้าง': r.created_at, 'แก้ไขล่าสุด': r.updated_at
 });
 
+const monthlyToThai = r => ({
+  'รหัสตรวจ': r.id, 'ปี': r.year, 'เดือน': r.month, 'รหัสจนท.': r.officer_id,
+  'ชื่อผู้ถูกตรวจ': r.officer_name, 'ผล': r.result, 'หมายเหตุ': r.note,
+  'พัสดุที่ถือ': r.holdings_snapshot, 'ผู้ตรวจ': r.inspector, 'วันที่ตรวจ': r.inspected_at
+});
+
 // ==================== DASHBOARD BUILDER (พอร์ตจาก buildDashboard_ ฝั่ง GAS) ====================
 function buildDashboardJS(assets, borrow, maint, alertDays) {
   const byCategory = {}, byStatus = {};
@@ -257,6 +263,14 @@ async function sGetAuditRecords(year) {
   return data.map(auditToThai);
 }
 
+async function sGetMonthlyChecks(year, month) {
+  const y = Number(year) || new Date().getFullYear();
+  const m = Number(month) || (new Date().getMonth() + 1);
+  const { data, error } = await sb.from('monthly_checks').select('*').eq('year', y).eq('month', m);
+  if (error) throw new Error(error.message);
+  return data.map(monthlyToThai);
+}
+
 async function supaApiGet(action, params) {
   params = params || {};
   switch (action) {
@@ -267,6 +281,7 @@ async function supaApiGet(action, params) {
     case 'getAuditRecords': return await sGetAuditRecords(params.year);
     case 'getSystemSettings': return await sGetSystemSettings();
     case 'validateSession': return { valid: !!verifyLocalToken(params.token) };
+    case 'getMonthlyChecks': return await sGetMonthlyChecks(params.year, params.month);
     default: throw new Error('ไม่รู้จัก action: ' + action);
   }
 }
@@ -642,6 +657,37 @@ async function sSaveAuditRecord(p, actor) {
   return { saved: true };
 }
 
+async function sSaveMonthlyCheck(p, actor) {
+  const year = Number(p.year), month = Number(p.month);
+  if (!year || !month || !p.officerId) throw new Error('ข้อมูลการตรวจไม่ครบ');
+  const { data: existing, error: e0 } = await sb.from('monthly_checks').select('id')
+    .eq('year', year).eq('month', month).eq('officer_id', p.officerId).maybeSingle();
+  if (e0) throw new Error('ตรวจสอบข้อมูลเดิมไม่สำเร็จ: ' + e0.message);
+
+  const payload = {
+    officer_name: p.officerName || '', result: p.result === 'มีปัญหา' ? 'มีปัญหา' : 'ครบ',
+    note: p.note || '', holdings_snapshot: p.holdingsSnapshot || '',
+    inspector: actor || '', inspected_at: new Date().toISOString()
+  };
+  if (existing) {
+    const { error } = await sb.from('monthly_checks').update(payload).eq('id', existing.id);
+    if (error) throw new Error('บันทึกผลตรวจไม่สำเร็จ: ' + error.message);
+  } else {
+    const { error } = await sb.from('monthly_checks')
+      .insert({ id: genId('MCK'), year, month, officer_id: p.officerId, ...payload });
+    if (error) throw new Error('บันทึกผลตรวจไม่สำเร็จ: ' + error.message);
+  }
+  await logActivitySb(actor, 'ตรวจประจำเดือน', (p.officerName || p.officerId) + ' → ' + payload.result);
+  return { saved: true, inspectedAt: payload.inspected_at };
+}
+async function sClearMonthlyCheck(p, actor) {
+  const { error } = await sb.from('monthly_checks').delete()
+    .eq('year', Number(p.year)).eq('month', Number(p.month)).eq('officer_id', p.officerId);
+  if (error) throw new Error('ล้างผลตรวจไม่สำเร็จ: ' + error.message);
+  await logActivitySb(actor, 'ล้างผลตรวจประจำเดือน', p.officerName || p.officerId);
+  return { cleared: true };
+}
+
 async function sChangeRolePassword(p) {
   const { data, error } = await sb.rpc('admin_set_role_password', { p_role: p.role, p_new_password: p.newPassword });
   if (error) throw new Error(error.message);
@@ -651,7 +697,7 @@ async function sChangeRolePassword(p) {
 const ADMIN_ACTIONS = ['addAsset', 'updateAsset', 'deleteAsset', 'borrowAsset', 'returnAsset', 'updateBorrow', 'deleteBorrow', 'renewBorrow',
   'approveBorrowRequest', 'rejectBorrowRequest', 'addMaint', 'updateMaint', 'addUser', 'updateUserRole',
   'deleteUser', 'addComponent', 'updateComponent', 'deleteComponent', 'deleteMemo', 'updateSystemSettings',
-  'saveAuditRecord', 'migrateImagesToDrive', 'changeRolePassword'];
+  'saveAuditRecord', 'migrateImagesToDrive', 'changeRolePassword','saveMonthlyCheck', 'clearMonthlyCheck'];
 const AUTH_ACTIONS = ['requestBorrow', 'addMemo', 'updateMemo', 'uploadImage'];
 
 async function supaApiPost(action, payload, role, actorName) {
@@ -689,6 +735,8 @@ async function supaApiPost(action, payload, role, actorName) {
     case 'saveAuditRecord': return await sSaveAuditRecord(payload, actorName);
     case 'migrateImagesToDrive': return { migrated: 0, failed: 0 };
     case 'changeRolePassword': return await sChangeRolePassword(payload);
+    case 'saveMonthlyCheck': return await sSaveMonthlyCheck(payload, actorName);
+    case 'clearMonthlyCheck': return await sClearMonthlyCheck(payload, actorName);
     default: throw new Error('ไม่รู้จัก action: ' + action);
   }
 }
