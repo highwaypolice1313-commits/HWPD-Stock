@@ -1718,6 +1718,77 @@ textarea.input{
     height:54px !important;
   }
 }
+
+/* ================================================================
+   EMPTY STATE FIX v6
+   แก้หน้าที่ไม่มีข้อมูลบนจอ PC:
+   - จำกัดความสูงของ empty state
+   - ป้องกัน SVG/icon ขยายจนกลายเป็นกล่องขนาดใหญ่
+   - คงการแสดงผลเดิมบนมือถือ
+   ================================================================ */
+@media (min-width:900px){
+  .page .empty-state{
+    min-height:180px !important;
+    height:auto !important;
+    max-height:280px !important;
+    box-sizing:border-box !important;
+    overflow:hidden !important;
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    padding:28px 20px !important;
+  }
+
+  .page .empty-state .empty-icon{
+    width:58px !important;
+    min-width:58px !important;
+    max-width:58px !important;
+    height:58px !important;
+    min-height:58px !important;
+    max-height:58px !important;
+    flex:0 0 58px !important;
+    overflow:hidden !important;
+    box-sizing:border-box !important;
+  }
+
+  .page .empty-state .empty-icon svg{
+    width:31px !important;
+    min-width:31px !important;
+    max-width:31px !important;
+    height:31px !important;
+    min-height:31px !important;
+    max-height:31px !important;
+    flex:0 0 31px !important;
+    display:block !important;
+    overflow:hidden !important;
+  }
+
+  .page .empty-state .empty-title{
+    max-width:100%;
+    line-height:1.5;
+    text-align:center;
+  }
+
+  .page .empty-state .empty-sub{
+    max-width:100%;
+    text-align:center;
+  }
+
+  /* หน้ารายการที่ใช้ empty-state เป็น grid item */
+  .asset-grid > .empty-state,
+  .memo-grid > .empty-state{
+    width:100% !important;
+    grid-column:1 / -1 !important;
+  }
+}
+
+/* ถ้า SVG ยังถูกสไตล์จาก component อื่น ให้บังคับขนาดเฉพาะ empty icon */
+.empty-state > .empty-icon > svg{
+  width:31px !important;
+  height:31px !important;
+  max-width:31px !important;
+  max-height:31px !important;
+}
 </style>
 </head>
 <body>
