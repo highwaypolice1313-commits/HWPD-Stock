@@ -1789,6 +1789,92 @@ textarea.input{
   max-width:31px !important;
   max-height:31px !important;
 }
+
+/* =========================================================
+   UI CLEANUP PATCH v7 — empty state
+   ========================================================= */
+.empty-state{
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:12px !important;
+  box-sizing:border-box !important;
+  width:100% !important;
+  min-height:164px !important;
+  height:auto !important;
+  max-height:260px !important;
+  padding:24px !important;
+  overflow:hidden !important;
+}
+.empty-state-content{
+  width:100% !important;
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:7px !important;
+  flex:0 0 auto !important;
+  min-width:0 !important;
+}
+.empty-state .empty-icon{
+  flex:0 0 48px !important;
+  width:48px !important;
+  min-width:48px !important;
+  max-width:48px !important;
+  height:48px !important;
+  min-height:48px !important;
+  max-height:48px !important;
+  border-radius:15px !important;
+}
+.empty-state .empty-icon svg{
+  width:25px !important;
+  min-width:25px !important;
+  max-width:25px !important;
+  height:25px !important;
+  min-height:25px !important;
+  max-height:25px !important;
+  display:block !important;
+}
+.empty-state .empty-title,
+.empty-state .empty-sub{
+  width:auto !important;
+  max-width:100% !important;
+  margin:0 !important;
+  text-align:center !important;
+}
+.empty-state .empty-title{line-height:1.45 !important;}
+.empty-state .empty-sub{line-height:1.45 !important;}
+.empty-actions{
+  width:auto !important;
+  max-width:100% !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  flex:0 0 auto !important;
+  margin:0 !important;
+}
+.empty-state .empty-action{
+  flex:0 0 auto !important;
+  width:auto !important;
+  min-width:118px !important;
+  max-width:220px !important;
+  height:40px !important;
+  min-height:40px !important;
+  max-height:40px !important;
+  margin:0 !important;
+  padding:8px 18px !important;
+  align-self:center !important;
+  white-space:nowrap !important;
+}
+@media (max-width:899px){
+  .empty-state{
+    min-height:150px !important;
+    max-height:none !important;
+    padding:22px 16px !important;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -3263,10 +3349,17 @@ function renderAssets() {
 function emptyState(msg) {
   const text = String(msg || 'ยังไม่มีข้อมูล');
   let action = '';
-  if (/งานซ่อม|ซ่อมค้าง|ยังไม่มีประวัติ/.test(text) && isAdmin()) action = `<button class="btn btn-primary empty-action" onclick="openMaintForm()">แจ้งซ่อม</button>`;
-  else if (/ครุภัณฑ์/.test(text) && isAdmin()) action = `<button class="btn btn-primary empty-action" onclick="openAssetForm()">เพิ่มครุภัณฑ์</button>`;
-  else if (/คำขอ|ค้างคืน/.test(text)) action = `<button class="btn btn-primary empty-action" onclick="openBorrowForm()">ขอยืมครุภัณฑ์</button>`;
-  return `<div class="glass empty-state"><div class="empty-icon">${ICONS.inbox}</div><div class="empty-title">${escapeHtml(text)}</div><div class="empty-sub">ข้อมูลจะแสดงที่นี่เมื่อมีรายการใหม่</div>${action}</div>`;
+  if (/งานซ่อม|ซ่อมค้าง|ยังไม่มีประวัติ/.test(text) && isAdmin()) action = `<button type="button" class="btn btn-primary empty-action" onclick="openMaintForm()">แจ้งซ่อม</button>`;
+  else if (/ครุภัณฑ์/.test(text) && isAdmin()) action = `<button type="button" class="btn btn-primary empty-action" onclick="openAssetForm()">เพิ่มครุภัณฑ์</button>`;
+  else if (/คำขอ|ค้างคืน/.test(text)) action = `<button type="button" class="btn btn-primary empty-action" onclick="openBorrowForm()">ขอยืมครุภัณฑ์</button>`;
+  return `<div class="glass empty-state">
+    <div class="empty-state-content">
+      <div class="empty-icon">${ICONS.inbox}</div>
+      <div class="empty-title">${escapeHtml(text)}</div>
+      <div class="empty-sub">ข้อมูลจะแสดงที่นี่เมื่อมีรายการใหม่</div>
+    </div>
+    ${action ? `<div class="empty-actions">${action}</div>` : ''}
+  </div>`;
 }
 
 /* ========================= ฟีเจอร์ ๓: สแกน QR/บาร์โค้ด ========================= */
