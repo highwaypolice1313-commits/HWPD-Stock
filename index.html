@@ -2224,61 +2224,53 @@ html{scroll-behavior:smooth;}
 .rp-filter{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;}
 .rp-filter select{max-width:240px;}
 /* =========================================================
-   ธีมใหม่ 4 แบบ: aurora / frost (กลาส) · ocean / graphite
-   [วางไว้ท้ายสุดของ <style> เสมอ]
+   ชุดธีมใหม่ — [วางไว้ท้ายสุดของ <style> เสมอ]
+   ตัวแปรสำคัญ:
+   --navy/--navy-deep = สีหลักของปุ่ม/พื้นที่เติมสี
+   --icon/--icon-bg   = สีไอคอนและพื้นหลังไอคอน (แยกจาก navy เพื่อไม่ให้จมในธีมมืด)
+   --c1..--c6         = สีกราฟโดนัท / --chart-line, --chart-bar = สีกราฟเส้น/แท่ง
    ========================================================= */
 
-/* ---------- 1) ออโรร่า — กลาสโทนมืด ม่วง/เขียวมิ้นต์ ---------- */
-:root[data-theme="aurora"]{
-  --dawn-1:#2a1b5e; --dawn-2:#10424a; --dawn-3:#161233; --dawn-4:#0e2a3a;
-  --bg-0:#0b0920; --bg-1:#120e2e;
-  --panel:rgba(255,255,255,.08); --panel-soft:rgba(255,255,255,.07);
-  --panel-line:rgba(255,255,255,.16); --panel-hi:rgba(255,255,255,.13);
-  --ink:#eef0ff; --ink-dim:#b4b8d8; --ink-faint:#7c82a8;
-  /* [ปรับสีตรงนี้] navy = สีหลักปุ่ม/ไฮไลต์, gold = สีเน้น */
-  --navy:#7c6bff; --navy-deep:#4a38d6; --navy-wash:rgba(124,107,255,.18); --navy-line:rgba(124,107,255,.5);
-  --gold:#2dd4bf; --gold-deep:#5eead4; --gold-wash:rgba(45,212,191,.16); --gold-line:rgba(45,212,191,.5);
-  --ok:#4ade80; --ok-wash:rgba(74,222,128,.15);
-  --warn:#fbbf24; --warn-wash:rgba(251,191,36,.16);
-  --bad:#fb7185; --bad-wash:rgba(251,113,133,.16);
-  --off:#a5aacb; --off-wash:rgba(165,170,203,.16);
-  --info:#60a5fa; --info-wash:rgba(96,165,250,.16);
-  --side-1:rgba(40,28,100,.55); --side-2:rgba(10,8,34,.72);
-  /* ตัวแปรของกลาส */
-  --glass-blur:blur(20px) saturate(165%);
-  --glass-edge:rgba(255,255,255,.18);
-  --glass-shadow:0 8px 32px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.14);
-  --topbar-bg:rgba(16,12,42,.5);
-  --tabbar-bg:rgba(30,24,80,.6);
-  --sheet-bg:rgba(24,19,58,.82);
-  --opt-bg:#1a1540;
-}
-:root[data-theme="aurora"] body{
-  background:
-    radial-gradient(700px 500px at 10% 0%, rgba(124,107,255,.55), transparent 60%),
-    radial-gradient(650px 480px at 95% 10%, rgba(45,212,191,.38), transparent 60%),
-    radial-gradient(800px 600px at 60% 105%, rgba(236,72,153,.32), transparent 60%),
-    linear-gradient(160deg,#0b0920,#140f35 55%,#0a1f2e);
-  background-attachment:fixed;
+/* ---------- ค่าเริ่มต้นของตัวแปรใหม่ (ทุกธีมที่ไม่ได้กำหนดเองจะใช้ค่านี้) ---------- */
+:root{
+  --icon:var(--navy); --icon-bg:var(--navy-wash);
+  --c1:#17324f; --c2:#2a8f68; --c3:#4a86b4; --c4:#bb8a3f; --c5:#c1495a; --c6:#8b98a3;
+  --chart-line:#bb8a3f; --chart-bar:#4a86b4;
 }
 
-/* ---------- 2) น้ำแข็งใส — กลาสโทนสว่าง ฟ้า/ชมพู/ม่วงพาสเทล ---------- */
+/* บังคับให้ไอคอนทุกจุดใช้โทนของธีม (แก้ปัญหาไอคอนจมในธีมมืด) */
+.li-icon,.ax-ico,.asset-card-icon,.more-ico,.avatar-placeholder{ color:var(--icon); background:var(--icon-bg); }
+.ax-round{ color:var(--icon); }
+.icon-btn,.refresh-btn,.sheet-close,.zbtn,.view-toggle button:not(.active){ color:var(--ink); }
+
+/* ---------- ocean : สว่าง เขียวน้ำทะเล ---------- */
+:root[data-theme="ocean"]{
+  --dawn-1:#e0f7f5; --dawn-2:#e6f1fb; --dawn-3:#e8f4f2; --dawn-4:#dcecf3;
+  --bg-0:#e6f1f2; --bg-1:#f1f8f7;
+  --panel-line:#d6e6e6; --panel-hi:#e8f5f3;
+  --navy:#0f4c5c; --navy-deep:#0a2f3a; --navy-wash:rgba(15,76,92,.07); --navy-line:rgba(15,76,92,.22);
+  --gold:#0ea5a4; --gold-deep:#0b7a7a; --gold-wash:rgba(14,165,164,.14); --gold-line:rgba(14,165,164,.4);
+  --side-1:#0f4c5c; --side-2:#0a2f3a;
+  --c1:#0f4c5c; --c2:#0ea5a4; --c3:#3b82b6; --c4:#d9a441; --c5:#d6566b; --c6:#8aa3ad;
+  --chart-line:#0ea5a4; --chart-bar:#0f4c5c;
+}
+
+/* ---------- frost : สว่าง กลาส ---------- */
 :root[data-theme="frost"]{
   --dawn-1:#dbeafe; --dawn-2:#fce7f3; --dawn-3:#e0f2fe; --dawn-4:#ede9fe;
   --bg-0:#e6eefb; --bg-1:#f3f0ff;
   --panel:rgba(255,255,255,.55); --panel-soft:rgba(255,255,255,.42);
   --panel-line:rgba(110,130,190,.22); --panel-hi:rgba(255,255,255,.75);
   --ink:#1e2a44; --ink-dim:#5b6785; --ink-faint:#98a2bd;
-  /* [ปรับสีตรงนี้] */
   --navy:#3b5bdb; --navy-deep:#1e3a8a; --navy-wash:rgba(59,91,219,.1); --navy-line:rgba(59,91,219,.3);
   --gold:#8b5cf6; --gold-deep:#6d28d9; --gold-wash:rgba(139,92,246,.14); --gold-line:rgba(139,92,246,.4);
   --side-1:rgba(37,55,120,.74); --side-2:rgba(24,34,90,.84);
-  --glass-blur:blur(20px) saturate(165%);
-  --glass-edge:rgba(255,255,255,.85);
+  --glass-blur:blur(20px) saturate(165%); --glass-edge:rgba(255,255,255,.85);
   --glass-shadow:0 8px 32px rgba(70,90,160,.14), inset 0 1px 0 rgba(255,255,255,.9);
-  --topbar-bg:rgba(255,255,255,.5);
-  --tabbar-bg:rgba(255,255,255,.62);
-  --sheet-bg:rgba(255,255,255,.76);
+  --topbar-bg:rgba(255,255,255,.5); --tabbar-bg:rgba(255,255,255,.62); --sheet-bg:rgba(255,255,255,.78);
+  --icon:#3b5bdb; --icon-bg:rgba(59,91,219,.12);
+  --c1:#3b5bdb; --c2:#10b981; --c3:#38bdf8; --c4:#f59e0b; --c5:#ec4899; --c6:#94a3b8;
+  --chart-line:#8b5cf6; --chart-bar:#3b5bdb;
 }
 :root[data-theme="frost"] body{
   background:
@@ -2289,35 +2281,173 @@ html{scroll-behavior:smooth;}
   background-attachment:fixed;
 }
 
-/* ---------- 3) ทะเลสาบ — สว่าง เขียวน้ำทะเล ---------- */
-:root[data-theme="ocean"]{
-  --dawn-1:#e0f7f5; --dawn-2:#e6f1fb; --dawn-3:#e8f4f2; --dawn-4:#dcecf3;
-  --bg-0:#e6f1f2; --bg-1:#f1f8f7;
-  --panel-line:#d6e6e6; --panel-hi:#e8f5f3;
-  --navy:#0f4c5c; --navy-deep:#0a2f3a; --navy-wash:rgba(15,76,92,.07); --navy-line:rgba(15,76,92,.22);
-  --gold:#0ea5a4; --gold-deep:#0b7a7a; --gold-wash:rgba(14,165,164,.14); --gold-line:rgba(14,165,164,.4);
-  --side-1:#0f4c5c; --side-2:#0a2f3a;
+/* ---------- aurora : มืด กลาส ---------- */
+:root[data-theme="aurora"]{
+  --dawn-1:#2a1b5e; --dawn-2:#10424a; --dawn-3:#161233; --dawn-4:#0e2a3a;
+  --bg-0:#0b0920; --bg-1:#120e2e;
+  --panel:rgba(255,255,255,.08); --panel-soft:rgba(255,255,255,.07);
+  --panel-line:rgba(255,255,255,.16); --panel-hi:rgba(255,255,255,.13);
+  --ink:#eef0ff; --ink-dim:#b4b8d8; --ink-faint:#7c82a8;
+  --navy:#7c6bff; --navy-deep:#4a38d6; --navy-wash:rgba(124,107,255,.18); --navy-line:rgba(124,107,255,.5);
+  --gold:#2dd4bf; --gold-deep:#5eead4; --gold-wash:rgba(45,212,191,.16); --gold-line:rgba(45,212,191,.5);
+  --ok:#4ade80; --ok-wash:rgba(74,222,128,.15); --warn:#fbbf24; --warn-wash:rgba(251,191,36,.16);
+  --bad:#fb7185; --bad-wash:rgba(251,113,133,.16); --off:#a5aacb; --off-wash:rgba(165,170,203,.16);
+  --info:#60a5fa; --info-wash:rgba(96,165,250,.16);
+  --side-1:rgba(40,28,100,.55); --side-2:rgba(10,8,34,.72);
+  --glass-blur:blur(20px) saturate(165%); --glass-edge:rgba(255,255,255,.18);
+  --glass-shadow:0 8px 32px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.14);
+  --topbar-bg:rgba(16,12,42,.5); --tabbar-bg:rgba(30,24,80,.6); --sheet-bg:rgba(24,19,58,.86); --opt-bg:#1a1540;
+  --icon:#b8aeff; --icon-bg:rgba(124,107,255,.24);
+  --c1:#8b7bff; --c2:#2dd4bf; --c3:#60a5fa; --c4:#fbbf24; --c5:#fb7185; --c6:#a5aacb;
+  --chart-line:#2dd4bf; --chart-bar:#8b7bff;
+}
+:root[data-theme="aurora"] body{
+  background:
+    radial-gradient(700px 500px at 10% 0%, rgba(124,107,255,.55), transparent 60%),
+    radial-gradient(650px 480px at 95% 10%, rgba(45,212,191,.38), transparent 60%),
+    radial-gradient(800px 600px at 60% 105%, rgba(236,72,153,.32), transparent 60%),
+    linear-gradient(160deg,#0b0920,#140f35 55%,#0a1f2e);
+  background-attachment:fixed;
 }
 
-/* ---------- 4) ทองแดงกราไฟต์ — มืด เทาอุ่น/ทองแดง ---------- */
+/* ---------- obsidian : มืด เรียบ น้ำเงินไฟฟ้า/ฟ้า ---------- */
+:root[data-theme="obsidian"]{
+  --dawn-1:#0f1520; --dawn-2:#0d131c; --dawn-3:#0a0e15; --dawn-4:#0a0e15;
+  --bg-0:#07090d; --bg-1:#0a0d13;
+  --panel:#12171f; --panel-soft:#171d27; --panel-line:#232c3a; --panel-hi:#1c2431;
+  --ink:#eaf0f8; --ink-dim:#9aa7ba; --ink-faint:#657185;
+  --navy:#4f8cff; --navy-deep:#2b5fd9; --navy-wash:rgba(79,140,255,.14); --navy-line:rgba(79,140,255,.45);
+  --gold:#22d3ee; --gold-deep:#67e8f9; --gold-wash:rgba(34,211,238,.13); --gold-line:rgba(34,211,238,.42);
+  --ok:#34d399; --ok-wash:rgba(52,211,153,.14); --warn:#fbbf24; --warn-wash:rgba(251,191,36,.15);
+  --bad:#fb7185; --bad-wash:rgba(251,113,133,.15); --off:#94a3b8; --off-wash:rgba(148,163,184,.15);
+  --info:#60a5fa; --info-wash:rgba(96,165,250,.15);
+  --side-1:#0c1118; --side-2:#06080c; --sheet-bg:#12171f; --opt-bg:#12171f;
+  --icon:#8db4ff; --icon-bg:rgba(79,140,255,.17);
+  --c1:#4f8cff; --c2:#34d399; --c3:#22d3ee; --c4:#fbbf24; --c5:#fb7185; --c6:#94a3b8;
+  --chart-line:#22d3ee; --chart-bar:#4f8cff;
+  --shadow-sm:0 1px 0 rgba(255,255,255,.03); --shadow-md:0 6px 18px rgba(0,0,0,.4); --shadow-lg:0 14px 36px rgba(0,0,0,.5);
+}
+:root[data-theme="obsidian"] .glass,
+:root[data-theme="obsidian"] .stat-card,
+:root[data-theme="obsidian"] .chart-card,
+:root[data-theme="obsidian"] .rp-card,
+:root[data-theme="obsidian"] .rp-kpi,
+:root[data-theme="obsidian"] .list-item,
+:root[data-theme="obsidian"] .asset-card{ box-shadow:none; }
+
+/* ---------- graphite : มืด เทาอุ่น/ทองแดง ---------- */
 :root[data-theme="graphite"]{
   --dawn-1:#2a2623; --dawn-2:#262220; --dawn-3:#1c1a19; --dawn-4:#191716;
   --bg-0:#121110; --bg-1:#181615;
   --panel:#211e1c; --panel-soft:#2a2623; --panel-line:#3a3531; --panel-hi:#312c29;
   --ink:#f1ece6; --ink-dim:#b3aaa0; --ink-faint:#80776e;
-  /* [ปรับสีตรงนี้] */
   --navy:#c9965a; --navy-deep:#8f6335; --navy-wash:rgba(201,150,90,.16); --navy-line:rgba(201,150,90,.45);
   --gold:#e8b774; --gold-deep:#f0c78e; --gold-wash:rgba(232,183,116,.16); --gold-line:rgba(232,183,116,.45);
-  --off:#a39a90;
-  --side-1:#1b1816; --side-2:#100e0d;
-  --sheet-bg:#211e1c;
-  --opt-bg:#211e1c;
+  --ok:#6fcf97; --ok-wash:rgba(111,207,151,.15); --warn:#f2c14e; --warn-wash:rgba(242,193,78,.16);
+  --bad:#f0788a; --bad-wash:rgba(240,120,138,.16); --off:#a39a90; --off-wash:rgba(163,154,144,.16);
+  --info:#7db7d9; --info-wash:rgba(125,183,217,.16);
+  --side-1:#1b1816; --side-2:#100e0d; --sheet-bg:#211e1c; --opt-bg:#211e1c;
+  --icon:#ecc08a; --icon-bg:rgba(201,150,90,.18);
+  --c1:#c9965a; --c2:#7bbf8e; --c3:#6fa8c9; --c4:#e8b774; --c5:#d4687a; --c6:#a39a90;
+  --chart-line:#e8b774; --chart-bar:#c9965a;
+}
+
+/* ---------- terminal : มืด เหลี่ยม เขียวสด ---------- */
+:root[data-theme="terminal"]{
+  --dawn-1:#071007; --dawn-2:#061006; --dawn-3:#050a05; --dawn-4:#040804;
+  --bg-0:#030603; --bg-1:#050a05;
+  --panel:#0a120a; --panel-soft:#0e180e; --panel-line:#1d3a1d; --panel-hi:#132213;
+  --ink:#c9f7cf; --ink-dim:#7fb88a; --ink-faint:#4d7a56;
+  --navy:#22c55e; --navy-deep:#15803d; --navy-wash:rgba(34,197,94,.13); --navy-line:rgba(34,197,94,.45);
+  --gold:#a3e635; --gold-deep:#bef264; --gold-wash:rgba(163,230,53,.12); --gold-line:rgba(163,230,53,.4);
+  --ok:#4ade80; --ok-wash:rgba(74,222,128,.14); --warn:#facc15; --warn-wash:rgba(250,204,21,.14);
+  --bad:#f87171; --bad-wash:rgba(248,113,113,.15); --off:#7fa088; --off-wash:rgba(127,160,136,.15);
+  --info:#38bdf8; --info-wash:rgba(56,189,248,.14);
+  --side-1:#060d06; --side-2:#030603; --sheet-bg:#0a120a; --opt-bg:#0a120a;
+  --icon:#4ade80; --icon-bg:rgba(34,197,94,.15);
+  --r-xl:6px; --r-lg:6px; --r-md:5px; --r-sm:4px; --r-tag:4px;
+  --font-num:ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace;
+  --font-disp:'Kanit',sans-serif;
+  --c1:#22c55e; --c2:#a3e635; --c3:#38bdf8; --c4:#facc15; --c5:#f87171; --c6:#7fa088;
+  --chart-line:#4ade80; --chart-bar:#22c55e;
+}
+/* เหลี่ยมทั้งระบบ — [ปรับตรงนี้] เปลี่ยน 5px เป็นค่าอื่นถ้าอยากมนมากขึ้น */
+:root[data-theme="terminal"] .glass,
+:root[data-theme="terminal"] .stat-card, :root[data-theme="terminal"] .chart-card,
+:root[data-theme="terminal"] .rp-card, :root[data-theme="terminal"] .rp-kpi,
+:root[data-theme="terminal"] .list-item, :root[data-theme="terminal"] .asset-card,
+:root[data-theme="terminal"] .memo-card, :root[data-theme="terminal"] .hero-card,
+:root[data-theme="terminal"] .input, :root[data-theme="terminal"] select.input,
+:root[data-theme="terminal"] .btn, :root[data-theme="terminal"] .chip, :root[data-theme="terminal"] .ax-pill,
+:root[data-theme="terminal"] .icon-btn, :root[data-theme="terminal"] .refresh-btn, :root[data-theme="terminal"] .ax-round,
+:root[data-theme="terminal"] .sheet, :root[data-theme="terminal"] .tabbar, :root[data-theme="terminal"] .tab,
+:root[data-theme="terminal"] .tab-pill, :root[data-theme="terminal"] .status-badge, :root[data-theme="terminal"] .role-pill,
+:root[data-theme="terminal"] .li-icon, :root[data-theme="terminal"] .ax-ico, :root[data-theme="terminal"] .asset-card-icon,
+:root[data-theme="terminal"] .view-toggle, :root[data-theme="terminal"] .alert-banner{ border-radius:5px !important; }
+:root[data-theme="terminal"] .glass:not(.hero-card),
+:root[data-theme="terminal"] .stat-card, :root[data-theme="terminal"] .chart-card,
+:root[data-theme="terminal"] .rp-card, :root[data-theme="terminal"] .rp-kpi,
+:root[data-theme="terminal"] .list-item, :root[data-theme="terminal"] .asset-card{
+  box-shadow:0 0 0 1px rgba(34,197,94,.1), 0 0 16px rgba(34,197,94,.05);
+}
+:root[data-theme="terminal"] .hero-num,
+:root[data-theme="terminal"] .stat-num{ text-shadow:0 0 10px rgba(74,222,128,.35); }
+
+/* ---------- brutal : สว่าง ขอบดำหนา เงาแข็ง ---------- */
+:root[data-theme="brutal"]{
+  --dawn-1:#fff1c2; --dawn-2:#ffe0ec; --dawn-3:#fff4d6; --dawn-4:#fff4d6;
+  --bg-0:#fff4d6; --bg-1:#fff9e6;
+  --panel:#ffffff; --panel-soft:#fffdf4; --panel-line:#111111; --panel-hi:#fff3bf;
+  --ink:#111111; --ink-dim:#4a4a4a; --ink-faint:#8a8a8a;
+  --navy:#111111; --navy-deep:#000000; --navy-wash:rgba(0,0,0,.06); --navy-line:rgba(0,0,0,.5);
+  --gold:#ff4d8d; --gold-deep:#c4165a; --gold-wash:rgba(255,77,141,.16); --gold-line:#111111;
+  --ok:#0a8f4f; --ok-wash:rgba(10,143,79,.14); --warn:#b86e00; --warn-wash:rgba(255,178,0,.22);
+  --bad:#d6204a; --bad-wash:rgba(214,32,74,.13); --off:#555555; --off-wash:rgba(0,0,0,.08);
+  --info:#1d62d8; --info-wash:rgba(29,98,216,.13);
+  --side-1:#111111; --side-2:#111111;
+  --icon:#111111; --icon-bg:#ffd23f;
+  --r-xl:14px; --r-lg:12px; --r-md:10px; --r-sm:8px; --r-tag:8px;
+  --font-disp:'Kanit',sans-serif;
+  --shadow-sm:3px 3px 0 #111; --shadow-md:5px 5px 0 #111; --shadow-lg:6px 6px 0 #111;
+  --c1:#111111; --c2:#0a8f4f; --c3:#1d62d8; --c4:#ffb800; --c5:#ff4d8d; --c6:#8a8a8a;
+  --chart-line:#ff4d8d; --chart-bar:#111111; --chart-edge:#111111;
+}
+:root[data-theme="brutal"] .glass,
+:root[data-theme="brutal"] .stat-card, :root[data-theme="brutal"] .chart-card,
+:root[data-theme="brutal"] .rp-card, :root[data-theme="brutal"] .rp-kpi,
+:root[data-theme="brutal"] .list-item, :root[data-theme="brutal"] .asset-card,
+:root[data-theme="brutal"] .memo-card{ border:2px solid #111; box-shadow:3px 3px 0 #111; }
+:root[data-theme="brutal"] .asset-card:hover, :root[data-theme="brutal"] .list-item:hover,
+:root[data-theme="brutal"] .stat-card:hover, :root[data-theme="brutal"] .chart-card:hover{
+  box-shadow:5px 5px 0 #111; border-color:#111; transform:translate(-1px,-1px);
+}
+:root[data-theme="brutal"] .hero-card{ background:#111; border:2px solid #111; box-shadow:6px 6px 0 var(--gold); }
+:root[data-theme="brutal"] .hero-card::before{ display:none; }
+:root[data-theme="brutal"] .topbar{ background:#ffd23f; border-bottom:3px solid #111; box-shadow:none; }
+:root[data-theme="brutal"] .section-title{ font-weight:700; }
+:root[data-theme="brutal"] .input, :root[data-theme="brutal"] select.input{ border:2px solid #111; background:#fff; box-shadow:none; }
+:root[data-theme="brutal"] .input:focus{ border-color:#111; box-shadow:3px 3px 0 var(--gold); }
+:root[data-theme="brutal"] .btn{ border:2px solid #111; }
+:root[data-theme="brutal"] .btn-primary{ background:#111; color:#fff; box-shadow:3px 3px 0 var(--gold); }
+:root[data-theme="brutal"] .btn-ghost{ background:#fff; box-shadow:3px 3px 0 #111; }
+:root[data-theme="brutal"] .btn:active{ transform:translate(2px,2px); box-shadow:none; }
+:root[data-theme="brutal"] .chip, :root[data-theme="brutal"] .ax-pill{ border:2px solid #111; }
+:root[data-theme="brutal"] .chip.active, :root[data-theme="brutal"] .ax-pill.active{ background:#111; color:#fff; box-shadow:none; }
+:root[data-theme="brutal"] .icon-btn, :root[data-theme="brutal"] .refresh-btn, :root[data-theme="brutal"] .ax-round{
+  border:2px solid #111; background:#fff; box-shadow:2px 2px 0 #111;
+}
+:root[data-theme="brutal"] .sheet{ border:3px solid #111; box-shadow:8px 8px 0 #111; background:#fff; }
+:root[data-theme="brutal"] .li-icon, :root[data-theme="brutal"] .ax-ico,
+:root[data-theme="brutal"] .asset-card-icon, :root[data-theme="brutal"] .more-ico{ border:2px solid #111; }
+@media (max-width:899px){
+  :root[data-theme="brutal"] .tabbar{ background:#fff !important; border:2px solid #111 !important; box-shadow:3px 3px 0 #111 !important; }
+  :root[data-theme="brutal"] .tab-pill{ background:#111 !important; box-shadow:none !important; }
 }
 
 /* =========================================================
-   กฎร่วมของ "ธีมมืด" (aurora, graphite) — ผ่าน data-mode="dark"
+   กฎร่วมของ "ธีมมืด" (aurora, obsidian, graphite, terminal)
    ========================================================= */
-:root[data-mode="dark"]{ color-scheme:dark; }   /* ให้ช่องวันที่/สกอลล์บาร์ของเบราว์เซอร์เป็นโทนมืด */
+:root[data-mode="dark"]{ color-scheme:dark; }
 :root[data-mode="dark"] .chip:not(.active),
 :root[data-mode="dark"] .btn-ghost,
 :root[data-mode="dark"] .icon-btn,
@@ -2329,78 +2459,63 @@ html{scroll-behavior:smooth;}
 :root[data-mode="dark"] .mf-tabs button.active,
 :root[data-mode="dark"] .loading-card,
 :root[data-mode="dark"] .view-toggle button:not(.active),
-:root[data-mode="dark"] .audit-btn:not([class*="active-"]){
-  background:var(--panel); color:var(--ink);
-}
+:root[data-mode="dark"] .audit-btn:not([class*="active-"]){ background:var(--panel); color:var(--ink); }
 :root[data-mode="dark"] .input,
 :root[data-mode="dark"] select.input{ background:var(--panel-soft); color:var(--ink); }
 :root[data-mode="dark"] .input:focus{ background:var(--panel-hi); }
-:root[data-mode="dark"] select.input option{ background:var(--opt-bg); color:var(--ink); } /* รายการดรอปดาวน์ต้องอ่านออก */
+:root[data-mode="dark"] select.input option{ background:var(--opt-bg,#14141c); color:var(--ink); }
 :root[data-mode="dark"] .section-title{ color:var(--ink); }
 :root[data-mode="dark"] .loading-overlay{ background:rgba(0,0,0,.55); }
-:root[data-mode="dark"] .sheet{ background:var(--sheet-bg); color:var(--ink); }
+:root[data-mode="dark"] .sheet{ background:var(--sheet-bg,var(--panel)); color:var(--ink); }
+/* ข้อความ/ไอคอนที่เดิมใช้ --navy เป็นสีตัวอักษร ให้ใช้ --icon ที่สว่างกว่าแทนบนพื้นมืด */
+:root[data-mode="dark"] .ap-group-head,
+:root[data-mode="dark"] .ax-serial,
+:root[data-mode="dark"] .ap-serial,
+:root[data-mode="dark"] .ax-chip-sn,
+:root[data-mode="dark"] .mf-section-title,
+:root[data-mode="dark"] .mf-item-head,
+:root[data-mode="dark"] .mf-preview-title,
+:root[data-mode="dark"] .mf-tabs button.active,
+:root[data-mode="dark"] .memo-section-label,
+:root[data-mode="dark"] .gs-cat,
+:root[data-mode="dark"] .ax-round{ color:var(--icon); }
+:root[data-mode="dark"] .tabbar .tab:not(.active){ color:var(--ink-dim); }
 
 /* =========================================================
-   กฎร่วมของ "กลาส" (aurora, frost) — ผ่าน data-glass
-   หมายเหตุ: ใส่เบลอเฉพาะการ์ดใหญ่/แผงลอย ไม่ใส่ทุกแถวรายการ เพื่อไม่ให้มือถือกระตุก
+   กฎร่วมของ "กลาส" (aurora, frost)
+   เบลอเฉพาะการ์ดใหญ่/แผงลอย ไม่เบลอทุกแถวรายการ เพื่อไม่ให้มือถือกระตุก
    ========================================================= */
 :root[data-glass] .glass:not(.hero-card),
-:root[data-glass] .stat-card,
-:root[data-glass] .chart-card,
-:root[data-glass] .rp-card,
-:root[data-glass] .rp-kpi,
-:root[data-glass] .memo-card{
-  background:var(--panel);
-  border-color:var(--glass-edge);
-  box-shadow:var(--glass-shadow);
+:root[data-glass] .stat-card, :root[data-glass] .chart-card,
+:root[data-glass] .rp-card, :root[data-glass] .rp-kpi, :root[data-glass] .memo-card{
+  background:var(--panel); border-color:var(--glass-edge); box-shadow:var(--glass-shadow);
 }
-:root[data-glass] .stat-card,
-:root[data-glass] .chart-card,
-:root[data-glass] .rp-card,
-:root[data-glass] .rp-kpi{
-  -webkit-backdrop-filter:var(--glass-blur);
-  backdrop-filter:var(--glass-blur);
+:root[data-glass] .stat-card, :root[data-glass] .chart-card,
+:root[data-glass] .rp-card, :root[data-glass] .rp-kpi{
+  -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur);
 }
-:root[data-glass] .hero-card{
-  border:1px solid rgba(255,255,255,.22);
-  box-shadow:0 14px 40px rgba(20,20,60,.28), inset 0 1px 0 rgba(255,255,255,.3);
-}
+:root[data-glass] .hero-card{ border:1px solid rgba(255,255,255,.22); box-shadow:0 14px 40px rgba(20,20,60,.28), inset 0 1px 0 rgba(255,255,255,.3); }
 :root[data-glass] .topbar{
-  background:var(--topbar-bg);
-  -webkit-backdrop-filter:blur(24px) saturate(160%);
-  backdrop-filter:blur(24px) saturate(160%);
+  background:var(--topbar-bg); -webkit-backdrop-filter:blur(24px) saturate(160%); backdrop-filter:blur(24px) saturate(160%);
   border-bottom-color:var(--glass-edge);
 }
 :root[data-glass] .sheet{
-  background:var(--sheet-bg);
-  -webkit-backdrop-filter:blur(30px) saturate(170%);
-  backdrop-filter:blur(30px) saturate(170%);
+  background:var(--sheet-bg); -webkit-backdrop-filter:blur(30px) saturate(170%); backdrop-filter:blur(30px) saturate(170%);
   border-color:var(--glass-edge);
 }
 @media (max-width:899px){
-  /* แถบเมนูล่างบนมือถือ ให้เป็นกระจกที่มองเห็นชัด */
-  :root[data-glass] .tabbar{
-    background:var(--tabbar-bg) !important;
-    border-color:var(--glass-edge) !important;
-  }
+  :root[data-glass] .tabbar{ background:var(--tabbar-bg) !important; border-color:var(--glass-edge) !important; }
 }
-
-/* ---------- เฉพาะน้ำแข็งใส: ปุ่ม/ช่องกรอกที่เดิมเป็นขาวทึบ ให้เป็นขาวโปร่ง ---------- */
+/* frost: ปุ่ม/ช่องกรอกที่เดิมขาวทึบ ให้เป็นขาวโปร่ง */
 :root[data-theme="frost"] .chip:not(.active),
-:root[data-theme="frost"] .btn-ghost,
-:root[data-theme="frost"] .icon-btn,
-:root[data-theme="frost"] .refresh-btn,
-:root[data-theme="frost"] .pagination button,
-:root[data-theme="frost"] .sheet-close,
-:root[data-theme="frost"] .zbtn,
-:root[data-theme="frost"] .mf-item,
-:root[data-theme="frost"] .mf-tabs button.active,
-:root[data-theme="frost"] .loading-card,
-:root[data-theme="frost"] .view-toggle button:not(.active),
-:root[data-theme="frost"] .audit-btn:not([class*="active-"]){
-  background:rgba(255,255,255,.62);
-}
+:root[data-theme="frost"] .btn-ghost, :root[data-theme="frost"] .icon-btn,
+:root[data-theme="frost"] .refresh-btn, :root[data-theme="frost"] .pagination button,
+:root[data-theme="frost"] .sheet-close, :root[data-theme="frost"] .zbtn,
+:root[data-theme="frost"] .mf-item, :root[data-theme="frost"] .mf-tabs button.active,
+:root[data-theme="frost"] .loading-card, :root[data-theme="frost"] .view-toggle button:not(.active),
+:root[data-theme="frost"] .audit-btn:not([class*="active-"]){ background:rgba(255,255,255,.62); }
 :root[data-theme="frost"] .input:focus{ background:rgba(255,255,255,.9); }
+   
 /* =========================================================
    [แก้ไขมุมมองการ์ด] มือถือให้การ์ดเป็น 2 คอลัมน์ (เดิมถูกบังคับเหลือ 1 คอลัมน์)
    ใช้กับหน้า ครุภัณฑ์ / ยืม-คืน / ซ่อมบำรุง / จนท.ในสังกัด / เอกสารใบเบิก
@@ -2603,39 +2718,47 @@ const GUN_CATEGORY = 'อาวุธปืน';
 const SESSION_KEY = 'hpAssetSession_v2';
 
 const THEME_KEY = 'hpAssetThemeV1';
+/* ===== รายชื่อธีม =====
+   mode:'dark' = ธีมมืด / glass:true = สไตล์กระจก / tag = ป้ายเล็กใต้ชื่อในหน้าตั้งค่า
+   [ปรับตรงนี้] เพิ่ม/ลบ/เรียงลำดับธีมได้ — id ต้องตรงกับ CSS :root[data-theme="..."] */
 const THEMES = [
-  { id:'dawn',   name:'รุ่งอรุณ ทางหลวง', swatches:['#17324f','#bb8a3f','#fdf2e4'] },
-  { id:'night',  name:'ราตรีตรวจการณ์',   swatches:['#0c1e33','#3d7bd6','#0a1420'] },
-  { id:'forest', name:'มรกตพงไพร',        swatches:['#1f3d33','#3fae7a','#eef6f0'] },
-  { id:'ember',  name:'อัคคีสัญญาณ',      swatches:['#3a1f22','#d9704a','#fbeee4'] },
-
-  /* ===== [ธีมใหม่] mode:'dark' = ธีมมืด / glass:true = สไตล์กระจกโปร่งแสง ===== */
-  { id:'aurora',   name:'ออโรร่า (กลาส)',    swatches:['#7c6bff','#2dd4bf','#0b0920'], mode:'dark', glass:true },
-  { id:'frost',    name:'น้ำแข็งใส (กลาส)',  swatches:['#3b5bdb','#8b5cf6','#e8f0ff'], glass:true },
-  { id:'ocean',    name:'ทะเลสาบ',           swatches:['#0f4c5c','#0ea5a4','#e0f7f5'] },
-  { id:'graphite', name:'ทองแดงกราไฟต์',     swatches:['#c9965a','#e8b774','#121110'], mode:'dark' }
+  { id:'dawn',     name:'รุ่งอรุณ ทางหลวง',  swatches:['#17324f','#bb8a3f','#fdf2e4'], tag:'สว่าง · คลาสสิก' },
+  { id:'forest',   name:'มรกตพงไพร',         swatches:['#1f3d33','#3fae7a','#eef6f0'], tag:'สว่าง · เขียว' },
+  { id:'ember',    name:'อัคคีสัญญาณ',       swatches:['#3a1f22','#d9704a','#fbeee4'], tag:'สว่าง · ส้มอิฐ' },
+  { id:'ocean',    name:'ทะเลสาบ',           swatches:['#0f4c5c','#0ea5a4','#e0f7f5'], tag:'สว่าง · เขียวน้ำทะเล' },
+  { id:'frost',    name:'น้ำแข็งใส',         swatches:['#3b5bdb','#8b5cf6','#e8f0ff'], tag:'สว่าง · กลาส', glass:true },
+  { id:'aurora',   name:'ออโรร่า',           swatches:['#7c6bff','#2dd4bf','#0b0920'], tag:'มืด · กลาส', mode:'dark', glass:true },
+  { id:'obsidian', name:'ออบซิเดียน',        swatches:['#4f8cff','#22d3ee','#07090d'], tag:'มืด · เรียบ', mode:'dark' },
+  { id:'graphite', name:'ทองแดงกราไฟต์',     swatches:['#c9965a','#e8b774','#121110'], tag:'มืด · อุ่น', mode:'dark' },
+  { id:'terminal', name:'เทอร์มินัล',        swatches:['#22c55e','#a3e635','#030603'], tag:'มืด · เหลี่ยม', mode:'dark' },
+  { id:'brutal',   name:'บรูทัลลิสต์',       swatches:['#111111','#ff4d8d','#ffd23f'], tag:'สว่าง · ขอบหนา' }
 ];
-   
-function currentTheme() { try { const saved = localStorage.getItem(THEME_KEY); if (saved) return saved; return (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'night' : 'dawn'; } catch (e) { return (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'night' : 'dawn'; } }
+
+function currentTheme() {
+  let saved = null;
+  try { saved = localStorage.getItem(THEME_KEY); } catch (e) {}
+  // ถ้า id ที่เคยบันทึกไว้ไม่มีในรายการแล้ว (เช่น 'night' ของเดิม) ให้ถอยกลับไปธีมเริ่มต้น
+  if (saved && THEMES.some(t => t.id === saved)) return saved;
+  const dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  return dark ? 'obsidian' : 'dawn';
+}
 function applyTheme(id) {
+  if (!THEMES.some(t => t.id === id)) id = 'dawn';
   const root = document.documentElement;
   root.setAttribute('data-theme', id);
-
-  // [เพิ่ม] ตั้งป้ายโหมดมืด/กลาส ให้ CSS ใช้จับกลุ่มธีม
   const t = THEMES.find(x => x.id === id) || {};
+  // ป้ายโหมดมืด/กลาส ให้ CSS ใช้จับกลุ่มธีม
   if (t.mode) root.setAttribute('data-mode', t.mode); else root.removeAttribute('data-mode');
   if (t.glass) root.setAttribute('data-glass', '1'); else root.removeAttribute('data-glass');
-
   try { localStorage.setItem(THEME_KEY, id); } catch (e) {}
 }
 applyTheme(currentTheme());
 try {
   const mediaDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
   mediaDark?.addEventListener?.('change', e => {
-    try { if (!localStorage.getItem(THEME_KEY)) applyTheme(e.matches ? 'night' : 'dawn'); } catch (_) {}
+    try { if (!localStorage.getItem(THEME_KEY)) applyTheme(e.matches ? 'obsidian' : 'dawn'); } catch (_) {}
   });
 } catch (_) {}
-
 
 function detectPaperFont() {
   const root = document.documentElement;
@@ -2677,7 +2800,9 @@ const ICONS = {
 };
 ICONS.print = '<svg viewBox="0 0 20 20" fill="none"><path d="M5 7V3.5a1 1 0 011-1h8a1 1 0 011 1V7" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><rect x="3" y="7" width="14" height="7" rx="1.2" stroke="currentColor" stroke-width="1.4"/><rect x="6" y="12" width="8" height="5.5" rx="0.8" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>';
 ICONS.search = '<svg viewBox="0 0 20 20" fill="none"><circle cx="8.7" cy="8.7" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M12.5 12.5l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
-/* ใส่ width/height ให้ทุกไอคอน — CSS ที่กำหนดขนาดไว้แล้วยังชนะตามเดิม
+ICONS.edit = '<svg viewBox="0 0 20 20" fill="none"><path d="M4 16l.8-3.4L13.4 4a1.5 1.5 0 012.1 0l.5.5a1.5 1.5 0 010 2.1L7.4 15.2 4 16z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>';
+ICONS.trash = '<svg viewBox="0 0 20 20" fill="none"><path d="M4.5 6h11M8 6V4.2h4V6M6 6l.6 9.3a1 1 0 001 .9h4.8a1 1 0 001-.9L14 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+   /* ใส่ width/height ให้ทุกไอคอน — CSS ที่กำหนดขนาดไว้แล้วยังชนะตามเดิม
    แต่ถ้าที่ไหนไม่มี CSS ก็จะไม่ขยายเต็มจออีก */
 Object.keys(ICONS).forEach(k => {
   if (typeof ICONS[k] === 'string' && !/<svg[^>]*\swidth=/.test(ICONS[k])) {
@@ -3675,6 +3800,17 @@ function chartAxisOpts(size) {
   const tick = cssVar('--ink-dim', '#6c7b83');
   return { ticks: { color: tick, font: { family: 'Kanit', size: size } }, grid: { color: 'rgba(128,140,150,.18)' } };
 }
+/* ตัวช่วยสีกราฟ: อ่านจากตัวแปร CSS ของธีมที่ใช้อยู่ */
+function chartPalette() {
+  const def = ['#17324f','#2a8f68','#4a86b4','#bb8a3f','#c1495a','#8b98a3'];
+  return def.map((d, i) => cssVar('--c' + (i + 1), d));
+}
+function colorAlpha(c, a) {            // แปลง #rrggbb เป็น rgba(...) ให้ Chart.js ใช้ได้
+  const m = /^#([0-9a-f]{6})$/i.exec(String(c).trim());
+  if (!m) return c;
+  const n = parseInt(m[1], 16);
+  return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')';
+}
 function drawDoughnut(id, dataObj) {
   const ctx = document.getElementById(id);
   if (!ctx || typeof Chart === 'undefined') return;
@@ -3682,7 +3818,7 @@ function drawDoughnut(id, dataObj) {
   const labels = Object.keys(dataObj), values = Object.values(dataObj);
   chartRefs[id] = new Chart(ctx, {
     type: 'doughnut',
-    data: { labels, datasets: [{ data: values, backgroundColor: ['#17324f','#2a8f68','#4a86b4','#bb8a3f','#c1495a','#8b98a3'], borderWidth: 2, borderColor: cssVar('--panel', '#ffffff') }] },
+    data: { labels, datasets: [{ data: values, backgroundColor: chartPalette(), borderWidth: 2, borderColor: cssVar('--chart-edge', cssVar('--panel', '#ffffff')) }] },
     options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: cssVar('--ink-dim', '#4a5a63'), font: { family: 'Kanit', size: 11 }, padding: 10 } } }, cutout: '62%' }
   });
 }
@@ -3694,7 +3830,7 @@ function drawBar(id, dataObj) {
   const ax = chartAxisOpts(10.5);
   chartRefs[id] = new Chart(ctx, {
     type: 'bar',
-    data: { labels, datasets: [{ data: values, backgroundColor: '#4a86b4', borderRadius: 8, maxBarThickness: 34 }] },
+    data: { labels, datasets: [{ data: values, backgroundColor: cssVar('--chart-bar', '#4a86b4'), borderRadius: 8, maxBarThickness: 34 }] },
     options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: ax.ticks, grid: { display: false } }, y: { ticks: ax.ticks, grid: ax.grid } } }
   });
 }
@@ -3705,16 +3841,15 @@ function drawLine(id, dataObj) {
   const labels = Object.keys(dataObj).map(k => { const m = k.split('-')[1]; return TH_MONTHS_ABBR[parseInt(m, 10) - 1]; });
   const values = Object.values(dataObj);
   const ax = chartAxisOpts(10.5);
+  const line = cssVar('--chart-line', '#bb8a3f');
   chartRefs[id] = new Chart(ctx, {
     type: 'line',
-    data: { labels, datasets: [{ data: values, borderColor: '#bb8a3f', backgroundColor: 'rgba(187,138,63,.12)', fill: true, tension: .35, pointBackgroundColor: '#4a86b4', pointRadius: 4 }] },
+    data: { labels, datasets: [{ data: values, borderColor: line, backgroundColor: colorAlpha(line, 0.14), fill: true, tension: .35, pointBackgroundColor: cssVar('--chart-bar', '#4a86b4'), pointRadius: 4 }] },
     options: { maintainAspectRatio: false, plugins: { legend: { display: false } },
       scales: { x: { ticks: ax.ticks, grid: { display: false } },
                 y: { beginAtZero: true, ticks: { stepSize: 1, color: ax.ticks.color, font: ax.ticks.font }, grid: ax.grid } } }
   });
 }
-
-/* ========================================================= ASSETS */
 /* ========================================================= ASSETS (v5: หมวดใหญ่เป็นปุ่ม + รายการ/การ์ดแบบรายชิ้น) */
 function sortAssets(list) {
   const [field, dir] = state.assetSort.split('_');
@@ -4959,7 +5094,10 @@ function selectAsset(id) {
 }
    
   document.getElementById('f_assetTrigger').onclick = () => openAssetPickerSheet(val('f_asset'), selectAsset);
-  if (available.length) selectAsset(available[0]['รหัสครุภัณฑ์']);
+    // [แก้ไข] ถ้ามี presetId (มาจากการปัดแถวครุภัณฑ์) ให้เลือกชิ้นนั้นก่อน
+  const presetAsset = presetId && available.find(a => a['รหัสครุภัณฑ์'] === presetId);
+  if (presetAsset) selectAsset(presetAsset['รหัสครุภัณฑ์']);
+  else if (available.length) selectAsset(available[0]['รหัสครุภัณฑ์']);
 
   // ปุ่มลัดกำหนดคืน
   document.querySelectorAll('[data-days]').forEach(chip => {
@@ -5188,7 +5326,10 @@ function selectAsset(id) {
       .filter(Boolean).join(' · ');
 }
   document.getElementById('f_assetTrigger').onclick = () => openAssetPickerSheet(val('f_asset'), selectAsset, false);
-  if (state.assets.length) selectAsset(state.assets[0]['รหัสครุภัณฑ์']);
+    // [แก้ไข] ถ้ามี presetId ให้เลือกครุภัณฑ์ชิ้นนั้นก่อน
+  const presetM = presetId && state.assets.find(a => a['รหัสครุภัณฑ์'] === presetId);
+  if (presetM) selectAsset(presetM['รหัสครุภัณฑ์']);
+  else if (state.assets.length) selectAsset(state.assets[0]['รหัสครุภัณฑ์']);
 
   document.getElementById('f_maintPhoto').onchange = (e) => {
     const file = e.target.files && e.target.files[0];
@@ -6462,7 +6603,14 @@ function rpGroupSummaryHtml() {
   const vehicles = state.assets.filter(a => a['หมวดหมู่'] === 'ยานพาหนะ');
   const byType = rpGroup(vehicles, rpVehicleType);
 
-  return GS_CSS + `
+  // การ์ด "ยานพาหนะแยกตามประเภท" — แสดงเฉพาะตอนเลือกชิป "ยานพาหนะ" และจะถูกวางไว้บนสุด
+  // [ปรับตรงนี้] ถ้าเปลี่ยนชื่อหมวดยานพาหนะในหน้าตั้งค่า ให้แก้คำว่า 'ยานพาหนะ' ให้ตรงกัน
+  const vehicleCard = (cat === 'ยานพาหนะ' && vehicles.length) ? `<div class="glass rp-card">
+      <h4>ยานพาหนะแยกตามประเภท <small>รวม ${vehicles.length} คัน</small></h4>
+      <div class="gs-list gs-all">${rpGroupRowsHtml(byType, false, 0)}</div>
+    </div>` : '';
+
+  return GS_CSS + vehicleCard + `
     <div class="glass rp-card">
       <h4>สรุปตามชื่อครุภัณฑ์ <small>ชื่อเดียวกันรวมเป็นแถวเดียว</small></h4>
       <div class="gs-chips">
@@ -6480,13 +6628,8 @@ function rpGroupSummaryHtml() {
       </div>
       <div class="gs-list ${state.rpGroupAll ? 'gs-all' : ''}" id="gsList">${rpGroupRowsHtml(byName, cat === 'all', GS_LIMIT)}</div>
       ${byName.length > GS_LIMIT ? `<button class="gs-showall" id="gsShowAll" type="button">${state.rpGroupAll ? 'ย่อรายการ' : 'แสดงทั้งหมด (' + byName.length + ' ชนิด)'}</button>` : ''}
-    </div>
-        ${(cat === 'ยานพาหนะ' && vehicles.length) ? `<div class="glass rp-card">
-      <h4>ยานพาหนะแยกตามประเภท <small>รวม ${vehicles.length} คัน</small></h4>
-      <div class="gs-list gs-all">${rpGroupRowsHtml(byType, false, 0)}</div>
-    </div>` : ''}`;
+    </div>`;
 }
-
 function rpGroupWire() {
   document.querySelectorAll('[data-gcat]').forEach(c => c.onclick = () => {
     state.rpGroupCat = c.dataset.gcat; state.rpGroupAll = false; renderReports();
@@ -7401,12 +7544,12 @@ function renderSettings() {
 
   const TABS = [
     { id: 'general',   label: 'ทั่วไป' },
-    { id: 'committee',  label: 'คณะกรรมการตรวจสอบ' },
-    { id: 'units',      label: 'หมวดหมู่ & หน่วยนับ' },
-    { id: 'org',        label: 'หน่วยงาน & เอกสาร' },
-    { id: 'security',   label: 'รหัสผ่าน' },
-    { id: 'activity',   label: 'บันทึกกิจกรรม' },
-    { id: 'data',       label: 'ข้อมูล & สำรอง' }
+    { id: 'committee', label: 'คณะกรรมการตรวจสอบ' },
+    { id: 'units',     label: 'หมวดหมู่ & หน่วยนับ' },
+    { id: 'org',       label: 'หน่วยงาน & เอกสาร' },
+    { id: 'security',  label: 'รหัสผ่าน' },
+    { id: 'activity',  label: 'บันทึกกิจกรรม' },
+    { id: 'data',      label: 'ข้อมูล & สำรอง' }
   ];
 
   el.innerHTML = `
@@ -7422,27 +7565,11 @@ function renderSettings() {
         <div class="hint" style="margin-top:0;">เลือกธีมสีของหน้าจอ — บันทึกไว้เฉพาะเครื่อง/เบราว์เซอร์นี้</div>
         <div id="themeSwatchRow" style="display:flex; gap:12px; flex-wrap:wrap; margin-top:10px;">
           ${THEMES.map(t => `
-            <div class="theme-swatch-card" data-theme-id="${t.id}" style="cursor:pointer; border:2px solid ${active===t.id?'var(--gold)':'var(--panel-line)'}; border-radius:14px; padding:10px; width:120px; text-align:center;">
+            <div class="theme-swatch-card" data-theme-id="${t.id}" style="cursor:pointer; border:2px solid ${active===t.id?'var(--gold)':'var(--panel-line)'}; border-radius:14px; padding:10px; flex:1 1 130px; max-width:160px; text-align:center;">
               <div style="display:flex; height:34px; border-radius:8px; overflow:hidden; margin-bottom:8px;">${t.swatches.map(c => `<div style="flex:1; background:${c};"></div>`).join('')}</div>
               <div style="font-size:12px;">${t.name}</div>
+              <div style="font-size:10.5px; color:var(--ink-dim); margin-top:2px;">${t.tag || ''}</div>
             </div>`).join('')}
-        </div>
-      </div>
-
-      <div class="section-title" style="margin-top:6px; font-size:14px;">ตราครุฑ (หัวเอกสารบันทึกข้อความ)</div>
-      <div class="glass" style="padding:16px;">
-        <div class="hint" style="margin-top:0;">อัปโหลดไฟล์รูปตราครุฑ (แนะนำ PNG พื้นหลังโปร่งใส ไฟล์เล็ก ไม่เกินประมาณ 30-40KB) ใช้ร่วมกันทุกคนในระบบทั้งหน้าจอและตอนพิมพ์</div>
-        <div style="display:flex; align-items:center; gap:14px; margin-top:12px; flex-wrap:wrap;">
-          <div id="garudaPreviewBox" style="width:60px;height:68px;border:1px dashed var(--panel-line);border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex:none;background:#fff;">
-            ${s.garudaLogo ? `<img src="${s.garudaLogo}" style="width:100%;height:100%;object-fit:contain;">` : `<span style="font-size:9px;color:var(--ink-dim);text-align:center;">ยังไม่มีรูป</span>`}
-          </div>
-          <div style="flex:1; min-width:180px;">
-            <input type="file" id="st_garuda" accept="image/png,image/jpeg,image/webp" class="input" style="padding:8px;">
-            <div class="btn-row" style="margin-top:8px;">
-              <button class="btn btn-ghost" id="btnUploadGaruda">อัปโหลดรูปนี้</button>
-              ${s.garudaLogo ? `<button class="btn btn-danger" id="btnRemoveGaruda">ลบรูปตราครุฑ</button>` : ''}
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -7450,7 +7577,8 @@ function renderSettings() {
     <div class="settings-panel" data-panel="committee" style="display:${state.settingsTab==='committee'?'block':'none'};">
       ${auditCommitteeSettingsSectionHtml(s)}
     </div>
-      <div class="settings-panel" data-panel="units" style="display:${state.settingsTab==='units'?'block':'none'};">
+
+    <div class="settings-panel" data-panel="units" style="display:${state.settingsTab==='units'?'block':'none'};">
       <div class="section-title" style="margin-top:6px; font-size:14px;">หมวดหมู่ & หน่วยนับครุภัณฑ์</div>
       <div class="glass" style="padding:16px;">
         <div class="hint" style="margin-top:0;">จัดการรายการหมวดหมู่ครุภัณฑ์ที่ใช้ทั้งระบบ พร้อมกำหนดหน่วยนับสำหรับเอกสารบันทึกข้อความ (ใบเบิก) — แก้ชื่อหมวดหมู่ตรงนี้ได้เลย ระบบจะปรับชื่อหมวดหมู่ในครุภัณฑ์ที่มีอยู่แล้วให้ตรงกันอัตโนมัติเมื่อกดบันทึก</div>
@@ -7471,7 +7599,7 @@ function renderSettings() {
 
     <div class="settings-panel" data-panel="org" style="display:${state.settingsTab==='org'?'block':'none'};">
       <div class="section-title" style="margin-top:6px; font-size:14px;">ข้อมูลหน่วยงาน &amp; เลขหนังสือ</div>
-      <div class="glass" style="padding:16px;">
+      <div class="glass" style="padding:16px; margin-bottom:16px;">
         <div class="field"><label>ส่วนราชการ (แสดงในหัวบันทึกข้อความ)</label><input class="input" id="st_org" value="${escapeHtml(s.orgName || ORG_NAME)}"></div>
         <div class="field"><label>เบอร์โทรศัพท์หน่วยงาน</label><input class="input" id="st_phone" value="${escapeHtml(s.orgPhone || '')}"></div>
         <div class="field"><label>เลขที่หนังสือ (ส่วนคงที่)</label>
@@ -7480,6 +7608,24 @@ function renderSettings() {
         </div>
         <div class="field"><label>แจ้งเตือนล่วงหน้าก่อนครบกำหนดตรวจสภาพ/ต่อทะเบียน (วัน)</label><input class="input" type="number" id="st_renewaldays" value="${s.renewalAlertDays || 30}"></div>
         <div class="btn-row" style="margin-top:14px;"><button class="btn btn-primary" id="btnSaveSettings">บันทึกการตั้งค่า</button></div>
+      </div>
+
+      <!-- [ย้ายมาจากแท็บ "ทั่วไป"] ตราครุฑ (หัวเอกสารบันทึกข้อความ) -->
+      <div class="section-title" style="margin-top:6px; font-size:14px;">ตราครุฑ (หัวเอกสารบันทึกข้อความ)</div>
+      <div class="glass" style="padding:16px;">
+        <div class="hint" style="margin-top:0;">อัปโหลดไฟล์รูปตราครุฑ (แนะนำ PNG พื้นหลังโปร่งใส ไฟล์เล็ก ไม่เกินประมาณ 30-40KB) ใช้ร่วมกันทุกคนในระบบทั้งหน้าจอและตอนพิมพ์</div>
+        <div style="display:flex; align-items:center; gap:14px; margin-top:12px; flex-wrap:wrap;">
+          <div id="garudaPreviewBox" style="width:60px;height:68px;border:1px dashed var(--panel-line);border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex:none;background:#fff;">
+            ${s.garudaLogo ? `<img src="${s.garudaLogo}" style="width:100%;height:100%;object-fit:contain;">` : `<span style="font-size:9px;color:#6c7b83;text-align:center;">ยังไม่มีรูป</span>`}
+          </div>
+          <div style="flex:1; min-width:180px;">
+            <input type="file" id="st_garuda" accept="image/png,image/jpeg,image/webp" class="input" style="padding:8px;">
+            <div class="btn-row" style="margin-top:8px;">
+              <button class="btn btn-ghost" id="btnUploadGaruda">อัปโหลดรูปนี้</button>
+              ${s.garudaLogo ? `<button class="btn btn-danger" id="btnRemoveGaruda">ลบรูปตราครุฑ</button>` : ''}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -7495,7 +7641,7 @@ function renderSettings() {
       </div>
     </div>
 
-        <div class="settings-panel" data-panel="activity" style="display:${state.settingsTab==='activity'?'block':'none'};">
+    <div class="settings-panel" data-panel="activity" style="display:${state.settingsTab==='activity'?'block':'none'};">
       <div class="section-title" style="margin-top:6px; font-size:14px;">บันทึกกิจกรรมล่าสุด</div>
       <div id="activityPanelList"></div>
     </div>
@@ -7515,14 +7661,14 @@ function renderSettings() {
     </div>
   `;
 
-  // ---- แท็บ ----
+  // ---- สลับแท็บ ----
   document.querySelectorAll('#settingsTabRow [data-stab]').forEach(c => {
     c.onclick = () => {
       state.settingsTab = c.dataset.stab;
       document.querySelectorAll('#settingsTabRow [data-stab]').forEach(x => x.classList.toggle('active', x.dataset.stab === state.settingsTab));
       document.querySelectorAll('.settings-panel').forEach(p => { p.style.display = (p.dataset.panel === state.settingsTab) ? 'block' : 'none'; });
       window.scrollTo({ top: 0, behavior: 'smooth' });
-        if (state.settingsTab === 'activity') loadActivityPanel();
+      if (state.settingsTab === 'activity') loadActivityPanel();
     };
   });
 
@@ -7580,7 +7726,7 @@ function renderSettings() {
   };
 
   document.getElementById('btnExportAll').onclick = () => {
-        const data = {
+    const data = {
       assets: state.assets, borrow: state.borrow, maint: state.maint, components: state.components,
       memos: state.memos, users: state.users, activity: state.activity,
       settings: state.settings, auditRecords: state.auditRecords, auditYear: state.auditYear,
@@ -7599,7 +7745,7 @@ function renderSettings() {
       btn.onclick = async () => {
         const row = btn.closest('.cu-row');
         const original = row.querySelector('.cu-original').value;
-        // ถ้าหมวดหมู่นี้มีครุภัณฑ์ใช้อยู่แล้ว เตือนก่อนลบ เพราะครุภัณฑ์เดิมจะยังคงชื่อหมวดหมู่เก่าไว้ แต่จะไม่แสดงในตัวกรองอีกต่อไป
+        // ถ้าหมวดหมู่นี้มีครุภัณฑ์ใช้อยู่แล้ว เตือนก่อนลบ
         if (original) {
           const count = state.assets.filter(a => a['หมวดหมู่'] === original).length;
           if (count > 0 && !await confirmSheet('มีครุภัณฑ์ ' + count + ' รายการอยู่ในหมวดหมู่ "' + original + '" หากลบหมวดหมู่นี้ ครุภัณฑ์เดิมจะยังคงข้อมูลไว้ แต่จะไม่แสดงในตัวกรองหมวดหมู่อีกต่อไป ยืนยันการลบ?', {title:'ลบหมวดหมู่', okText:'ลบหมวดหมู่', tone:'bad'})) return;
@@ -7657,8 +7803,45 @@ function renderSettings() {
   };
 
   wireAuditCommitteeSettingsHandlers();
-   if (state.settingsTab === 'activity') loadActivityPanel();
+  if (state.settingsTab === 'activity') loadActivityPanel();   // กรณีรีเฟรชแล้วค้างอยู่แท็บนี้
 }
+
+  /* =========================================================
+   ปัดแถวเพื่อเลือกคำสั่ง
+   ========================================================= */
+.sw-wrap{ position:relative; margin-bottom:9px; border-radius:var(--r-md); }
+.sw-wrap > .list-item{
+  position:relative; z-index:1; margin-bottom:0 !important;
+  touch-action:pan-y;                              /* ให้เลื่อนหน้าแนวตั้งได้ แต่แนวนอนเป็นของการปัด */
+  transition:left .24s cubic-bezier(.2,.8,.2,1);
+}
+.sw-wrap.sw-drag > .list-item{ transition:none; }  /* ระหว่างลากให้ตามนิ้วทันที */
+.sw-wrap.sw-active{ overflow:hidden; }
+
+.sw-actions{
+  position:absolute; top:0; bottom:0; z-index:0;
+  display:flex; align-items:stretch; gap:6px; padding:0 6px;
+  max-width:calc(100% - 56px); overflow-x:auto; scrollbar-width:none;
+  visibility:hidden;                               /* ซ่อนไว้จนกว่าจะเริ่มปัด (กันโผล่ทะลุธีมกลาส) */
+}
+.sw-actions::-webkit-scrollbar{ display:none; }
+.sw-wrap.sw-left .sw-actions{ left:0; }
+.sw-wrap.sw-right .sw-actions{ right:0; }
+.sw-wrap.sw-active .sw-actions{ visibility:visible; }
+
+.sw-btn{
+  flex:0 0 60px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+  border:none; border-radius:var(--r-md); color:#fff; font-family:inherit; font-size:11px; font-weight:500;
+  cursor:pointer; padding:0;
+}
+.sw-btn svg{ width:20px; height:20px; }
+.sw-btn:active{ filter:brightness(.9); }
+/* สีปุ่ม: ผสมดำเล็กน้อยเพื่อให้ตัวอักษรขาวอ่านชัดในทุกธีม */
+.sw-btn.tone-navy{ background:color-mix(in srgb, var(--navy) 78%, #000); }
+.sw-btn.tone-ok{   background:color-mix(in srgb, var(--ok) 72%, #000); }
+.sw-btn.tone-warn{ background:color-mix(in srgb, var(--warn) 70%, #000); }
+.sw-btn.tone-bad{  background:color-mix(in srgb, var(--bad) 74%, #000); }
+.sw-btn.tone-info{ background:color-mix(in srgb, var(--info) 72%, #000); } 
 
    /* ===== [แก้ไขพิมพ์เปล่า] ย้าย #printArea ให้เป็นลูกตรงของ <body> =====
    เหตุผล: กฎพิมพ์ซ่อน "body > *" ทุกตัวที่ไม่ใช่ #printArea
