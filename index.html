@@ -3140,32 +3140,37 @@ function animateCountUps(root=document) {
   els.forEach(el => {
     if (el.dataset.countAnimated === '1') return;
 
-    // สำคัญ: ค่าเป้าหมายอยู่ใน data-count ไม่ใช่ข้อความเริ่มต้น "0"
-    // โค้ดเดิมอ่าน text node จึงอ่านได้แค่ 0 และทำให้ตัวเลขบน Dashboard ค้างที่ 0 ตลอด
+    // [แก้ไข] ค่าเป้าหมายอยู่ใน data-count เท่านั้น
     const rawAttr = el.dataset.count;
-    const target = Number(String(rawAttr ?? '').replace(/,/g, ''));
+
+    // [แก้ไข] ถ้าไม่มี data-count (เช่น การ์ดหน้ารายงาน/ยืม-คืน/ซ่อมบำรุง)
+    // ให้ข้ามไปเลย ปล่อยตัวเลขจริงที่ render ไว้ ไม่เขียนทับเป็น 0
+    if (rawAttr === undefined || rawAttr === null || String(rawAttr).trim() === '') return;
+
+    const target = Number(String(rawAttr).replace(/,/g, ''));
     if (!isFinite(target)) return;
 
+    // หา text node แรกที่เป็นตัวเลข (เพื่อไม่ให้ลบหน่วย เช่น "รายการ" "บาท")
     const first = Array.from(el.childNodes).find(n => n.nodeType === 3 && /\d/.test(n.nodeValue || ''));
     if (!first) return;
 
-    const decimals = Math.max(0, (String(rawAttr ?? '').split('.')[1] || '').length);
-    first.nodeValue = (0).toLocaleString('en-US', {
+    // จำนวนทศนิยมของค่าเป้าหมาย
+    const decimals = Math.max(0, (String(rawAttr).split('.')[1] || '').length);
+    const fmt = v => v.toLocaleString('en-US', {
       minimumFractionDigits: decimals,
       maximumFractionDigits: decimals
     });
+
+    first.nodeValue = fmt(0);
     el.dataset.countAnimated = '1';
 
-    const start = performance.now(), duration = 820;
+    const start = performance.now(), duration = 820;   // ระยะเวลาแอนิเมชัน (ms)
     const ease = x => 1 - Math.pow(1 - x, 3);
     const tick = now => {
       const p = Math.min(1, (now - start) / duration);
-      const v = target * ease(p);
-      first.nodeValue = v.toLocaleString('en-US', {
-        minimumFractionDigits: decimals,
-        maximumFractionDigits: decimals
-      });
+      first.nodeValue = fmt(target * ease(p));
       if (p < 1) requestAnimationFrame(tick);
+      else first.nodeValue = fmt(target);              // ล็อกค่าสุดท้ายให้ตรงเป๊ะ
     };
     requestAnimationFrame(tick);
   });
