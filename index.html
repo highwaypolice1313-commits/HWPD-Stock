@@ -3140,26 +3140,33 @@ function animateCountUps(root=document) {
   els.forEach(el => {
     if (el.dataset.countAnimated === '1') return;
 
-    // [แก้ไข] ค่าเป้าหมายอยู่ใน data-count เท่านั้น
-    const rawAttr = el.dataset.count;
-
-    // [แก้ไข] ถ้าไม่มี data-count (เช่น การ์ดหน้ารายงาน/ยืม-คืน/ซ่อมบำรุง)
-    // ให้ข้ามไปเลย ปล่อยตัวเลขจริงที่ render ไว้ ไม่เขียนทับเป็น 0
-    if (rawAttr === undefined || rawAttr === null || String(rawAttr).trim() === '') return;
-
-    const target = Number(String(rawAttr).replace(/,/g, ''));
-    if (!isFinite(target)) return;
-
-    // หา text node แรกที่เป็นตัวเลข (เพื่อไม่ให้ลบหน่วย เช่น "รายการ" "บาท")
+    // หา text node แรกที่มีตัวเลข (ไม่แตะหน่วย เช่น "รายการ" "บาท")
     const first = Array.from(el.childNodes).find(n => n.nodeType === 3 && /\d/.test(n.nodeValue || ''));
     if (!first) return;
 
-    // จำนวนทศนิยมของค่าเป้าหมาย
-    const decimals = Math.max(0, (String(rawAttr).split('.')[1] || '').length);
+    let target, decimals = 0, suffix = '';
+    const rawAttr = el.dataset.count;
+
+    if (rawAttr !== undefined && String(rawAttr).trim() !== '') {
+      // กรณี Dashboard: ใช้ค่าจาก data-count
+      target = Number(String(rawAttr).replace(/,/g, ''));
+      decimals = (String(rawAttr).split('.')[1] || '').length;
+    } else if (el.matches('.rp-kpi .k-num')) {
+      // กรณีการ์ดหน้ารายงาน: อ่านจากข้อความที่ render ไว้ เช่น "165", "1,234", "57%", "3.5"
+      const m = /^\s*([\d,]+(?:\.(\d+))?)(.*)$/.exec(first.nodeValue || '');
+      if (!m) return;                                   // ไม่ใช่ตัวเลข เช่น "-" ให้ข้าม
+      target = Number(m[1].replace(/,/g, ''));
+      decimals = m[2] ? m[2].length : 0;
+      suffix = (m[3] || '');                            // เช่น "%"
+    } else {
+      return;   // stat-num หน้าอื่นที่ไม่มี data-count ปล่อยตามเดิม (กันกะพริบตอนพิมพ์ค้นหา)
+    }
+    if (!isFinite(target)) return;
+
     const fmt = v => v.toLocaleString('en-US', {
       minimumFractionDigits: decimals,
       maximumFractionDigits: decimals
-    });
+    }) + suffix;
 
     first.nodeValue = fmt(0);
     el.dataset.countAnimated = '1';
@@ -6073,6 +6080,7 @@ function renderReports() {
   document.querySelectorAll('[data-rpp]').forEach(c => c.onclick = () => { state.rpPeriod = c.dataset.rpp; renderReports(); });
   const body = document.getElementById('rpBody');
   ({ overview: rpOverview, assets: rpAssets, borrow: rpBorrow, maint: rpMaint, official: rpOfficial })[state.rpTab](body);
+  requestAnimationFrame(() => animateCountUps(el));   // [เพิ่ม] ให้การ์ดตัวเลขหน้ารายงานนับขึ้น
 }
 
 /* ---------- แท็บ: ภาพรวม ---------- */
