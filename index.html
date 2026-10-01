@@ -2144,6 +2144,76 @@ textarea.input{
   #view-dashboard .dashboard-right{ margin-top:0; }
   #view-dashboard .dashboard-left > .section-title:first-of-type{ margin-top:22px !important; }
 }
+
+   
+/* ===== PREMIUM EXPERIENCE LAYER v3 (ย้ายมาไว้ที่ถูกต้อง) ===== */
+:root{
+  --motion-ease:cubic-bezier(.22,.8,.2,1);
+  --skeleton-base:color-mix(in srgb,var(--panel) 72%,var(--ink-faint) 28%);
+  --skeleton-hi:color-mix(in srgb,var(--panel) 92%,var(--gold) 8%);
+}
+html{scroll-behavior:smooth;}
+.stat-num,.hero-num,.k-num,.ap-serial{font-variant-numeric:tabular-nums;}
+.btn:active,.list-item:active,.asset-card:active,.icon-btn:active,.refresh-btn:active,.fab:active,.chip:active,.tab:active{transform:scale(.97);}
+@keyframes premiumItemIn{from{opacity:0;transform:translateY(8px) scale(.992)}to{opacity:1;transform:none}}
+.premium-stagger-item{animation:premiumItemIn .42s var(--motion-ease) both;animation-delay:calc(var(--stagger-index,0) * 30ms);}
+
+/* skeleton */
+.skeleton-page{display:grid;gap:14px;}
+.skeleton-hero{height:164px;border-radius:24px;}
+.skeleton-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}
+.skeleton-card{height:92px;border-radius:18px;}
+.skeleton-list{display:grid;gap:10px;}
+.skeleton-row{height:76px;border-radius:16px;}
+.skeleton-shimmer{
+  position:relative;overflow:hidden;border:1px solid var(--premium-line);
+  background:linear-gradient(110deg,var(--skeleton-base) 8%,var(--skeleton-hi) 18%,var(--skeleton-base) 33%);
+  background-size:220% 100%;animation:skeletonShimmer 1.25s linear infinite;
+}
+@keyframes skeletonShimmer{to{background-position:-220% 0;}}
+
+/* toast */
+.toast{
+  top:auto!important;bottom:calc(92px + env(safe-area-inset-bottom))!important;left:50%!important;
+  transform:translateX(-50%) translateY(12px)!important;display:flex;align-items:center;gap:9px;
+  width:max-content;max-width:min(92vw,520px);padding:11px 15px!important;border-radius:16px!important;
+}
+.toast.show{opacity:1!important;transform:translateX(-50%) translateY(0)!important;}
+.toast-icon{width:20px;height:20px;display:grid;place-items:center;flex:none;border-radius:50%;}
+.toast-icon svg{width:17px;height:17px;}
+.toast-message{line-height:1.4;text-align:left;white-space:normal;}
+.toast.ok .toast-icon{color:var(--ok);background:var(--ok-wash);}
+.toast.warn .toast-icon{color:var(--warn);background:var(--warn-wash);}
+.toast.bad .toast-icon{color:var(--bad);background:var(--bad-wash);}
+@media (min-width:900px){.toast{bottom:24px!important;}}
+
+/* confirm sheet */
+.confirm-overlay{align-items:center!important;padding:18px;}
+.confirm-sheet{width:min(440px,100%);max-width:440px!important;border-radius:26px!important;padding:22px!important;}
+.confirm-icon{width:50px;height:50px;border-radius:17px;display:grid;place-items:center;margin-bottom:14px;color:var(--warn);background:var(--warn-wash);}
+.confirm-icon svg{width:26px;height:26px;}
+.confirm-title{font-size:18px;font-weight:650;color:var(--ink);margin-bottom:7px;font-family:var(--font-disp);}
+.confirm-message{font-size:13px;line-height:1.7;color:var(--ink-dim);white-space:pre-line;}
+.confirm-actions{display:flex;gap:10px;margin-top:20px;}
+
+/* timeline (ตัวการที่ทำให้ icon ใหญ่) */
+.asset-timeline{margin:18px 0 4px;}
+.timeline-title{font-size:12px;font-weight:650;color:var(--ink);margin-bottom:12px;display:flex;align-items:center;gap:7px;}
+.timeline-title svg{width:16px!important;height:16px!important;color:var(--gold-deep);}
+.timeline{position:relative;display:grid;}
+.timeline::before{content:"";position:absolute;left:11px;top:13px;bottom:13px;width:1px;background:var(--panel-line);}
+.timeline-item{position:relative;display:grid;grid-template-columns:24px 1fr;gap:9px;padding:0 0 14px;}
+.timeline-dot{width:23px;height:23px;border-radius:50%;display:grid;place-items:center;background:var(--panel);border:1px solid var(--panel-line);color:var(--ink-dim);z-index:1;}
+.timeline-dot svg{width:13px!important;height:13px!important;}
+.timeline-item.current .timeline-dot{color:var(--gold-deep);border-color:var(--gold-line);background:var(--gold-wash);}
+.timeline-content{min-width:0;padding-top:1px;}
+.timeline-event{font-size:12.5px;font-weight:600;color:var(--ink);}
+.timeline-date{font-size:10.5px;color:var(--ink-dim);margin-top:2px;}
+.timeline-note{font-size:10.5px;color:var(--ink-faint);margin-top:2px;line-height:1.45;}
+
+/* ตาราง/สรุปในหน้ารายงาน */
+.rp-filter{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;}
+.rp-filter select{max-width:240px;}
    
 </style>
 </head>
@@ -6073,44 +6143,118 @@ function rpGroup(list, keyFn) {
   });
   return Array.from(m.values()).sort((x, y) => y.n - x.n || x.key.localeCompare(y.key, 'th'));
 }
-function rpGroupTableHtml(groups, firstLabel, withCat) {
-  const dash = n => n ? n.toLocaleString() : '-';
-  const sum = k => groups.reduce((s, g) => s + g[k], 0);
-  const cols = [[firstLabel]].concat(withCat ? [['หมวดหมู่']] : [], [['จำนวน', 1], ['พร้อมใช้', 1], ['ยืม', 1], ['ซ่อม', 1], ['จำหน่าย', 1], ['มูลค่ารวม (บาท)', 1]]);
-  const rows = groups.map(g => [escapeHtml(g.key)]
-    .concat(withCat ? [escapeHtml(Array.from(g.cats).join(', '))] : [],
-      ['<b>' + g.n.toLocaleString() + '</b>', dash(g.r), dash(g.b), dash(g.m), dash(g.d), g.v ? g.v.toLocaleString() : '-']));
-  const foot = ['รวม (' + groups.length + ' กลุ่ม)'].concat(withCat ? [''] : [],
-    [sum('n').toLocaleString(), dash(sum('r')), dash(sum('b')), dash(sum('m')), dash(sum('d')), sum('v').toLocaleString()]);
-  return rpTable(cols, rows, foot);
+   const GS_LIMIT = 15;
+const GS_CSS = `<style>
+.gs-head{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.gs-search{flex:1 1 200px}
+.gs-search input{width:100%;height:42px;padding:0 16px;border-radius:99px;border:1px solid var(--panel-line);background:var(--panel-soft);color:var(--ink);font:inherit;font-size:14px;outline:none}
+.gs-search input:focus{border-color:var(--gold-line);box-shadow:0 0 0 3px var(--gold-wash)}
+.gs-csv{flex:none;height:42px;padding:0 18px;border-radius:99px;border:1px solid var(--panel-line);background:var(--panel);color:var(--ink);cursor:pointer;font:inherit;font-size:13px}
+.gs-csv:hover{border-color:var(--gold-line);background:var(--gold-wash)}
+.gs-chips{display:flex;gap:7px;overflow-x:auto;padding:2px 0 6px;margin-bottom:10px;scrollbar-width:none}
+.gs-chips::-webkit-scrollbar{display:none}
+.gs-chip{flex:none;padding:7px 14px;border-radius:99px;border:1px solid var(--panel-line);background:var(--panel);color:var(--ink-dim);font-size:12.5px;cursor:pointer;white-space:nowrap}
+.gs-chip b{font-family:var(--font-num);color:var(--ink);margin-left:4px;font-weight:600}
+.gs-chip.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.gs-chip.on b{color:#fff}
+.gs-sum{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:8px}
+.gs-sumc{background:var(--panel-soft);border:1px solid var(--panel-line);border-radius:14px;padding:10px 12px}
+.gs-sumc b{display:block;font-family:var(--font-num);font-size:20px;line-height:1.2;color:var(--ink)}
+.gs-sumc span{font-size:11px;color:var(--ink-dim)}
+.gs-row{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(130px,1fr) 76px;gap:6px 18px;align-items:center;padding:13px 4px;border-top:1px solid var(--panel-line)}
+.gs-name{font-size:14px;font-weight:500;color:var(--ink);line-height:1.4}
+.gs-cat{display:inline-block;margin-top:4px;font-size:10.5px;padding:2px 9px;border-radius:99px;background:var(--navy-wash);color:var(--navy)}
+.gs-val{margin-left:6px;font-size:11px;color:var(--ink-dim)}
+.gs-bar{display:flex;height:7px;border-radius:99px;overflow:hidden;background:var(--panel-line)}
+.gs-bar i{display:block;height:100%}
+.gs-pills{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+.gs-p{font-size:11px;padding:2px 9px;border-radius:99px;font-weight:500}
+.gs-p.ok{background:var(--ok-wash);color:var(--ok)}
+.gs-p.warn{background:var(--warn-wash);color:var(--warn)}
+.gs-p.bad{background:var(--bad-wash);color:var(--bad)}
+.gs-p.off{background:var(--off-wash);color:var(--off)}
+.gs-total{text-align:right;font-family:var(--font-num);font-size:24px;font-weight:700;line-height:1;color:var(--ink)}
+.gs-total small{display:block;margin-top:4px;font-family:var(--font-th);font-size:10.5px;font-weight:400;color:var(--ink-dim)}
+.gs-list:not(.gs-all) .gs-more{display:none}
+.gs-showall{display:block;margin:12px auto 2px;padding:9px 24px;border-radius:99px;border:1px solid var(--panel-line);background:var(--panel);color:var(--ink);font:inherit;font-size:12.5px;cursor:pointer}
+.gs-empty{padding:26px;text-align:center;color:var(--ink-dim);font-size:13px}
+@media (max-width:640px){
+  .gs-row{grid-template-columns:minmax(0,1fr) auto}
+  .gs-mid{grid-column:1 / -1;grid-row:2}
+  .gs-total{font-size:22px}
 }
+</style>`;
+
+function rpGroupRowsHtml(groups, withCat, limit) {
+  if (!groups.length) return '<div class="gs-empty">ไม่มีข้อมูล</div>';
+  return groups.map((g, i) => {
+    const seg = (n, c) => n ? `<i style="width:${(n / g.n * 100).toFixed(1)}%;background:var(${c})"></i>` : '';
+    const pill = (n, label, c) => n ? `<span class="gs-p ${c}">${label} ${n.toLocaleString()}</span>` : '';
+    const other = g.n - g.r - g.b - g.m - g.d;
+    return `<div class="gs-row${limit && i >= limit ? ' gs-more' : ''}" data-n="${escapeHtml(g.key.toLowerCase())}">
+      <div>
+        <div class="gs-name">${escapeHtml(g.key)}</div>
+        ${withCat ? `<span class="gs-cat">${escapeHtml(Array.from(g.cats).join(', '))}</span>` : ''}${g.v ? `<span class="gs-val">มูลค่า ${g.v.toLocaleString()} บาท</span>` : ''}
+      </div>
+      <div class="gs-mid">
+        <div class="gs-bar">${seg(g.r, '--ok')}${seg(g.b, '--warn')}${seg(g.m, '--bad')}${seg(g.d, '--off')}${seg(other, '--ink-faint')}</div>
+        <div class="gs-pills">${pill(g.r, 'พร้อมใช้', 'ok')}${pill(g.b, 'ยืม', 'warn')}${pill(g.m, 'ซ่อม', 'bad')}${pill(g.d, 'จำหน่าย', 'off')}</div>
+      </div>
+      <div class="gs-total">${g.n.toLocaleString()}<small>รายการ</small></div>
+    </div>`;
+  }).join('');
+}
+
 function rpGroupSummaryHtml() {
   const cat = state.rpGroupCat || 'all';
-  const cats = Array.from(new Set(getCategories().concat(state.assets.map(a => a['หมวดหมู่']).filter(Boolean))));
+  const cats = Array.from(new Set(getCategories().concat(state.assets.map(a => a['หมวดหมู่']).filter(Boolean))))
+    .map(c => ({ c, n: state.assets.filter(a => a['หมวดหมู่'] === c).length })).filter(x => x.n > 0);
   const list = state.assets.filter(a => cat === 'all' || a['หมวดหมู่'] === cat);
   const byName = rpGroup(list, a => rpNameKey(a['ชื่อครุภัณฑ์']) || 'ไม่ระบุชื่อ');
+  const ready = list.filter(a => a['สถานะ'] === 'พร้อมใช้งาน').length;
+  const readyPct = list.length ? Math.round(ready / list.length * 100) : 0;
   const vehicles = state.assets.filter(a => a['หมวดหมู่'] === 'ยานพาหนะ');
   const byType = rpGroup(vehicles, rpVehicleType);
-  return `
+
+  return GS_CSS + `
     <div class="glass rp-card">
-      <h4>สรุปรวมตามชื่อครุภัณฑ์ <small>ชื่อเดียวกันรวมเป็นแถวเดียว</small></h4>
-      <div class="rp-filter">
-        <select class="input" id="rpGroupCat">
-          <option value="all">ทุกหมวดหมู่</option>
-          ${cats.map(c => `<option value="${escapeHtml(c)}" ${cat === c ? 'selected' : ''}>${escapeHtml(c)}</option>`).join('')}
-        </select>
-        <button class="btn btn-ghost" id="btnRpGroupCsv" style="flex:none;">ส่งออก CSV</button>
+      <h4>สรุปตามชื่อครุภัณฑ์ <small>ชื่อเดียวกันรวมเป็นแถวเดียว</small></h4>
+      <div class="gs-chips">
+        <div class="gs-chip ${cat === 'all' ? 'on' : ''}" data-gcat="all">ทั้งหมด<b>${state.assets.length}</b></div>
+        ${cats.map(x => `<div class="gs-chip ${cat === x.c ? 'on' : ''}" data-gcat="${escapeHtml(x.c)}">${escapeHtml(x.c)}<b>${x.n}</b></div>`).join('')}
       </div>
-      ${rpGroupTableHtml(byName, 'ชื่อครุภัณฑ์', cat === 'all')}
+      <div class="gs-sum">
+        <div class="gs-sumc"><b>${list.length.toLocaleString()}</b><span>รายการทั้งหมด</span></div>
+        <div class="gs-sumc"><b>${byName.length.toLocaleString()}</b><span>ชนิด/ชื่อ</span></div>
+        <div class="gs-sumc"><b style="color:var(--ok)">${readyPct}%</b><span>พร้อมใช้งาน</span></div>
+      </div>
+      <div class="gs-head">
+        <div class="gs-search"><input id="gsSearch" placeholder="ค้นหาชื่อครุภัณฑ์..." autocomplete="off"></div>
+        <button class="gs-csv" id="btnRpGroupCsv" type="button">ส่งออก CSV</button>
+      </div>
+      <div class="gs-list ${state.rpGroupAll ? 'gs-all' : ''}" id="gsList">${rpGroupRowsHtml(byName, cat === 'all', GS_LIMIT)}</div>
+      ${byName.length > GS_LIMIT ? `<button class="gs-showall" id="gsShowAll" type="button">${state.rpGroupAll ? 'ย่อรายการ' : 'แสดงทั้งหมด (' + byName.length + ' ชนิด)'}</button>` : ''}
     </div>
     ${vehicles.length ? `<div class="glass rp-card">
-      <h4>สรุปยานพาหนะแยกตามประเภท <small>รวม ${vehicles.length} คัน</small></h4>
-      ${rpGroupTableHtml(byType, 'ประเภทรถ', false)}
+      <h4>ยานพาหนะแยกตามประเภท <small>รวม ${vehicles.length} คัน</small></h4>
+      <div class="gs-list gs-all">${rpGroupRowsHtml(byType, false, 0)}</div>
     </div>` : ''}`;
 }
+
 function rpGroupWire() {
-  const sel = document.getElementById('rpGroupCat');
-  if (sel) sel.onchange = () => { state.rpGroupCat = sel.value; renderReports(); };
+  document.querySelectorAll('[data-gcat]').forEach(c => c.onclick = () => {
+    state.rpGroupCat = c.dataset.gcat; state.rpGroupAll = false; renderReports();
+  });
+  const listEl = document.getElementById('gsList');
+  const input = document.getElementById('gsSearch');
+  if (input && listEl) input.oninput = () => {
+    const q = input.value.trim().toLowerCase();
+    listEl.classList.toggle('gs-all', !!q || !!state.rpGroupAll);
+    listEl.querySelectorAll('.gs-row').forEach(r => { r.style.display = (!q || r.dataset.n.includes(q)) ? '' : 'none'; });
+    const btn = document.getElementById('gsShowAll'); if (btn) btn.style.display = q ? 'none' : '';
+  };
+  const showAll = document.getElementById('gsShowAll');
+  if (showAll) showAll.onclick = () => { state.rpGroupAll = !state.rpGroupAll; renderReports(); };
   const csv = document.getElementById('btnRpGroupCsv');
   if (csv) csv.onclick = () => {
     const cat = state.rpGroupCat || 'all';
@@ -6122,7 +6266,6 @@ function rpGroupWire() {
     exportCsv('สรุปครุภัณฑ์ตามชื่อ.csv', ['ชื่อครุภัณฑ์', 'หมวดหมู่', 'จำนวน', 'พร้อมใช้งาน', 'กำลังยืม', 'ซ่อมบำรุง', 'จำหน่ายแล้ว', 'มูลค่ารวม(บาท)'], rows);
   };
 }
-   
 function rpAssets(body) {
   const A = state.assets;
   const cats = Array.from(new Set(getCategories().concat(A.map(a => a['หมวดหมู่']).filter(Boolean))));
@@ -6832,74 +6975,6 @@ function printAuditReport() {
   const html = `
     <style>@page{ size:A4; margin:15mm; }
 
-/* ===== PREMIUM EXPERIENCE LAYER v3 (ย้ายมาไว้ที่ถูกต้อง) ===== */
-:root{
-  --motion-ease:cubic-bezier(.22,.8,.2,1);
-  --skeleton-base:color-mix(in srgb,var(--panel) 72%,var(--ink-faint) 28%);
-  --skeleton-hi:color-mix(in srgb,var(--panel) 92%,var(--gold) 8%);
-}
-html{scroll-behavior:smooth;}
-.stat-num,.hero-num,.k-num,.ap-serial{font-variant-numeric:tabular-nums;}
-.btn:active,.list-item:active,.asset-card:active,.icon-btn:active,.refresh-btn:active,.fab:active,.chip:active,.tab:active{transform:scale(.97);}
-@keyframes premiumItemIn{from{opacity:0;transform:translateY(8px) scale(.992)}to{opacity:1;transform:none}}
-.premium-stagger-item{animation:premiumItemIn .42s var(--motion-ease) both;animation-delay:calc(var(--stagger-index,0) * 30ms);}
-
-/* skeleton */
-.skeleton-page{display:grid;gap:14px;}
-.skeleton-hero{height:164px;border-radius:24px;}
-.skeleton-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}
-.skeleton-card{height:92px;border-radius:18px;}
-.skeleton-list{display:grid;gap:10px;}
-.skeleton-row{height:76px;border-radius:16px;}
-.skeleton-shimmer{
-  position:relative;overflow:hidden;border:1px solid var(--premium-line);
-  background:linear-gradient(110deg,var(--skeleton-base) 8%,var(--skeleton-hi) 18%,var(--skeleton-base) 33%);
-  background-size:220% 100%;animation:skeletonShimmer 1.25s linear infinite;
-}
-@keyframes skeletonShimmer{to{background-position:-220% 0;}}
-
-/* toast */
-.toast{
-  top:auto!important;bottom:calc(92px + env(safe-area-inset-bottom))!important;left:50%!important;
-  transform:translateX(-50%) translateY(12px)!important;display:flex;align-items:center;gap:9px;
-  width:max-content;max-width:min(92vw,520px);padding:11px 15px!important;border-radius:16px!important;
-}
-.toast.show{opacity:1!important;transform:translateX(-50%) translateY(0)!important;}
-.toast-icon{width:20px;height:20px;display:grid;place-items:center;flex:none;border-radius:50%;}
-.toast-icon svg{width:17px;height:17px;}
-.toast-message{line-height:1.4;text-align:left;white-space:normal;}
-.toast.ok .toast-icon{color:var(--ok);background:var(--ok-wash);}
-.toast.warn .toast-icon{color:var(--warn);background:var(--warn-wash);}
-.toast.bad .toast-icon{color:var(--bad);background:var(--bad-wash);}
-@media (min-width:900px){.toast{bottom:24px!important;}}
-
-/* confirm sheet */
-.confirm-overlay{align-items:center!important;padding:18px;}
-.confirm-sheet{width:min(440px,100%);max-width:440px!important;border-radius:26px!important;padding:22px!important;}
-.confirm-icon{width:50px;height:50px;border-radius:17px;display:grid;place-items:center;margin-bottom:14px;color:var(--warn);background:var(--warn-wash);}
-.confirm-icon svg{width:26px;height:26px;}
-.confirm-title{font-size:18px;font-weight:650;color:var(--ink);margin-bottom:7px;font-family:var(--font-disp);}
-.confirm-message{font-size:13px;line-height:1.7;color:var(--ink-dim);white-space:pre-line;}
-.confirm-actions{display:flex;gap:10px;margin-top:20px;}
-
-/* timeline (ตัวการที่ทำให้ icon ใหญ่) */
-.asset-timeline{margin:18px 0 4px;}
-.timeline-title{font-size:12px;font-weight:650;color:var(--ink);margin-bottom:12px;display:flex;align-items:center;gap:7px;}
-.timeline-title svg{width:16px!important;height:16px!important;color:var(--gold-deep);}
-.timeline{position:relative;display:grid;}
-.timeline::before{content:"";position:absolute;left:11px;top:13px;bottom:13px;width:1px;background:var(--panel-line);}
-.timeline-item{position:relative;display:grid;grid-template-columns:24px 1fr;gap:9px;padding:0 0 14px;}
-.timeline-dot{width:23px;height:23px;border-radius:50%;display:grid;place-items:center;background:var(--panel);border:1px solid var(--panel-line);color:var(--ink-dim);z-index:1;}
-.timeline-dot svg{width:13px!important;height:13px!important;}
-.timeline-item.current .timeline-dot{color:var(--gold-deep);border-color:var(--gold-line);background:var(--gold-wash);}
-.timeline-content{min-width:0;padding-top:1px;}
-.timeline-event{font-size:12.5px;font-weight:600;color:var(--ink);}
-.timeline-date{font-size:10.5px;color:var(--ink-dim);margin-top:2px;}
-.timeline-note{font-size:10.5px;color:var(--ink-faint);margin-top:2px;line-height:1.45;}
-
-/* ตาราง/สรุปในหน้ารายงาน */
-.rp-filter{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;}
-.rp-filter select{max-width:240px;}
 </style>
     <div style="font-family:'TH Sarabun New','Sarabun','Kanit',sans-serif; font-size:14pt; color:#000;">
       <div style="text-align:center; font-weight:700; font-size:18pt;">รายงานผลการตรวจนับพัสดุประจำปี พ.ศ. ${toThaiNumber(state.auditYear + 543)}</div>
@@ -6925,7 +7000,7 @@ html{scroll-behavior:smooth;}
   triggerPrint(() => { pa.innerHTML = ''; });
 }
 
-   function openVehicleAuditForm(assetId) {
+  function openVehicleAuditForm(assetId) {
   const a = state.assets.find(x => x['รหัสครุภัณฑ์'] === assetId);
   if (!a) return;
   const rec = auditRecordFor(assetId) || {};
