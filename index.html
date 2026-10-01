@@ -10071,13 +10071,22 @@ function compareMonthlyOfficers(a, b) {
        * รายงานทั้งก้อน" เพราะจะทำให้ข้อมูลที่เกิน 1 หน้าโดนตัดหาย
        * เราแบ่งข้อมูลเป็นหลายหน้าแนวนอนก่อน แล้วแต่ละหน้าจึงถูกหมุนแยกกัน
        */
-      const PAGE_ROWS = 6;
+      // Mobile: หน้าแรกมีหัวรายงาน + summary ส่วนหน้าถัดไปต่อด้วยแถวข้อมูลทันที
+      // เพื่อให้ใช้กระดาษน้อยที่สุด โดยไม่สร้างหัวข้อ/หัวตารางซ้ำทุกหน้า
+      const FIRST_PAGE_ROWS = 6;
+      const CONTINUATION_PAGE_ROWS = 10;
       const chunks = [];
-      if (!detailRows.length) chunks.push([]);
-      else for (let i = 0; i < detailRows.length; i += PAGE_ROWS) chunks.push(detailRows.slice(i, i + PAGE_ROWS));
+      if (!detailRows.length) {
+        chunks.push([]);
+      } else {
+        chunks.push(detailRows.slice(0, FIRST_PAGE_ROWS));
+        for (let i = FIRST_PAGE_ROWS; i < detailRows.length; i += CONTINUATION_PAGE_ROWS) {
+          chunks.push(detailRows.slice(i, i + CONTINUATION_PAGE_ROWS));
+        }
+      }
 
       const mobilePages = chunks.map((chunk, pageIndex) => {
-        const startIndex = pageIndex * PAGE_ROWS;
+        const startIndex = pageIndex === 0 ? 0 : FIRST_PAGE_ROWS + (pageIndex - 1) * CONTINUATION_PAGE_ROWS;
         const isFirst = pageIndex === 0;
         const isLast = pageIndex === chunks.length - 1;
         const bodyRows = renderRows(chunk, startIndex) || '<tr><td colspan="8" class="center">ไม่มีข้อมูลครุภัณฑ์ที่ต้องตรวจ</td></tr>';
@@ -10085,13 +10094,14 @@ function compareMonthlyOfficers(a, b) {
           <div class="mcr-mobile-page">
             <div class="mcr-mobile-page-inner">
               <div class="mcr">
-                <div class="head">
-                  <div class="title">รายงานผลการตรวจประจำเดือน</div>
-                  <div class="org">${escapeHtml(orgName)}</div>
-                  <div class="period">ประจำเดือน ${escapeHtml(monthName)} พ.ศ. ${toThaiNumber(thaiYear)}${chunks.length > 1 ? ` — หน้า ${toThaiNumber(pageIndex + 1)} / ${toThaiNumber(chunks.length)}` : ''}</div>
-                </div>
-                ${isFirst ? summaryHtml : '<div class="continued">รายงานต่อเนื่อง</div>'}
-                <table>${tableHead}<tbody>${bodyRows}${isLast ? `<tr class="total"><td colspan="4" class="center">รวม</td><td class="center">${toThaiNumber(totalQty)}</td><td colspan="3"></td></tr>` : ''}</tbody></table>
+                ${isFirst ? `
+                  <div class="head">
+                    <div class="title">รายงานผลการตรวจประจำเดือน</div>
+                    <div class="org">${escapeHtml(orgName)}</div>
+                    <div class="period">ประจำเดือน ${escapeHtml(monthName)} พ.ศ. ${toThaiNumber(thaiYear)}</div>
+                  </div>
+                  ${summaryHtml}` : ''}
+                <table>${isFirst ? tableHead : ''}<tbody>${bodyRows}${isLast ? `<tr class="total"><td colspan="4" class="center">รวม</td><td class="center">${toThaiNumber(totalQty)}</td><td colspan="3"></td></tr>` : ''}</tbody></table>
                 ${isLast ? `
                   <div class="note">หมายเหตุ: รายงานนี้จัดแสดงตาม <strong>ชื่อครุภัณฑ์ + หมายเลขครุภัณฑ์ + จำนวน</strong> เพื่อให้ง่ายต่อการตรวจสอบรายการของแต่ละผู้ครอบครอง</div>
                   <div class="signatures">
