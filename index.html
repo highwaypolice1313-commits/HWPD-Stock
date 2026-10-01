@@ -9230,70 +9230,148 @@ function compareMonthlyOfficers(a, b) {
 
   function mcRenderPrintReport(){
     const orgName = (state.settings && state.settings.orgName) || ORG_NAME;
-    const rowsAll = (state.users || [])
-      .map(u => ({u, sum:mcSummary(u), rec:mcRecordFor(u)}))
-      .filter(x => x.sum.hold.length > 0 || x.rec);
-
-    const rows = rowsAll.map((x,i)=>{
-      const serials = mcSerialsFor(x.u);
-      const serialText = serials.length
-        ? serials.map(s => s.serial).join(', ')
-        : '-';
-      const result = x.rec ? x.rec['ผล'] : 'ยังไม่ตรวจ';
-      const cls = result === 'ครบ' ? 'ok' : (result === 'มีปัญหา' ? 'bad' : 'pending');
-      return `<tr>
-        <td>${i+1}</td>
-        <td><strong>${escapeHtml(officerFullName(x.u))}</strong><br><small>${escapeHtml(x.u['ตำแหน่ง']||'-')}</small></td>
-        <td>${escapeHtml(serialText)}</td>
-        <td>${escapeHtml(mcHoldingsTextEnhanced(x.u)||'-')}</td>
-        <td class="${cls}">${escapeHtml(result)}</td>
-        <td>${escapeHtml(x.rec && x.rec['หมายเหตุ'] || '-')}</td>
-        <td>${escapeHtml(x.rec && x.rec['ผู้ตรวจ'] || '-')}<br>${x.rec ? escapeHtml(thaiDateTime(x.rec['วันที่ตรวจ'])) : '-'}</td>
-      </tr>`;
-    }).join('');
-
-    const done = rowsAll.filter(x=>x.rec).length;
-    const bad = rowsAll.filter(x=>x.rec && x.rec['ผล']==='มีปัญหา').length;
-    const pending = rowsAll.length - done;
     const monthName = TH_MONTHS_FULL[(state.mcMonth||1)-1] || '';
     const thaiYear = (Number(state.mcYear)||new Date().getFullYear()) + 543;
 
+    // สร้างรายการครุภัณฑ์สำหรับรายงาน: ชื่อ + หมายเลขครุภัณฑ์ + จำนวน
+    // แยกตามผู้ครอบครอง เพื่อให้อ่านง่ายและตรวจสอบย้อนกลับได้
+    const source = (state.users || [])
+      .map(u => ({u, rec:mcRecordFor(u), hold:mcHoldingsOf(u)}))
+      .filter(x => x.hold.length > 0 || x.rec)
+      .sort((a,b) => compareMonthlyOfficers(a,b));
+
+    const detailRows = [];
+    source.forEach(x => {
+      const grouped = {};
+      x.hold.forEach(b => {
+        const a = mcAssetByBorrow(b) || {};
+        const name = String(b['ชื่อครุภัณฑ์'] || a['ชื่อครุภัณฑ์'] || '-').trim() || '-';
+        const assetNo = String(a['รหัสครุภัณฑ์'] || b['รหัสครุภัณฑ์'] || '').trim() || '-';
+        const key = name + '||' + assetNo;
+        if (!grouped[key]) grouped[key] = {name, assetNo, qty:0};
+        grouped[key].qty += 1;
+      });
+
+      const items = Object.values(grouped);
+      const result = x.rec ? x.rec['ผล'] : 'ยังไม่ตรวจ';
+      const note = x.rec && x.rec['หมายเหตุ'] ? x.rec['หมายเหตุ'] : '-';
+      const inspector = x.rec && x.rec['ผู้ตรวจ'] ? x.rec['ผู้ตรวจ'] : '-';
+      const checkedAt = x.rec && x.rec['วันที่ตรวจ'] ? thaiDateTime(x.rec['วันที่ตรวจ']) : '-';
+
+      if (!items.length) {
+        detailRows.push({
+          officer: officerFullName(x.u), position: x.u['ตำแหน่ง'] || '-',
+          name:'-', assetNo:'-', qty:0, result, note, inspector, checkedAt
+        });
+      } else {
+        items.forEach((it, idx) => detailRows.push({
+          officer: idx === 0 ? officerFullName(x.u) : '',
+          position: idx === 0 ? (x.u['ตำแหน่ง'] || '-') : '',
+          name: it.name, assetNo: it.assetNo, qty: it.qty,
+          result: idx === 0 ? result : '',
+          note: idx === 0 ? note : '',
+          inspector: idx === 0 ? inspector : '',
+          checkedAt: idx === 0 ? checkedAt : ''
+        }));
+      }
+    });
+
+    const done = source.filter(x=>x.rec).length;
+    const bad = source.filter(x=>x.rec && x.rec['ผล']==='มีปัญหา').length;
+    const pending = source.length - done;
+    const totalQty = detailRows.reduce((sum,r)=>sum + Number(r.qty||0), 0);
+
+    const resultBadge = (result) => {
+      if (!result) return '';
+      const cls = result === 'ครบ' ? 'ok' : (result === 'มีปัญหา' ? 'bad' : 'pending');
+      return `<span class="result ${cls}">${escapeHtml(result)}</span>`;
+    };
+
+    const rows = detailRows.map((r,i)=>`<tr>
+      <td class="center">${i+1}</td>
+      <td class="officer">${r.officer ? `<strong>${escapeHtml(r.officer)}</strong><br><span>${escapeHtml(r.position)}</span>` : ''}</td>
+      <td>${escapeHtml(r.name)}</td>
+      <td class="asset-no">${escapeHtml(r.assetNo)}</td>
+      <td class="center qty">${r.qty ? toThaiNumber(r.qty) : '-'}</td>
+      <td class="center">${resultBadge(r.result)}</td>
+      <td>${escapeHtml(r.note || '')}</td>
+      <td>${r.inspector ? `${escapeHtml(r.inspector)}<br><span>${escapeHtml(r.checkedAt)}</span>` : ''}</td>
+    </tr>`).join('');
+
     const html = `
       <style>
-        @page{size:A4 landscape;margin:12mm;}
-        .mcr{font-family:'TH Sarabun New','Sarabun','Kanit',sans-serif;color:#111;font-size:11pt;}
-        .mcr h1{font-size:20pt;text-align:center;margin:0 0 2mm;}
-        .mcr .sub{text-align:center;font-size:13pt;margin-bottom:6mm;}
-        .mcr .kpis{display:flex;gap:8mm;margin-bottom:5mm;}
-        .mcr .kpi{flex:1;border:1px solid #aaa;padding:3mm;text-align:center;}
-        .mcr .kpi b{display:block;font-size:18pt;}
-        .mcr table{width:100%;border-collapse:collapse;}
-        .mcr th,.mcr td{border:1px solid #333;padding:2.2mm 2.5mm;vertical-align:top;}
-        .mcr th{background:#e9edf0;text-align:center;font-weight:700;}
-        .mcr td:first-child{text-align:center;width:8mm;}
-        .mcr .ok{color:#168052;font-weight:700;}
-        .mcr .bad{color:#b52d43;font-weight:700;}
-        .mcr .pending{color:#a86b12;font-weight:700;}
-        .mcr .foot{margin-top:5mm;font-size:10pt;color:#555;}
+        @page{size:A4 landscape;margin:11mm 12mm;}
+        .mcr{font-family:'TH Sarabun New','Sarabun','Kanit',sans-serif;color:#111;font-size:13pt;line-height:1.25;}
+        .mcr *{box-sizing:border-box;}
+        .mcr .head{text-align:center;margin-bottom:5mm;}
+        .mcr .head .title{font-size:20pt;font-weight:700;line-height:1.15;margin:0 0 1.5mm;}
+        .mcr .head .org{font-size:15pt;font-weight:600;margin:0 0 1mm;}
+        .mcr .head .period{font-size:13pt;color:#333;}
+        .mcr .summary{display:grid;grid-template-columns:repeat(4,1fr);gap:4mm;margin:0 0 5mm;}
+        .mcr .summary-box{border:1px solid #777;border-radius:2mm;padding:2.5mm 3mm;text-align:center;}
+        .mcr .summary-box b{display:block;font-size:17pt;line-height:1.05;}
+        .mcr .summary-box span{font-size:11pt;}
+        .mcr table{width:100%;border-collapse:collapse;table-layout:fixed;}
+        .mcr th,.mcr td{border:1px solid #333;padding:2mm 2.2mm;vertical-align:middle;}
+        .mcr th{background:#e9edf0;text-align:center;font-weight:700;line-height:1.15;}
+        .mcr td.center{text-align:center;}
+        .mcr td.officer{width:18%;}
+        .mcr td.officer strong{font-size:12.5pt;}
+        .mcr td.officer span,.mcr td span{font-size:10.5pt;color:#444;}
+        .mcr .asset-no{font-weight:700;text-align:center;word-break:break-word;}
+        .mcr .qty{font-weight:700;font-size:13.5pt;}
+        .mcr .result{display:inline-block;padding:1mm 2.5mm;border-radius:1.5mm;font-weight:700;white-space:nowrap;}
+        .mcr .result.ok{background:#e8f6ee;color:#126b43;}
+        .mcr .result.bad{background:#fdecef;color:#a1263b;}
+        .mcr .result.pending{background:#fff4dc;color:#8a5a00;}
+        .mcr .total td{font-weight:700;background:#f7f7f7;}
+        .mcr .note{margin-top:4mm;font-size:11pt;color:#555;}
+        .mcr .signatures{display:grid;grid-template-columns:1fr 1fr;gap:25mm;margin-top:13mm;page-break-inside:avoid;}
+        .mcr .sig{text-align:center;font-size:12pt;}
+        .mcr .sig .line{margin:0 auto 2mm;width:70%;border-bottom:1px dotted #333;height:9mm;}
+        .mcr .sig .sub{font-size:10.5pt;color:#555;margin-top:1mm;}
+        .mcr tr{page-break-inside:avoid;}
       </style>
       <div class="mcr">
-        <h1>รายงานผลการตรวจประจำเดือน ${escapeHtml(monthName)} พ.ศ. ${toThaiNumber(thaiYear)}</h1>
-        <div class="sub">${escapeHtml(orgName)}</div>
-        <div class="kpis">
-          <div class="kpi"><b>${rowsAll.length}</b>ผู้ที่ต้องตรวจ</div>
-          <div class="kpi"><b>${done}</b>ตรวจแล้ว</div>
-          <div class="kpi"><b>${bad}</b>มีปัญหา</div>
-          <div class="kpi"><b>${pending}</b>ยังไม่ตรวจ</div>
+        <div class="head">
+          <div class="title">รายงานผลการตรวจประจำเดือน</div>
+          <div class="org">${escapeHtml(orgName)}</div>
+          <div class="period">ประจำเดือน ${escapeHtml(monthName)} พ.ศ. ${toThaiNumber(thaiYear)}</div>
         </div>
+
+        <div class="summary">
+          <div class="summary-box"><b>${toThaiNumber(source.length)}</b><span>ผู้ที่ต้องตรวจ</span></div>
+          <div class="summary-box"><b>${toThaiNumber(done)}</b><span>ตรวจแล้ว</span></div>
+          <div class="summary-box"><b>${toThaiNumber(bad)}</b><span>มีปัญหา</span></div>
+          <div class="summary-box"><b>${toThaiNumber(totalQty)}</b><span>ครุภัณฑ์ที่ถือครอง</span></div>
+        </div>
+
         <table>
+          <colgroup>
+            <col style="width:4%"><col style="width:18%"><col style="width:23%"><col style="width:15%">
+            <col style="width:7%"><col style="width:9%"><col style="width:13%"><col style="width:11%">
+          </colgroup>
           <thead><tr>
-            <th>ลำดับ</th><th>ผู้ครอบครอง / ตำแหน่ง</th><th>หมายเลขเครื่อง / Serial</th>
-            <th>รายการพัสดุ</th><th>ผลตรวจ</th><th>หมายเหตุ</th><th>ผู้ตรวจ / วันที่</th>
+            <th>ลำดับ</th>
+            <th>ผู้ครอบครอง / ตำแหน่ง</th>
+            <th>ชื่อครุภัณฑ์</th>
+            <th>หมายเลขครุภัณฑ์</th>
+            <th>จำนวน</th>
+            <th>ผลตรวจ</th>
+            <th>หมายเหตุ</th>
+            <th>ผู้ตรวจ / วันที่</th>
           </tr></thead>
-          <tbody>${rows || '<tr><td colspan="7" style="text-align:center;">ไม่มีข้อมูล</td></tr>'}</tbody>
+          <tbody>
+            ${rows || '<tr><td colspan="8" class="center">ไม่มีข้อมูลครุภัณฑ์ที่ต้องตรวจ</td></tr>'}
+            ${rows ? `<tr class="total"><td colspan="4" class="center">รวม</td><td class="center">${toThaiNumber(totalQty)}</td><td colspan="3"></td></tr>` : ''}
+          </tbody>
         </table>
-        <div class="foot">
-          หมายเหตุ: รายงานนี้แสดง “หมายเลขเครื่อง / Serial” เป็นตัวระบุครุภัณฑ์หลัก และไม่แสดงรหัสครุภัณฑ์ในรายการตรวจประจำเดือน
+
+        <div class="note">หมายเหตุ: รายงานนี้จัดแสดงตาม <strong>ชื่อครุภัณฑ์ + หมายเลขครุภัณฑ์ + จำนวน</strong> เพื่อให้ง่ายต่อการตรวจสอบรายการของแต่ละผู้ครอบครอง</div>
+
+        <div class="signatures">
+          <div class="sig"><div class="line"></div>ผู้ตรวจประจำเดือน</div>
+          <div class="sig"><div class="line"></div>ผู้รับรอง / หัวหน้าหน่วย</div>
         </div>
       </div>`;
 
