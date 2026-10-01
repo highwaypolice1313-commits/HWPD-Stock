@@ -3994,7 +3994,126 @@ function drawAssetList() {
   }
 
   listEl.querySelectorAll('.asset-item').forEach(it => it.onclick = () => openAssetDetail(it.dataset.id));
+   if (!isGrid) wireSwipeRows(listEl);
 }
+
+   /* ========== ปัดแถวครุภัณฑ์เพื่อเลือกคำสั่ง ========== */
+let swOpenWrap = null;
+function swClose(wrap) {
+  if (!wrap) return;
+  const row = wrap.querySelector('.list-item');
+  if (row) row.style.left = '0px';
+  wrap.classList.remove('sw-drag');
+  setTimeout(() => { if (!wrap.dataset.open) wrap.classList.remove('sw-active', 'sw-left', 'sw-right'); }, 260);
+  delete wrap.dataset.open;
+  if (swOpenWrap === wrap) swOpenWrap = null;
+}
+function swBtn(tone, icon, label, act) {
+  return `<button type="button" class="sw-btn tone-${tone}" data-act="${act}">${icon}<span>${label}</span></button>`;
+}
+function wireSwipeRows(listEl) {
+  const rows = Array.from(listEl.querySelectorAll('.list-item.asset-item'));
+  rows.forEach(row => {
+    const id = row.dataset.id;
+    const asset = state.assets.find(a => a['รหัสครุภัณฑ์'] === id);
+    if (!asset) return;
+
+    // ปุ่มฝั่งขวา (โผล่ตอนปัดซ้าย) และฝั่งซ้าย (โผล่ตอนปัดขวา)
+    const rightHtml = swBtn('ok', ICONS.swap, 'ยืม', 'borrow')
+      + (isAdmin() ? swBtn('bad', ICONS.wrench, 'แจ้งซ่อม', 'maint') : '')
+      + swBtn('navy', ICONS.scan, 'QR', 'qr');
+    const leftHtml = isAdmin()
+      ? swBtn('info', ICONS.clock, 'สถานะ', 'status') + swBtn('warn', ICONS.edit, 'แก้ไข', 'edit')
+      : swBtn('navy', ICONS.info, 'รายละเอียด', 'detail');
+
+    const wrap = document.createElement('div');
+    wrap.className = 'sw-wrap';
+    row.parentNode.insertBefore(wrap, row);
+    wrap.appendChild(row);
+    const right = document.createElement('div');
+    right.className = 'sw-actions sw-actions-right';
+    right.innerHTML = rightHtml;
+    const left = document.createElement('div');
+    left.className = 'sw-actions sw-actions-left';
+    left.innerHTML = leftHtml;
+    wrap.appendChild(right);
+    wrap.appendChild(left);
+
+    const runAct = (act) => {
+      swClose(wrap);
+      if (act === 'borrow') {
+        if (asset['สถานะ'] !== 'พร้อมใช้งาน') { toast('ครุภัณฑ์นี้ไม่พร้อมให้ยืม (' + asset['สถานะ'] + ')'); return; }
+        openBorrowForm(id);
+      }
+      else if (act === 'maint') openMaintForm(id);
+      else if (act === 'qr') openQrView(asset);
+      else if (act === 'status') openQuickStatusForm(asset);
+      else if (act === 'edit') openAssetForm(asset);
+      else if (act === 'detail') openAssetDetail(id);
+    };
+    wrap.querySelectorAll('.sw-btn').forEach(b => {
+      b.onclick = (e) => { e.stopPropagation(); runAct(b.dataset.act); };
+    });
+
+    // แตะแถวตอนที่เปิดอยู่ = ปิด ไม่เปิดรายละเอียด
+    row.addEventListener('click', (e) => {
+      if (wrap.dataset.open || row._swMoved) { e.stopImmediatePropagation(); e.preventDefault(); if (wrap.dataset.open) swClose(wrap); }
+    }, true);
+
+    let sx = 0, sy = 0, dx = 0, dragging = false, decided = false, startLeft = 0, pid = null;
+    row.addEventListener('pointerdown', (e) => {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      sx = e.clientX; sy = e.clientY; dx = 0; dragging = false; decided = false; pid = e.pointerId;
+      startLeft = wrap.dataset.open ? (parseFloat(row.style.left) || 0) : 0;
+      row._swMoved = false;
+      if (swOpenWrap && swOpenWrap !== wrap) swClose(swOpenWrap);
+    });
+    row.addEventListener('pointermove', (e) => {
+      if (pid !== e.pointerId) return;
+      const mx = e.clientX - sx, my = e.clientY - sy;
+      if (!decided) {
+        if (Math.abs(mx) < 8 && Math.abs(my) < 8) return;
+        decided = true;
+        dragging = Math.abs(mx) > Math.abs(my);
+        if (dragging) { try { row.setPointerCapture(e.pointerId); } catch (_) {} wrap.classList.add('sw-drag', 'sw-active'); }
+      }
+      if (!dragging) return;
+      row._swMoved = true;
+      dx = startLeft + mx;
+      const side = dx < 0 ? 'right' : 'left';
+      wrap.classList.toggle('sw-right', side === 'right');
+      wrap.classList.toggle('sw-left', side === 'left');
+      const panel = side === 'right' ? right : left;
+      const maxW = Math.min(panel.scrollWidth + 12, wrap.clientWidth - 56);
+      dx = Math.max(-maxW, Math.min(maxW, dx));
+      row.style.left = dx + 'px';
+    });
+    const end = (e) => {
+      if (pid !== e.pointerId) return;
+      pid = null;
+      if (!dragging) return;
+      dragging = false;
+      wrap.classList.remove('sw-drag');
+      const side = dx < 0 ? 'right' : 'left';
+      const panel = side === 'right' ? right : left;
+      const w = Math.min(panel.scrollWidth + 12, wrap.clientWidth - 56);
+      if (Math.abs(dx) > 40) {
+        row.style.left = (side === 'right' ? -w : w) + 'px';
+        wrap.dataset.open = side;
+        swOpenWrap = wrap;
+      } else {
+        swClose(wrap);
+      }
+      setTimeout(() => { row._swMoved = false; }, 50);
+    };
+    row.addEventListener('pointerup', end);
+    row.addEventListener('pointercancel', end);
+  });
+}
+// แตะที่อื่นแล้วปิดแถวที่เปิดค้างอยู่
+document.addEventListener('pointerdown', (e) => {
+  if (swOpenWrap && !swOpenWrap.contains(e.target)) swClose(swOpenWrap);
+}, true);
 
 function openAssetFilterSheet() {
   showSheet(`
