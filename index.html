@@ -3452,59 +3452,122 @@ html{scroll-behavior:smooth;}
 
 
 
-/* ===== MONTHLY V2 — LIST keeps current card design / GRID becomes Tinder review ===== */
+/* ===== MONTHLY V3 — LIST = polished cards / GRID = Tinder review ===== */
 #view-monthly .mc-swipe-nav{display:none;}
 #view-monthly .mc-swipe-stage{display:none;}
 #view-monthly .mc-swipe-card{touch-action:pan-y;user-select:none;cursor:grab;position:relative;overflow:hidden;}
 #view-monthly .mc-swipe-card.dragging{cursor:grabbing;transition:none !important;}
-#view-monthly .mc-swipe-hint{display:flex;align-items:center;justify-content:center;gap:18px;margin:8px 0 0;font-size:11px;color:var(--muted);}
-#view-monthly .mc-swipe-hint .left{color:#b4233b;font-weight:700;}
-#view-monthly .mc-swipe-hint .right{color:#13764b;font-weight:700;}
-#view-monthly .mc-swipe-overlay{position:absolute;top:18px;padding:7px 12px;border:2px solid currentColor;border-radius:10px;font-size:15px;font-weight:800;letter-spacing:.2px;opacity:0;pointer-events:none;z-index:5;background:var(--panel);}
-#view-monthly .mc-swipe-overlay.left{left:18px;color:#b4233b;transform:rotate(-8deg);}
-#view-monthly .mc-swipe-overlay.right{right:18px;color:#13764b;transform:rotate(8deg);}
-#view-monthly .mc-swipe-stage .mc-card-grid{width:100%;max-width:760px;margin:0 auto;}
-#view-monthly .mc-swipe-stage .mc-grid-hold{max-height:42vh;overflow:auto;}
-#view-monthly .mc-swipe-stage .mc-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+#view-monthly .mc-swipe-hint{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:10px auto 0;max-width:760px;font-size:11px;color:var(--muted);padding:0 4px;}
+#view-monthly .mc-swipe-hint .left{color:#13764b;font-weight:800;}
+#view-monthly .mc-swipe-hint .right{color:#b4233b;font-weight:800;}
+#view-monthly .mc-swipe-overlay{position:absolute;top:18px;padding:7px 12px;border:2px solid currentColor;border-radius:10px;font-size:15px;font-weight:800;letter-spacing:.2px;opacity:0;pointer-events:none;z-index:5;background:var(--panel);box-shadow:0 4px 14px rgba(0,0,0,.08);}
+#view-monthly .mc-swipe-overlay.left{left:18px;color:#13764b;transform:rotate(-8deg);}
+#view-monthly .mc-swipe-overlay.right{right:18px;color:#b4233b;transform:rotate(8deg);}
+
+/* LIST: ใช้หน้าตาการ์ดแบบเดียวกับการ์ดเดิม แต่เรียงหลายใบ */
+#view-monthly .mc-grid.mc-grid-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:stretch;}
+#view-monthly .mc-grid.mc-grid-list .mc-card-grid{
+  display:flex !important;
+  flex-direction:column;
+  align-items:stretch;
+  min-width:0;
+  height:100%;
+  padding:18px;
+  border-radius:18px;
+  box-shadow:var(--shadow-sm,0 6px 22px rgba(0,0,0,.08));
+  transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+#view-monthly .mc-grid.mc-grid-list .mc-card-grid:hover{transform:translateY(-2px);box-shadow:var(--shadow-md,0 12px 30px rgba(0,0,0,.12));}
+#view-monthly .mc-grid.mc-grid-list .mc-grid-person{padding:0;min-height:48px;}
+#view-monthly .mc-grid.mc-grid-list .mc-grid-divider{margin:12px 0;}
+#view-monthly .mc-grid.mc-grid-list .mc-grid-hold{flex:1 1 auto;}
+#view-monthly .mc-grid.mc-grid-list .mc-actions{margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:7px;width:100%;}
+#view-monthly .mc-grid.mc-grid-list .mc-btn{min-height:46px;border-radius:11px;}
+#view-monthly .mc-grid.mc-grid-list .mc-meta{margin-top:8px;font-size:10px;}
+
+/* GRID/TINDER: คนเดียวเต็มพื้นที่ */
+#view-monthly .mc-swipe-stage .mc-card-grid{
+  width:100%;max-width:760px;margin:0 auto;
+  min-height:0;
+  padding:24px;
+  border-radius:24px;
+  box-shadow:var(--shadow-md,0 16px 44px rgba(0,0,0,.13));
+  background:var(--panel);
+}
+#view-monthly .mc-swipe-stage .mc-grid-person{padding:2px 2px 0;}
+#view-monthly .mc-swipe-stage .mc-grid-avatar .mc-avatar{width:64px;height:64px;}
+#view-monthly .mc-swipe-stage .mc-grid-avatar .mc-avatar-ph{width:64px;height:64px;}
+#view-monthly .mc-swipe-stage .mc-name{font-size:18px;line-height:1.25;font-weight:800;}
+#view-monthly .mc-swipe-stage .mc-pos{font-size:12px;margin-top:3px;}
+#view-monthly .mc-swipe-stage .mc-grid-divider{margin:16px 0;}
+#view-monthly .mc-swipe-stage .mc-grid-hold{padding:14px !important;border-radius:15px;}
+#view-monthly .mc-swipe-stage .mc-grid-hold-summary{font-size:13px;line-height:1.5;}
+#view-monthly .mc-swipe-stage .mc-serial-list{gap:6px;max-height:180px;overflow:auto;}
+#view-monthly .mc-swipe-stage .mc-serial-pill{font-size:10px;padding:5px 8px;}
+#view-monthly .mc-swipe-stage .mc-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
 #view-monthly .mc-swipe-stage .mc-btn{min-height:52px;border-radius:13px;}
-#view-monthly .mc-swipe-nav{align-items:center;justify-content:center;gap:8px;margin:10px auto 8px;max-width:760px;}
-#view-monthly .mc-swipe-nav .mc-swipe-select{min-width:0;flex:1 1 auto;}
-#view-monthly .mc-swipe-nav .mc-swipe-nav-btn{width:42px;height:40px;min-width:42px;padding:0;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;}
-#view-monthly .mc-swipe-nav .mc-swipe-count{font-size:10px;color:var(--muted);white-space:nowrap;min-width:58px;text-align:center;}
-#view-monthly .mc-swipe-empty{max-width:760px;margin:0 auto;}
 
-/* LIST = the current polished card layout */
-#view-monthly .mc-grid.mc-grid-list .mc-card-list{border-radius:17px;}
-
-/* GRID/TINDER = one person at a time */
 @media (min-width:900px){
-  #view-monthly .mc-grid.mc-grid-cards{display:block;}
-  #view-monthly .mc-grid.mc-grid-cards .mc-card-grid{min-height:520px;max-width:760px;margin:0 auto;padding:24px;border-radius:22px;box-shadow:var(--shadow-md,0 14px 40px rgba(0,0,0,.12));}
+  #view-monthly .mc-grid.mc-grid-list{grid-template-columns:repeat(3,minmax(0,1fr));}
   #view-monthly .mc-swipe-stage{display:block;}
-  #view-monthly .mc-swipe-stage .mc-grid-hold{max-height:48vh;}
+  #view-monthly .mc-swipe-stage .mc-grid-hold{max-height:48vh;overflow:auto;}
+  #view-monthly .mc-swipe-stage .mc-card-grid{min-height:520px;}
 }
-
+@media (min-width:900px) and (max-width:1250px){
+  #view-monthly .mc-grid.mc-grid-list{grid-template-columns:repeat(2,minmax(0,1fr));}
+}
 @media (max-width:899px){
-  #view-monthly .mc-swipe-nav{display:flex;}
+  #view-monthly .mc-grid.mc-grid-list{grid-template-columns:1fr;gap:12px;}
+  #view-monthly .mc-swipe-nav{display:flex;align-items:center;justify-content:center;gap:8px;margin:10px auto 8px;max-width:760px;}
+  #view-monthly .mc-swipe-nav .mc-swipe-select{min-width:0;flex:1 1 auto;}
+  #view-monthly .mc-swipe-nav .mc-swipe-nav-btn{width:42px;height:40px;min-width:42px;padding:0;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;}
+  #view-monthly .mc-swipe-nav .mc-swipe-count{font-size:10px;color:var(--muted);white-space:nowrap;min-width:52px;text-align:center;}
   #view-monthly .mc-swipe-stage{display:block;}
-  #view-monthly .mc-swipe-stage .mc-card-grid{min-height:calc(100vh - 350px);max-height:none;padding:16px;border-radius:20px;}
-  #view-monthly .mc-swipe-stage .mc-grid-hold{max-height:38vh;}
-  #view-monthly .mc-swipe-stage .mc-grid-person{padding-top:2px;}
-  #view-monthly .mc-swipe-hint{font-size:10px;margin-top:7px;}
+  #view-monthly .mc-swipe-stage .mc-card-grid{padding:17px;border-radius:20px;}
+  #view-monthly .mc-swipe-stage .mc-grid-hold{max-height:40vh;overflow:auto;}
 }
-
+@media (max-width:600px){
+  #view-monthly .mc-grid.mc-grid-list .mc-card-grid{padding:14px;border-radius:16px;}
+  #view-monthly .mc-grid.mc-grid-list .mc-grid-person{min-height:44px;}
+  #view-monthly .mc-grid.mc-grid-list .mc-grid-avatar .mc-avatar,
+  #view-monthly .mc-grid.mc-grid-list .mc-grid-avatar .mc-avatar-ph{width:48px;height:48px;}
+  #view-monthly .mc-grid.mc-grid-list .mc-name{font-size:14px;}
+  #view-monthly .mc-grid.mc-grid-list .mc-pos{font-size:10px;}
+  #view-monthly .mc-grid.mc-grid-list .mc-grid-hold{padding:11px !important;border-radius:12px;}
+  #view-monthly .mc-grid.mc-grid-list .mc-actions{gap:6px;}
+  #view-monthly .mc-grid.mc-grid-list .mc-btn{min-height:44px;font-size:11px;}
+  #view-monthly .mc-grid.mc-grid-list .mc-btn-sub{display:none;}
+}
 @media (max-width:430px){
   #view-monthly .mc-swipe-nav{gap:6px;margin:8px auto 7px;}
   #view-monthly .mc-swipe-nav .mc-swipe-select{height:40px;font-size:12px;padding-left:9px;padding-right:24px;}
   #view-monthly .mc-swipe-nav .mc-swipe-nav-btn{width:38px;height:38px;min-width:38px;border-radius:11px;}
-  #view-monthly .mc-swipe-nav .mc-swipe-count{font-size:9px;min-width:48px;}
-  #view-monthly .mc-swipe-stage .mc-card-grid{min-height:0;padding:13px;border-radius:18px;}
-  #view-monthly .mc-swipe-stage .mc-grid-hold{max-height:43vh;padding:10px !important;}
+  #view-monthly .mc-swipe-nav .mc-swipe-count{font-size:9px;min-width:46px;}
+  #view-monthly .mc-swipe-stage .mc-card-grid{padding:14px;border-radius:18px;}
+  #view-monthly .mc-swipe-stage .mc-grid-avatar .mc-avatar,
+  #view-monthly .mc-swipe-stage .mc-grid-avatar .mc-avatar-ph{width:56px;height:56px;}
+  #view-monthly .mc-swipe-stage .mc-name{font-size:16px;}
+  #view-monthly .mc-swipe-stage .mc-grid-hold{max-height:43vh;padding:11px !important;}
   #view-monthly .mc-swipe-stage .mc-actions{gap:7px;}
   #view-monthly .mc-swipe-stage .mc-btn{min-height:46px;font-size:11px;}
   #view-monthly .mc-swipe-overlay{top:13px;font-size:13px;padding:6px 10px;}
 }
 
+/* PRINT: รายงานตรวจประจำเดือนต้องเป็น A4 แนวนอนทุกอุปกรณ์ที่รองรับ CSS print */
+@page{size:A4 landscape;margin:10mm 11mm;}
+@media print{
+  #printArea.report-print-area{
+    width:297mm !important;
+    min-width:297mm !important;
+    max-width:297mm !important;
+    padding:0 !important;
+    margin:0 !important;
+    overflow:visible !important;
+  }
+  #printArea.report-print-area .mcr{width:100%;min-width:297mm;}
+  #printArea.report-print-area .mcr table{width:100%;min-width:100%;}
+  #printArea.report-print-area .mcr .summary{grid-template-columns:repeat(4,1fr);}
+}
 </style>
 </head>
 <body>
@@ -9440,11 +9503,11 @@ function compareMonthlyOfficers(a, b) {
     const base=mcCardHtmlEnhanced(item);
     return `<div class="mc-swipe-stage" id="mcSwipeStage">
       <div class="mc-swipe-card-wrap">
-        <div class="mc-swipe-overlay left" id="mcSwipeLeftLabel">มีปัญหา</div>
-        <div class="mc-swipe-overlay right" id="mcSwipeRightLabel">ครบ</div>
+        <div class="mc-swipe-overlay left" id="mcSwipeLeftLabel">ครบ</div>
+        <div class="mc-swipe-overlay right" id="mcSwipeRightLabel">มีปัญหา</div>
         <div id="mcSwipeCard" class="mc-swipe-card">${base}</div>
       </div>
-      <div class="mc-swipe-hint"><span class="left">← ปัดซ้าย = มีปัญหา</span><span class="right">ปัดขวา = ครบ →</span></div>
+      <div class="mc-swipe-hint"><span class="left">← ปัดซ้าย = ครบ</span><span class="right">ปัดขวา = มีปัญหา →</span></div>
     </div>`;
   }
 
@@ -9459,7 +9522,7 @@ function compareMonthlyOfficers(a, b) {
 
   async function mcSwipeCommit(result, item){
     if(!item) return;
-    // Tinder workflow: ปัดขวา = ครบ, ปัดซ้าย = มีปัญหา
+    // Tinder workflow: ปัดซ้าย = ครบ, ปัดขวา = มีปัญหา
     // กรณีมีปัญหาให้ใช้หน้ากรอกรายละเอียดเดิม เพื่อไม่ทิ้งข้อมูลสาเหตุ
     if(result === 'มีปัญหา'){
       mcProblemSheet(item.u);
@@ -9492,7 +9555,7 @@ function compareMonthlyOfficers(a, b) {
       setTimeout(()=>{
         reset();
         // ปัดเป็นการเลือกผลตรวจ แล้วเปิด checklist เดิมเพื่อยืนยัน/ตรวจรายชิ้น
-        mcSwipeCommit(dir>0?'ครบ':'มีปัญหา', item);
+        mcSwipeCommit(dir>0?'มีปัญหา':'ครบ', item);
       },180);
     };
     card.onpointerdown=e=>{
@@ -9521,7 +9584,6 @@ function compareMonthlyOfficers(a, b) {
 
   function mcCardHtmlEnhanced({u,sum,rec}){
     const r = rec ? rec['ผล'] : '';
-    const mode = mcViewMode();
     const photo = u['รูปถ่าย']
       ? `<img class="mc-avatar" src="${u['รูปถ่าย']}" alt="">`
       : `<div class="mc-avatar-ph">${ICONS.user}</div>`;
@@ -9548,30 +9610,6 @@ function compareMonthlyOfficers(a, b) {
         ⚠ มีปัญหา <span class="mc-btn-sub">มีรายการไม่ครบ/ผิดปกติ</span>
       </button>
     </div>`;
-
-    if (mode === 'list') {
-      return `<div class="glass mc-card mc-card-list ${r === 'ครบ' ? 'done-ok' : (r === 'มีปัญหา' ? 'done-bad' : '')}"
-        data-key="${escapeHtml(mcKey(u))}">
-        <div class="mc-list-person">
-          ${photo}
-          <div class="mc-list-person-info">
-            <div class="mc-name">${escapeHtml(officerFullName(u))}</div>
-            <div class="mc-pos">${escapeHtml(u['ตำแหน่ง'] || 'ไม่ระบุตำแหน่ง')}</div>
-            ${mcStatusHtml(rec)}
-          </div>
-        </div>
-        <div class="mc-list-assets">
-          <div class="mc-hold-title">
-            <svg viewBox="0 0 20 20" fill="none"><path d="M4 5.5h12M5.5 5.5v9h9v-9M7.5 3.5h5l1 2H6.5l1-2zM8 8.5h4M8 11h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            ครุภัณฑ์ในความครอบครอง ${holdCount} รายการ
-          </div>
-          <div class="mc-list-summary">${escapeHtml(mcHoldingsTextEnhanced(u) || 'ไม่มีพัสดุในความครอบครองขณะนี้')}</div>
-          ${serialHtml}
-        </div>
-        <div class="mc-list-actions">${actions}</div>
-        ${note}${meta}
-      </div>`;
-    }
 
     return `<div class="glass mc-card mc-card-grid ${r === 'ครบ' ? 'done-ok' : (r === 'มีปัญหา' ? 'done-bad' : '')}"
       data-key="${escapeHtml(mcKey(u))}">
@@ -9720,7 +9758,7 @@ function compareMonthlyOfficers(a, b) {
       x.hold.forEach(b => {
         const a = mcAssetByBorrow(b) || {};
         const name = String(b['ชื่อครุภัณฑ์'] || a['ชื่อครุภัณฑ์'] || '-').trim() || '-';
-        const assetNo = String(a['รหัสครุภัณฑ์'] || b['รหัสครุภัณฑ์'] || '').trim() || '-';
+        const assetNo = String(a['หมายเลขเครื่อง'] || '').trim() || (String(a['ทะเบียนรถ'] || '').trim() ? 'ทะเบียน ' + String(a['ทะเบียนรถ']).trim() : '-');
         const key = name + '||' + assetNo;
         if (!grouped[key]) grouped[key] = {name, assetNo, qty:0};
         grouped[key].qty += 1;
