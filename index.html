@@ -3787,6 +3787,15 @@ body:has(#modalRoot .overlay){
   -webkit-overflow-scrolling:touch;
   transform:translateZ(0);               /* ยกขึ้น GPU layer */
 }   
+
+   /* ===== ลายเซ็น ===== */
+.sig-canvas{display:block;width:100%;height:210px;border:1.5px dashed var(--navy-line);border-radius:16px;background:#fff;touch-action:none;cursor:crosshair;}
+.sig-saved{border:1px solid var(--panel-line);border-radius:16px;background:#fff;padding:16px;text-align:center;}
+.sig-saved img{max-width:100%;max-height:180px;}
+.photo-upload-row .preview-box.sig-box{width:120px;border-radius:12px;background:#fff;}
+.photo-upload-row .preview-box.sig-box img{object-fit:contain;}
+.pf-sign-rank{position:relative;}
+.pf-doc .pf-sigimg{position:absolute;left:77%;bottom:-2mm;height:12mm;width:auto;max-width:4.4cm;transform:translateX(-50%);pointer-events:none;}
    
 </style>
 </head>
@@ -6285,11 +6294,12 @@ function borrowRow(b) {
   triggerPrint(() => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; });
 }
 function borrowedComponentIds(b) { return String(b['รหัสส่วนควบที่ยืม'] || '').split(',').map(s => s.trim()).filter(Boolean); }
+
 function openBorrowDetail(id) {
   const b = state.borrow.find(x => x['รหัสรายการ'] === id);
   if (!b) return;
   const compRefs = parseCompRefs(b['รหัสส่วนควบที่ยืม']);
-const compNames = compRefs.map(r => {
+  const compNames = compRefs.map(r => {
   const c = state.components.find(x => x['รหัสส่วนควบ'] === r.id);
   return (c ? c['ชื่อส่วนควบ'] : r.id) + (r.n > 1 ? ' ×' + r.n : '');
 });
@@ -6372,7 +6382,7 @@ const compNames = compRefs.map(r => {
     };
   }
   if (isAdmin() && status === 'รออนุมัติ') {
-    document.getElementById('btnApprove').onclick = async () => {
+    document.getElementById('btnApprove').onclick = () => openApproveSheet(b); {
       const btn = document.getElementById('btnApprove'); if (btn.disabled) return; setButtonBusy(btn, true, 'กำลังอนุมัติ...'); setLoading(true, 'กำลังอนุมัติคำขอ...');
       try { await apiPost('approveBorrowRequest', { borrowId: id }); closeSheet(); toast('อนุมัติการยืมแล้ว'); await reloadThen(renderBorrow); }
       catch (err) { toast(err.message || 'อนุมัติไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(btn, false); }
@@ -6395,6 +6405,64 @@ const compNames = compRefs.map(r => {
       catch (err) { toast(err.message || 'บันทึกการคืนไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(btn, false); }
     };
   }
+}
+
+function openApproveSheet(b) {
+  const l1 = officersByMemoRole('ผู้อนุมัติ ลำดับที่ 1')[0];
+  const defIdx = l1 ? String(state.users.indexOf(l1)) : '';
+  showSheet(`
+    <div class="sheet-title">อนุมัติคำขอยืม</div>
+    <div class="glass" style="padding:12px 14px; margin-bottom:12px;">
+      <div style="font-weight:600;">${escapeHtml(b['ชื่อครุภัณฑ์'])}</div>
+      <div style="font-size:12.5px; color:var(--ink-dim);">ผู้ยืม ${escapeHtml(b['ผู้ยืม'])}</div>
+    </div>
+    <div class="field"><label>ผู้อนุมัติ</label>
+      <select class="input" id="ap_pick">${officerSelectOptions(defIdx)}</select>
+      <input class="input" id="ap_name" placeholder="พิมพ์ชื่อผู้อนุมัติ" style="margin-top:8px; display:none;">
+    </div>
+    <div class="field"><label>ลายเซ็นผู้อนุมัติ (จำเป็น)</label>
+      <div class="glass list-item" id="ap_sigTrigger" style="cursor:pointer;">
+        <div class="li-icon" id="ap_sigIcon">${ICONS.edit}</div>
+        <div class="li-body"><div class="li-title" id="ap_sigTitle">แตะเพื่อเซ็นชื่อ</div><div class="li-sub">เซ็นสด หรือใช้ลายเซ็นที่บันทึกไว้ของผู้อนุมัติ</div></div>
+        <span class="status-badge status-ready" style="flex:none;">เซ็น</span>
+      </div>
+      <input type="hidden" id="ap_sig" value="">
+    </div>
+    <div class="btn-row"><button class="btn btn-ghost" id="apCancel">ยกเลิก</button><button class="btn btn-ok" id="apOk">อนุมัติ</button></div>
+  `);
+  const officer = () => { const v = val('ap_pick'); return (v !== '' && v !== '__other__') ? state.users[Number(v)] : null; };
+  const approverName = () => { const o = officer(); return o ? officerFullName(o) : val('ap_name').trim(); };
+  document.getElementById('ap_pick').onchange = () => {
+    document.getElementById('ap_name').style.display = val('ap_pick') === '__other__' ? 'block' : 'none';
+    document.getElementById('ap_sig').value = '';
+    document.getElementById('ap_sigIcon').innerHTML = ICONS.edit;
+    document.getElementById('ap_sigTitle').textContent = 'แตะเพื่อเซ็นชื่อ';
+  };
+  document.getElementById('ap_sigTrigger').onclick = () => {
+    if (!approverName()) { toast('กรุณาเลือกผู้อนุมัติก่อน'); return; }
+    const o = officer();
+    openSignatureSheet({
+      title: 'ลายเซ็นผู้อนุมัติ', name: approverName(), saved: o ? o['ลายเซ็น'] : '',
+      onDone: v => {
+        document.getElementById('ap_sig').value = v;
+        document.getElementById('ap_sigIcon').innerHTML = `<img src="${v}" style="width:100%;height:100%;object-fit:contain;">`;
+        document.getElementById('ap_sigTitle').textContent = 'เซ็นแล้ว (แตะเพื่อเซ็นใหม่)';
+      }
+    });
+  };
+  document.getElementById('apCancel').onclick = closeSheet;
+  document.getElementById('apOk').onclick = async () => {
+    if (!approverName()) { toast('กรุณาเลือกผู้อนุมัติ'); return; }
+    if (!val('ap_sig')) { toast('กรุณาเซ็นชื่อผู้อนุมัติก่อน'); return; }
+    const btn = document.getElementById('apOk'); if (btn.disabled) return;
+    setButtonBusy(btn, true, 'กำลังอนุมัติ...'); setLoading(true, 'กำลังอนุมัติคำขอ...');
+    try {
+      const sigApprover = await uploadSignature(val('ap_sig'), 'approver-' + b['รหัสรายการ']);
+      await apiPost('approveBorrowRequest', { borrowId: b['รหัสรายการ'], approverName: approverName(), sigApprover });
+      closeAllSheets(); toast('อนุมัติการยืมแล้ว'); await reloadThen(renderBorrow);
+    } catch (err) { toast(err.message || 'อนุมัติไม่สำเร็จ'); }
+    finally { setLoading(false); setButtonBusy(btn, false); }
+  };
 }
 function openBorrowEditForm(b) {
   showSheet(`
@@ -6493,6 +6561,107 @@ function openBorrowEditForm(b) {
     } catch (err) { toast(err.message || 'ยืมต่อไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(btn, false); }
   };
 }  
+
+/* ========== ลายเซ็น ========== */
+function sigCanvasToPng(cv) {
+  const w = cv.width, h = cv.height;
+  const d = cv.getContext('2d').getImageData(0, 0, w, h).data;
+  let x0 = w, y0 = h, x1 = -1, y1 = -1;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    if (d[(y * w + x) * 4 + 3] > 20) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+  }
+  if (x1 < 0) return '';
+  const pad = 8;
+  x0 = Math.max(0, x0 - pad); y0 = Math.max(0, y0 - pad);
+  x1 = Math.min(w - 1, x1 + pad); y1 = Math.min(h - 1, y1 + pad);
+  const sw = x1 - x0 + 1, sh = y1 - y0 + 1, k = Math.min(1, 360 / sw);
+  const out = document.createElement('canvas');
+  out.width = Math.max(1, Math.round(sw * k)); out.height = Math.max(1, Math.round(sh * k));
+  out.getContext('2d').drawImage(cv, x0, y0, sw, sh, 0, 0, out.width, out.height);
+  return out.toDataURL('image/png');   // ตัดขอบว่างให้ไฟล์เล็ก พื้นหลังโปร่งใส
+}
+function createSigPad(cv) {
+  const ctx = cv.getContext('2d');
+  let drawing = false, dirty = false, last = null;
+  const r0 = cv.getBoundingClientRect(), dpr = Math.max(1, window.devicePixelRatio || 1);
+  cv.width = Math.round(r0.width * dpr); cv.height = Math.round(r0.height * dpr);
+  ctx.lineWidth = 2.6 * dpr; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.strokeStyle = '#111'; ctx.fillStyle = '#111';
+  const pos = e => { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) * cv.width / r.width, (e.clientY - r.top) * cv.height / r.height]; };
+  cv.addEventListener('pointerdown', e => {
+    e.preventDefault(); try { cv.setPointerCapture(e.pointerId); } catch (_) {}
+    drawing = true; dirty = true; last = pos(e);
+    ctx.beginPath(); ctx.arc(last[0], last[1], ctx.lineWidth / 2, 0, 7); ctx.fill();
+  });
+  cv.addEventListener('pointermove', e => {
+    if (!drawing) return;
+    const p = pos(e);
+    ctx.beginPath(); ctx.moveTo(last[0], last[1]); ctx.lineTo(p[0], p[1]); ctx.stroke(); last = p;
+  });
+  const end = () => { drawing = false; };
+  cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
+  return {
+    clear() { ctx.clearRect(0, 0, cv.width, cv.height); dirty = false; },
+    png() { return dirty ? sigCanvasToPng(cv) : ''; }
+  };
+}
+function sigFileToPng(file) {   // ไฟล์ลายเซ็นที่อัปโหลด -> PNG ขนาดเล็ก
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const k = Math.min(1, 500 / img.width), c = document.createElement('canvas');
+        c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        resolve(c.toDataURL('image/png'));
+      };
+      img.onerror = () => reject(new Error('อ่านรูปไม่สำเร็จ'));
+      img.src = fr.result;
+    };
+    fr.onerror = () => reject(new Error('อ่านไฟล์ไม่สำเร็จ'));
+    fr.readAsDataURL(file);
+  });
+}
+// อัปโหลดลายเซ็นขึ้น Drive "โดยไม่ผ่านการบีบเป็น JPEG" (uploadImageToDrive จะทำพื้นหลังดำ)
+async function uploadSignature(v, name) {
+  if (!v) return '';
+  if (!isInlineImage(v)) return v;           // เป็น URL อยู่แล้ว
+  const r = await apiPost('uploadImage', { dataUrl: v, fileName: 'sig-' + (name || 'x') });
+  return r && r.url ? r.url : '';
+}
+// หน้าต่างเซ็นชื่อ: opts = {title, name, saved(URL ลายเซ็นที่บันทึกไว้, ไม่บังคับ), onDone(v)}
+function openSignatureSheet(opts) {
+  const saved = opts.saved || '';
+  showSheet(`
+    <div class="sheet-title">${escapeHtml(opts.title || 'ลงลายเซ็น')}</div>
+    ${opts.name ? `<div class="hint" style="margin-top:-6px;">${escapeHtml(opts.name)}</div>` : ''}
+    ${saved ? `<div class="chip-row"><div class="chip active" data-sgm="draw">เซ็นสด</div><div class="chip" data-sgm="saved">ใช้ลายเซ็นที่บันทึกไว้</div></div>` : ''}
+    <div id="sgDrawBox"><canvas id="sgCanvas" class="sig-canvas"></canvas><div class="hint">ใช้นิ้วหรือปากกาเซ็นในกรอบ</div></div>
+    <div id="sgSavedBox" style="display:none;"><div class="sig-saved"><img src="${escapeHtml(saved)}" alt=""></div></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="sgClear">ล้าง</button>
+      <button class="btn btn-ghost" id="sgCancel">ยกเลิก</button>
+      <button class="btn btn-primary" id="sgOk">ใช้ลายเซ็นนี้</button>
+    </div>`);
+  const pad = createSigPad(document.getElementById('sgCanvas'));
+  let mode = 'draw';
+  document.querySelectorAll('[data-sgm]').forEach(c => c.onclick = () => {
+    mode = c.dataset.sgm;
+    document.querySelectorAll('[data-sgm]').forEach(x => x.classList.toggle('active', x === c));
+    document.getElementById('sgDrawBox').style.display = mode === 'draw' ? '' : 'none';
+    document.getElementById('sgSavedBox').style.display = mode === 'saved' ? '' : 'none';
+  });
+  document.getElementById('sgClear').onclick = () => pad.clear();
+  document.getElementById('sgCancel').onclick = closeSheet;
+  document.getElementById('sgOk').onclick = () => {
+    const v = mode === 'saved' ? saved : pad.png();
+    if (!v) { toast('กรุณาเซ็นชื่อก่อน'); return; }
+    closeSheet();
+    opts.onDone(v);
+  };
+}   
+   
 function openBorrowForm(presetId) {
   const available = state.assets.filter(a => a['สถานะ'] === 'พร้อมใช้งาน');
   const admin = isAdmin();
@@ -6540,12 +6709,27 @@ function openBorrowForm(presetId) {
         <div class="chip" data-days="30">30 วัน</div>
         <div class="chip" data-days="365">1 ปี</div>
       </div>
+            <div class="field" style="margin-top:12px;">
+        <label>ลายเซ็นผู้ยืม ${admin ? '(ไม่บังคับ)' : '(จำเป็น)'}</label>
+        <div class="glass list-item" id="f_sigTrigger" style="cursor:pointer;">
+          <div class="li-icon" id="f_sigIcon">${ICONS.edit}</div>
+          <div class="li-body"><div class="li-title" id="f_sigTitle">แตะเพื่อเซ็นชื่อ</div><div class="li-sub">ลายเซ็นจะแสดงในเอกสารใบเบิก</div></div>
+          <span class="status-badge status-ready" style="flex:none;">เซ็น</span>
+        </div>
+        <input type="hidden" id="f_sigBorrower" value="">
+      </div>
     </div>
 
     ${admin ? `<div class="mf-section">
       <div class="mf-section-title"><span class="mf-step">3</span> ผู้อนุมัติ</div>
       <select class="input" id="f_approverPick">${officerSelectOptions(defaultApproverIdx)}</select>
       <input class="input" id="f_approver" placeholder="พิมพ์ชื่อผู้อนุมัติ" style="margin-top:8px; display:none;">
+            <div class="glass list-item" id="f_sigApvTrigger" style="cursor:pointer; margin-top:8px;">
+        <div class="li-icon" id="f_sigApvIcon">${ICONS.edit}</div>
+        <div class="li-body"><div class="li-title" id="f_sigApvTitle">ลายเซ็นผู้อนุมัติ (ไม่บังคับ)</div><div class="li-sub">เซ็นสด หรือใช้ลายเซ็นที่บันทึกไว้</div></div>
+        <span class="status-badge status-ready" style="flex:none;">เซ็น</span>
+      </div>
+      <input type="hidden" id="f_sigApprover" value="">
     </div>` : ''}
 
     <div class="mf-section">
@@ -6623,7 +6807,45 @@ function selectAsset(id) {
    
   document.getElementById('f_assetTrigger').onclick = () => openAssetPickerSheet(val('f_asset'), selectAsset);
   document.getElementById('f_borrowerTrigger').onclick = () =>
+     function resetBorrowerSig() {
+    document.getElementById('f_sigBorrower').value = '';
+    document.getElementById('f_sigIcon').innerHTML = ICONS.edit;
+    document.getElementById('f_sigTitle').textContent = 'แตะเพื่อเซ็นชื่อ';
+  }
+  document.getElementById('f_sigTrigger').onclick = () => {
+    if (!val('f_borrower').trim()) { toast('กรุณาเลือกผู้ยืมก่อน'); return; }
+    openSignatureSheet({
+      title: 'ลายเซ็นผู้ยืม', name: val('f_borrower'),
+      onDone: v => {
+        document.getElementById('f_sigBorrower').value = v;
+        document.getElementById('f_sigIcon').innerHTML = `<img src="${v}" style="width:100%;height:100%;object-fit:contain;">`;
+        document.getElementById('f_sigTitle').textContent = 'เซ็นแล้ว (แตะเพื่อเซ็นใหม่)';
+      }
+    });
+  };
+  if (admin) {
+    const resetApvSig = () => {
+      document.getElementById('f_sigApprover').value = '';
+      document.getElementById('f_sigApvIcon').innerHTML = ICONS.edit;
+      document.getElementById('f_sigApvTitle').textContent = 'ลายเซ็นผู้อนุมัติ (ไม่บังคับ)';
+    };
+    document.getElementById('f_approverPick').addEventListener('change', resetApvSig);
+    document.getElementById('f_sigApvTrigger').onclick = () => {
+      const pv = val('f_approverPick');
+      const off = (pv !== '' && pv !== '__other__') ? state.users[Number(pv)] : null;
+      if (!val('f_approver').trim() && !off) { toast('กรุณาเลือกผู้อนุมัติก่อน'); return; }
+      openSignatureSheet({
+        title: 'ลายเซ็นผู้อนุมัติ', name: val('f_approver'), saved: off ? off['ลายเซ็น'] : '',
+        onDone: v => {
+          document.getElementById('f_sigApprover').value = v;
+          document.getElementById('f_sigApvIcon').innerHTML = `<img src="${v}" style="width:100%;height:100%;object-fit:contain;">`;
+          document.getElementById('f_sigApvTitle').textContent = 'เซ็นแล้ว (แตะเพื่อเซ็นใหม่)';
+        }
+      });
+    };
+  }   
   openOfficerPickerSheet(val('f_borrower'), (name, u) => {
+    if (name !== val('f_borrower')) resetBorrowerSig();   // เปลี่ยนคน = ลายเซ็นเดิมใช้ไม่ได้
     document.getElementById('f_borrower').value = name;
     document.getElementById('f_borrowerName').textContent = name;
     document.getElementById('f_borrowerSub').textContent = u ? (u['ตำแหน่ง'] || 'ไม่ระบุตำแหน่ง') : 'พิมพ์ชื่อเอง';
@@ -6655,6 +6877,7 @@ function selectAsset(id) {
     if (!val('f_borrower').trim()) { toast('กรุณาเลือกหรือกรอกชื่อผู้ยืม'); return; }
     if (!val('f_borrowdate') || !val('f_duedate')) { toast('กรุณาระบุวันที่ยืมและกำหนดคืน'); return; }
     if (val('f_duedate') < val('f_borrowdate')) { toast('กำหนดคืนต้องไม่ก่อนวันที่ยืม'); return; }
+         if (!admin && !val('f_sigBorrower')) { toast('กรุณาเซ็นชื่อผู้ยืมก่อนส่งคำขอ'); return; }
     const componentIds = Array.from(document.querySelectorAll('.f_comp_chk:checked')).map(el => {
   const q = document.querySelector('.f_comp_qty[data-for="' + el.value + '"]');
   const max = q ? Number(q.max) : 1;
@@ -6668,7 +6891,9 @@ function selectAsset(id) {
     try {
        let conditionPhotoOut = val('f_conditionPhotoVal');
        if (isInlineImage(conditionPhotoOut)) conditionPhotoOut = await uploadImageToDrive(conditionPhotoOut, 'borrow-' + assetId);
-       const payload = { assetId, assetName: asset ? asset['ชื่อครุภัณฑ์'] : '', borrower: val('f_borrower'), borrowerLineId: '', borrowDate: val('f_borrowdate'), dueDate: val('f_duedate'), approver: admin ? val('f_approver') : '', note: val('f_bnote'), componentIds, conditionPhotoOut };
+       const sigBorrower = await uploadSignature(val('f_sigBorrower'), 'borrower-' + assetId);
+       const sigApprover = admin ? await uploadSignature(val('f_sigApprover'), 'approver-' + assetId) : '';
+       const payload = { assetId, assetName: asset ? asset['ชื่อครุภัณฑ์'] : '', borrower: val('f_borrower'), borrowerLineId: '', borrowDate: val('f_borrowdate'), dueDate: val('f_duedate'), approver: admin ? val('f_approver') : '', note: val('f_bnote'), componentIds, conditionPhotoOut , sigBorrower, sigApprover };
        await apiPost(admin ? 'borrowAsset' : 'requestBorrow', payload);
       closeSheet(); toast(admin ? 'บันทึกการยืมแล้ว' : 'ส่งคำขอยืมแล้ว รอแอดมินอนุมัติ'); await reloadThen(renderBorrow);
     } catch (err) { toast(err.message || 'ทำรายการไม่สำเร็จ'); }
@@ -6676,7 +6901,6 @@ function selectAsset(id) {
   };
 }
 
-/* ========================================================= MAINTENANCE */
 /* ========================================================= MAINTENANCE */
 function renderMaint() {
   const el = document.getElementById('view-maint');
@@ -7156,6 +7380,20 @@ function openUserForm(u) {
       </div>
       <input type="hidden" id="u_photo" value="${escapeHtml(photoVal)}">
     </div>
+    <div class="field">
+      <label>ลายเซ็น (ใช้ตอนเป็นผู้อนุมัติ)</label>
+      <div class="photo-upload-row">
+        <div class="preview-box sig-box" id="u_sigPreview">${editing && u['ลายเซ็น'] ? `<img src="${escapeHtml(u['ลายเซ็น'])}">` : ICONS.edit}</div>
+        <div style="flex:1;min-width:160px;">
+          <input type="file" id="u_sigFile" accept="image/png,image/jpeg,image/webp" class="input" style="padding:8px;">
+          <div class="btn-row" style="margin-top:8px;">
+            <button type="button" class="btn btn-ghost" id="u_sigDraw">เซ็นตอนนี้</button>
+            <button type="button" class="btn btn-danger" id="u_sigClear">ลบ</button>
+          </div>
+        </div>
+      </div>
+      <input type="hidden" id="u_sig" value="${editing ? escapeHtml(u['ลายเซ็น'] || '') : ''}">
+    </div>    
     <div class="memo-two-col">
       <div class="field" style="max-width:140px;"><label>ยศ</label><select class="input" id="u_rank"><option value="">-</option>${RANK_OPTIONS.map(r => `<option ${editing && u['ยศ']===r?'selected':''}>${r}</option>`).join('')}</select></div>
       <div class="field"><label>ชื่อ-สกุล</label><input class="input" id="u_name" value="${editing ? escapeHtml(u['ชื่อ-สกุล']) : ''}"></div>
@@ -7174,6 +7412,17 @@ function openUserForm(u) {
       document.getElementById('u_photo').value = data;
       document.getElementById('u_photoPreview').innerHTML = `<img src="${data}">`;
     }).catch(err => toast(err.message || 'เตรียมรูปไม่สำเร็จ'));
+      const setUserSig = v => {
+    document.getElementById('u_sig').value = v;
+    document.getElementById('u_sigPreview').innerHTML = v ? `<img src="${v}">` : ICONS.edit;
+  };
+  document.getElementById('u_sigFile').onchange = (e) => {
+    const f = e.target.files && e.target.files[0]; if (!f) return;
+    sigFileToPng(f).then(setUserSig).catch(err => toast(err.message || 'เตรียมรูปไม่สำเร็จ'));
+  };
+  document.getElementById('u_sigDraw').onclick = () =>
+    openSignatureSheet({ title: 'ลายเซ็นประจำตัว', name: val('u_name'), onDone: setUserSig });
+  document.getElementById('u_sigClear').onclick = () => setUserSig(''); 
   };
   document.getElementById('btnCancel').onclick = closeSheet;
   document.getElementById('btnSave').onclick = async () => {
@@ -7185,6 +7434,7 @@ function openUserForm(u) {
       // ถ้าไม่เปลี่ยนรูป -> ส่ง URL เดิมกลับไป
       // ถ้าเปลี่ยนรูป -> ส่ง photoData ให้ backend อัปโหลด+แก้แถวเดิมใน transaction เดียว
       const photoPayload = isInlineImage(userPhoto) ? { photoData: userPhoto } : { photo: userPhoto };
+      const sigUrl = await uploadSignature(val('u_sig'), 'user-' + (editing ? (officerId(u) || 'x') : 'new'));
       if (!editing) {
         await apiPost('addUser', {
           name: val('u_name'), rank: val('u_rank'), position: val('u_position'), unit: val('u_unit'),
@@ -7484,6 +7734,7 @@ function mountPaper(container, pfDocWrapperHtml) {
 /* ========================================================= เอกสารบันทึกข้อความ — เนื้อหา */
 function buildMemoBodyHtml(m) {
   const req = m.requester || {}, apv = m.approver || {}, iss = m.issuer || {};
+  const sigImg = s => s ? `<img class="pf-sigimg" src="${escapeHtml(s)}" alt="">` : '';
   const itemsText = m.itemsText !== undefined ? m.itemsText : itemPhraseList(m.items || []);
   const logo = state.settings && state.settings.garudaLogo;
   const emblemHtml = logo
@@ -7510,14 +7761,14 @@ function buildMemoBodyHtml(m) {
     <p class="pf-body">ด้วยข้าฯ <span id="ed_reqfull">${escapeHtml(((req.rank||'') + ' ' + (req.name||'')).trim())}</span> <span id="ed_reqposition">${escapeHtml(req.position||'')}</span> มีความประสงค์ขอเบิก<span id="ed_items">${itemsText}</span> เพื่อใช้ในการปฏิบัติหน้าที่ราชการ</p>
     <p class="pf-body">จึงเรียนมาเพื่อโปรดพิจารณา</p>
     <div class="pf-sign">
-      <div class="pf-sign-rank" id="ed_reqrank">${escapeHtml(req.rank) || '&nbsp;'}</div>
+      <div class="pf-sign-rank" id="ed_reqrank">${escapeHtml(req.rank) || '&nbsp;'}${sigImg(req.sig)}</div>
       <div>( <span id="ed_reqname">${escapeHtml(req.name) || '.....................................'}</span> )</div>
       <div id="ed_reqposition2">${escapeHtml(req.position) || '&nbsp;'}</div>
       <div id="ed_reqdate">${escapeHtml(req.date) || '&nbsp;'}</div>
     </div>
     <p class="pf-note">- อนุมัติให้เบิก-จ่ายได้</p>
     <div class="pf-sign">
-      <div class="pf-sign-rank" id="ed_apvrank">${escapeHtml(apv.rank) || '&nbsp;'}</div>
+      <div class="pf-sign-rank" id="ed_apvrank">${escapeHtml(apv.rank) || '&nbsp;'}${sigImg(apv.sig)}</div>
       <div>( <span id="ed_apvname">${escapeHtml(apv.name) || '.....................................'}</span> )</div>
       <div id="ed_apvposition">${escapeHtml(toThaiNumber(apv.position)) || '&nbsp;'}</div>
       <div id="ed_apvdate">${escapeHtml(apv.date) || '&nbsp;'}</div>
@@ -7743,10 +7994,10 @@ function itemPhraseList(items) {
   if (phrases.length === 1) return phrases[0];
   return phrases.slice(0, -1).join(', ') + ' และ' + phrases[phrases.length - 1];
 }
-function signerPickerHtml(prefix, defaultIdx, rankVal, nameVal, positionVal) {
+function signerPickerHtml(prefix, defaultIdx, rankVal, nameVal, positionVal, sigVal) {
   return `
+    <input type="hidden" id="${prefix}Sig" value="${escapeHtml(sigVal || '')}">
     <div class="memo-signer-pick"><select class="input" id="${prefix}Pick">${officerSelectOptions(defaultIdx)}</select></div>
-    <div class="memo-two-col">
       <div class="field" style="max-width:130px;"><label>ยศ</label><input class="input" id="${prefix}Rank" value="${escapeHtml(rankVal||'')}"></div>
       <div class="field"><label>ชื่อ-สกุล</label><input class="input" id="${prefix}Name" value="${escapeHtml(nameVal||'')}"></div>
     </div>
@@ -7759,6 +8010,7 @@ function wireSignerPicker(prefix) {
     if (pick.value === '' || pick.value === '__other__') return;
     const u = state.users[Number(pick.value)];
     if (!u) return;
+    const sg = document.getElementById(prefix + 'Sig'); if (sg) sg.value = '';   // เปลี่ยนคน = ลบลายเซ็นของคนเดิม 
     document.getElementById(prefix + 'Rank').value = u['ยศ'] || '';
     document.getElementById(prefix + 'Name').value = u['ชื่อ-สกุล'] || '';
     document.getElementById(prefix + 'Position').value = u['ตำแหน่ง'] || '';
@@ -7800,13 +8052,15 @@ function collectMemoFormData() {
       rank: val('m_reqRank'), 
       name: val('m_reqName'), 
       position: toThaiNumber(val('m_reqPosition')), 
-      date: toThaiNumber(val('m_reqDate')) 
+      date: toThaiNumber(val('m_reqDate')) , 
+      sig: val('m_reqSig') 
     },
     approver: { 
       rank: val('m_apvRank'), 
       name: val('m_apvName'), 
       position: toThaiNumber(val('m_apvPosition')), 
-      date: toThaiNumber(val('m_apvDate')) 
+      date: toThaiNumber(val('m_apvDate'))  , 
+      sig: val('m_apvSig')
     },
     issuer: { 
       rank: val('m_issRank'), 
@@ -7850,6 +8104,8 @@ async function commitDocNo(docNoText) {
 function openPrintMemoForm(opts) {
   const items = buildMemoItemList(opts);
   const borrow = opts.borrow || null;
+  const reqSig = borrow ? (borrow['ลายเซ็นผู้ยืม'] || '') : '';
+  const apvSig = borrow ? (borrow['ลายเซ็นผู้อนุมัติ'] || '') : '';
   const dueDateText = borrow ? thaiDateAbbr(borrow['กำหนดคืน']) : '';
   const defaultSubject = 'ขอเบิก' + (items[0] && items[0].name ? items[0].name : 'พัสดุครุภัณฑ์');
   const requesterNameDefault = borrow ? (borrow['ผู้ยืม'] || '') : (state.user && state.user.name) || '';
@@ -7926,12 +8182,12 @@ function openPrintMemoForm(opts) {
           </div>
           <div class="mf-section">
             <div class="mf-section-title"><span class="mf-step">3</span> ผู้ขอเบิก/ยืม</div>
-            ${signerPickerHtml('m_req', reqIdx, reqSplit.rank, reqSplit.name || requesterNameDefault, reqOfficer ? reqOfficer['ตำแหน่ง'] : '')}
+            ${signerPickerHtml('m_req', reqIdx, reqSplit.rank, reqSplit.name || requesterNameDefault, reqOfficer ? reqOfficer['ตำแหน่ง'] : '', reqSig)}
             <div class="field"><label>วันที่ลงนาม</label><input class="input" id="m_reqDate" value="${escapeHtml(thaiDateAbbr())}"></div>
           </div>
           <div class="mf-section">
             <div class="mf-section-title"><span class="mf-step">4</span> ผู้อนุมัติ</div>
-            ${signerPickerHtml('m_apv', apvIdx, apvOfficer ? apvOfficer['ยศ'] : '', apvOfficer ? apvOfficer['ชื่อ-สกุล'] : approverNameDefault, apvOfficer ? apvOfficer['ตำแหน่ง'] : '')}
+             ${signerPickerHtml('m_apv', apvIdx, apvOfficer ? apvOfficer['ยศ'] : '', apvOfficer ? apvOfficer['ชื่อ-สกุล'] : approverNameDefault, apvOfficer ? apvOfficer['ตำแหน่ง'] : '', apvSig)}
             <div class="hint" style="margin-top:0;">เลือกจากดรอปดาวน์เพื่อสลับผู้ลงนามได้ทันที</div>
             <div class="field"><label>วันที่ลงนาม</label><input class="input" id="m_apvDate" value="${escapeHtml(thaiDateAbbr())}"></div>
           </div>
