@@ -3814,14 +3814,15 @@ body:has(#modalRoot .overlay){
   padding:0 !important;
 }
 
-/* ยศ: ชิดขวาของคอลัมน์ซ้าย
-   จึงไม่ขยับลายเซ็น และตัวอักษรสุดท้ายจะตรงกับ ( ของชื่อ */
+/* ยศ: ใช้คอลัมน์ซ้ายเป็นพื้นที่เดิม เพื่อไม่ให้กระทบตำแหน่งลายเซ็น
+   จากนั้น JavaScript จะขยับเฉพาะตัวอักษรยศให้ "ตัวสุดท้าย" ตรงกับ ( ของชื่อ */
 .pf-sign-rank .pf-rank{
   grid-column:1;
   justify-self:end;
   text-align:right;
   white-space:nowrap;
   margin:0;
+  transform:translateX(0);
 }
 
 /* ตำแหน่ง/ชื่อ/วันที่ ห้ามตัดขึ้นบรรทัดใหม่ */
@@ -7940,11 +7941,46 @@ window.addEventListener('resize', () => { clearTimeout(window._refitT); window._
 function wrapPfDoc(innerHtml, editable) {
   return `<div class="pf-doc" id="memoDocBody" ${editable ? 'contenteditable="true" spellcheck="false"' : ''}>${thaiifyHtml(innerHtml || '')}</div>`;
 }
+function alignPfRankToName(container) {
+  if (!container) return;
+  const doc = container.querySelector('.pf-doc');
+  const scaleEl = container.querySelector('.paper-scale');
+  if (!doc || !scaleEl) return;
+
+  // วัดจากพิกัดจริงบนหน้ากระดาษ แล้วขยับเฉพาะ "ยศ"
+  // โดยไม่แตะ grid / ลายเซ็น / ชื่อ / ตำแหน่ง / วันที่
+  const scale = scaleEl.offsetWidth ? (scaleEl.getBoundingClientRect().width / scaleEl.offsetWidth) : 1;
+  doc.querySelectorAll('.pf-sign').forEach(sign => {
+    const rank = sign.querySelector('.pf-sign-rank .pf-rank');
+    const nameLine = sign.querySelector('.pf-sign-rank + div');
+    if (!rank || !nameLine) return;
+
+    // รีเซ็ตก่อนวัด เพื่อให้คำนวณซ้ำได้ถูกต้องเมื่อชื่อมีการแก้ไข
+    rank.style.transform = 'translateX(0)';
+
+    const firstText = nameLine.firstChild;
+    if (!firstText || firstText.nodeType !== Node.TEXT_NODE) return;
+
+    const range = document.createRange();
+    range.setStart(firstText, 0);
+    range.setEnd(firstText, Math.min(1, firstText.nodeValue.length));
+    const openParenRect = range.getBoundingClientRect();
+    const rankRect = rank.getBoundingClientRect();
+    if (!openParenRect.width && !openParenRect.height) return;
+
+    const delta = (openParenRect.left - rankRect.right) / (scale || 1);
+    rank.style.transform = `translateX(${delta}px)`;
+  });
+}
+
 function mountPaper(container, pfDocWrapperHtml) {
   if (!container) return;
   container.innerHTML = `<div class="paper-sizer"><div class="paper-scale"><div class="a4-page">${pfDocWrapperHtml}</div></div></div>`;
   registerPaper(container);
-  requestAnimationFrame(() => fitPaper(container));
+  requestAnimationFrame(() => {
+    fitPaper(container);
+    requestAnimationFrame(() => alignPfRankToName(container));
+  });
 }
 
 /* ========================================================= เอกสารบันทึกข้อความ — เนื้อหา */
@@ -8144,7 +8180,11 @@ const commitDocNoOnce = () => {
   if (e) commitDocNo(e.textContent.trim());
 };
   const dirtyEl = document.getElementById('docDirty');
-  if (!readOnly) desk.addEventListener('input', () => { dirtyEl.classList.add('show'); });
+  if (!readOnly) desk.addEventListener('input', () => {
+    dirtyEl.classList.add('show');
+    requestAnimationFrame(() => alignPfRankToName(desk));
+  });
+  requestAnimationFrame(() => alignPfRankToName(desk));
 
 // พิมพ์เลขอารบิกลงในเอกสาร -> แปลงเป็นเลขไทยทันที (ตอนออกจากช่องที่กำลังแก้)
 desk.addEventListener('focusout', () => {
@@ -10879,7 +10919,9 @@ function compareMonthlyOfficers(a, b) {
     if (!items.length) { mcProblemSheet(u); return; }
 
     const rec = mcRecordFor(u);
-    const st = items.map(() => 0);
+    // ถ้าเคยบันทึกผลแล้ว ให้เปิดรายละเอียดพร้อมสถานะเดิมทันที
+    // โดยเฉพาะผล "ครบ" ต้องแสดงเป็นตรวจครบทุกชิ้น ไม่ใช่ย้อนกลับไปเป็น 0/จำนวน
+    const st = items.map(() => (rec && rec['ผล'] === 'ครบ') ? 1 : 0);
 
     showSheet(`
       <div class="sheet-title">ตรวจพัสดุ · ${escapeHtml(officerFullName(u))}</div>
@@ -10887,8 +10929,9 @@ function compareMonthlyOfficers(a, b) {
         <div>
           <div style="font-weight:600;">รายการที่ต้องตรวจ</div>
           <div class="hint" style="margin:2px 0 0;">ใช้หมายเลขเครื่อง / Serial เป็นตัวระบุหลัก</div>
+          ${rec ? `<div style="margin-top:6px;font-weight:600;color:${rec['ผล'] === 'ครบ' ? 'var(--ok)' : 'var(--bad)'};">● บันทึกผลแล้ว: ${escapeHtml(rec['ผล'])}</div>` : ''}
         </div>
-        <div class="mc-checklist-count" id="ckCount">0/${items.length}</div>
+        <div class="mc-checklist-count" id="ckCount">${rec && rec['ผล'] === 'ครบ' ? items.length : 0}/${items.length}</div>
       </div>
       <div id="ckList" style="max-height:50vh;overflow:auto;">
         ${items.map((it,i)=>`
