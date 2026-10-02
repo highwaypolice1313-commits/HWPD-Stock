@@ -6622,9 +6622,7 @@ function sigFileToPng(file) {   // ไฟล์ลายเซ็นที่อ
 // อัปโหลดลายเซ็นขึ้น Drive "โดยไม่ผ่านการบีบเป็น JPEG" (uploadImageToDrive จะทำพื้นหลังดำ)
 async function uploadSignature(v, name) {
   if (!v) return '';
-  if (!isInlineImage(v)) return v;           // เป็น URL อยู่แล้ว
-  const r = await apiPost('uploadImage', { dataUrl: v, fileName: 'sig-' + (name || 'x') });
-  return r && r.url ? r.url : '';
+  return v;   // เก็บ data URL ของลายเซ็นลง Supabase ตรง ๆ ไม่ผ่าน GAS
 }
 // หน้าต่างเซ็นชื่อ: opts = {title, name, saved(URL ลายเซ็นที่บันทึกไว้, ไม่บังคับ), onDone(v)}
 function openSignatureSheet(opts) {
