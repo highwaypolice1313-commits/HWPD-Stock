@@ -3723,6 +3723,20 @@ html{scroll-behavior:smooth;}
   .command-hint{ display:none !important; }
 }
 
+/* ===== แก้เลื่อนไม่ได้บน iPad ===== */
+.overlay{
+  height:100vh; height:100dvh;
+  overscroll-behavior:contain;
+}
+.sheet{
+  max-height:92vh !important;
+  max-height:92dvh !important;      /* !important เพื่อชนะ inline style max-height:92vh */
+  overflow-y:auto !important;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+  touch-action:pan-y;
+}
+   
 </style>
 </head>
 <body>
@@ -5551,7 +5565,8 @@ function openOfficerPickerSheet(currentName, onPick) {
     if (first) first.click();
   };
   drawList();
-  setTimeout(() => input.focus(), 60);
+  // บนจอสัมผัส (iPad/มือถือ) ไม่โฟกัสอัตโนมัติ เพื่อไม่ให้คีย์บอร์ดบังรายชื่อ
+  if (!window.matchMedia('(pointer:coarse)').matches) setTimeout(() => input.focus(), 60);
 }
    
 function openAssetPickerSheet(currentId, onPick, onlyAvailable = true) {
