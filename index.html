@@ -8399,7 +8399,7 @@ function openPrintMemoForm(opts) {
   wireItemRow();
   document.getElementById('btnAddItem').onclick = () => {
     document.getElementById('m_itemsWrap').insertAdjacentHTML('beforeend',
-        memoItemRowHtml({ id: '', name: '', brand: '', serial: '', qty: 1, unit: 'เครื่อง' }, 'รายการเพิ่มเติม', true)
+        memoItemRowHtml({ id: '', name: '', brand: '', serial: '', qty: 1, unit: 'เครื่อง' }, 'รายการเพิ่มเติม', true));
     wireItemRow();
     refreshMemoLivePreview();
   };
