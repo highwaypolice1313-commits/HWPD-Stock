@@ -119,7 +119,8 @@ const borrowToThai = r => ({
   'รหัสรายการ': r.id, 'รหัสครุภัณฑ์': r.asset_id, 'ชื่อครุภัณฑ์': r.asset_name, 'ผู้ยืม': r.borrower,
   'LINEUserId': r.borrower_line_id, 'วันที่ยืม': r.borrow_date, 'กำหนดคืน': r.due_date,
   'วันที่คืนจริง': r.return_date, 'สถานะ': r.status, 'ผู้อนุมัติ': r.approver, 'หมายเหตุ': r.note,
-  'รหัสส่วนควบที่ยืม': r.component_ids, 'รูปสภาพ(ตอนยืม)': r.photo_out, 'รูปสภาพ(ตอนคืน)': r.photo_in
+  'รหัสส่วนควบที่ยืม': r.component_ids, 'รูปสภาพ(ตอนยืม)': r.photo_out, 'รูปสภาพ(ตอนคืน)': r.photo_in,
+  'ลายเซ็นผู้ยืม': r.sig_borrower, 'ลายเซ็นผู้อนุมัติ': r.sig_approver
 });
 const maintToThai = r => ({
   'รหัสรายการ': r.id, 'รหัสครุภัณฑ์': r.asset_id, 'ชื่อครุภัณฑ์': r.asset_name, 'วันที่แจ้ง': r.report_date,
@@ -134,7 +135,7 @@ const componentToThai = r => ({
 const userToThai = r => ({
   'รหัสจนท.': r.id, 'LINEUserId': r.line_user_id, 'ชื่อ-สกุล': r.name, 'ตำแหน่ง': r.position,
   'หน่วยงาน': r.unit, 'สิทธิ์': r.role, 'วันที่เพิ่ม': r.created_at, 'ชื่อผู้ใช้': r.username,
-  'ยศ': r.rank, 'บทบาทเบิก-ยืม': r.memo_role, 'รูปถ่าย': r.photo
+  'ยศ': r.rank, 'บทบาทเบิก-ยืม': r.memo_role, 'รูปถ่าย': r.photo, 'ลายเซ็น': r.signature
 });
 const activityToThai = r => ({
   'รหัส': r.id, 'วันที่-เวลา': r.created_at, 'ผู้ทำรายการ': r.actor, 'การกระทำ': r.action, 'รายละเอียด': r.detail
@@ -223,7 +224,7 @@ async function sGetAll() {
     sb.from('borrow').select('*').order('created_at', { ascending: true }),
     sb.from('maint').select('*').order('created_at', { ascending: true }),
     sb.from('components').select('*'),
-    sb.from('users').select('id,line_user_id,name,position,unit,role,rank,memo_role,photo,username,created_at')
+    sb.from('users').select('id,line_user_id,name,position,unit,role,rank,memo_role,photo,username,created_at,signature')
   ]);
   [assetsR, borrowR, maintR, componentsR, usersR].forEach(r => { if (r.error) throw new Error(r.error.message); });
 
@@ -242,7 +243,7 @@ async function sGetAll() {
 
 async function sGetUsers() {
   const { data, error } = await sb.from('users')
-    .select('id,line_user_id,name,position,unit,role,rank,memo_role,photo,username,created_at');
+    .select('id,line_user_id,name,position,unit,role,rank,memo_role,photo,username,created_at,signature');
   if (error) throw new Error(error.message);
   return data.map(u => { const t = userToThai(u); t['มีรหัสผ่านแล้ว'] = false; return t; });
 }
@@ -351,7 +352,9 @@ async function sBorrowAsset(p, actor, directApprove) {
     id, asset_id: p.assetId, asset_name: p.assetName || '', borrower: p.borrower,
     borrower_line_id: p.borrowerLineId || '', borrow_date: p.borrowDate || null, due_date: p.dueDate || null,
     status, approver: p.approver || (directApprove ? actor : ''), note: p.note || '',
-    component_ids: componentIds.join(','), photo_out: p.conditionPhotoOut || ''
+    component_ids: componentIds.join(','), photo_out: p.conditionPhotoOut || '',
+    sig_borrower: p.sigBorrower || '',
+    sig_approver: directApprove ? (p.sigApprover || '') : ''
   };
   const { error } = await sb.from('borrow').insert(row);
   if (error) throw new Error('บันทึกการยืมไม่สำเร็จ: ' + error.message);
@@ -365,9 +368,11 @@ async function sBorrowAsset(p, actor, directApprove) {
 async function sApproveBorrow(p, actor) {
   const { data: b, error: e1 } = await sb.from('borrow').select('*').eq('id', p.borrowId).single();
   if (e1 || !b) throw new Error('ไม่พบคำขอยืมรหัส ' + p.borrowId);
-  const { error } = await sb.from('borrow').update({ status: 'กำลังยืม', approver: actor }).eq('id', p.borrowId);
-  if (error) throw new Error(error.message);
-  await sb.from('assets').update({ status: 'กำลังยืม', holder: b.borrower }).eq('id', b.asset_id);
+const upd = { status: 'กำลังยืม', approver: p.approverName || actor };
+if (p.sigApprover) upd.sig_approver = p.sigApprover;
+const { error } = await sb.from('borrow').update(upd).eq('id', p.borrowId);
+if (error) throw new Error(error.message);
+await sb.from('assets').update({ status: 'กำลังยืม', holder: b.borrower }).eq('id', b.asset_id);
   await adjustComponentsSb(parseCompRefs(b.component_ids), +1);
   await logActivitySb(actor, 'อนุมัติการยืม', p.borrowId);
   return { approved: true };
@@ -527,7 +532,7 @@ async function sAddUser(p, actor) {
   const row = {
     id, line_user_id: p.lineUserId || '', name: p.name, position: p.position || '', unit: p.unit || '',
     role: p.role || 'viewer', rank: p.rank || '', memo_role: p.memoRole || 'ไม่ระบุ (เลือกเองตอนพิมพ์)',
-    photo: photoUrl, username: p.username || ''
+    photo: photoUrl, username: p.username || '' , signature: p.signature || ''
   };
   const { error } = await sb.from('users').insert(row);
   if (error) throw new Error('เพิ่มรายชื่อไม่สำเร็จ: ' + error.message);
@@ -548,6 +553,7 @@ async function sUpdateUserRole(p, actor) {
   if (p.memoRole !== undefined) upd.memo_role = p.memoRole;
   if (p.photoData) upd.photo = (await gasUploadImageToDrive(p.photoData, 'user-' + val)).url;
   else if (p.photo !== undefined) upd.photo = p.photo;
+  if (p.signature !== undefined) upd.signature = p.signature;
   const { error } = await sb.from('users').update(upd).eq(col, val);
   if (error) throw new Error('แก้ไขไม่สำเร็จ: ' + error.message);
   await logActivitySb(actor, 'แก้ไขข้อมูล จนท.', p.name || val);
