@@ -6034,7 +6034,7 @@ function openQuickStatusForm(a) {
   };
 }
    
-function triggerPrint(cleanupFn) {
+function triggerPrint(cleanupFn, options = {}) {
   const pa = document.getElementById('printArea');
   const imgs = Array.from(pa.querySelectorAll('img'));
   let cleaned = false, started = false;
@@ -6085,6 +6085,8 @@ function triggerPrint(cleanupFn) {
     setTimeout(cleanupOnce, 4000);
   };
   const start = () => { if (started) return; started = true; doPrint(); };
+
+  if (options.iosImmediate) { start(); return; }
   let remaining = imgs.length;
   imgs.forEach(img => {
     if (img.complete) { remaining--; return; }
@@ -7498,7 +7500,7 @@ function printOfficerPortfolio(u, holdings) {
   const pa = document.getElementById('printArea');
   pa.classList.add('report-print-area');
   pa.innerHTML = html;
-  triggerPrint(() => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; });
+  triggerPrint(() => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; }, { iosImmediate: true });
 }
 
    function printAllOfficers() {
