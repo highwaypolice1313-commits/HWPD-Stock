@@ -9649,6 +9649,20 @@ function mcDecodeItemResults(rec) {
 function mcSaveNoteText(rec) {
   return rec && rec['หมายเหตุ'] ? String(rec['หมายเหตุ']).trim() : '';
 }
+// Helpers used by the enhanced monthly-report builder.
+// Keep these at top-level because mcBuildCheckItems() is also top-level.
+function mcAssetByBorrow(b) {
+  return (state.assets || []).find(a => a['รหัสครุภัณฑ์'] === b['รหัสครุภัณฑ์']) || null;
+}
+function mcSerialTextFromBorrow(b) {
+  const a = mcAssetByBorrow(b);
+  const serial = String(a && a['หมายเลขเครื่อง'] || '').trim();
+  const plate = String(a && a['ทะเบียนรถ'] || '').trim();
+  if (serial) return serial;
+  if (plate) return 'ทะเบียน ' + plate;
+  return 'ไม่ระบุหมายเลขเครื่อง';
+}
+
 function mcBuildCheckItems(u) {
   const items = [];
   mcHoldingsOf(u).forEach((b, borrowIndex) => {
