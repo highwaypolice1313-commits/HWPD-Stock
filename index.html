@@ -6334,13 +6334,18 @@ function openBorrowEditForm(b) {
   showSheet(`
     <div class="sheet-title">แก้ไขข้อมูลการยืม</div>
     <div class="field"><label>ครุภัณฑ์</label><div class="input" style="background:var(--panel-soft); color:var(--ink-dim);">${escapeHtml(b['ชื่อครุภัณฑ์'])}</div></div>
-    <div class="field">
-      <label>ผู้ยืม</label>
-      <input class="input" id="ef_borrower" list="editBorrowerDatalist" value="${escapeHtml(b['ผู้ยืม'])}">
-      <datalist id="editBorrowerDatalist">
-        ${state.users.map(u => `<option value="${escapeHtml(officerFullName(u))}"></option>`).join('')}
-      </datalist>
+<div class="field">
+  <label>ผู้ยืม</label>
+  <div class="glass list-item" id="ef_borrowerTrigger" style="cursor:pointer;">
+    <div class="li-icon">${ICONS.user}</div>
+    <div class="li-body">
+      <div class="li-title" id="ef_borrowerName">${escapeHtml(b['ผู้ยืม'])}</div>
+      <div class="li-sub">แตะเพื่อเปลี่ยนผู้ยืม</div>
     </div>
+    <span class="status-badge status-ready" style="flex:none;">เปลี่ยน</span>
+  </div>
+  <input type="hidden" id="ef_borrower" value="${escapeHtml(b['ผู้ยืม'])}">
+</div>
     <div class="memo-two-col">
       <div class="field"><label>วันที่ยืม</label><input class="input" type="date" id="ef_borrowdate" value="${b['วันที่ยืม'] ? isoDate(b['วันที่ยืม']) : ''}"></div>
       <div class="field"><label>กำหนดคืน</label><input class="input" type="date" id="ef_duedate" value="${b['กำหนดคืน'] ? isoDate(b['กำหนดคืน']) : ''}"></div>
@@ -6448,15 +6453,15 @@ function openBorrowForm(presetId) {
       <div class="mf-section-title"><span class="mf-step">2</span> ผู้ยืมและกำหนดคืน</div>
 <div class="field">
   <label>ผู้ยืม</label>
-  <div class="glass list-item" id="ef_borrowerTrigger" style="cursor:pointer;">
-    <div class="li-icon">${ICONS.user}</div>
+  <div class="glass list-item" id="f_borrowerTrigger" style="cursor:pointer;">
+    <div class="li-icon" id="f_borrowerIcon">${ICONS.user}</div>
     <div class="li-body">
-      <div class="li-title" id="ef_borrowerName">${escapeHtml(b['ผู้ยืม'])}</div>
-      <div class="li-sub">แตะเพื่อเปลี่ยนผู้ยืม</div>
+      <div class="li-title" id="f_borrowerName">แตะเพื่อเลือกผู้ยืม</div>
+      <div class="li-sub" id="f_borrowerSub">เลือกจากทำเนียบ หรือพิมพ์ค้นหา</div>
     </div>
-    <span class="status-badge status-ready" style="flex:none;">เปลี่ยน</span>
+    <span class="status-badge status-ready" style="flex:none;">เลือก</span>
   </div>
-  <input type="hidden" id="ef_borrower" value="${escapeHtml(b['ผู้ยืม'])}">
+  <input type="hidden" id="f_borrower" value="">
 </div>
       <div class="memo-two-col">
         <div class="field"><label>วันที่ยืม</label><input class="input" type="date" id="f_borrowdate" value="${isoDate()}"></div>
@@ -7772,14 +7777,9 @@ async function commitDocNo(docNoText) {
   if (used < (Number(nextDocNo()) || 0)) return;   // ใช้เลขย้อนหลัง ไม่ถอยเลขถัดไป
   const next = String(used + 1);
   try {
-    await apiPost('updateSystemSettings', {
-  orgName: val('st_org'), orgPhone: val('st_phone'),
-  docNoPrefix: val('st_docprefix'), docNoNext: val('st_docnext'),
-  renewalAlertDays: val('st_renewaldays')
-});
+    await apiPost('updateSystemSettings', { docNoNext: next });
     state.settings.docNoNext = next;
   } catch (e) { console.warn('อัปเดตเลขหนังสือถัดไปไม่สำเร็จ', e); }
-}
    
 function openPrintMemoForm(opts) {
   const items = buildMemoItemList(opts);
