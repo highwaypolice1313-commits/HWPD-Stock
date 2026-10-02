@@ -5742,8 +5742,22 @@ function openOfficerPickerSheet(currentName, onPick) {
   if (!window.matchMedia('(pointer:coarse)').matches) setTimeout(() => input.focus(), 60);
 }
    
+// ครุภัณฑ์ที่ผู้ใช้สามารถยื่นคำขอยืมได้จริง:
+// 1) สถานะต้องเป็น "พร้อมใช้งาน"
+// 2) ต้องไม่มีรายการยืม/คำขอยืมที่ยังถือสิทธิ์อยู่กับผู้ยืมคนอื่น
+function assetBorrowState(id) {
+  return (state.borrow || []).find(b => {
+    if (b['รหัสครุภัณฑ์'] !== id) return false;
+    const st = String(b['สถานะ'] || '');
+    return ['รออนุมัติ', 'กำลังยืม', 'เกินกำหนด'].includes(st);
+  }) || null;
+}
+function isAssetBorrowable(a) {
+  return !!a && String(a['สถานะ'] || '') === 'พร้อมใช้งาน' && !assetBorrowState(a['รหัสครุภัณฑ์']);
+}
+
 function openAssetPickerSheet(currentId, onPick, onlyAvailable = true, excludeFn = null) {
-  let available = onlyAvailable ? state.assets.filter(a => a['สถานะ'] === 'พร้อมใช้งาน') : state.assets.slice();
+  let available = onlyAvailable ? state.assets.filter(isAssetBorrowable) : state.assets.slice();
   if (typeof excludeFn === 'function') available = available.filter(a => !excludeFn(a));
   let pickCat = 'all', pickQ = '';
   const openGroups = new Set();          // กลุ่มที่ผู้ใช้กดเปิดเอง
@@ -5936,7 +5950,7 @@ function openAssetDetail(id) {
     ${assetTimelineHtml(a, id)}
     <div class="btn-row">
       <button class="btn btn-ghost" id="btnShowQr">แสดง QR โค้ด</button>
-      <button class="btn btn-ghost" id="btnPrintAssetForm">พิมพ์บันทึกขอเบิก</button>
+      <button class="btn btn-ghost" id="btnPrintAssetForm">${isAdmin() ? 'พิมพ์บันทึกขอเบิก' : (isAssetBorrowable(a) ? 'ขอยืมครุภัณฑ์' : 'ครุภัณฑ์นี้ยังไม่พร้อมให้ยืม')}</button>
     </div>
     ${isAdmin() ? `<div class="btn-row">
       <button class="btn btn-ghost" id="btnQuickStatus">เปลี่ยนสถานะด่วน</button>
@@ -5945,17 +5959,35 @@ function openAssetDetail(id) {
     </div>` : ''}
   `);
   document.getElementById('btnShowQr').onclick = () => openQrView(a);
-  document.getElementById('btnPrintAssetForm').onclick = () => {
-  // หารายการยืมที่ยังไม่คืนของครุภัณฑ์ชิ้นนี้
-  const activeBorrow = state.borrow.find(b =>
-    b['รหัสครุภัณฑ์'] === id && (b['สถานะ'] === 'กำลังยืม' || b['สถานะ'] === 'เกินกำหนด'));
-  if (activeBorrow) {
-    // ส่ง borrow เข้าไป ฟอร์มจะดึงชื่อผู้ยืม / ผู้อนุมัติ / กำหนดคืน ให้อัตโนมัติ
-    openPrintMemoForm({ borrow: activeBorrow });
-  } else {
-    openPrintMemoForm({ items: [a], components: componentsOf(id) });
+  const assetActionBtn = document.getElementById('btnPrintAssetForm');
+  if (assetActionBtn) {
+    if (!isAdmin()) {
+      // ผู้ดูอย่างเดียวไม่ควรสร้าง/แก้ไขบันทึกขอเบิกจากทะเบียนครุภัณฑ์
+      // ให้เข้าสู่ขั้นตอน "ขอยืมครุภัณฑ์" โดยล็อกครุภัณฑ์ชิ้นนี้ไว้ให้ทันที
+      const borrowable = isAssetBorrowable(a);
+      assetActionBtn.textContent = borrowable ? 'ขอยืมครุภัณฑ์' : 'ครุภัณฑ์นี้ยังไม่พร้อมให้ยืม';
+      assetActionBtn.disabled = !borrowable;
+      assetActionBtn.style.opacity = borrowable ? '' : '.55';
+      assetActionBtn.style.cursor = borrowable ? 'pointer' : 'not-allowed';
+      assetActionBtn.onclick = () => {
+        if (!isAssetBorrowable(a)) {
+          const hold = assetBorrowState(id);
+          toast(hold ? 'ครุภัณฑ์นี้มีผู้ยืมหรือมีคำขอยืมอยู่แล้ว' : 'ครุภัณฑ์นี้ยังไม่พร้อมให้ยืม');
+          return;
+        }
+        closeSheet();
+        openBorrowForm(id);
+      };
+    } else {
+      // แอดมินยังใช้ปุ่มเดิมได้ตามสิทธิ์เดิม
+      assetActionBtn.onclick = () => {
+        const activeBorrow = state.borrow.find(b =>
+          b['รหัสครุภัณฑ์'] === id && (b['สถานะ'] === 'กำลังยืม' || b['สถานะ'] === 'เกินกำหนด'));
+        if (activeBorrow) openPrintMemoForm({ borrow: activeBorrow });
+        else openPrintMemoForm({ items: [a], components: componentsOf(id) });
+      };
+    }
   }
-};
   if (isAdmin()) {
     document.getElementById('btnQuickStatus').onclick = () => openQuickStatusForm(a);
     document.getElementById('btnEditAsset').onclick = () => openAssetForm(a);
@@ -6794,7 +6826,7 @@ function openSignatureSheet(opts) {
 }   
    
 function openBorrowForm(presetId) {
-  const available = state.assets.filter(a => a['สถานะ'] === 'พร้อมใช้งาน');
+  const available = state.assets.filter(isAssetBorrowable);
   const admin = isAdmin();
   const defaultApproverIdx = (() => { const list = officersByMemoRole('ผู้อนุมัติ ลำดับที่ 1'); return list.length ? state.users.indexOf(list[0]) : ''; })();
   showSheet(`
@@ -6887,7 +6919,7 @@ function openBorrowForm(presetId) {
       img.src = data; img.style.display = 'block';
     }).catch(err => toast(err.message || 'เตรียมรูปไม่สำเร็จ'));
   };
-  if (!available.length) { toast('ไม่มีครุภัณฑ์ที่พร้อมให้ยืมในขณะนี้'); }
+  if (!available.length) { toast('ไม่มีครุภัณฑ์ที่พร้อมให้ยืมและยังไม่มีผู้ยืมในขณะนี้'); }
 
   // ---------- ตัวเลือกผู้อนุมัติ (ดรอปดาวน์ + ช่องพิมพ์เอง) ----------
   function wirePicker(pickId, textId) {
@@ -6991,10 +7023,24 @@ function openBorrowForm(presetId) {
     };
   }
 
-  // ---------- ถ้ามี presetId (มาจากการปัดแถวครุภัณฑ์) ให้เลือกชิ้นนั้นก่อน ----------
+  // ---------- ถ้ามี presetId (มาจากทะเบียนครุภัณฑ์/ปัดแถว) ให้เลือกชิ้นนั้นก่อน ----------
   const presetAsset = presetId && available.find(a => a['รหัสครุภัณฑ์'] === presetId);
-  if (presetAsset) selectAsset(presetAsset['รหัสครุภัณฑ์']);
-  else if (available.length) selectAsset(available[0]['รหัสครุภัณฑ์']);
+  if (presetId) {
+    // ถ้ามาจากทะเบียนครุภัณฑ์ ต้องพยายามเลือกชิ้นที่กดมาเท่านั้น
+    // ห้ามเงียบ ๆ เปลี่ยนไปเลือกชิ้นอื่น เพราะอาจทำให้ผู้ใช้ยืมผิดรายการ
+    if (presetAsset) {
+      selectAsset(presetAsset['รหัสครุภัณฑ์']);
+    } else {
+      const preset = state.assets.find(a => a['รหัสครุภัณฑ์'] === presetId);
+      if (preset) {
+        document.getElementById('f_assetIcon').innerHTML = catIcon(preset['หมวดหมู่']);
+        document.getElementById('f_assetName').textContent = preset['ชื่อครุภัณฑ์'] || 'ครุภัณฑ์ที่เลือก';
+        document.getElementById('f_assetSub').textContent = 'รายการนี้ไม่พร้อมให้ยืม หรือมีผู้ยืม/คำขอยืมอยู่แล้ว';
+      }
+    }
+  } else if (available.length) {
+    selectAsset(available[0]['รหัสครุภัณฑ์']);
+  }
 
   // ---------- ปุ่มลัดกำหนดคืน ----------
   document.querySelectorAll('[data-days]').forEach(chip => {
@@ -7012,7 +7058,11 @@ function openBorrowForm(presetId) {
   document.getElementById('btnSave').onclick = async () => {
     const assetId = val('f_asset');
     const asset = state.assets.find(a => a['รหัสครุภัณฑ์'] === assetId);
-    if (!assetId) { toast('ไม่พบครุภัณฑ์ที่พร้อมให้ยืม'); return; }
+    const freshAsset = state.assets.find(a => a['รหัสครุภัณฑ์'] === assetId);
+    if (!assetId || !freshAsset || !isAssetBorrowable(freshAsset)) {
+      toast('ครุภัณฑ์นี้ไม่พร้อมให้ยืม หรือมีผู้ยืม/คำขอยืมอยู่แล้ว');
+      return;
+    }
     if (!val('f_borrower').trim()) { toast('กรุณาเลือกหรือกรอกชื่อผู้ยืม'); return; }
     if (!val('f_borrowdate') || !val('f_duedate')) { toast('กรุณาระบุวันที่ยืมและกำหนดคืน'); return; }
     if (val('f_duedate') < val('f_borrowdate')) { toast('กำหนดคืนต้องไม่ก่อนวันที่ยืม'); return; }
