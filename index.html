@@ -10898,9 +10898,11 @@ function compareMonthlyOfficers(a, b) {
           note = fullNote || 'ไม่ครบ/ผิดปกติ';
         }
         const asset = it.borrow ? mcAssetByBorrow(it.borrow) : null;
+        // ช่องหมายเลขครุภัณฑ์ของรายงาน ใช้ข้อมูลจาก "หมายเลขเครื่อง" โดยตรง
+        // ส่วนควบยังใช้รหัสส่วนควบของรายการนั้น เพื่อไม่ให้สูญเสียตัวระบุของส่วนควบ
         const assetNo = it.type === 'component'
           ? (it.componentId || '-')
-          : (String(asset && asset['รหัสครุภัณฑ์'] || '').trim() || String(it.serial || '').trim() || '-');
+          : (String(asset && asset['หมายเลขเครื่อง'] || '').trim() || '-');
         detailRows.push({
           officer: idx === 0 ? officerFullName(x.u) : '',
           position: idx === 0 ? (x.u['ตำแหน่ง'] || '-') : '',
@@ -10983,8 +10985,8 @@ function compareMonthlyOfficers(a, b) {
         </div>
         <table>
           <colgroup>
-            <col style="width:4%"><col style="width:17%"><col style="width:24%"><col style="width:13%">
-            <col style="width:7%"><col style="width:10%"><col style="width:15%"><col style="width:10%">
+            <col style="width:4%"><col style="width:17%"><col style="width:22%"><col style="width:18%">
+            <col style="width:7%"><col style="width:10%"><col style="width:7%"><col style="width:15%">
           </colgroup>
           <thead><tr>
             <th>ลำดับ</th>
@@ -11036,7 +11038,7 @@ function compareMonthlyOfficers(a, b) {
         const first=idx===0,last=idx===chunks.length-1;
         const body=chunk.length?chunk.join(''):'<tr><td colspan="8" class="center">ไม่มีข้อมูลครุภัณฑ์ที่ต้องตรวจ</td></tr>';
         const tail=last?`${rowHtml.length?`<tr class="total"><td colspan="4" class="center">รวม</td><td class="center">${toThaiNumber(totalQty)}</td><td colspan="3"></td></tr>`:''}<div class="note">หมายเหตุ: แสดงผลตรวจแยกตามครุภัณฑ์หลักและส่วนควบ เพื่อให้ตรวจสอบได้เป็นรายชิ้น โดยช่องลายมือชื่อเว้นว่างสำหรับลงนาม</div>`:'';
-        return `<div class="mcr-mobile-page${last?' last':''}"><div class="mcr-mobile-page-inner"><div class="mcr">${first?headHtml:''}<table><colgroup><col style="width:4%"><col style="width:17%"><col style="width:24%"><col style="width:13%"><col style="width:7%"><col style="width:10%"><col style="width:15%"><col style="width:10%"></colgroup>${first?tableHead:''}<tbody>${body}</tbody></table>${tail}</div></div></div>`;
+        return `<div class="mcr-mobile-page${last?' last':''}"><div class="mcr-mobile-page-inner"><div class="mcr">${first?headHtml:''}<table><colgroup><col style="width:4%"><col style="width:17%"><col style="width:22%"><col style="width:18%"><col style="width:7%"><col style="width:10%"><col style="width:7%"><col style="width:15%"></colgroup>${first?tableHead:''}<tbody>${body}</tbody></table>${tail}</div></div></div>`;
       }).join('');
       pa.innerHTML=`<style>
         @page{size:A4 portrait;margin:0;} html,body{margin:0 !important;padding:0 !important;background:#fff !important;}
