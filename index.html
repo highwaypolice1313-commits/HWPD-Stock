@@ -3803,7 +3803,9 @@ body:has(#modalRoot .overlay){
   text-align:center;
 }
 
-/* แถว ยศ + ลายเซ็น */
+/* แถว ยศ + ลายเซ็น
+   ยศอยู่ฝั่งซ้ายของกลุ่มลายเซ็น โดย "ตัวอักษรสุดท้ายของยศ"
+   จัดให้ตรงกับจุดเริ่มต้นของวงเล็บเปิดชื่อ ( ของบรรทัดถัดไป */
 .pf-sign-rank{
   display:grid;
   grid-template-columns: 1fr 1fr;
@@ -3812,10 +3814,19 @@ body:has(#modalRoot .overlay){
   padding:0 !important;
 }
 
-/* ยศอยู่ฝั่งซ้าย */
+/* ยศ: ชิดขวาของคอลัมน์ซ้าย
+   จึงไม่ขยับลายเซ็น และตัวอักษรสุดท้ายจะตรงกับ ( ของชื่อ */
 .pf-sign-rank .pf-rank{
-  text-align:center;
+  grid-column:1;
+  justify-self:end;
+  text-align:right;
   white-space:nowrap;
+  margin:0;
+}
+
+/* ตำแหน่ง/ชื่อ/วันที่ ห้ามตัดขึ้นบรรทัดใหม่ */
+.pf-sign > div:not(.pf-sign-rank){
+  white-space:nowrap !important;
 }
 
 /* ลายเซ็นอยู่ฝั่งขวา */
