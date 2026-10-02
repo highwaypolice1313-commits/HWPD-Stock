@@ -3794,8 +3794,56 @@ body:has(#modalRoot .overlay){
 .sig-saved img{max-width:100%;max-height:180px;}
 .photo-upload-row .preview-box.sig-box{width:120px;border-radius:12px;background:#fff;}
 .photo-upload-row .preview-box.sig-box img{object-fit:contain;}
-.pf-sign-rank{position:relative;}
-.pf-doc .pf-sigimg{position:absolute;left:77%;bottom:-2mm;height:12mm;width:auto;max-width:4.4cm;transform:translateX(-50%);pointer-events:none;}
+
+/* ===== ลายเซ็นเอกสารใบเบิก ===== */
+
+.pf-sign{
+  width:10cm;
+  margin:16pt 0 0 4.1cm;
+  text-align:center;
+}
+
+/* แถว ยศ + ลายเซ็น */
+.pf-sign-rank{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  align-items:center;
+  min-height:14mm;
+  padding:0 !important;
+}
+
+/* ยศอยู่ฝั่งซ้าย */
+.pf-sign-rank .pf-rank{
+  text-align:center;
+  white-space:nowrap;
+}
+
+/* ลายเซ็นอยู่ฝั่งขวา */
+.pf-doc .pf-sigimg{
+  position:static;
+  display:block;
+  justify-self:center;
+  height:12mm;
+  width:auto;
+  max-width:4.4cm;
+  object-fit:contain;
+  transform:none;
+  pointer-events:none;
+}
+
+/* ชื่อ / ตำแหน่ง / วันที่
+   ให้อยู่ใต้ "ลายเซ็น" ฝั่งขวา */
+.pf-sign > div:not(.pf-sign-rank){
+  width:50%;
+  margin-left:50%;
+  text-align:center;
+  box-sizing:border-box;
+}
+
+.pf-sign > div{
+  line-height:19pt;
+  min-height:19pt;
+}   
    
 </style>
 </head>
@@ -7773,27 +7821,27 @@ function buildMemoBodyHtml(m) {
     <p class="pf-body">ด้วยข้าฯ <span id="ed_reqfull">${escapeHtml(((req.rank||'') + ' ' + (req.name||'')).trim())}</span> <span id="ed_reqposition">${escapeHtml(req.position||'')}</span> มีความประสงค์ขอเบิก<span id="ed_items">${itemsText}</span> เพื่อใช้ในการปฏิบัติหน้าที่ราชการ</p>
     <p class="pf-body">จึงเรียนมาเพื่อโปรดพิจารณา</p>
     <div class="pf-sign">
-      <div class="pf-sign-rank" id="ed_reqrank">${escapeHtml(req.rank) || '&nbsp;'}${sigImg(req.sig)}</div>
+      <div class="pf-sign-rank" id="ed_reqrank"><span class="pf-rank">${escapeHtml(req.rank) || '&nbsp;'}</span>${sigImg(req.sig)}</div>
       <div>( <span id="ed_reqname">${escapeHtml(req.name) || '.....................................'}</span> )</div>
       <div id="ed_reqposition2">${escapeHtml(req.position) || '&nbsp;'}</div>
       <div id="ed_reqdate">${escapeHtml(req.date) || '&nbsp;'}</div>
     </div>
     <p class="pf-note">- อนุมัติให้เบิก-จ่ายได้</p>
     <div class="pf-sign">
-      <div class="pf-sign-rank" id="ed_apvrank">${escapeHtml(apv.rank) || '&nbsp;'}${sigImg(apv.sig)}</div>
+      <div class="pf-sign-rank" id="ed_apvrank"><span class="pf-rank">${escapeHtml(apv.rank) || '&nbsp;'}</span>${sigImg(apv.sig)}</div>
       <div>( <span id="ed_apvname">${escapeHtml(apv.name) || '.....................................'}</span> )</div>
       <div id="ed_apvposition">${escapeHtml(toThaiNumber(apv.position)) || '&nbsp;'}</div>
       <div id="ed_apvdate">${escapeHtml(apv.date) || '&nbsp;'}</div>
     </div>
     <p class="pf-body pf-receipt">- ได้รับ<span id="ed_items2">${itemsText}</span> เพื่อใช้ในการปฏิบัติหน้าที่ราชการต่อไป</p>
     <div class="pf-sign">
-      <div class="pf-sign-rank" id="ed_reqrank2">${escapeHtml(req.rank) || '&nbsp;'}</div>
+      <div class="pf-sign-rank" id="ed_reqrank2"><span class="pf-rank">${escapeHtml(req.rank) || '&nbsp;'}</span></div>
       <div>( <span id="ed_reqname2">${escapeHtml(req.name) || '.....................................'}</span> )</div>
       <div id="ed_reqposition3">${escapeHtml(toThaiNumber(req.position)) || '&nbsp;'}</div>
       <div id="ed_reqdate2">${escapeHtml(req.date) || '&nbsp;'}</div>
     </div>
     <div class="pf-sign">
-      <div class="pf-sign-rank" id="ed_issrank">${escapeHtml(iss.rank) || '&nbsp;'}</div>
+      <div class="pf-sign-rank" id="ed_issrank"><span class="pf-rank">${escapeHtml(iss.rank) || '&nbsp;'}</span></div>
       <div>( <span id="ed_issname">${escapeHtml(iss.name) || '.....................................'}</span> )</div>
       <div id="ed_issposition">${escapeHtml(toThaiNumber(iss.position)) || '&nbsp;'}</div>
       <div id="ed_issdate">${escapeHtml(iss.date) || '&nbsp;'}</div>
