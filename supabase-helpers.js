@@ -205,12 +205,12 @@ async function logActivitySb(actor, action, detail) {
 }
 
 // ==================== GET-side actions ====================
-const SETTING_KEYS = ['orgName', 'orgPhone', 'docNoPrefix', 'renewalAlertDays', 'garudaLogo','auditCommittee', 'auditPeriodStart', 'auditPeriodEnd', 'categoryUnits', 'assetCategories'];
+const SETTING_KEYS = ['orgName', 'orgPhone', 'docNoPrefix', 'renewalAlertDays', 'garudaLogo','auditCommittee', 'auditPeriodStart', 'auditPeriodEnd', 'categoryUnits', 'assetCategories', 'memoAddressee'];
 
 async function sGetSystemSettings() {
   const { data, error } = await sb.from('system_settings').select('*');
   if (error) throw new Error(error.message);
-  const s = { orgName: '', orgPhone: '', docNoPrefix: '', renewalAlertDays: 30, garudaLogo: '' , auditCommittee: '', auditPeriodStart: '', auditPeriodEnd: '', categoryUnits: '', assetCategories: '' };
+ const s = { orgName: '', orgPhone: '', docNoPrefix: '', renewalAlertDays: 30, garudaLogo: '' , auditCommittee: '', auditPeriodStart: '', auditPeriodEnd: '', categoryUnits: '', assetCategories: '', memoAddressee: '' };
   (data || []).forEach(row => { if (SETTING_KEYS.indexOf(row.key) !== -1) s[row.key] = row.value; });
   const days = Number(s.renewalAlertDays);
   s.renewalAlertDays = (s.renewalAlertDays !== '' && !isNaN(days) && days >= 0) ? days : 30;
@@ -596,6 +596,7 @@ async function sUpdateSystemSettings(p, actor) {
   const updates = {};
   if (p.orgName !== undefined) updates.orgName = String(p.orgName || '').trim();
   if (p.orgPhone !== undefined) updates.orgPhone = String(p.orgPhone || '').trim();
+  if (p.memoAddressee !== undefined) updates.memoAddressee = String(p.memoAddressee || '').trim();
   if (p.docNoPrefix !== undefined) updates.docNoPrefix = String(p.docNoPrefix || '').trim();
   if (p.renewalAlertDays !== undefined && String(p.renewalAlertDays).trim() !== '') {
     const d = Number(p.renewalAlertDays);
