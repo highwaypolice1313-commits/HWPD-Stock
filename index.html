@@ -3803,33 +3803,25 @@ body:has(#modalRoot .overlay){
   text-align:center;
 }
 
-/* แถว ยศ + ลายเซ็น
-   ยศต้องอยู่ในคอลัมน์เดียวกับลายเซ็น/ชื่อ
-   โดยวางชิดด้านซ้ายของคอลัมน์นั้น */
+/* แถว ยศ + ลายเซ็น */
 .pf-sign-rank{
   display:grid;
-  grid-template-columns:1fr 1fr;
+  grid-template-columns: 1fr 1fr;
   align-items:center;
   min-height:14mm;
   padding:0 !important;
 }
 
-/* ยศอยู่ต้นคอลัมน์ขวา
-   (ตำแหน่งเดียวกับจุดเริ่มของกลุ่มลายเซ็น/ชื่อ) */
+/* ยศอยู่ฝั่งซ้าย */
 .pf-sign-rank .pf-rank{
-  grid-column:2;
-  justify-self:start;
-  text-align:left;
+  text-align:center;
   white-space:nowrap;
-  position:relative;
-  left:-0.5cm;
 }
 
-/* ลายเซ็นอยู่กลางคอลัมน์ขวา */
+/* ลายเซ็นอยู่ฝั่งขวา */
 .pf-doc .pf-sigimg{
   position:static;
   display:block;
-  grid-column:2;
   justify-self:center;
   height:12mm;
   width:auto;
@@ -3840,7 +3832,7 @@ body:has(#modalRoot .overlay){
 }
 
 /* ชื่อ / ตำแหน่ง / วันที่
-   ให้อยู่ใต้ลายเซ็นฝั่งขวา */
+   ให้อยู่ใต้ "ลายเซ็น" ฝั่งขวา */
 .pf-sign > div:not(.pf-sign-rank){
   width:50%;
   margin-left:50%;
@@ -3851,7 +3843,7 @@ body:has(#modalRoot .overlay){
 .pf-sign > div{
   line-height:19pt;
   min-height:19pt;
-}
+}   
    
 </style>
 </head>
@@ -5020,12 +5012,12 @@ layoutNav();
   if (activePage) activePage.style.display = 'block';
   window.scrollTo({ top: 0, behavior: 'smooth' });
   const fab = document.getElementById('fabBtn');
-  fab.style.display = (['assets','borrow','maint','memos'].includes(name) && (isAdmin() || name === 'borrow' || name === 'memos')) ? 'flex' : 'none';
+  fab.style.display = (['assets','borrow','maint','memos'].includes(name) && (isAdmin() || name === 'borrow')) ? 'flex' : 'none';
   fab.onclick = () => {
     if (name === 'assets' && isAdmin()) openAssetForm();
     if (name === 'borrow') openBorrowForm();
     if (name === 'maint' && isAdmin()) openMaintForm();
-    if (name === 'memos') openPrintMemoForm({});
+    if (name === 'memos' && isAdmin()) openPrintMemoForm({});
   };
   if (name === 'dashboard') renderDashboard();
   if (name === 'assets') renderAssets();
@@ -6479,12 +6471,30 @@ function openBorrowDetail(id) {
       }).catch(err => toast(err.message || 'เตรียมรูปไม่สำเร็จ'));
     };
   }
-  document.getElementById('btnPrintForm').onclick = () => openPrintMemoForm({
-    borrow: b,
-    componentNames: compNames,
-    // ผู้ดูอย่างเดียวเปิดเอกสารที่อนุมัติแล้วได้เฉพาะดู/พิมพ์ ห้ามแก้ไข
-    readOnly: !isAdmin() && !['รออนุมัติ', 'ถูกปฏิเสธ'].includes(status)
-  });
+  document.getElementById('btnPrintForm').onclick = async () => {
+    if (isAdmin()) {
+      openPrintMemoForm({ borrow: b, componentNames: compNames });
+      return;
+    }
+    // ผู้ดูอย่างเดียว: ถ้ารายการอนุมัติแล้ว ให้เปิดเอกสารเดิมเพื่อดู/พิมพ์เท่านั้น
+    if (!['รออนุมัติ', 'ถูกปฏิเสธ'].includes(status)) {
+      try {
+        const memos = (state.memos && state.memos.length)
+          ? state.memos
+          : await apiGet('getMemos', { token: state.sessionToken });
+        const memo = (memos || []).find(x => x['รหัสรายการยืม'] === b['รหัสรายการ']);
+        if (!memo) { toast('ยังไม่มีเอกสารบันทึกของรายการนี้'); return; }
+        openMemoEditor({
+          id: memo['รหัสใบเบิก'],
+          docHtml: memo['เนื้อหาเอกสาร(HTML)'],
+          borrowId: memo['รหัสรายการยืม'],
+          readOnly: true
+        });
+      } catch (e) { toast(e.message || 'เปิดเอกสารไม่สำเร็จ'); }
+      return;
+    }
+    toast('รายการนี้ยังไม่ได้รับการอนุมัติ');
+  };
   const editBtn = document.getElementById('btnEditBorrow');
   if (editBtn) editBtn.onclick = () => { closeSheet(); openBorrowEditForm(b); };
   const renewBtn = document.getElementById('btnRenewBorrow');
@@ -7948,7 +7958,7 @@ function drawMemos() {
       เอกสารใบเบิก-ยืม <small>${list.length} ฉบับ</small>
       <span class="section-actions">${viewToggleHtml('memos', state.memosView)}</span>
     </div>
-    <div class="hint" style="margin-top:0;">แตะที่เอกสารเพื่อเปิดดู/แก้ไขได้โดยตรงบนหน้าเอกสารจริง แล้วค่อยบันทึกหรือพิมพ์</div>
+    <div class="hint" style="margin-top:0;">${isAdmin() ? 'แตะที่เอกสารเพื่อเปิดดู/แก้ไข แล้วบันทึกหรือพิมพ์ได้' : 'แตะที่เอกสารเพื่อเปิดดูหรือพิมพ์ได้เท่านั้น — ผู้ดูอย่างเดียวแก้ไขหรือลบเอกสารไม่ได้'}</div>
     <div class="${isGrid ? 'memo-grid' : ''}" id="memoGrid">${list.length ? list.map(isGrid ? memoCard : memoRow).join('') : emptyState('ยังไม่มีเอกสารที่บันทึกไว้ — กดปุ่ม + เพื่อสร้างเอกสารใหม่')}</div>
   `;
   if (isGrid) {
@@ -7956,12 +7966,28 @@ function drawMemos() {
       const m = list.find(x => x['รหัสใบเบิก'] === card.dataset.id);
       const thumb = card.querySelector('[data-thumb]');
       if (m && thumb) mountPaper(thumb, wrapPfDoc(m['เนื้อหาเอกสาร(HTML)'], false));
-      card.onclick = () => { if (m) openMemoEditor({ id: m['รหัสใบเบิก'], docHtml: m['เนื้อหาเอกสาร(HTML)'], borrowId: m['รหัสรายการยืม'] }); };
+      card.onclick = () => {
+        if (!m) return;
+        openMemoEditor({
+          id: m['รหัสใบเบิก'],
+          docHtml: m['เนื้อหาเอกสาร(HTML)'],
+          borrowId: m['รหัสรายการยืม'],
+          readOnly: !isAdmin()
+        });
+      };
     });
   } else {
     document.querySelectorAll('.memo-row').forEach(row => {
       const m = list.find(x => x['รหัสใบเบิก'] === row.dataset.id);
-      row.onclick = () => { if (m) openMemoEditor({ id: m['รหัสใบเบิก'], docHtml: m['เนื้อหาเอกสาร(HTML)'], borrowId: m['รหัสรายการยืม'] }); };
+      row.onclick = () => {
+        if (!m) return;
+        openMemoEditor({
+          id: m['รหัสใบเบิก'],
+          docHtml: m['เนื้อหาเอกสาร(HTML)'],
+          borrowId: m['รหัสรายการยืม'],
+          readOnly: !isAdmin()
+        });
+      };
     });
   }
   wireViewToggle(drawMemos, '#view-memos', 'memosView');
@@ -7990,8 +8016,6 @@ function memoCard(m) {
 /* ---------- เปิดหน้าเอกสารเพื่อแก้ไขจริง / พิมพ์ / บันทึก ---------- */
 function openMemoEditor(opts) {
   const isNew = !opts.id;
-  // readOnly=true ใช้สำหรับผู้ดูอย่างเดียว โดยเฉพาะเอกสารของรายการที่อนุมัติแล้ว
-  // ผู้ดูสามารถเปิดดู/ซูม/พิมพ์ได้ แต่แก้ไขหรือบันทึกเอกสารไม่ได้
   const readOnly = !!opts.readOnly && !isAdmin();
     showRawSheet(`<div class="overlay" id="overlayEl">
     <div class="sheet memo-doc-sheet">
@@ -8001,7 +8025,7 @@ function openMemoEditor(opts) {
         <span>เอกสารบันทึกข้อความ</span><span class="doc-dirty" id="docDirty">ยังไม่บันทึก</span>
       </div>
       <div class="doc-toolbar">
-        <div class="hint">แตะข้อความในเอกสารเพื่อแก้ไขได้โดยตรง เหมือนพิมพ์ทับเอกสารจริง</div>
+        <div class="hint">${readOnly ? 'โหมดดูอย่างเดียว — เอกสารนี้ไม่สามารถแก้ไขหรือลบได้' : 'แตะข้อความในเอกสารเพื่อแก้ไขได้โดยตรง เหมือนพิมพ์ทับเอกสารจริง'}</div>
         <div class="zoom-ctl">
           <button class="zbtn" id="zOut" type="button">−</button>
           <span class="zoom-lbl" id="zLbl">100%</span>
@@ -8012,7 +8036,7 @@ function openMemoEditor(opts) {
       <div class="paper-desk" id="memoPaperDesk"></div>
       <div class="btn-row">
         <button class="btn btn-ghost" id="btnMemoClose">ปิด</button>
-        ${!readOnly && !isNew && isAdmin() ? `<button class="btn btn-danger" id="btnMemoDelete">ลบเอกสาร</button>` : ''}
+        ${!isNew && isAdmin() && !readOnly ? `<button class="btn btn-danger" id="btnMemoDelete">ลบเอกสาร</button>` : ''}
         <button class="btn btn-ghost" id="btnMemoPrint">พิมพ์</button>
         ${!readOnly ? `<button class="btn btn-primary" id="btnMemoSave">บันทึกเอกสาร</button>` : ''}
       </div>
@@ -8089,7 +8113,7 @@ desk.addEventListener('focusout', () => {
       borrowId: opts.borrowId || '',
       status: 'บันทึกแล้ว'
     };
-    const btn = document.getElementById('btnMemoSave'); if (btn.disabled) return; setButtonBusy(btn, true, 'กำลังบันทึก...'); setLoading(true, 'กำลังบันทึกเอกสาร...');
+    const btn = document.getElementById('btnMemoSave'); if (!btn || btn.disabled) return; setButtonBusy(btn, true, 'กำลังบันทึก...'); setLoading(true, 'กำลังบันทึกเอกสาร...');
     try {
       const res = await apiPost(isNew ? 'addMemo' : 'updateMemo', payload);
       if (isNew && res && res.id) opts.id = res.id;
@@ -8503,7 +8527,7 @@ function openPrintMemoForm(opts) {
     const docHtml = buildMemoBodyHtml(memo);
     const borrowId = borrow ? borrow['รหัสรายการ'] : '';
     closeSheet();
-    openMemoEditor({ id: null, docHtml, borrowId, readOnly: !!opts.readOnly });
+    openMemoEditor({ id: null, docHtml, borrowId });
   };
 }
 
@@ -9719,38 +9743,16 @@ function mcCardHtml({ u, sum, rec }) {
   </div>`;
 }
 
-const MC_DETAIL_MARKER = '[[MCDETAILS]]';
-function mcPackDetails(note, details){
-  const clean = String(note || '').trim();
-  if (!Array.isArray(details) || !details.length) return clean;
-  try { return clean + (clean ? '\n' : '') + MC_DETAIL_MARKER + encodeURIComponent(JSON.stringify(details)); }
-  catch(e){ return clean; }
-}
-function mcParseDetails(note){
-  const s = String(note || '');
-  const pos = s.indexOf(MC_DETAIL_MARKER);
-  if (pos < 0) return null;
-  try { return JSON.parse(decodeURIComponent(s.slice(pos + MC_DETAIL_MARKER.length).trim())); }
-  catch(e){ return null; }
-}
-function mcCleanNote(note){
-  const s = String(note || '');
-  const pos = s.indexOf(MC_DETAIL_MARKER);
-  return (pos < 0 ? s : s.slice(0, pos)).trim();
-}
-
-async function mcSave(u, result, note, details = null) {
+async function mcSave(u, result, note) {
   const sum = mcSummary(u);
-  const storedNote = mcPackDetails(note, details);
   const payload = {
     year: state.mcYear, month: state.mcMonth, officerId: mcKey(u), officerName: officerFullName(u),
-    result, note: storedNote, holdingsSnapshot: (sum.text ? sum.text + ' | ' : '') + sum.names
+    result, note, holdingsSnapshot: (sum.text ? sum.text + ' | ' : '') + sum.names
   };
   try {
     await apiPost('saveMonthlyCheck', payload);
     const rec = {
       'รหัสจนท.': payload.officerId, 'ชื่อผู้ถูกตรวจ': payload.officerName, 'ผล': result, 'หมายเหตุ': note,
-      'รายละเอียดตรวจ': Array.isArray(details) ? details : null,
       'ผู้ตรวจ': state.user.name, 'วันที่ตรวจ': new Date()
     };
     const i = state.mcRecords.findIndex(r => r['รหัสจนท.'] === payload.officerId);
@@ -9780,7 +9782,7 @@ function mcProblemSheet(u) {
       ${['ของไม่ครบ', 'สภาพชำรุด', 'ส่วนควบหาย', 'ไม่พบตัวบุคคล', 'ข้อมูลในระบบไม่ตรง'].map(t => `<div class="chip" data-q="${t}">${t}</div>`).join('')}
     </div>
     <div class="field" style="margin-top:10px;"><label>รายละเอียดปัญหา</label>
-      <textarea class="input" id="mcNote" rows="3" placeholder="ระบุสิ่งที่พบ">${escapeHtml(rec && rec['ผล'] === 'มีปัญหา' ? mcCleanNote(rec['หมายเหตุ']) : '')}</textarea>
+      <textarea class="input" id="mcNote" rows="3" placeholder="ระบุสิ่งที่พบ">${escapeHtml(rec && rec['ผล'] === 'มีปัญหา' ? rec['หมายเหตุ'] : '')}</textarea>
     </div>
     <div class="btn-row"><button class="btn btn-ghost" id="mcCancel">ยกเลิก</button><button class="btn btn-danger" id="mcSaveBad">บันทึก "มีปัญหา"</button></div>
   `);
@@ -9833,7 +9835,7 @@ function mcChecklistSheet(u) {
         </div>`).join('')}
     </div>
     <div class="field" id="ckNoteWrap" style="margin-top:10px; display:none;"><label>รายละเอียดเพิ่มเติม (ถ้ามี)</label>
-      <textarea class="input" id="ckNote" rows="2" placeholder="เช่น สภาพชำรุด, หาย">${escapeHtml(rec && rec['ผล'] === 'มีปัญหา' ? mcCleanNote(rec['หมายเหตุ']) : '')}</textarea>
+      <textarea class="input" id="ckNote" rows="2" placeholder="เช่น สภาพชำรุด, หาย">${escapeHtml(rec && rec['ผล'] === 'มีปัญหา' ? rec['หมายเหตุ'] : '')}</textarea>
     </div>
     <div class="btn-row"><button class="btn btn-ghost" id="ckCancel">ยกเลิก</button><button class="btn btn-primary" id="ckSave" disabled>บันทึก</button></div>
   `);
@@ -10748,9 +10750,8 @@ function compareMonthlyOfficers(a, b) {
         )).join('')}</div>`
       : `<span class="mc-serial-pill none">ไม่มีพัสดุในความครอบครอง</span>`;
 
-    const cleanRecNote = rec ? mcCleanNote(rec['หมายเหตุ']) : '';
-    const note = r === 'มีปัญหา' && cleanRecNote
-      ? `<div class="mc-note">${escapeHtml(cleanRecNote)}</div>` : '';
+    const note = r === 'มีปัญหา' && rec['หมายเหตุ']
+      ? `<div class="mc-note">${escapeHtml(rec['หมายเหตุ'])}</div>` : '';
     const meta = rec ? `<div class="mc-meta">
       <span>ตรวจโดย ${escapeHtml(rec['ผู้ตรวจ'] || '-')} · ${systemDateTime(rec['วันที่ตรวจ'])}</span>
       <span class="link-btn mc-clear">ล้างผล</span>
@@ -10793,10 +10794,7 @@ function compareMonthlyOfficers(a, b) {
     const items = [];
     mcHoldingsOf(u).forEach(b => {
       const asset = mcAssetByBorrow(b);
-      const assetKey = b['รหัสครุภัณฑ์'] || b['ชื่อครุภัณฑ์'] || '';
       items.push({
-        type: 'asset',
-        key: assetKey,
         label: b['ชื่อครุภัณฑ์'] || '-',
         serial: mcSerialTextFromBorrow(b),
         sub: asset && asset['ยี่ห้อ/รุ่น'] ? asset['ยี่ห้อ/รุ่น'] : ''
@@ -10804,11 +10802,8 @@ function compareMonthlyOfficers(a, b) {
       parseCompRefs(b['รหัสส่วนควบที่ยืม']).forEach(r => {
         const c = state.components.find(x => x['รหัสส่วนควบ'] === r.id);
         items.push({
-          type: 'component',
-          key: r.id,
-          parentKey: assetKey,
           label: 'ส่วนควบ: ' + (c ? compDisplayName(c) : r.id),
-          serial: c && c['หมายเลข/ซีเรียล'] ? String(c['หมายเลข/ซีเรียล']) : '',
+          serial: '',
           sub: r.n > 1 ? 'จำนวน × ' + r.n : ''
         });
       });
@@ -10817,18 +10812,14 @@ function compareMonthlyOfficers(a, b) {
     if (!items.length) { mcProblemSheet(u); return; }
 
     const rec = mcRecordFor(u);
-    const savedDetails = rec && (Array.isArray(rec['รายละเอียดตรวจ']) ? rec['รายละเอียดตรวจ'] : mcParseDetails(rec['หมายเหตุ']));
-    const st = items.map(it => {
-      const old = Array.isArray(savedDetails) ? savedDetails.find(d => d.key === it.key && d.type === it.type) : null;
-      return old && old.result === 'ครบ' ? 1 : (old && old.result === 'ไม่ครบ' ? 2 : 0);
-    });
+    const st = items.map(() => 0);
 
     showSheet(`
       <div class="sheet-title">ตรวจพัสดุ · ${escapeHtml(officerFullName(u))}</div>
       <div class="mc-checklist-head">
         <div>
           <div style="font-weight:600;">รายการที่ต้องตรวจ</div>
-          <div class="hint" style="margin:2px 0 0;">ตรวจแยกทุกครุภัณฑ์และส่วนควบ เพื่อให้รายงานแสดงผลเป็นรายรายการ</div>
+          <div class="hint" style="margin:2px 0 0;">ใช้หมายเลขเครื่อง / Serial เป็นตัวระบุหลัก</div>
         </div>
         <div class="mc-checklist-count" id="ckCount">0/${items.length}</div>
       </div>
@@ -10846,7 +10837,7 @@ function compareMonthlyOfficers(a, b) {
       </div>
       <div class="field" id="ckNoteWrap" style="margin-top:10px;display:none;">
         <label>รายละเอียดเพิ่มเติม</label>
-        <textarea class="input" id="ckNote" rows="2" placeholder="เช่น สภาพชำรุด, หมายเลขเครื่องไม่ตรง, สูญหาย">${escapeHtml(rec && rec['ผล']==='มีปัญหา' ? mcCleanNote(rec['หมายเหตุ']) : '')}</textarea>
+        <textarea class="input" id="ckNote" rows="2" placeholder="เช่น สภาพชำรุด, หมายเลขเครื่องไม่ตรง, สูญหาย">${escapeHtml(rec && rec['ผล']==='มีปัญหา' ? rec['หมายเหตุ'] : '')}</textarea>
       </div>
       <div class="btn-row">
         <button class="btn btn-ghost" id="ckCancel">ยกเลิก</button>
@@ -10881,7 +10872,6 @@ function compareMonthlyOfficers(a, b) {
       };
       ok.onclick = () => set(1);
       bad.onclick = () => set(2);
-      if (st[i]) set(st[i]);
     });
     refresh();
 
@@ -10889,18 +10879,16 @@ function compareMonthlyOfficers(a, b) {
     document.getElementById('ckSave').onclick = async () => {
       const btn = document.getElementById('ckSave');
       if (!btn || btn.disabled) return;
-      const details = items.map((it,i) => ({
-        type: it.type, key: it.key, parentKey: it.parentKey || '', label: it.label,
-        result: st[i] === 1 ? 'ครบ' : 'ไม่ครบ'
-      }));
       const badItems = items.filter((_,i)=>st[i]===2);
       setButtonBusy(btn, true);
       if (!badItems.length) {
-        await mcSave(u, 'ครบ', '', details);
+        await mcSave(u, 'ครบ', '');
       } else {
         const extra = (document.getElementById('ckNote').value || '').trim();
-        const badLabels = badItems.map(it => it.label);
-        await mcSave(u, 'มีปัญหา', 'ไม่ครบ/ผิดปกติ: ' + badLabels.join(', ') + (extra ? ' | ' + extra : ''), details);
+        const serialProblems = badItems.map(it => it.serial ? `S/N ${it.serial}` : it.label);
+        await mcSave(u, 'มีปัญหา',
+          'ไม่ครบ/ผิดปกติ: ' + serialProblems.join(', ') + (extra ? ' | ' + extra : '')
+        );
       }
       closeSheet();
     };
@@ -10911,110 +10899,70 @@ function compareMonthlyOfficers(a, b) {
     const monthName = TH_MONTHS_FULL[(state.mcMonth||1)-1] || '';
     const thaiYear = (Number(state.mcYear)||new Date().getFullYear()) + 543;
 
-    // รายงานแสดงเป็นรายครุภัณฑ์ + รายส่วนควบ เพื่อให้ผลตรวจของแต่ละรายการแยกกันชัดเจน
+    // สร้างรายการครุภัณฑ์สำหรับรายงาน: ชื่อ + หมายเลขครุภัณฑ์ + จำนวน
+    // แยกตามผู้ครอบครอง เพื่อให้อ่านง่ายและตรวจสอบย้อนกลับได้
     const source = (state.users || [])
       .map(u => ({u, rec:mcRecordFor(u), hold:mcHoldingsOf(u)}))
       .filter(x => x.hold.length > 0 || x.rec)
       .sort((a,b) => compareMonthlyOfficers(a,b));
 
-    const getSavedDetails = rec => {
-      if (!rec) return null;
-      if (Array.isArray(rec['รายละเอียดตรวจ'])) return rec['รายละเอียดตรวจ'];
-      return mcParseDetails(rec['หมายเหตุ']);
-    };
-    const getDetailResult = (rec, type, key, fallback) => {
-      const details = getSavedDetails(rec);
-      const found = Array.isArray(details) ? details.find(d => d.type === type && d.key === key) : null;
-      if (found && (found.result === 'ครบ' || found.result === 'ไม่ครบ')) return found.result;
-      return fallback || 'ยังไม่ตรวจ';
-    };
-
     const detailRows = [];
     source.forEach(x => {
-      const rec = x.rec;
-      const overall = rec ? (rec['ผล'] || 'ยังไม่ตรวจ') : 'ยังไม่ตรวจ';
-      const cleanNote = rec ? mcCleanNote(rec['หมายเหตุ']) : '';
-      const details = getSavedDetails(rec);
+      const grouped = {};
+      x.hold.forEach(b => {
+        const a = mcAssetByBorrow(b) || {};
+        const name = String(b['ชื่อครุภัณฑ์'] || a['ชื่อครุภัณฑ์'] || '-').trim() || '-';
+        const assetNo = String(a['หมายเลขเครื่อง'] || '').trim() || (String(a['ทะเบียนรถ'] || '').trim() ? 'ทะเบียน ' + String(a['ทะเบียนรถ']).trim() : '-');
+        const key = name + '||' + assetNo;
+        if (!grouped[key]) grouped[key] = {name, assetNo, qty:0};
+        grouped[key].qty += 1;
+      });
 
-      if (!x.hold.length) {
+      const items = Object.values(grouped);
+      const result = x.rec ? x.rec['ผล'] : 'ยังไม่ตรวจ';
+      const note = x.rec && x.rec['หมายเหตุ'] ? x.rec['หมายเหตุ'] : '-';
+      const inspector = x.rec && x.rec['ผู้ตรวจ'] ? x.rec['ผู้ตรวจ'] : '-';
+      const checkedAt = x.rec && x.rec['วันที่ตรวจ'] ? thaiDateTime(x.rec['วันที่ตรวจ']) : '-';
+
+      if (!items.length) {
         detailRows.push({
           officer: officerFullName(x.u), position: x.u['ตำแหน่ง'] || '-',
-          name:'-', assetNo:'-', qty:0, result:overall, note:cleanNote || '', component:false
+          name:'-', assetNo:'-', qty:0, result, note, inspector, checkedAt
         });
-        return;
+      } else {
+        items.forEach((it, idx) => detailRows.push({
+          officer: idx === 0 ? officerFullName(x.u) : '',
+          position: idx === 0 ? (x.u['ตำแหน่ง'] || '-') : '',
+          name: it.name, assetNo: it.assetNo, qty: it.qty,
+          result: idx === 0 ? result : '',
+          note: idx === 0 ? note : '',
+          inspector: idx === 0 ? inspector : '',
+          checkedAt: idx === 0 ? checkedAt : ''
+        }));
       }
-
-      x.hold.forEach((b, holdIdx) => {
-        const a = mcAssetByBorrow(b) || {};
-        const assetKey = b['รหัสครุภัณฑ์'] || b['ชื่อครุภัณฑ์'] || '';
-        const name = String(b['ชื่อครุภัณฑ์'] || a['ชื่อครุภัณฑ์'] || '-').trim() || '-';
-        // "หมายเลขครุภัณฑ์" ของรายงานใช้ข้อมูลจาก "หมายเลขเครื่อง" เท่านั้น
-        const assetNo = String(a['หมายเลขเครื่อง'] || '').trim() || '-';
-        const assetResult = getDetailResult(rec, 'asset', assetKey, overall);
-        detailRows.push({
-          officer: holdIdx === 0 ? officerFullName(x.u) : '',
-          position: holdIdx === 0 ? (x.u['ตำแหน่ง'] || '-') : '',
-          name, assetNo, qty:1, result:assetResult, note:holdIdx === 0 ? cleanNote : '', component:false
-        });
-
-        // แสดงส่วนควบของครุภัณฑ์นั้นเป็นรายการย่อย และใช้ผลตรวจที่บันทึกแยกแต่ละส่วนควบ
-        parseCompRefs(b['รหัสส่วนควบที่ยืม']).forEach(r => {
-          const c = state.components.find(x => x['รหัสส่วนควบ'] === r.id);
-          const compName = 'ส่วนควบ: ' + (c ? compDisplayName(c) : r.id);
-          const compResult = getDetailResult(rec, 'component', r.id, 'ยังไม่ตรวจ');
-          let compNote = '';
-          if (compResult === 'ไม่ครบ') compNote = 'ไม่ครบ/ผิดปกติ';
-          detailRows.push({
-            officer:'', position:'', name:compName, assetNo:'', qty:r.n || 1,
-            result:compResult, note:compNote, component:true
-          });
-        });
-      });
     });
 
     const done = source.filter(x=>x.rec).length;
     const bad = source.filter(x=>x.rec && x.rec['ผล']==='มีปัญหา').length;
+    const pending = source.length - done;
     const totalQty = detailRows.reduce((sum,r)=>sum + Number(r.qty||0), 0);
 
     const resultBadge = (result) => {
-      if (!result || result === 'ยังไม่ตรวจ') return `<span class="result pending">ยังไม่ตรวจ</span>`;
-      const cls = result === 'ครบ' ? 'ok' : 'bad';
-      return `<span class="result ${cls}">${result === 'ครบ' ? '✓ ครบ' : '✗ ไม่ครบ'}</span>`;
+      if (!result) return '';
+      const cls = result === 'ครบ' ? 'ok' : (result === 'มีปัญหา' ? 'bad' : 'pending');
+      return `<span class="result ${cls}">${escapeHtml(result)}</span>`;
     };
 
-    const rowHtml = detailRows.map((r,i)=>`<tr class="${r.component ? 'component-row' : ''}">
+    const rows = detailRows.map((r,i)=>`<tr>
       <td class="center">${i+1}</td>
       <td class="officer">${r.officer ? `<strong>${escapeHtml(r.officer)}</strong><br><span>${escapeHtml(r.position)}</span>` : ''}</td>
-      <td class="${r.component ? 'component-name' : ''}">${escapeHtml(r.name)}</td>
+      <td>${escapeHtml(r.name)}</td>
       <td class="asset-no">${escapeHtml(r.assetNo)}</td>
       <td class="center qty">${r.qty ? toThaiNumber(r.qty) : '-'}</td>
       <td class="center">${resultBadge(r.result)}</td>
       <td>${escapeHtml(r.note || '')}</td>
-      <td class="signature-cell"></td>
-    </tr>`);
-
-    const tableHead=`<thead><tr>
-      <th>ลำดับ</th>
-      <th>ผู้ครอบครอง / ตำแหน่ง</th>
-      <th>ชื่อครุภัณฑ์</th>
-      <th>หมายเลขครุภัณฑ์</th>
-      <th>จำนวน</th>
-      <th>ผลตรวจ</th>
-      <th>หมายเหตุ</th>
-      <th>ลายมือชื่อ</th>
-    </tr></thead>`;
-
-    const headHtml=`<div class="head">
-      <div class="title">รายงานผลการตรวจประจำเดือน</div>
-      <div class="org">${escapeHtml(orgName)}</div>
-      <div class="period">ประจำเดือน ${escapeHtml(monthName)} พ.ศ. ${toThaiNumber(thaiYear)}</div>
-    </div>
-    <div class="summary">
-      <div class="summary-box"><b>${toThaiNumber(source.length)}</b><span>ผู้ที่ต้องตรวจ</span></div>
-      <div class="summary-box"><b>${toThaiNumber(done)}</b><span>ตรวจแล้ว</span></div>
-      <div class="summary-box"><b>${toThaiNumber(bad)}</b><span>มีปัญหา</span></div>
-      <div class="summary-box"><b>${toThaiNumber(totalQty)}</b><span>รายการที่แสดง</span></div>
-    </div>`;
+      <td>${r.inspector ? `${escapeHtml(r.inspector)}<br><span>${escapeHtml(r.checkedAt)}</span>` : ''}</td>
+    </tr>`).join('');
 
     const html = `
       <style>
@@ -11030,10 +10978,10 @@ function compareMonthlyOfficers(a, b) {
         .mcr .summary-box b{display:block;font-size:17pt;line-height:1.05;}
         .mcr .summary-box span{font-size:11pt;}
         .mcr table{width:100%;border-collapse:collapse;table-layout:fixed;}
-        .mcr th,.mcr td{border:1px solid #333;padding:2mm 2mm;vertical-align:middle;}
+        .mcr th,.mcr td{border:1px solid #333;padding:2mm 2.2mm;vertical-align:middle;}
         .mcr th{background:#e9edf0;text-align:center;font-weight:700;line-height:1.15;}
         .mcr td.center{text-align:center;}
-        .mcr td.officer{width:17%;}
+        .mcr td.officer{width:18%;}
         .mcr td.officer strong{font-size:12.5pt;}
         .mcr td.officer span,.mcr td span{font-size:10.5pt;color:#444;}
         .mcr .asset-no{font-weight:700;text-align:center;word-break:break-word;}
@@ -11042,35 +10990,55 @@ function compareMonthlyOfficers(a, b) {
         .mcr .result.ok{background:#e8f6ee;color:#126b43;}
         .mcr .result.bad{background:#fdecef;color:#a1263b;}
         .mcr .result.pending{background:#fff4dc;color:#8a5a00;}
-        .mcr .component-row td{background:#fafafa;}
-        .mcr .component-row .component-name{padding-left:5mm;font-size:12pt;}
-        .mcr .signature-cell{height:13mm;}
+        .mcr .total td{font-weight:700;background:#f7f7f7;}
         .mcr .note{margin-top:4mm;font-size:11pt;color:#555;}
         .mcr .signatures{display:grid;grid-template-columns:1fr 1fr;gap:25mm;margin-top:13mm;page-break-inside:avoid;}
         .mcr .sig{text-align:center;font-size:12pt;}
         .mcr .sig .line{margin:0 auto 2mm;width:70%;border-bottom:1px dotted #333;height:9mm;}
+        .mcr .sig .sub{font-size:10.5pt;color:#555;margin-top:1mm;}
         .mcr tr{page-break-inside:avoid;}
       </style>
       <div class="mcr">
-        ${headHtml}
+        <div class="head">
+          <div class="title">รายงานผลการตรวจประจำเดือน</div>
+          <div class="org">${escapeHtml(orgName)}</div>
+          <div class="period">ประจำเดือน ${escapeHtml(monthName)} พ.ศ. ${toThaiNumber(thaiYear)}</div>
+        </div>
+
+        <div class="summary">
+          <div class="summary-box"><b>${toThaiNumber(source.length)}</b><span>ผู้ที่ต้องตรวจ</span></div>
+          <div class="summary-box"><b>${toThaiNumber(done)}</b><span>ตรวจแล้ว</span></div>
+          <div class="summary-box"><b>${toThaiNumber(bad)}</b><span>มีปัญหา</span></div>
+          <div class="summary-box"><b>${toThaiNumber(totalQty)}</b><span>ครุภัณฑ์ที่ถือครอง</span></div>
+        </div>
+
         <table>
           <colgroup>
-            <col style="width:4%">
-            <col style="width:17%">
-            <col style="width:20%">
-            <col style="width:20%">
-            <col style="width:6%">
-            <col style="width:10%">
-            <col style="width:6%">
-            <col style="width:17%">
+            <col style="width:4%"><col style="width:18%"><col style="width:23%"><col style="width:15%">
+            <col style="width:7%"><col style="width:9%"><col style="width:13%"><col style="width:11%">
           </colgroup>
-          ${tableHead}
+          <thead><tr>
+            <th>ลำดับ</th>
+            <th>ผู้ครอบครอง / ตำแหน่ง</th>
+            <th>ชื่อครุภัณฑ์</th>
+            <th>หมายเลขครุภัณฑ์</th>
+            <th>จำนวน</th>
+            <th>ผลตรวจ</th>
+            <th>หมายเหตุ</th>
+            <th>ผู้ตรวจ / วันที่</th>
+          </tr></thead>
           <tbody>
-            ${rowHtml.join('') || '<tr><td colspan="8" class="center">ไม่มีข้อมูลครุภัณฑ์ที่ต้องตรวจ</td></tr>'}
-            ${rowHtml.length ? `<tr><td colspan="4" class="center"><strong>รวม</strong></td><td class="center"><strong>${toThaiNumber(totalQty)}</strong></td><td colspan="3"></td></tr>` : ''}
+            ${rows || '<tr><td colspan="8" class="center">ไม่มีข้อมูลครุภัณฑ์ที่ต้องตรวจ</td></tr>'}
+            ${rows ? `<tr class="total"><td colspan="4" class="center">รวม</td><td class="center">${toThaiNumber(totalQty)}</td><td colspan="3"></td></tr>` : ''}
           </tbody>
         </table>
-        <div class="note">หมายเหตุ: แสดงผลตรวจแยกตามครุภัณฑ์และส่วนควบ โดยหมายเลขครุภัณฑ์ใช้ข้อมูลจาก <strong>หมายเลขเครื่อง</strong> และช่องลายมือชื่อเว้นว่างสำหรับลงนามด้วยตนเอง</div>
+
+        <div class="note">หมายเหตุ: รายงานนี้จัดแสดงตาม <strong>ชื่อครุภัณฑ์ + หมายเลขครุภัณฑ์ + จำนวน</strong> เพื่อให้ง่ายต่อการตรวจสอบรายการของแต่ละผู้ครอบครอง</div>
+
+        <div class="signatures">
+          <div class="sig"><div class="line"></div>ผู้ตรวจประจำเดือน</div>
+          <div class="sig"><div class="line"></div>ผู้รับรอง / หัวหน้าหน่วย</div>
+        </div>
       </div>`;
 
     const pa = document.getElementById('printArea');
@@ -11080,9 +11048,22 @@ function compareMonthlyOfficers(a, b) {
     const isMobilePrint = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
       (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent));
     if (isMobilePrint) {
+      // แบ่งเป็นหน้า A4 จริงทีละหน้า แล้วหมุนเนื้อหา 90° เหมือน บชก.3
+      // ไม่ใช้ page-break-before และไม่ใช้ overflow:hidden เพื่อไม่ให้เกิดหน้าว่าง/ข้อมูลหาย
+      // จำนวนแถวต่อหน้าแยกตามลักษณะหน้า เพื่อให้หัวรายงานและส่วนลงนามไม่เบียดกัน
       const FIRST_PAGE_ROWS = 7;
-      const OTHER_PAGE_ROWS = 10;
+      const OTHER_PAGE_ROWS = 11;
       const LAST_PAGE_RESERVED_ROWS = 8;
+      const rowHtml = detailRows.map((r,i)=>`<tr>
+        <td class="center">${i+1}</td>
+        <td class="officer">${r.officer ? `<strong>${escapeHtml(r.officer)}</strong><br><span>${escapeHtml(r.position)}</span>` : ''}</td>
+        <td>${escapeHtml(r.name)}</td>
+        <td class="asset-no">${escapeHtml(r.assetNo)}</td>
+        <td class="center qty">${r.qty ? toThaiNumber(r.qty) : '-'}</td>
+        <td class="center">${resultBadge(r.result)}</td>
+        <td>${escapeHtml(r.note || '')}</td>
+        <td>${r.inspector ? `${escapeHtml(r.inspector)}<br><span>${escapeHtml(r.checkedAt)}</span>` : ''}</td>
+      </tr>`);
       const chunks=[];
       if(rowHtml.length){
         let pos=0;
@@ -11096,14 +11077,15 @@ function compareMonthlyOfficers(a, b) {
           pos+=take;
         }
       } else chunks.push([]);
-
+      const headHtml=`<div class="head"><div class="title">รายงานผลการตรวจประจำเดือน</div><div class="org">${escapeHtml(orgName)}</div><div class="period">ประจำเดือน ${escapeHtml(monthName)} พ.ศ. ${toThaiNumber(thaiYear)}</div></div>
+        <div class="summary"><div class="summary-box"><b>${toThaiNumber(source.length)}</b><span>ผู้ที่ต้องตรวจ</span></div><div class="summary-box"><b>${toThaiNumber(done)}</b><span>ตรวจแล้ว</span></div><div class="summary-box"><b>${toThaiNumber(bad)}</b><span>มีปัญหา</span></div><div class="summary-box"><b>${toThaiNumber(totalQty)}</b><span>ครุภัณฑ์ที่ถือครอง</span></div></div>`;
+      const tableHead=`<thead><tr><th>ลำดับ</th><th>ผู้ครอบครอง / ตำแหน่ง</th><th>ชื่อครุภัณฑ์</th><th>หมายเลขครุภัณฑ์</th><th>จำนวน</th><th>ผลตรวจ</th><th>หมายเหตุ</th><th>ผู้ตรวจ / วันที่</th></tr></thead>`;
       const pages=chunks.map((chunk,idx)=>{
         const first=idx===0,last=idx===chunks.length-1;
         const body=chunk.length?chunk.join(''):'<tr><td colspan="8" class="center">ไม่มีข้อมูลครุภัณฑ์ที่ต้องตรวจ</td></tr>';
-        const tail=last ? `${rowHtml.length ? `<tr><td colspan="4" class="center"><strong>รวม</strong></td><td class="center"><strong>${toThaiNumber(totalQty)}</strong></td><td colspan="3"></td></tr>` : ''}<div class="note">หมายเหตุ: แสดงผลตรวจแยกตามครุภัณฑ์และส่วนควบ โดยหมายเลขครุภัณฑ์ใช้ข้อมูลจาก <strong>หมายเลขเครื่อง</strong> และช่องลายมือชื่อเว้นว่างสำหรับลงนามด้วยตนเอง</div>` : '';
-        return `<div class="mcr-mobile-page${last?' last':''}"><div class="mcr-mobile-page-inner"><div class="mcr">${first?headHtml:''}<table><colgroup><col style="width:4%"><col style="width:17%"><col style="width:20%"><col style="width:20%"><col style="width:6%"><col style="width:10%"><col style="width:6%"><col style="width:17%"></colgroup>${first?tableHead:''}<tbody>${body}</tbody></table>${tail}</div></div></div>`;
+        const tail=last?`${rowHtml.length?`<tr class="total"><td colspan="4" class="center">รวม</td><td class="center">${toThaiNumber(totalQty)}</td><td colspan="3"></td></tr>`:''}<div class="note">หมายเหตุ: รายงานนี้จัดแสดงตาม <strong>ชื่อครุภัณฑ์ + หมายเลขครุภัณฑ์ + จำนวน</strong> เพื่อให้ง่ายต่อการตรวจสอบรายการของแต่ละผู้ครอบครอง</div><div class="signatures"><div class="sig"><div class="line"></div>ผู้ตรวจประจำเดือน</div><div class="sig"><div class="line"></div>ผู้รับรอง / หัวหน้าหน่วย</div></div>`:'';
+        return `<div class="mcr-mobile-page${last?' last':''}"><div class="mcr-mobile-page-inner"><div class="mcr">${first?headHtml:''}<table><colgroup><col style="width:4%"><col style="width:18%"><col style="width:23%"><col style="width:15%"><col style="width:7%"><col style="width:9%"><col style="width:13%"><col style="width:11%"></colgroup>${first?tableHead:''}<tbody>${body}</tbody></table>${tail}</div></div></div>`;
       }).join('');
-
       pa.innerHTML=`<style>
         @page{size:A4 portrait;margin:0;}
         html,body{margin:0 !important;padding:0 !important;background:#fff !important;}
@@ -11133,11 +11115,11 @@ function compareMonthlyOfficers(a, b) {
         .mcr-mobile-page-inner .mcr .result.ok{background:#e8f6ee;color:#126b43;}
         .mcr-mobile-page-inner .mcr .result.bad{background:#fdecef;color:#a1263b;}
         .mcr-mobile-page-inner .mcr .result.pending{background:#fff4dc;color:#8a5a00;}
-        .mcr-mobile-page-inner .mcr .component-row td{background:#fafafa;}
-        .mcr-mobile-page-inner .mcr .component-name{padding-left:5mm;}
-        .mcr-mobile-page-inner .mcr .signature-cell{height:13mm;}
         .mcr-mobile-page-inner .mcr .total td{font-weight:700;background:#f7f7f7;}
         .mcr-mobile-page-inner .mcr .note{margin-top:3mm;font-size:10pt;color:#555;line-height:1.2;}
+        .mcr-mobile-page-inner .mcr .signatures{display:grid;grid-template-columns:1fr 1fr;gap:25mm;margin-top:9mm;page-break-inside:avoid;break-inside:avoid;}
+        .mcr-mobile-page-inner .mcr .sig{text-align:center;font-size:11pt;}
+        .mcr-mobile-page-inner .mcr .sig .line{margin:0 auto 1.5mm;width:70%;border-bottom:1px dotted #333;height:8mm;}
         .mcr-mobile-page-inner .mcr tr{page-break-inside:avoid;break-inside:avoid;}
       </style>${pages}`;
     } else {
