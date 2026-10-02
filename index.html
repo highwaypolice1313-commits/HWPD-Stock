@@ -3644,6 +3644,16 @@ html{scroll-behavior:smooth;}
 #view-monthly .mc-swipe-stage .mc-grid-hold{ max-height:none !important; overflow:visible !important; }
 #view-monthly .mc-swipe-stage .mc-serial-list{ max-height:58px !important; overflow:hidden !important; }
 
+   /* ===== iPad / แท็บเล็ตแนวตั้ง: โชว์ปุ่มเมนูเพิ่มตามความกว้าง ===== */
+@media (max-width:899px){
+  .tabbar .tab-secondary.promoted{ display:flex !important; }
+  .tabbar .tab-more.nav-hide{ display:none !important; }
+}
+@media (min-width:600px) and (max-width:899px){
+  .tabbar{ max-width:780px; margin:0 auto; }   /* [ปรับตรงนี้] ความกว้างสูงสุดของแถบ */
+  .tabbar .tab .lbl{ font-size:13px; }
+}
+
 </style>
 </head>
 <body>
@@ -4775,20 +4785,41 @@ function layoutNav() {
   if (!bar || !pill) return;
   const tabs = [...bar.querySelectorAll('.tab')];
 
-  // เดสก์ท็อปใช้ sidebar เดิม: ล้างความกว้างที่ JS เคยตั้งไว้
+  // เดสก์ท็อปใช้ sidebar: ล้างค่าที่ JS เคยตั้ง
   if (!window.matchMedia('(max-width:899px)').matches) {
-    tabs.forEach(t => { t.style.width = ''; });
+    tabs.forEach(t => { t.style.width = ''; t.classList.remove('promoted', 'nav-hide'); });
     return;
   }
+  if (!bar.clientWidth) return;
 
-  // ปุ่มที่มองเห็นบนมือถือ (ตัวรองถูก CSS ซ่อน, ตัวของแอดมินที่ยังเป็น display:none ก็ข้าม)
-  const vis = tabs.filter(t => !t.classList.contains('tab-secondary') && t.style.display !== 'none');
-  const act = vis.find(t => t.classList.contains('active')) || vis[0];
-  if (!act || !bar.clientWidth) return;
-
-  // ถ้าอยู่หน้าที่ซ่อนในเมนู ให้ปุ่มเมนูแสดงชื่อหน้านั้นแทนคำว่า "เมนู"
   const more = document.getElementById('tabMore');
+  const primary = tabs.filter(t => !t.classList.contains('tab-secondary') && t !== more && t.style.display !== 'none');
+  const secondary = tabs.filter(t => t.classList.contains('tab-secondary') && t.style.display !== 'none');
+
+  // --- ตัดสินใจว่าจะดึงปุ่มรองขึ้นมากี่ปุ่ม (เฉพาะจอ >= 600px เช่น iPad) ---
+  let extra = 0;
+  if (window.matchMedia('(min-width:600px)').matches) {
+    const MIN_TAB = 54, ACTIVE_W = 130;               // [ปรับตรงนี้] ความกว้างต่ำสุดต่อปุ่ม / ปุ่มที่เลือก
+    const room = Math.floor((bar.clientWidth - 12 - ACTIVE_W) / MIN_TAB);
+    if (primary.length + secondary.length - 1 <= room) extra = secondary.length;
+    else extra = Math.max(0, Math.min(secondary.length - 1, room - primary.length));
+  }
+  secondary.forEach((t, i) => t.classList.toggle('promoted', i < extra));
+  const allShown = extra >= secondary.length;
   if (more) {
+    more.classList.toggle('nav-hide', allShown);
+    const inMore = secondary.some(t => !t.classList.contains('promoted') && t.dataset.tab === state.tab);
+    more.classList.toggle('active', inMore);
+  }
+
+  // --- ปุ่มที่มองเห็นจริง ---
+  const vis = tabs.filter(t => t.style.display !== 'none'
+    && !t.classList.contains('nav-hide')
+    && (!t.classList.contains('tab-secondary') || t.classList.contains('promoted')));
+  const act = vis.find(t => t.classList.contains('active')) || vis[0];
+  if (!act) return;
+
+  if (more && !allShown) {
     const cur = document.querySelector('.tab-secondary[data-tab="' + state.tab + '"] .lbl');
     more.querySelector('.lbl').textContent = (more.classList.contains('active') && cur) ? cur.textContent : 'เมนู';
   }
@@ -4796,10 +4827,9 @@ function layoutNav() {
   const first = !layoutNav.done;
   if (first) bar.classList.add('no-anim');
 
-  // ความกว้างปุ่มที่เลือก = ไอคอน 21 + ช่องว่าง 7 + ป้ายชื่อจริง + padding 28
   const aw = Math.ceil(21 + 7 + act.querySelector('.lbl').scrollWidth + 28);
-  const inner = bar.clientWidth - 12;                      // หัก padding ซ้าย 6 + ขวา 6
-  const iw = (inner - aw) / Math.max(1, vis.length - 1);   // ปุ่มอื่นแบ่งพื้นที่ที่เหลือเท่ากัน
+  const inner = bar.clientWidth - 12;
+  const iw = (inner - aw) / Math.max(1, vis.length - 1);
 
   let x = 6;
   vis.forEach(t => {
@@ -4811,10 +4841,10 @@ function layoutNav() {
 
   if (first) {
     layoutNav.done = true;
-    // รอ 2 เฟรมก่อนเปิด transition กลับ เพื่อไม่ให้ค่าเริ่มต้นถูกเลื่อนแบบแอนิเมชัน
     requestAnimationFrame(() => requestAnimationFrame(() => bar.classList.remove('no-anim')));
   }
 }
+   
 window.addEventListener('resize', debounce(layoutNav, 100));
 window.addEventListener('orientationchange', () => setTimeout(layoutNav, 250));
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(layoutNav);
@@ -7383,6 +7413,13 @@ function openMemoEditor(opts) {
   document.getElementById('zFit').onclick = () => { userZoom = null; applyZoom(); };
 
   const getBody = () => document.getElementById('memoDocBody');
+   let docNoCommitted = !isNew;   // เอกสารเก่าไม่ต้องนับเลขซ้ำ
+const commitDocNoOnce = () => {
+  if (docNoCommitted) return;
+  docNoCommitted = true;
+  const e = document.getElementById('ed_docno');
+  if (e) commitDocNo(e.textContent.trim());
+};
   const dirtyEl = document.getElementById('docDirty');
   desk.addEventListener('input', () => { dirtyEl.classList.add('show'); });
 
@@ -7399,6 +7436,7 @@ desk.addEventListener('focusout', () => {
 });
 
   document.getElementById('btnMemoPrint').onclick = () => {
+  commitDocNoOnce();  
   const b = getBody();
   if (b) document.getElementById('printArea').innerHTML = thaiifyHtml(b.outerHTML);
   triggerPrint(() => { document.getElementById('printArea').innerHTML = ''; });
@@ -7421,6 +7459,7 @@ desk.addEventListener('focusout', () => {
     try {
       const res = await apiPost(isNew ? 'addMemo' : 'updateMemo', payload);
       if (isNew && res && res.id) opts.id = res.id;
+      commitDocNoOnce();
       dirtyEl.classList.remove('show');
       toast('บันทึกเอกสารแล้ว');
       await reloadThen(() => { if (state.tab === 'memos') renderMemos(); });
@@ -7545,7 +7584,35 @@ function refreshMemoLivePreview() {
   const memo = collectMemoFormData();
   mountPaper(memoPreviewDesk, wrapPfDoc(buildMemoBodyHtml(memo), false));
 }
-
+   
+/* ---------- เลขหนังสือรันอัตโนมัติ ---------- */
+function thaiToArabic(s) {
+  return String(s == null ? '' : s).replace(/[๐-๙]/g, d => '๐๑๒๓๔๕๖๗๘๙'.indexOf(d));
+}
+function nextDocNo() {
+  const n = parseInt(state.settings && state.settings.docNoNext, 10);
+  return (isFinite(n) && n > 0) ? n : '';
+}
+// เรียกหลังใช้เลขหนังสือแล้ว: ถ้าเลขที่ใช้ >= เลขถัดไป ให้เลื่อนเป็นเลขที่ใช้ + 1
+async function commitDocNo(docNoText) {
+  const pre  = thaiToArabic((state.settings && state.settings.docNoPrefix) || '').replace(/\s+/g, '');
+  const full = thaiToArabic(docNoText).replace(/\s+/g, '');
+  if (!full.startsWith(pre)) return;
+  const m = /^(\d+)$/.exec(full.slice(pre.length));
+  if (!m) return;                       // ไม่ใช่เลขล้วน เช่น ช่องว่าง/จุดไข่ปลา
+  const used = parseInt(m[1], 10);
+  if (used < (Number(nextDocNo()) || 0)) return;   // ใช้เลขย้อนหลัง ไม่ถอยเลขถัดไป
+  const next = String(used + 1);
+  try {
+    await apiPost('updateSystemSettings', {
+  orgName: val('st_org'), orgPhone: val('st_phone'),
+  docNoPrefix: val('st_docprefix'), docNoNext: val('st_docnext'),
+  renewalAlertDays: val('st_renewaldays')
+});
+    state.settings.docNoNext = next;
+  } catch (e) { console.warn('อัปเดตเลขหนังสือถัดไปไม่สำเร็จ', e); }
+}
+   
 function openPrintMemoForm(opts) {
   const items = buildMemoItemList(opts);
   const borrow = opts.borrow || null;
@@ -7608,7 +7675,7 @@ function openPrintMemoForm(opts) {
               <div class="field"><label>ที่ (เลขที่หนังสือ)</label>
                 <div style="display:flex; gap:6px; align-items:center;">
                   <span class="tag tag-off" style="flex:none;">${escapeHtml(docPrefix) || 'ยังไม่ตั้งเลขที่คงที่'}</span>
-                  <input class="input" id="m_docno_suffix" placeholder="เช่น 45" style="flex:1;">
+                  <input class="input" id="m_docno_suffix" placeholder="เช่น 45" value="${nextDocNo()}" style="flex:1;">
                 </div>
                 ${!docPrefix ? `<div class="hint" style="margin-top:4px;">ตั้งเลขที่หนังสือส่วนคงที่ได้ที่เมนู "ตั้งค่าระบบ"</div>` : ''}
               </div>
@@ -9229,6 +9296,10 @@ function renderSettings() {
           <input class="input" id="st_docprefix" placeholder="เช่น 0026.313/" value="${escapeHtml(s.docNoPrefix || '')}">
           <div class="hint" style="margin-top:6px;">ตอนพิมพ์บันทึกข้อความแต่ละครั้ง ระบบจะให้กรอกเฉพาะเลขที่ท้ายส่วนนี้ เช่น 45, 46, ...</div>
         </div>
+      <div class="field"><label>เลขที่ถัดไป (ระบบรันต่ออัตโนมัติเมื่อใช้เลขแล้ว)</label>
+        <input class="input" type="number" min="1" id="st_docnext" placeholder="เช่น 45" value="${escapeHtml(s.docNoNext || '')}">
+        <div class="hint" id="st_docpreview" style="margin-top:6px;"></div>
+      </div>
         <div class="field"><label>แจ้งเตือนล่วงหน้าก่อนครบกำหนดตรวจสภาพ/ต่อทะเบียน (วัน)</label><input class="input" type="number" id="st_renewaldays" value="${s.renewalAlertDays || 30}"></div>
         <div class="btn-row" style="margin-top:14px;"><button class="btn btn-primary" id="btnSaveSettings">บันทึกการตั้งค่า</button></div>
       </div>
@@ -9436,6 +9507,15 @@ function renderSettings() {
     } catch (err) { toast(err.message || 'บันทึกไม่สำเร็จ'); }
     finally { setLoading(false); setButtonBusy(btn, false); }
   };
+
+  const updDocPreview = () => {
+  const p = document.getElementById('st_docpreview');
+  if (!p) return;
+  const n = val('st_docnext');
+  p.textContent = n ? 'เลขที่หนังสือฉบับถัดไป: ' + toThaiNumber(val('st_docprefix') + n) : 'ยังไม่ได้ตั้งเลขถัดไป (ระบบจะเริ่มนับให้เมื่อใช้เลขครั้งแรก)';
+};
+['st_docprefix', 'st_docnext'].forEach(id => { const e = document.getElementById(id); if (e) e.oninput = updDocPreview; });
+updDocPreview();
 
   wireAuditCommitteeSettingsHandlers();
   if (state.settingsTab === 'activity') loadActivityPanel();   // กรณีรีเฟรชแล้วค้างอยู่แท็บนี้
