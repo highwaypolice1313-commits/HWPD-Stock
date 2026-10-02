@@ -6479,7 +6479,12 @@ function openBorrowDetail(id) {
       }).catch(err => toast(err.message || 'เตรียมรูปไม่สำเร็จ'));
     };
   }
-  document.getElementById('btnPrintForm').onclick = () => openPrintMemoForm({ borrow: b, componentNames: compNames });
+  document.getElementById('btnPrintForm').onclick = () => openPrintMemoForm({
+    borrow: b,
+    componentNames: compNames,
+    // ผู้ดูอย่างเดียวเปิดเอกสารที่อนุมัติแล้วได้เฉพาะดู/พิมพ์ ห้ามแก้ไข
+    readOnly: !isAdmin() && !['รออนุมัติ', 'ถูกปฏิเสธ'].includes(status)
+  });
   const editBtn = document.getElementById('btnEditBorrow');
   if (editBtn) editBtn.onclick = () => { closeSheet(); openBorrowEditForm(b); };
   const renewBtn = document.getElementById('btnRenewBorrow');
@@ -7985,6 +7990,9 @@ function memoCard(m) {
 /* ---------- เปิดหน้าเอกสารเพื่อแก้ไขจริง / พิมพ์ / บันทึก ---------- */
 function openMemoEditor(opts) {
   const isNew = !opts.id;
+  // readOnly=true ใช้สำหรับผู้ดูอย่างเดียว โดยเฉพาะเอกสารของรายการที่อนุมัติแล้ว
+  // ผู้ดูสามารถเปิดดู/ซูม/พิมพ์ได้ แต่แก้ไขหรือบันทึกเอกสารไม่ได้
+  const readOnly = !!opts.readOnly && !isAdmin();
     showRawSheet(`<div class="overlay" id="overlayEl">
     <div class="sheet memo-doc-sheet">
       <button class="sheet-close" id="sheetCloseBtn" type="button" title="ปิด" aria-label="ปิด">${ICONS.close}</button>
@@ -8004,9 +8012,9 @@ function openMemoEditor(opts) {
       <div class="paper-desk" id="memoPaperDesk"></div>
       <div class="btn-row">
         <button class="btn btn-ghost" id="btnMemoClose">ปิด</button>
-        ${!isNew && isAdmin() ? `<button class="btn btn-danger" id="btnMemoDelete">ลบเอกสาร</button>` : ''}
+        ${!readOnly && !isNew && isAdmin() ? `<button class="btn btn-danger" id="btnMemoDelete">ลบเอกสาร</button>` : ''}
         <button class="btn btn-ghost" id="btnMemoPrint">พิมพ์</button>
-        <button class="btn btn-primary" id="btnMemoSave">บันทึกเอกสาร</button>
+        ${!readOnly ? `<button class="btn btn-primary" id="btnMemoSave">บันทึกเอกสาร</button>` : ''}
       </div>
     </div>
   </div>`);
@@ -8014,7 +8022,7 @@ function openMemoEditor(opts) {
   document.getElementById('btnMemoClose').onclick = closeSheet;
 
   const desk = document.getElementById('memoPaperDesk');
-  mountPaper(desk, wrapPfDoc(opts.docHtml, true));
+  mountPaper(desk, wrapPfDoc(opts.docHtml, !readOnly));
   registerPaper(desk);
   let userZoom = null;
   function applyZoom() {
@@ -8045,7 +8053,7 @@ const commitDocNoOnce = () => {
   if (e) commitDocNo(e.textContent.trim());
 };
   const dirtyEl = document.getElementById('docDirty');
-  desk.addEventListener('input', () => { dirtyEl.classList.add('show'); });
+  if (!readOnly) desk.addEventListener('input', () => { dirtyEl.classList.add('show'); });
 
 // พิมพ์เลขอารบิกลงในเอกสาร -> แปลงเป็นเลขไทยทันที (ตอนออกจากช่องที่กำลังแก้)
 desk.addEventListener('focusout', () => {
@@ -8065,7 +8073,8 @@ desk.addEventListener('focusout', () => {
   if (b) document.getElementById('printArea').innerHTML = thaiifyHtml(b.outerHTML);
   triggerPrint(() => { document.getElementById('printArea').innerHTML = ''; });
 };
-  document.getElementById('btnMemoSave').onclick = async () => {
+  const saveMemoBtn = document.getElementById('btnMemoSave');
+  if (saveMemoBtn) saveMemoBtn.onclick = async () => {
     const b = getBody();
     if (!b) { toast('ไม่พบเนื้อหาเอกสาร'); return; }
     const g = (id) => { const e = document.getElementById(id); return e ? e.textContent.trim() : ''; };
@@ -8494,7 +8503,7 @@ function openPrintMemoForm(opts) {
     const docHtml = buildMemoBodyHtml(memo);
     const borrowId = borrow ? borrow['รหัสรายการ'] : '';
     closeSheet();
-    openMemoEditor({ id: null, docHtml, borrowId });
+    openMemoEditor({ id: null, docHtml, borrowId, readOnly: !!opts.readOnly });
   };
 }
 
