@@ -6034,7 +6034,7 @@ function openQuickStatusForm(a) {
   };
 }
    
-function triggerPrint(cleanupFn, options = {}) {
+function triggerPrint(cleanupFn) {
   const pa = document.getElementById('printArea');
   const imgs = Array.from(pa.querySelectorAll('img'));
   let cleaned = false, started = false;
@@ -6085,8 +6085,6 @@ function triggerPrint(cleanupFn, options = {}) {
     setTimeout(cleanupOnce, 4000);
   };
   const start = () => { if (started) return; started = true; doPrint(); };
-
-  if (options.iosImmediate) { start(); return; }
   let remaining = imgs.length;
   imgs.forEach(img => {
     if (img.complete) { remaining--; return; }
@@ -7497,58 +7495,6 @@ function printOfficerPortfolio(u, holdings) {
         <div style="margin-top:4mm; font-size:12pt;">วันที่พิมพ์รายงาน: ${escapeHtml(thaiDateLong())}</div>
       </div>
     </div>`;
-  // iPhone/iPad Safari: พิมพ์ผ่านหน้าต่างเอกสารแยกโดยตรง
-  // เพราะ Safari บางรุ่นไม่ยอมพิมพ์เนื้อหาที่ถูกสร้างแบบ dynamic ใน #printArea
-  // และอาจส่งผลให้หน้าตัวอย่าง/กระดาษออกมาเป็นหน้าเปล่า
-  const isIOSDevice = /iPad|iPhone|iPod/i.test(navigator.userAgent) ||
-    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-
-  if (isIOSDevice) {
-    const printWin = window.open('', '_blank');
-    if (printWin) {
-      const printDoc = printWin.document;
-      printDoc.open();
-      printDoc.write(`<!doctype html>
-<html lang="th">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>รายงานสรุปพัสดุในความครอบครอง - ${escapeHtml(fullName)}</title>
-  <style>
-    @page { size: A4 portrait; margin: 12mm; }
-    html, body { margin:0; padding:0; background:#fff; color:#000; }
-    body { font-family:'TH Sarabun New','Sarabun','Kanit',sans-serif; }
-    * { box-sizing:border-box; }
-    table { width:100%; border-collapse:collapse; table-layout:fixed; }
-    tr { page-break-inside:avoid; break-inside:avoid; }
-    th, td { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-    @media screen {
-      body { padding:12mm; }
-    }
-    @media print {
-      html, body { width:auto !important; min-height:0 !important; overflow:visible !important; }
-      body { padding:0 !important; }
-    }
-  </style>
-</head>
-<body>${html}</body>
-</html>`);
-      printDoc.close();
-      try { printWin.focus(); } catch(e) {}
-      // ให้ Safari สร้าง layout ของหน้าที่เปิดใหม่ก่อนเรียก print
-      setTimeout(() => {
-        try {
-          printWin.focus();
-          printWin.print();
-        } catch (e) {
-          // หาก Safari ปฏิเสธการเรียก print ให้ผู้ใช้พิมพ์จากหน้ารายงานที่เปิดอยู่ได้
-        }
-      }, 150);
-      return;
-    }
-  }
-
-  // Desktop/กรณี Safari ไม่อนุญาตให้เปิดหน้าต่างใหม่ ใช้ระบบพิมพ์เดิม
   const pa = document.getElementById('printArea');
   pa.classList.add('report-print-area');
   pa.innerHTML = html;
