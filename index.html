@@ -6908,84 +6908,6 @@ function openBorrowForm(presetId) {
     finally { setLoading(false); setButtonBusy(saveBtn, false); }
   };
 }
-  if (admin) {
-    const resetApvSig = () => {
-      document.getElementById('f_sigApprover').value = '';
-      document.getElementById('f_sigApvIcon').innerHTML = ICONS.edit;
-      document.getElementById('f_sigApvTitle').textContent = 'ลายเซ็นผู้อนุมัติ (ไม่บังคับ)';
-    };
-    document.getElementById('f_approverPick').addEventListener('change', resetApvSig);
-    document.getElementById('f_sigApvTrigger').onclick = () => {
-      const pv = val('f_approverPick');
-      const off = (pv !== '' && pv !== '__other__') ? state.users[Number(pv)] : null;
-      if (!val('f_approver').trim() && !off) { toast('กรุณาเลือกผู้อนุมัติก่อน'); return; }
-      openSignatureSheet({
-        title: 'ลายเซ็นผู้อนุมัติ', name: val('f_approver'), saved: off ? off['ลายเซ็น'] : '',
-        onDone: v => {
-          document.getElementById('f_sigApprover').value = v;
-          document.getElementById('f_sigApvIcon').innerHTML = `<img src="${v}" style="width:100%;height:100%;object-fit:contain;">`;
-          document.getElementById('f_sigApvTitle').textContent = 'เซ็นแล้ว (แตะเพื่อเซ็นใหม่)';
-        }
-      });
-    };
-  }   
-  openOfficerPickerSheet(val('f_borrower'), (name, u) => {
-    if (name !== val('f_borrower')) resetBorrowerSig();   // เปลี่ยนคน = ลายเซ็นเดิมใช้ไม่ได้
-    document.getElementById('f_borrower').value = name;
-    document.getElementById('f_borrowerName').textContent = name;
-    document.getElementById('f_borrowerSub').textContent = u ? (u['ตำแหน่ง'] || 'ไม่ระบุตำแหน่ง') : 'พิมพ์ชื่อเอง';
-    document.getElementById('f_borrowerIcon').innerHTML = (u && u['รูปถ่าย'])
-      ? `<img src="${u['รูปถ่าย']}" style="width:100%;height:100%;object-fit:cover;border-radius:13px;">`
-      : ICONS.user;
-  }); 
-    // [แก้ไข] ถ้ามี presetId (มาจากการปัดแถวครุภัณฑ์) ให้เลือกชิ้นนั้นก่อน
-  const presetAsset = presetId && available.find(a => a['รหัสครุภัณฑ์'] === presetId);
-  if (presetAsset) selectAsset(presetAsset['รหัสครุภัณฑ์']);
-  else if (available.length) selectAsset(available[0]['รหัสครุภัณฑ์']);
-
-  // ปุ่มลัดกำหนดคืน
-  document.querySelectorAll('[data-days]').forEach(chip => {
-    chip.onclick = () => {
-      document.querySelectorAll('[data-days]').forEach(c => c.classList.remove('active'));
-      chip.classList.add('active');
-      const days = Number(chip.dataset.days);
-      document.getElementById('f_duedate').value = isoDate(new Date(Date.now() + days * 86400000));
-    };
-  });
-  document.getElementById('f_duedate').oninput = () => document.querySelectorAll('[data-days]').forEach(c => c.classList.remove('active'));
-
-  document.getElementById('btnCancel').onclick = closeSheet;
-  document.getElementById('btnSave').onclick = async () => {
-    const assetId = val('f_asset');
-    const asset = state.assets.find(a => a['รหัสครุภัณฑ์'] === assetId);
-    if (!assetId) { toast('ไม่พบครุภัณฑ์ที่พร้อมให้ยืม'); return; }
-    if (!val('f_borrower').trim()) { toast('กรุณาเลือกหรือกรอกชื่อผู้ยืม'); return; }
-    if (!val('f_borrowdate') || !val('f_duedate')) { toast('กรุณาระบุวันที่ยืมและกำหนดคืน'); return; }
-    if (val('f_duedate') < val('f_borrowdate')) { toast('กำหนดคืนต้องไม่ก่อนวันที่ยืม'); return; }
-         if (!admin && !val('f_sigBorrower')) { toast('กรุณาเซ็นชื่อผู้ยืมก่อนส่งคำขอ'); return; }
-    const componentIds = Array.from(document.querySelectorAll('.f_comp_chk:checked')).map(el => {
-  const q = document.querySelector('.f_comp_qty[data-for="' + el.value + '"]');
-  const max = q ? Number(q.max) : 1;
-  const n = Math.min(max, Math.max(1, parseInt(q ? q.value : 1, 10) || 1));
-  return el.value + ':' + n;
-});
-    const saveBtn = document.getElementById('btnSave');
-    if (saveBtn.disabled) return;
-    setButtonBusy(saveBtn, true);
-    setLoading(true, admin ? 'กำลังบันทึกการยืม...' : 'กำลังส่งคำขอ...');
-    try {
-       let conditionPhotoOut = val('f_conditionPhotoVal');
-       if (isInlineImage(conditionPhotoOut)) conditionPhotoOut = await uploadImageToDrive(conditionPhotoOut, 'borrow-' + assetId);
-       const sigBorrower = await uploadSignature(val('f_sigBorrower'), 'borrower-' + assetId);
-       const sigApprover = admin ? await uploadSignature(val('f_sigApprover'), 'approver-' + assetId) : '';
-       const payload = { assetId, assetName: asset ? asset['ชื่อครุภัณฑ์'] : '', borrower: val('f_borrower'), borrowerLineId: '', borrowDate: val('f_borrowdate'), dueDate: val('f_duedate'), approver: admin ? val('f_approver') : '', note: val('f_bnote'), componentIds, conditionPhotoOut , sigBorrower, sigApprover };
-       await apiPost(admin ? 'borrowAsset' : 'requestBorrow', payload);
-      closeSheet(); toast(admin ? 'บันทึกการยืมแล้ว' : 'ส่งคำขอยืมแล้ว รอแอดมินอนุมัติ'); await reloadThen(renderBorrow);
-    } catch (err) { toast(err.message || 'ทำรายการไม่สำเร็จ'); }
-    finally { setLoading(false); setButtonBusy(saveBtn, false); }
-  };
-}
-
 /* ========================================================= MAINTENANCE */
 function renderMaint() {
   const el = document.getElementById('view-maint');
@@ -7563,54 +7485,7 @@ function openUserForm(u) {
     };
   }
 }
-  document.getElementById('btnCancel').onclick = closeSheet;
-  document.getElementById('btnSave').onclick = async () => {
-    if (!val('u_name').trim()) { toast('กรุณากรอกชื่อ-สกุล'); return; }
-    const saveBtn = document.getElementById('btnSave'); if (saveBtn.disabled) return; setButtonBusy(saveBtn, true); setLoading(true, 'กำลังบันทึกรายชื่อ จนท....');
-    try {
-      const userPhoto = val('u_photo');
-      // สำคัญ: ตอนแก้ไขรายชื่อ จะไม่เรียก uploadImage แยกอีกต่อไป
-      // ถ้าไม่เปลี่ยนรูป -> ส่ง URL เดิมกลับไป
-      // ถ้าเปลี่ยนรูป -> ส่ง photoData ให้ backend อัปโหลด+แก้แถวเดิมใน transaction เดียว
-      const photoPayload = isInlineImage(userPhoto) ? { photoData: userPhoto } : { photo: userPhoto };
-      const sigUrl = await uploadSignature(val('u_sig'), 'user-' + (editing ? (officerId(u) || 'x') : 'new'));
-      if (!editing) {
-        await apiPost('addUser', {
-          name: val('u_name'), rank: val('u_rank'), position: val('u_position'), unit: val('u_unit'),
-          role: val('u_role'), memoRole: val('u_memorole'), ...photoPayload, signature: sigUrl
-        });
-      } else {
-        await apiPost('updateUserRole', {
-          officerId: officerId(u) || undefined,
-          lineUserId: (!officerId(u) && u['LINEUserId']) || undefined,
-          username: (!officerId(u) && u['ชื่อผู้ใช้']) || undefined,
-          name: val('u_name'), rank: val('u_rank'), position: val('u_position'), unit: val('u_unit'),
-          role: val('u_role'), memoRole: val('u_memorole'), ...photoPayload, signature: sigUrl
-        });
-      }
-      closeSheet();
-      toast(editing ? 'แก้ไขรายชื่อและยศเรียบร้อยแล้ว' : 'บันทึกรายชื่อและยศเรียบร้อยแล้ว');
-      await reloadThen(renderUsers);
-    } catch (err) { toast('บันทึกไม่สำเร็จ: ' + (err.message || 'เกิดข้อผิดพลาด')); }
-    finally { setLoading(false); setButtonBusy(saveBtn, false); }
-  };
-  if (editing) {
-    document.getElementById('btnDeleteUser').onclick = async () => {
-      if (!await confirmSheet('ยืนยันการลบรายชื่อนี้?', {title:'ลบรายชื่อเจ้าหน้าที่', okText:'ลบรายชื่อ', tone:'bad'})) return;
-      const oid = officerId(u);
-      const identifier = u['LINEUserId'] || u['ชื่อผู้ใช้'] || u['ชื่อ-สกุล'];
-      const deleteBtn = document.getElementById('btnDeleteUser');
-      if (deleteBtn?.disabled) return;
-      setButtonBusy(deleteBtn, true, 'กำลังลบ...'); setLoading(true, 'กำลังลบรายชื่อ จนท....');
-      try {
-        await apiPost('deleteUser', oid ? { officerId: oid } : { identifier });
-        closeSheet(); toast('ลบรายชื่อ "' + (u['ชื่อ-สกุล'] || '') + '" เรียบร้อยแล้ว'); await reloadThen(renderUsers);
-      } catch (err) { toast('ลบไม่สำเร็จ: ' + (err.message || 'เกิดข้อผิดพลาด')); }
-      finally { setLoading(false); setButtonBusy(deleteBtn, false, 'ลบรายชื่อนี้'); }
-    };
-  }
-}
-
+ 
 /* ========================================================= SHEET / MODAL */
 function confirmSheet(message, opts={}) {
   return new Promise(resolve => {
