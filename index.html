@@ -381,8 +381,6 @@ input[type="date"]::-webkit-date-and-time-value{ text-align:left; }
     background:#fff !important; height:auto !important; width:auto !important;
     padding:0 !important; margin:0 !important; overflow:visible !important;
     min-height:0 !important;
-    position:static !important;   /* ← เพิ่ม */
-    inset:auto !important;        /* ← เพิ่ม */
   }
   /* ซ่อนทุกอย่างใต้ body ยกเว้น #printArea (และ style/script ที่ไม่แสดงผลอยู่แล้ว) */
   body > *:not(#printArea):not(style):not(script){ display:none !important; }
@@ -6036,23 +6034,14 @@ function openQuickStatusForm(a) {
   };
 }
    
-function triggerPrint(cleanupFn) {
+function triggerPrint(cleanupFn, options = {}) {
   const pa = document.getElementById('printArea');
   const imgs = Array.from(pa.querySelectorAll('img'));
-  const bodyEl = document.body;
-  const prevBodyStyle = bodyEl.getAttribute('style');   // ← เพิ่ม
   let cleaned = false, started = false;
   const cleanupOnce = () => {
     if (cleaned) return; cleaned = true;
-    // ← เพิ่ม: คืนค่า style ของ body
-    if (prevBodyStyle === null) bodyEl.removeAttribute('style');
-    else bodyEl.setAttribute('style', prevBodyStyle);
     const d = document.getElementById('dynPageStyle'); if (d) d.remove();
     pa.style.removeProperty('zoom'); pa.style.removeProperty('width');
-    pa.style.removeProperty('display');
-    pa.style.removeProperty('visibility');
-    pa.style.removeProperty('opacity');
-    pa.style.removeProperty('position');
     if (cleanupFn) cleanupFn();
   };
 
@@ -6090,24 +6079,11 @@ function triggerPrint(cleanupFn) {
 
   const doPrint = () => {
     prepareLayout();
-    // ← เพิ่ม: ปลดล็อก body (เพราะ :has(#modalRoot .overlay) ทำให้เป็น fixed)
-    bodyEl.style.setProperty('position', 'static', 'important');
-    bodyEl.style.setProperty('inset', 'auto', 'important');
-    bodyEl.style.setProperty('overflow', 'visible', 'important');
-    bodyEl.style.setProperty('height', 'auto', 'important');
-    bodyEl.style.setProperty('width', 'auto', 'important');
-
-    pa.style.setProperty('display', 'block', 'important');
-    pa.style.setProperty('visibility', 'visible', 'important');
-    pa.style.setProperty('opacity', '1', 'important');
-    pa.style.setProperty('position', 'static', 'important');
-    void pa.offsetHeight;
     const onAfter = () => { window.removeEventListener('afterprint', onAfter); cleanupOnce(); };
     window.addEventListener('afterprint', onAfter);
     window.print();
-    setTimeout(cleanupOnce, 10000);
+    setTimeout(cleanupOnce, 4000);
   };
-   
   const start = () => { if (started) return; started = true; doPrint(); };
   // iOS Safari may lose the print user-gesture if window.print() is deferred
   // until fonts/images promises resolve. Keep the same shared print pipeline,
