@@ -7916,7 +7916,7 @@ function openPrintMemoForm(opts) {
               <div class="field"><label>วันที่</label><input class="input" id="m_docdate" value="${escapeHtml(thaiDateLong())}"></div>
             </div>
             <div class="field"><label>เรื่อง</label><input class="input" id="m_subject" value="${escapeHtml(defaultSubject)}"></div>
-            <div class="field"><label>เรียน (ผู้บังคับบัญชา)</label><input class="input" id="m_addressee" placeholder="เช่น สว.ส.ทล.3 กก.1 บก.ทล."></div>
+            <div class="field"><label>เรียน (ผู้บังคับบัญชา)</label><input class="input" id="m_addressee" placeholder="เช่น สว.ส.ทล.3 กก.1 บก.ทล." value="${escapeHtml((state.settings && state.settings.memoAddressee) || '')}"></div>
           </div>
           <div class="mf-section">
             <div class="mf-section-title"><span class="mf-step">2</span> รายการพัสดุที่ขอเบิก/ยืม</div>
@@ -9525,6 +9525,10 @@ function renderSettings() {
       <div class="glass" style="padding:16px; margin-bottom:16px;">
         <div class="field"><label>ส่วนราชการ (แสดงในหัวบันทึกข้อความ)</label><input class="input" id="st_org" value="${escapeHtml(s.orgName || ORG_NAME)}"></div>
         <div class="field"><label>เบอร์โทรศัพท์หน่วยงาน</label><input class="input" id="st_phone" value="${escapeHtml(s.orgPhone || '')}"></div>
+        <div class="field"><label>เรียน (ผู้บังคับบัญชา) ค่าเริ่มต้นในบันทึกข้อความ</label>
+        <input class="input" id="st_addressee" placeholder="เช่น สว.ส.ทล.3 กก.1 บก.ทล." value="${escapeHtml(s.memoAddressee || '')}">
+        <div class="hint" style="margin-top:6px;">ระบบจะเติมช่อง "เรียน" ให้อัตโนมัติทุกครั้งที่สร้างบันทึกข้อความ และแก้ไขเฉพาะฉบับได้ในฟอร์ม</div>
+        </div>
         <div class="field"><label>เลขที่หนังสือ (ส่วนคงที่)</label>
           <input class="input" id="st_docprefix" placeholder="เช่น 0026.313/" value="${escapeHtml(s.docNoPrefix || '')}">
           <div class="hint" style="margin-top:6px;">ตอนพิมพ์บันทึกข้อความแต่ละครั้ง ระบบจะให้กรอกเฉพาะเลขที่ท้ายส่วนนี้ เช่น 45, 46, ...</div>
@@ -9639,7 +9643,11 @@ function renderSettings() {
   document.getElementById('btnSaveSettings').onclick = async () => {
     const btn = document.getElementById('btnSaveSettings'); if (btn.disabled) return; setButtonBusy(btn, true); setLoading(true, 'กำลังบันทึกการตั้งค่า...');
     try {
-      await apiPost('updateSystemSettings', { orgName: val('st_org'), orgPhone: val('st_phone'), docNoPrefix: val('st_docprefix'), renewalAlertDays: val('st_renewaldays') });
+     await apiPost('updateSystemSettings', {
+  orgName: val('st_org'), orgPhone: val('st_phone'),
+  memoAddressee: val('st_addressee'),
+  docNoPrefix: val('st_docprefix'), renewalAlertDays: val('st_renewaldays')
+});
       toast('บันทึกการตั้งค่าแล้ว'); await reloadThen(renderSettings);
     } catch (err) { toast(err.message || 'บันทึกการตั้งค่าไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(btn, false); }
   };
