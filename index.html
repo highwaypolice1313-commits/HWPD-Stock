@@ -9643,10 +9643,13 @@ function renderSettings() {
   document.getElementById('btnSaveSettings').onclick = async () => {
     const btn = document.getElementById('btnSaveSettings'); if (btn.disabled) return; setButtonBusy(btn, true); setLoading(true, 'กำลังบันทึกการตั้งค่า...');
     try {
-     await apiPost('updateSystemSettings', {
-  orgName: val('st_org'), orgPhone: val('st_phone'),
+   await apiPost('updateSystemSettings', {
+  orgName: val('st_org'),
+  orgPhone: val('st_phone'),
   memoAddressee: val('st_addressee'),
-  docNoPrefix: val('st_docprefix'), renewalAlertDays: val('st_renewaldays')
+  docNoPrefix: val('st_docprefix'),
+  docNoNext: val('st_docnext'),
+  renewalAlertDays: val('st_renewaldays')
 });
       toast('บันทึกการตั้งค่าแล้ว'); await reloadThen(renderSettings);
     } catch (err) { toast(err.message || 'บันทึกการตั้งค่าไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(btn, false); }
