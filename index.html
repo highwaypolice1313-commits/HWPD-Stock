@@ -4735,6 +4735,26 @@ function thaiifyHtml(html) {
   nodes.forEach(n => { n.nodeValue = toThaiNumber(n.nodeValue); });
   return tpl.innerHTML;
 }
+function systemDate(v) {
+  if (!v) return '-';
+  const d = toDate(v);
+  if (isNaN(d)) return String(v);
+  const day = String(d.getDate());
+  const month = String(d.getMonth() + 1);
+  const year = String(d.getFullYear() + 543);
+  return `${day}/${month}/${year}`;
+}
+function systemDateTime(v) {
+  if (!v) return '-';
+  const d = toDate(v);
+  if (isNaN(d)) return String(v);
+  return systemDate(v) + ' ' + d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+}
+function systemDateLong(v) {
+  const d = v ? toDate(v) : new Date();
+  if (isNaN(d)) return '';
+  return d.getDate() + ' ' + TH_MONTHS_FULL[d.getMonth()] + ' ' + (d.getFullYear() + 543);
+}
 function thaiDate(v) {
   if (!v) return '-';
   const d = toDate(v);
@@ -4765,6 +4785,51 @@ function thaiDateAbbr(v) {
   const day = toThaiNumber(d.getDate());
   const year = toThaiNumber(d.getFullYear() + 543);
   return day + ' ' + TH_MONTHS_ABBR[d.getMonth()] + ' ' + year;
+}
+// แปลงวันที่ที่แสดงในเอกสารกลับเป็น ISO สำหรับบันทึกฐานข้อมูล
+// รองรับทั้งเลขอารบิก/เลขไทย และรูปแบบเต็ม/ย่อ เช่น 2 ตุลาคม 2569, ๒ ต.ค.๒๕๖๙, 2/10/2569
+function normalizeDocumentDateForDb(v) {
+  const raw = String(v == null ? '' : v).trim();
+  if (!raw) return '';
+  const s = thaiToArabic(raw).replace(/\s+/g, ' ').trim();
+
+  const iso = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(s);
+  if (iso) {
+    const y = Number(iso[1]), m = Number(iso[2]), d = Number(iso[3]);
+    if (y >= 1900 && m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+      return y + '-' + String(m).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+    }
+  }
+
+  const slash = /^(\d{1,2})\s*[/.-]\s*(\d{1,2})\s*[/.-]\s*(\d{4})$/.exec(s);
+  if (slash) {
+    let y = Number(slash[3]), m = Number(slash[2]), d = Number(slash[1]);
+    if (y > 2400) y -= 543;
+    if (y >= 1900 && m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+      return y + '-' + String(m).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+    }
+  }
+
+  const monthMap = {};
+  TH_MONTHS_FULL.forEach((name, i) => { monthMap[name] = i + 1; });
+  TH_MONTHS_ABBR.forEach((name, i) => {
+    monthMap[name.replace(/\.$/, '')] = i + 1;
+    monthMap[name] = i + 1;
+  });
+  const text = s.replace(/\s+/g, ' ').replace(/\s*([.])/g, '$1').trim();
+  const m = /^(\d{1,2})\s+(.+?)\s*\.?\s*(\d{4})$/.exec(text);
+  if (m) {
+    const d = Number(m[1]);
+    const monthKey = m[2].replace(/\.$/, '').trim();
+    const month = monthMap[monthKey];
+    let y = Number(m[3]);
+    if (y > 2400) y -= 543;
+    if (month && y >= 1900 && d >= 1 && d <= 31) {
+      return y + '-' + String(month).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+    }
+  }
+
+  return raw;
 }
 function isoDate(v) {
   const d = v ? toDate(v) : new Date();
@@ -5842,7 +5907,7 @@ function assetTimelineHtml(a, id) {
         </div>
         <div style="min-width:0; flex:1;">
           <div style="font-size:12.5px; font-weight:600; color:var(--ink); line-height:1.4;">${escapeHtml(e.title)}</div>
-          <div style="font-size:11px; color:var(--ink-dim); margin-top:1px;">${thaiDate(e.date)}</div>
+          <div style="font-size:11px; color:var(--ink-dim); margin-top:1px;">${systemDate(e.date)}</div>
           ${e.note ? `<div style="font-size:11px; color:var(--ink-faint); margin-top:1px; line-height:1.45; word-break:break-word;">${escapeHtml(e.note)}</div>` : ''}
         </div>
       </div>`).join('')}
@@ -5860,12 +5925,12 @@ function openAssetDetail(id) {
     <div class="detail-row"><span>หมวดหมู่</span><span>${escapeHtml(a['หมวดหมู่'])}</span></div>
     <div class="detail-row"><span>ยี่ห้อ/รุ่น</span><span>${escapeHtml(a['ยี่ห้อ/รุ่น']) || '-'}</span></div>
     <div class="detail-row"><span>หมายเลขเครื่อง</span><span>${escapeHtml(a['หมายเลขเครื่อง']) || '-'}</span></div>
-    <div class="detail-row"><span>วันที่รับเข้า</span><span>${thaiDate(a['วันที่รับเข้า'])}</span></div>
+    <div class="detail-row"><span>วันที่รับเข้า</span><span>${systemDate(a['วันที่รับเข้า'])}</span></div>
     <div class="detail-row"><span>มูลค่า</span><span>${a['มูลค่า(บาท)'] ? Number(a['มูลค่า(บาท)']).toLocaleString() + ' บาท' : '-'}</span></div>
     <div class="detail-row"><span>สถานะ</span><span class="status-badge ${statusClass(a['สถานะ'])}">${escapeHtml(a['สถานะ'])}</span></div>
     <div class="detail-row"><span>ผู้ครอบครอง</span><span>${escapeHtml(a['ผู้ครอบครอง/หน่วยงาน']) || '-'}</span></div>
     <div class="detail-row"><span>หน่วยงาน</span><span>${escapeHtml(a['หน่วยงาน']) || '-'}</span></div>
-    <div class="detail-row"><span>ครบกำหนดตรวจสภาพ/ต่อทะเบียน</span><span>${thaiDate(a['วันครบกำหนดตรวจสภาพ/ต่อทะเบียน'])}</span></div>
+    <div class="detail-row"><span>ครบกำหนดตรวจสภาพ/ต่อทะเบียน</span><span>${systemDate(a['วันครบกำหนดตรวจสภาพ/ต่อทะเบียน'])}</span></div>
     <div class="detail-row"><span>หมายเหตุ</span><span>${escapeHtml(a['หมายเหตุ']) || '-'}</span></div>
     ${a['หมวดหมู่'] === GUN_CATEGORY ? componentsSection(id) : ''}
     ${assetTimelineHtml(a, id)}
@@ -6150,13 +6215,13 @@ function openComponentForm(parentId, c) {
 
 /* ========================================================= BORROW */
 function borrowDaysInfo(b) {
-  if (b['สถานะ'] === 'คืนแล้ว') return 'คืนแล้ว ' + thaiDate(b['วันที่คืนจริง']);
-  if (b['สถานะ'] === 'ถูกปฏิเสธ' || b['สถานะ'] === 'รออนุมัติ') return 'กำหนดคืน ' + thaiDate(b['กำหนดคืน']);
+  if (b['สถานะ'] === 'คืนแล้ว') return 'คืนแล้ว ' + systemDate(b['วันที่คืนจริง']);
+  if (b['สถานะ'] === 'ถูกปฏิเสธ' || b['สถานะ'] === 'รออนุมัติ') return 'กำหนดคืน ' + systemDate(b['กำหนดคืน']);
   const days = daysUntil(b['กำหนดคืน']);
   if (days === null) return '';
-  if (days < 0) return 'เกินกำหนด ' + toThaiNumber(Math.abs(days)) + ' วัน';
+  if (days < 0) return 'เกินกำหนด ' + Math.abs(days) + ' วัน';
   if (days === 0) return 'ครบกำหนดวันนี้';
-  return 'เหลืออีก ' + toThaiNumber(days) + ' วัน';
+  return 'เหลืออีก ' + days + ' วัน';
 }
 function renderBorrow() {
   const el = document.getElementById('view-borrow');
@@ -7039,7 +7104,7 @@ function maintRow(m) {
     <div class="li-icon">${ICONS.wrench}</div>
     <div class="li-body">
       <div class="li-title">${escapeHtml(m['ชื่อครุภัณฑ์'])}</div>
-      <div class="li-sub">${escapeHtml(m['อาการ/ปัญหา'])} · แจ้งเมื่อ ${thaiDate(m['วันที่แจ้ง'])}</div>
+      <div class="li-sub">${escapeHtml(m['อาการ/ปัญหา'])} · แจ้งเมื่อ ${systemDate(m['วันที่แจ้ง'])}</div>
     </div>
     <div class="status-badge ${statusClass(m['สถานะ'])}">${escapeHtml(m['สถานะ'])}</div>
   </div>`;
@@ -7053,7 +7118,7 @@ function maintCard(m) {
     <div>
       <div class="asset-card-title">${escapeHtml(m['ชื่อครุภัณฑ์'])}</div>
       <div class="asset-card-sub">${escapeHtml(m['อาการ/ปัญหา'])}</div>
-      <div class="asset-card-sub">แจ้งเมื่อ ${thaiDate(m['วันที่แจ้ง'])}</div>
+      <div class="asset-card-sub">แจ้งเมื่อ ${systemDate(m['วันที่แจ้ง'])}</div>
     </div>
   </div>`;
 }
@@ -7062,7 +7127,7 @@ function openMaintDetail(id) {
   if (!m) return;
   showSheet(`
     <div class="sheet-title">${escapeHtml(m['ชื่อครุภัณฑ์'])}</div>
-    <div class="detail-row"><span>วันที่แจ้ง</span><span>${thaiDate(m['วันที่แจ้ง'])}</span></div>
+    <div class="detail-row"><span>วันที่แจ้ง</span><span>${systemDate(m['วันที่แจ้ง'])}</span></div>
     <div class="detail-row"><span>อาการ/ปัญหา</span><span>${escapeHtml(m['อาการ/ปัญหา'])}</span></div>
     <div class="detail-row"><span>ผู้แจ้ง</span><span>${escapeHtml(m['ผู้แจ้ง']) || '-'}</span></div>
     <div class="detail-row"><span>สถานะ</span><span class="status-badge ${statusClass(m['สถานะ'])}">${escapeHtml(m['สถานะ'])}</span></div>
@@ -7277,7 +7342,7 @@ function openOfficerProfile(u) {
           <div style="color:var(--ink);">${escapeHtml(b['ชื่อครุภัณฑ์'])}</div>
           ${comps.length ? `<div style="font-size:11.5px; color:var(--ink-dim); margin-top:3px; line-height:1.6;">ส่วนควบ: ${comps.map(escapeHtml).join(', ')}</div>` : ''}
         </div>
-        <span>${thaiDate(b['วันที่ยืม'])} → ${thaiDate(b['กำหนดคืน'])} <span class="status-badge ${statusClass(effectiveBorrowStatus(b))}" style="margin-left:6px;">${escapeHtml(effectiveBorrowStatus(b))}</span></span>
+        <span>${systemDate(b['วันที่ยืม'])} → ${systemDate(b['กำหนดคืน'])} <span class="status-badge ${statusClass(effectiveBorrowStatus(b))}" style="margin-left:6px;">${escapeHtml(effectiveBorrowStatus(b))}</span></span>
       </div>`;
     }).join('') : `<div class="hint">ไม่มีพัสดุในความครอบครองขณะนี้</div>`}
     <div class="btn-row">
@@ -7415,7 +7480,7 @@ function userRow(u) {
 function activityRow(a) {
   return `<div class="glass list-item" style="cursor:default;">
     <div class="li-icon">${ICONS.log}</div>
-    <div class="li-body"><div class="li-title">${escapeHtml(a['การกระทำ'])}${a['รายละเอียด'] ? ' · ' + escapeHtml(a['รายละเอียด']) : ''}</div><div class="li-sub">${escapeHtml(a['ผู้ทำรายการ'])} · ${thaiDateTime(a['วันที่-เวลา'])}</div></div>
+    <div class="li-body"><div class="li-title">${escapeHtml(a['การกระทำ'])}${a['รายละเอียด'] ? ' · ' + escapeHtml(a['รายละเอียด']) : ''}</div><div class="li-sub">${escapeHtml(a['ผู้ทำรายการ'])} · ${systemDateTime(a['วันที่-เวลา'])}</div></div>
   </div>`;
 }
 function openUserForm(u) {
@@ -7893,7 +7958,7 @@ function memoRow(m) {
     <div class="li-icon">${ICONS.log}</div>
     <div class="li-body">
       <div class="li-title">${escapeHtml(m['เรื่อง']) || 'ไม่ระบุเรื่อง'}</div>
-      <div class="li-sub">${escapeHtml(m['ผู้ขอเบิก']) || ''}${m['ผู้ขอเบิก'] ? ' · ' : ''}${thaiDate(m['วันที่สร้าง'])}</div>
+      <div class="li-sub">${escapeHtml(m['ผู้ขอเบิก']) || ''}${m['ผู้ขอเบิก'] ? ' · ' : ''}${systemDate(m['วันที่สร้าง'])}</div>
     </div>
     <div class="status-badge status-ready">${escapeHtml(m['สถานะ']) || 'บันทึกแล้ว'}</div>
   </div>`;
@@ -7903,7 +7968,7 @@ function memoCard(m) {
     <div class="memo-thumb" data-thumb></div>
     <div class="memo-card-body">
       <div class="li-title">${escapeHtml(m['เรื่อง']) || 'ไม่ระบุเรื่อง'}</div>
-      <div class="li-sub">${escapeHtml(m['ผู้ขอเบิก']) || ''}${m['ผู้ขอเบิก'] ? ' · ' : ''}${thaiDate(m['วันที่สร้าง'])}</div>
+      <div class="li-sub">${escapeHtml(m['ผู้ขอเบิก']) || ''}${m['ผู้ขอเบิก'] ? ' · ' : ''}${systemDate(m['วันที่สร้าง'])}</div>
       <div class="status-badge status-ready" style="margin-top:6px;">${escapeHtml(m['สถานะ']) || 'บันทึกแล้ว'}</div>
     </div>
   </div>`;
@@ -7995,12 +8060,13 @@ desk.addEventListener('focusout', () => {
   document.getElementById('btnMemoSave').onclick = async () => {
     const b = getBody();
     if (!b) { toast('ไม่พบเนื้อหาเอกสาร'); return; }
-    const g = (id) => { const e = document.getElementById(id); return e ? toThaiNumber(e.textContent.trim()) : ''; };
+    const g = (id) => { const e = document.getElementById(id); return e ? e.textContent.trim() : ''; };
     const payload = {
       id: opts.id || undefined,
       subject: g('ed_subject') || 'ไม่ระบุเรื่อง',
       docNo: g('ed_docno'),
-      docDate: g('ed_docdate'),
+      // ฐานข้อมูลเก็บวันที่มาตรฐาน ISO; ตัว HTML ของเอกสารยังแสดงเลขไทยตามรูปแบบเดิม
+      docDate: normalizeDocumentDateForDb(g('ed_docdate')),
       requesterName: g('ed_reqname') || g('ed_reqname2'),
       html: thaiifyHtml(b.innerHTML),
       borrowId: opts.borrowId || '',
@@ -8101,7 +8167,7 @@ function collectMemoFormData() {
   return {
     org: toThaiNumber(val('m_org')), 
     docNo: toThaiNumber(fullDocNo), 
-    docDate: toThaiNumber(val('m_docdate')), 
+    docDate: thaiDateLong(val('m_docdate')), 
     subject: val('m_subject'), 
     
     // **จุดที่แก้ไข**: ครอบ toThaiNumber ที่ช่องเรียน เพื่อแปลงตัวเลข เช่น ส.ทล.3 เป็น ส.ทล.๓
@@ -8109,26 +8175,26 @@ function collectMemoFormData() {
     
     items, 
     itemsText: itemPhraseList(items),
-    dueDateText: document.getElementById('m_duedate') ? toThaiNumber(val('m_duedate')) : '',
+    dueDateText: document.getElementById('m_duedate') ? thaiDateAbbr(val('m_duedate')) : '',
     requester: { 
       rank: val('m_reqRank'), 
       name: val('m_reqName'), 
       position: toThaiNumber(val('m_reqPosition')), 
-      date: toThaiNumber(val('m_reqDate')) , 
+      date: thaiDateAbbr(val('m_reqDate')), 
       sig: val('m_reqSig') 
     },
     approver: { 
       rank: val('m_apvRank'), 
       name: val('m_apvName'), 
       position: toThaiNumber(val('m_apvPosition')), 
-      date: toThaiNumber(val('m_apvDate'))  , 
+      date: thaiDateAbbr(val('m_apvDate')), 
       sig: val('m_apvSig')
     },
     issuer: { 
       rank: val('m_issRank'), 
       name: val('m_issName'), 
       position: toThaiNumber(val('m_issPosition')), 
-      date: toThaiNumber(val('m_issDate')), 
+      date: thaiDateAbbr(val('m_issDate')), 
       sig: val('m_issSig')
     }
   };
@@ -8255,6 +8321,7 @@ function openPrintMemoForm(opts) {
   const reqSig = borrow ? (borrow['ลายเซ็นผู้ยืม'] || '') : '';
   const apvSig = borrow ? (borrow['ลายเซ็นผู้อนุมัติ'] || '') : '';
   const dueDateText = borrow ? thaiDateAbbr(borrow['กำหนดคืน']) : '';
+  const dueDateIso = borrow && borrow['กำหนดคืน'] ? isoDate(borrow['กำหนดคืน']) : '';
   const defaultSubject = 'ขอเบิก' + (items[0] && items[0].name ? items[0].name : 'พัสดุครุภัณฑ์');
   const requesterNameDefault = borrow ? (borrow['ผู้ยืม'] || '') : (state.user && state.user.name) || '';
   const approverNameDefault = borrow ? (borrow['ผู้อนุมัติ'] || '') : '';
@@ -8305,7 +8372,7 @@ function openPrintMemoForm(opts) {
                 </div>
                 ${!docPrefix ? `<div class="hint" style="margin-top:4px;">ตั้งเลขที่หนังสือส่วนคงที่ได้ที่เมนู "ตั้งค่าระบบ"</div>` : ''}
               </div>
-              <div class="field"><label>วันที่</label><input class="input" id="m_docdate" value="${escapeHtml(thaiDateLong())}"></div>
+              <div class="field"><label>วันที่</label><input class="input" type="date" id="m_docdate" value="${isoDate()}"></div>
             </div>
             <div class="field"><label>เรื่อง</label><input class="input" id="m_subject" value="${escapeHtml(defaultSubject)}"></div>
             <div class="field"><label>เรียน (ผู้บังคับบัญชา)</label><input class="input" id="m_addressee" placeholder="เช่น สว.ส.ทล.3 กก.1 บก.ทล." value="${escapeHtml((state.settings && state.settings.memoAddressee) || '')}"></div>
@@ -8314,22 +8381,22 @@ function openPrintMemoForm(opts) {
             <div class="mf-section-title"><span class="mf-step">2</span> รายการพัสดุที่ขอเบิก/ยืม</div>
             <div id="m_itemsWrap">${itemFieldsHtml()}</div>
             <button type="button" class="mf-add" id="btnAddItem">+ เพิ่มรายการพัสดุ</button>
-            ${dueDateText ? `<div class="field"><label>กำหนดส่งคืนภายในวันที่</label><input class="input" id="m_duedate" value="${escapeHtml(dueDateText)}"></div>` : ''}
+            ${dueDateText ? `<div class="field"><label>กำหนดส่งคืนภายในวันที่</label><input class="input" type="date" id="m_duedate" value="${dueDateIso}"></div>` : ''}
           </div>
           <div class="mf-section">
             <div class="mf-section-title"><span class="mf-step">3</span> ผู้ขอเบิก/ยืม</div>
             ${signerCardHtml('m_req', 'ผู้ขอเบิก/ยืม', { rank: reqSplit.rank, name: reqSplit.name || requesterNameDefault, position: reqOfficer ? reqOfficer['ตำแหน่ง'] : '', sig: reqSig, photo: reqOfficer ? reqOfficer['รูปถ่าย'] : '' })}
-            <div class="field" style="margin-top:10px;"><label>วันที่ลงนาม</label><input class="input" id="m_reqDate" value="${escapeHtml(thaiDateAbbr())}"></div>
+            <div class="field" style="margin-top:10px;"><label>วันที่ลงนาม</label><input class="input" type="date" id="m_reqDate" value="${isoDate()}"></div>
           </div>
           <div class="mf-section">
             <div class="mf-section-title"><span class="mf-step">4</span> ผู้อนุมัติ</div>
             ${signerCardHtml('m_apv', 'ผู้อนุมัติ', { rank: apvOfficer ? apvOfficer['ยศ'] : '', name: apvOfficer ? apvOfficer['ชื่อ-สกุล'] : approverNameDefault, position: apvOfficer ? apvOfficer['ตำแหน่ง'] : '', sig: apvSigUse, photo: apvOfficer ? apvOfficer['รูปถ่าย'] : '' })}
-            <div class="field" style="margin-top:10px;"><label>วันที่ลงนาม</label><input class="input" id="m_apvDate" value="${escapeHtml(thaiDateAbbr())}"></div>
+            <div class="field" style="margin-top:10px;"><label>วันที่ลงนาม</label><input class="input" type="date" id="m_apvDate" value="${isoDate()}"></div>
           </div>
           <div class="mf-section">
             <div class="mf-section-title"><span class="mf-step">5</span> ผู้จ่ายพัสดุ</div>
             ${signerCardHtml('m_iss', 'ผู้จ่ายพัสดุ', { rank: issOfficer ? issOfficer['ยศ'] : '', name: issOfficer ? issOfficer['ชื่อ-สกุล'] : '', position: issOfficer ? issOfficer['ตำแหน่ง'] : '', sig: '', photo: issOfficer ? issOfficer['รูปถ่าย'] : '' })}
-            <div class="field" style="margin-top:10px;"><label>วันที่ลงนาม</label><input class="input" id="m_issDate" value="${escapeHtml(thaiDateAbbr())}"></div>
+            <div class="field" style="margin-top:10px;"><label>วันที่ลงนาม</label><input class="input" type="date" id="m_issDate" value="${isoDate()}"></div>
           </div>
         </div>
         <div class="mf-preview">
@@ -8399,7 +8466,8 @@ function openPrintMemoForm(opts) {
   wireItemRow();
   document.getElementById('btnAddItem').onclick = () => {
     document.getElementById('m_itemsWrap').insertAdjacentHTML('beforeend',
-        memoItemRowHtml({ id: '', name: '', brand: '', serial: '', qty: 1, unit: 'เครื่อง' }, 'รายการเพิ่มเติม', true));
+        memoItemRowHtml({ id: '', name: '', brand: '', serial: '', qty: 1, unit: 'เครื่อง' }, 'รายการเพิ่มเติม', true)
+    );
     wireItemRow();
     refreshMemoLivePreview();
   };
@@ -8475,7 +8543,7 @@ function renderReports() {
   const showPeriod = state.rpTab === 'borrow' || state.rpTab === 'maint';
   el.innerHTML = `
     <div class="rp-root">
-      <div class="section-title">รายงานสรุป <small>ข้อมูล ณ วันที่ ${thaiDateLong()}</small></div>
+      <div class="section-title">รายงานสรุป <small>ข้อมูล ณ วันที่ ${systemDateLong()}</small></div>
       <div class="chip-row" id="rpTabs">${TABS.map(t => `<div class="chip ${state.rpTab === t[0] ? 'active' : ''}" data-rptab="${t[0]}">${t[1]}</div>`).join('')}</div>
       ${showPeriod ? `<div class="hint" style="margin:0 0 6px;">ช่วงเวลา (นับจาก${state.rpTab === 'borrow' ? 'วันที่ยืม' : 'วันที่แจ้งซ่อม'})</div>
       <div class="chip-row" id="rpPeriods">${PERIODS.map(p => `<div class="chip ${state.rpPeriod === p[0] ? 'active' : ''}" data-rpp="${p[0]}">${p[1]}</div>`).join('')}</div>` : ''}
@@ -8727,8 +8795,8 @@ function rpAssets(body) {
       </div>
       <div class="glass rp-card"><h4>ใกล้ครบกำหนดตรวจสภาพ/ต่อทะเบียน <small>ภายใน ${win} วัน</small></h4>
         ${rpTable([['ครุภัณฑ์'], ['ครบกำหนด'], ['เหลือ', 1]],
-          due.map(x => [escapeHtml(x.a['ชื่อครุภัณฑ์']), thaiDate(x.a['วันครบกำหนดตรวจสภาพ/ต่อทะเบียน']),
-            x.d < 0 ? `<span class="status-badge status-overdue">เลย ${toThaiNumber(-x.d)} วัน</span>` : `<span class="status-badge status-borrowed">อีก ${toThaiNumber(x.d)} วัน</span>`]))}
+          due.map(x => [escapeHtml(x.a['ชื่อครุภัณฑ์']), systemDate(x.a['วันครบกำหนดตรวจสภาพ/ต่อทะเบียน']),
+            x.d < 0 ? `<span class="status-badge status-overdue">เลย ${-x.d} วัน</span>` : `<span class="status-badge status-borrowed">อีก ${x.d} วัน</span>`]))}
       </div>
     </div>
     <div class="glass rp-card"><h4>ตรวจความครบถ้วนของข้อมูล <small>ช่วยให้รายงานราชการไม่มีช่องว่าง</small></h4>
@@ -8773,7 +8841,7 @@ function rpBorrow(body) {
     </div>
     <div class="glass rp-card"><h4>รายการค้างเกินกำหนดคืน <small>เรียงจากเกินนานที่สุด</small></h4>
       ${rpTable([['ผู้ยืม'], ['ครุภัณฑ์'], ['กำหนดคืน'], ['เกิน', 1]],
-        overdueAll.map(x => [escapeHtml(x.b['ผู้ยืม']), escapeHtml(x.b['ชื่อครุภัณฑ์']), thaiDate(x.b['กำหนดคืน']), `<span class="status-badge status-overdue">${toThaiNumber(x.days)} วัน</span>`]))}
+        overdueAll.map(x => [escapeHtml(x.b['ผู้ยืม']), escapeHtml(x.b['ชื่อครุภัณฑ์']), systemDate(x.b['กำหนดคืน']), `<span class="status-badge status-overdue">${x.days} วัน</span>`]))}
     </div>
     <div class="rp-grid2">
       <div class="glass rp-card"><h4>ผู้ยืมบ่อยที่สุด <small>ครั้ง</small></h4>${rpBars(topPeople.map(x => ({ label: x[0], n: x[1] })), topPeople.length ? topPeople[0][1] : 0)}</div>
@@ -8821,8 +8889,8 @@ function rpMaint(body) {
     </div>
     <div class="glass rp-card"><h4>งานที่ยังค้างอยู่ <small>เรียงจากรอนานที่สุด</small></h4>
       ${rpTable([['ครุภัณฑ์'], ['อาการ/ปัญหา'], ['แจ้งเมื่อ'], ['สถานะ'], ['รอมา', 1]],
-        openList.map(x => [escapeHtml(x.m['ชื่อครุภัณฑ์']), escapeHtml(x.m['อาการ/ปัญหา']), thaiDate(x.m['วันที่แจ้ง']),
-          `<span class="status-badge ${statusClass(x.m['สถานะ'])}">${escapeHtml(x.m['สถานะ'])}</span>`, toThaiNumber(x.wait) + ' วัน']))}
+        openList.map(x => [escapeHtml(x.m['ชื่อครุภัณฑ์']), escapeHtml(x.m['อาการ/ปัญหา']), systemDate(x.m['วันที่แจ้ง']),
+          `<span class="status-badge ${statusClass(x.m['สถานะ'])}">${escapeHtml(x.m['สถานะ'])}</span>`, x.wait + ' วัน']))}
     </div>
     <div class="glass rp-card"><h4>ครุภัณฑ์ที่ซ่อมบ่อย/ค่าใช้จ่ายสูง <small>8 อันดับ</small></h4>
       ${rpTable([['ครุภัณฑ์'], ['จำนวนครั้ง', 1], ['ค่าใช้จ่าย (บาท)', 1]], topAssets.map(x => [escapeHtml(x[0]), x[1].n, x[1].c.toLocaleString()]))}
@@ -8837,7 +8905,7 @@ function rpOfficial(body) {
   const hasComms = state.assets.some(a => a['หมวดหมู่'] === 'สื่อสาร');
   const hasVeh = state.assets.some(a => a['หมวดหมู่'] === 'ยานพาหนะ');
   body.innerHTML = `
-    <div class="glass rp-card"><h4>รายงานรูปแบบราชการ <small>ประจำปี พ.ศ. ${toThaiNumber(state.auditYear + 543)}</small></h4>
+    <div class="glass rp-card"><h4>รายงานรูปแบบราชการ <small>ประจำปี พ.ศ. ${state.auditYear + 543}</small></h4>
       <div class="hint" style="margin-top:0;">ช่องผลตรวจ (ดี/ชำรุด) ดึงจากผลตรวจนับประจำปีที่ระบุ หากช่องว่างทั้งหมด ให้เปิดหน้า "ตรวจนับประจำปี" ของปีนั้นก่อน แล้วกลับมาพิมพ์</div>
       <div class="btn-row">
         <button class="btn btn-primary" id="btnRpGeneral">ครุภัณฑ์ทั่วไป</button>
@@ -9042,7 +9110,7 @@ function auditIsChecked(a) {
   const years = [];
   for (let y = now; y >= now - 4; y--) years.push(y);
   if (!years.includes(state.auditYear)) years.unshift(state.auditYear);
-  return years.map(y => `<option value="${y}" ${y === state.auditYear ? 'selected' : ''}>พ.ศ. ${toThaiNumber(y + 543)}</option>`).join('');
+  return years.map(y => `<option value="${y}" ${y === state.auditYear ? 'selected' : ''}>พ.ศ. ${y + 543}</option>`).join('');
 }
    
 function drawAuditView() {
@@ -9536,7 +9604,7 @@ async function renderMonthly() {
           ${TH_MONTHS_FULL.map((m, i) => `<option value="${i + 1}" ${state.mcMonth === i + 1 ? 'selected' : ''}>${m}</option>`).join('')}
         </select>
         <select class="input sort-select" id="mcYear" style="min-width:110px;">
-          ${years.map(y => `<option value="${y}" ${state.mcYear === y ? 'selected' : ''}>พ.ศ. ${toThaiNumber(y + 543)}</option>`).join('')}
+          ${years.map(y => `<option value="${y}" ${state.mcYear === y ? 'selected' : ''}>พ.ศ. ${y + 543}</option>`).join('')}
         </select>
       </span>
     </div>
@@ -9630,7 +9698,7 @@ function mcCardHtml({ u, sum, rec }) {
       <button type="button" class="mc-btn bad mc-bad ${r === 'มีปัญหา' ? 'on' : ''}">⚠ มีปัญหา</button>
     </div>
     ${r === 'มีปัญหา' && rec['หมายเหตุ'] ? `<div class="mc-note">${escapeHtml(rec['หมายเหตุ'])}</div>` : ''}
-    ${rec ? `<div class="mc-meta"><span>ตรวจโดย ${escapeHtml(rec['ผู้ตรวจ'] || '-')} · ${thaiDateTime(rec['วันที่ตรวจ'])}</span><span class="link-btn mc-clear">ล้างผล</span></div>` : ''}
+    ${rec ? `<div class="mc-meta"><span>ตรวจโดย ${escapeHtml(rec['ผู้ตรวจ'] || '-')} · ${systemDateTime(rec['วันที่ตรวจ'])}</span><span class="link-btn mc-clear">ล้างผล</span></div>` : ''}
   </div>`;
 }
 
@@ -10213,7 +10281,7 @@ function renderSettings() {
   const p = document.getElementById('st_docpreview');
   if (!p) return;
   const n = val('st_docnext');
-  p.textContent = n ? 'เลขที่หนังสือฉบับถัดไป: ' + toThaiNumber(val('st_docprefix') + n) : 'ยังไม่ได้ตั้งเลขถัดไป (ระบบจะเริ่มนับให้เมื่อใช้เลขครั้งแรก)';
+  p.textContent = n ? 'เลขที่หนังสือฉบับถัดไป: ' + (val('st_docprefix') + n) : 'ยังไม่ได้ตั้งเลขถัดไป (ระบบจะเริ่มนับให้เมื่อใช้เลขครั้งแรก)';
 };
 ['st_docprefix', 'st_docnext'].forEach(id => { const e = document.getElementById(id); if (e) e.oninput = updDocPreview; });
 updDocPreview();
@@ -10644,7 +10712,7 @@ function compareMonthlyOfficers(a, b) {
     const note = r === 'มีปัญหา' && rec['หมายเหตุ']
       ? `<div class="mc-note">${escapeHtml(rec['หมายเหตุ'])}</div>` : '';
     const meta = rec ? `<div class="mc-meta">
-      <span>ตรวจโดย ${escapeHtml(rec['ผู้ตรวจ'] || '-')} · ${thaiDateTime(rec['วันที่ตรวจ'])}</span>
+      <span>ตรวจโดย ${escapeHtml(rec['ผู้ตรวจ'] || '-')} · ${systemDateTime(rec['วันที่ตรวจ'])}</span>
       <span class="link-btn mc-clear">ล้างผล</span>
     </div>` : '';
     const actions = `<div class="mc-actions">
@@ -11052,7 +11120,7 @@ function compareMonthlyOfficers(a, b) {
                 ${TH_MONTHS_FULL.map((m,i)=>`<option value="${i+1}" ${state.mcMonth===i+1?'selected':''}>${m}</option>`).join('')}
               </select>
               <select class="input" id="mcYear">
-                ${years.map(y=>`<option value="${y}" ${state.mcYear===y?'selected':''}>พ.ศ. ${toThaiNumber(y+543)}</option>`).join('')}
+                ${years.map(y=>`<option value="${y}" ${state.mcYear===y?'selected':''}>พ.ศ. ${y+543}</option>`).join('')}
               </select>
             </div>
           </div>
