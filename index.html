@@ -7841,7 +7841,7 @@ function buildMemoBodyHtml(m) {
      <div id="ed_reqdate2">${escapeHtml(req.date) || '&nbsp;'}</div>
    </div>
     <div class="pf-sign">
-      <div class="pf-sign-rank" id="ed_issrank"><span class="pf-rank">${escapeHtml(iss.rank) || '&nbsp;'}</span></div>
+      <div class="pf-sign-rank" id="ed_issrank"><span class="pf-rank">${escapeHtml(iss.rank) || '&nbsp;'}</span>${sigImg(iss.sig)}</div>
       <div>( <span id="ed_issname">${escapeHtml(iss.name) || '.....................................'}</span> )</div>
       <div id="ed_issposition">${escapeHtml(toThaiNumber(iss.position)) || '&nbsp;'}</div>
       <div id="ed_issdate">${escapeHtml(iss.date) || '&nbsp;'}</div>
@@ -8128,6 +8128,7 @@ function collectMemoFormData() {
       name: val('m_issName'), 
       position: toThaiNumber(val('m_issPosition')), 
       date: toThaiNumber(val('m_issDate')) 
+      sig: val('m_issSig')
     }
   };
 }
@@ -8162,6 +8163,90 @@ async function commitDocNo(docNoText) {
     state.settings.docNoNext = next;
   } catch (e) { console.warn('อัปเดตเลขหนังสือถัดไปไม่สำเร็จ', e); }
 }
+   /* ---------- แถวรายการพัสดุแบบ "แตะเพื่อเลือก" (เหมือนหน้ายืม-คืน) ---------- */
+function memoItemRowHtml(it, label, removable) {
+  const sub = [it.serial ? 'S/N ' + it.serial : '', it.brand].filter(Boolean).join(' · ') || 'เลือกจากทะเบียนครุภัณฑ์';
+  return `
+  <div class="mf-item" data-item>
+    <div class="mf-item-head"><span>${escapeHtml(label)}</span>${removable ? `<button type="button" class="mf-item-del">ลบ</button>` : ''}</div>
+    <input type="hidden" class="memo-item-name" value="${escapeHtml(it.name || '')}">
+    <input type="hidden" class="memo-item-brand" value="${escapeHtml(it.brand || '')}">
+    <input type="hidden" class="memo-item-serial" value="${escapeHtml(it.serial || '')}">
+    <div class="glass list-item memo-item-trigger" style="cursor:pointer;">
+      <div class="li-icon">${ICONS.other}</div>
+      <div class="li-body">
+        <div class="li-title memo-item-title">${escapeHtml(it.name || 'แตะเพื่อเลือกครุภัณฑ์')}</div>
+        <div class="li-sub memo-item-sub">${escapeHtml(sub)}</div>
+      </div>
+      <span class="status-badge status-ready" style="flex:none;">เลือก</span>
+    </div>
+    <div class="memo-two-col" style="margin-top:10px;">
+      <div class="field" style="max-width:90px;"><label>จำนวน</label><input class="input memo-item-qty" type="number" min="1" value="${it.qty || 1}"></div>
+      <div class="field" style="max-width:140px;"><label>หน่วยนับ</label><input class="input memo-item-unit" list="unitDatalist" value="${escapeHtml(it.unit || 'เครื่อง')}"></div>
+    </div>
+  </div>`;
+}
+
+/* ---------- การ์ดผู้ลงนามแบบ "แตะเพื่อเลือก" + ปุ่มลงลายเซ็น ---------- */
+function signerCardHtml(prefix, label, o) {
+  o = o || {};
+  const full = ((o.rank || '') + ' ' + (o.name || '')).trim();
+  return `
+    <input type="hidden" id="${prefix}Rank" value="${escapeHtml(o.rank || '')}">
+    <input type="hidden" id="${prefix}Name" value="${escapeHtml(o.name || '')}">
+    <input type="hidden" id="${prefix}Position" value="${escapeHtml(o.position || '')}">
+    <input type="hidden" id="${prefix}Sig" value="${escapeHtml(o.sig || '')}">
+    <div class="glass list-item" id="${prefix}Trigger" style="cursor:pointer;">
+      <div class="li-icon" id="${prefix}Icon">${o.photo ? `<img src="${o.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:13px;">` : ICONS.user}</div>
+      <div class="li-body">
+        <div class="li-title" id="${prefix}Title">${escapeHtml(full || 'แตะเพื่อเลือก' + label)}</div>
+        <div class="li-sub" id="${prefix}Sub">${escapeHtml(o.position || 'เลือกจากทำเนียบ หรือพิมพ์ค้นหา')}</div>
+      </div>
+      <span class="status-badge status-ready" style="flex:none;">เลือก</span>
+    </div>
+    <div class="glass list-item" id="${prefix}SigTrigger" style="cursor:pointer; margin-top:8px;">
+      <div class="li-icon" id="${prefix}SigIcon">${o.sig ? `<img src="${escapeHtml(o.sig)}" style="width:100%;height:100%;object-fit:contain;">` : ICONS.edit}</div>
+      <div class="li-body">
+        <div class="li-title" id="${prefix}SigTitle">${o.sig ? 'เซ็นแล้ว (แตะเพื่อเซ็นใหม่)' : 'ลายเซ็น (ไม่บังคับ)'}</div>
+        <div class="li-sub">เซ็นสด หรือใช้ลายเซ็นที่บันทึกไว้ของ จนท.</div>
+      </div>
+      <span class="status-badge status-ready" style="flex:none;">เซ็น</span>
+    </div>`;
+}
+
+function wireSignerCard(prefix, label) {
+  const $ = id => document.getElementById(prefix + id);
+  const fullName = () => (val(prefix + 'Rank') + ' ' + val(prefix + 'Name')).trim();
+  const findOfficer = () => { const i = findOfficerIndexByName(fullName()); return i !== '' ? state.users[Number(i)] : null; };
+  const setSig = v => {
+    $('Sig').value = v;
+    $('SigIcon').innerHTML = v ? `<img src="${v}" style="width:100%;height:100%;object-fit:contain;">` : ICONS.edit;
+    $('SigTitle').textContent = v ? 'เซ็นแล้ว (แตะเพื่อเซ็นใหม่)' : 'ลายเซ็น (ไม่บังคับ)';
+  };
+
+  $('Trigger').onclick = () => openOfficerPickerSheet(fullName(), (name, u) => {
+    if (name !== fullName()) setSig('');                 // เปลี่ยนคน = ลายเซ็นเดิมใช้ไม่ได้
+    let rank, nm, pos;
+    if (u) { rank = u['ยศ'] || ''; nm = u['ชื่อ-สกุล'] || ''; pos = u['ตำแหน่ง'] || ''; }
+    else { const s = splitRankName(name); rank = s.rank; nm = s.name; pos = ''; }
+    $('Rank').value = rank; $('Name').value = nm; $('Position').value = pos;
+    $('Title').textContent = (rank + ' ' + nm).trim();
+    $('Sub').textContent = pos || (u ? 'ไม่ระบุตำแหน่ง' : 'พิมพ์ชื่อเอง');
+    $('Icon').innerHTML = (u && u['รูปถ่าย'])
+      ? `<img src="${u['รูปถ่าย']}" style="width:100%;height:100%;object-fit:cover;border-radius:13px;">` : ICONS.user;
+    refreshMemoLivePreview();
+  });
+
+  $('SigTrigger').onclick = () => {
+    if (!fullName()) { toast('กรุณาเลือก' + label + 'ก่อน'); return; }
+    const o = findOfficer();
+    openSignatureSheet({
+      title: 'ลายเซ็น' + label, name: fullName(), saved: o ? o['ลายเซ็น'] : '',
+      onDone: v => { setSig(v); refreshMemoLivePreview(); }
+    });
+  };
+}
+   
 function openPrintMemoForm(opts) {
   const items = buildMemoItemList(opts);
   const borrow = opts.borrow || null;
@@ -8176,30 +8261,18 @@ function openPrintMemoForm(opts) {
   const reqOfficer = reqIdx !== '' ? state.users[Number(reqIdx)] : null;
   const reqSplit = reqOfficer ? { rank: reqOfficer['ยศ'], name: reqOfficer['ชื่อ-สกุล'] } : splitRankName(requesterNameDefault);
 
-  let apvIdx = findOfficerIndexByName(approverNameDefault);
-  if (apvIdx === '') { const apv1 = officersByMemoRole('ผู้อนุมัติ ลำดับที่ 1')[0]; if (apv1) apvIdx = String(state.users.indexOf(apv1)); }
-  const apvOfficer = apvIdx !== '' && apvIdx !== undefined ? state.users[Number(apvIdx)] : null;
+  // ผู้อนุมัติ: ใช้ "ผู้อนุมัติ ลำดับที่ 1" จากทำเนียบเป็นค่าตั้งต้น (ไม่มีค่อยถอยไปใช้ชื่อในรายการยืม)
+  const apv1 = officersByMemoRole('ผู้อนุมัติ ลำดับที่ 1')[0];
+  let apvOfficer = apv1 || null;
+  if (!apvOfficer) { const i = findOfficerIndexByName(approverNameDefault); if (i !== '') apvOfficer = state.users[Number(i)]; }
+  // ลายเซ็นจากรายการยืม ใช้ต่อเมื่อเป็นคนเดียวกับผู้อนุมัติตั้งต้นเท่านั้น (กันลายเซ็นไม่ตรงกับชื่อ)
+  const apvSigUse = (apvOfficer && approverNameDefault && eqCiJs_(officerFullName(apvOfficer), approverNameDefault)) ? apvSig : '';
 
-  const issuer1 = officersByMemoRole('ผู้จ่ายพัสดุ')[0];
-  const issIdx = issuer1 ? String(state.users.indexOf(issuer1)) : '';
-  const issOfficer = issuer1 || null;
+  // ผู้จ่ายพัสดุ
+  const issOfficer = officersByMemoRole('ผู้จ่ายพัสดุ')[0] || null;
 
   function itemFieldsHtml() {
-    return items.map((it, i) => `
-      <div class="mf-item" data-item>
-        <div class="mf-item-head"><span>รายการที่ ${i+1}</span>${items.length > 1 ? `<button type="button" class="mf-item-del">ลบ</button>` : ''}</div>
-        <div class="memo-two-col">
-          <div class="field"><label>ชื่อพัสดุ</label><input class="input memo-item-name" value="${escapeHtml(it.name)}"></div>
-        </div>
-        <div class="memo-two-col">
-          <div class="field" style="max-width:90px;"><label>จำนวน</label><input class="input memo-item-qty" type="number" min="1" value="${it.qty}"></div>
-          <div class="field" style="max-width:120px;"><label>หน่วยนับ</label><input class="input memo-item-unit" list="unitDatalist" value="${escapeHtml(it.unit || 'เครื่อง')}"></div>
-          <div class="field"><label>ยี่ห้อ/รุ่น</label><input class="input memo-item-brand" value="${escapeHtml(it.brand)}"></div>
-        </div>
-        <div class="memo-two-col">
-          <div class="field"><label>หมายเลขเครื่อง/SN</label><input class="input memo-item-serial" value="${escapeHtml(it.serial)}"></div>
-        </div>
-      </div>`).join('');
+    return items.map((it, i) => memoItemRowHtml(it, 'รายการที่ ' + (i + 1), items.length > 1)).join('');
   }
 
   const orgLine = (state.settings && state.settings.orgName) || ORG_NAME;
@@ -8243,19 +8316,18 @@ function openPrintMemoForm(opts) {
           </div>
           <div class="mf-section">
             <div class="mf-section-title"><span class="mf-step">3</span> ผู้ขอเบิก/ยืม</div>
-            ${signerPickerHtml('m_req', reqIdx, reqSplit.rank, reqSplit.name || requesterNameDefault, reqOfficer ? reqOfficer['ตำแหน่ง'] : '', reqSig)}
-            <div class="field"><label>วันที่ลงนาม</label><input class="input" id="m_reqDate" value="${escapeHtml(thaiDateAbbr())}"></div>
+            ${signerCardHtml('m_req', 'ผู้ขอเบิก/ยืม', { rank: reqSplit.rank, name: reqSplit.name || requesterNameDefault, position: reqOfficer ? reqOfficer['ตำแหน่ง'] : '', sig: reqSig, photo: reqOfficer ? reqOfficer['รูปถ่าย'] : '' })}
+            <div class="field" style="margin-top:10px;"><label>วันที่ลงนาม</label><input class="input" id="m_reqDate" value="${escapeHtml(thaiDateAbbr())}"></div>
           </div>
           <div class="mf-section">
             <div class="mf-section-title"><span class="mf-step">4</span> ผู้อนุมัติ</div>
-             ${signerPickerHtml('m_apv', apvIdx, apvOfficer ? apvOfficer['ยศ'] : '', apvOfficer ? apvOfficer['ชื่อ-สกุล'] : approverNameDefault, apvOfficer ? apvOfficer['ตำแหน่ง'] : '', apvSig)}
-            <div class="hint" style="margin-top:0;">เลือกจากดรอปดาวน์เพื่อสลับผู้ลงนามได้ทันที</div>
-            <div class="field"><label>วันที่ลงนาม</label><input class="input" id="m_apvDate" value="${escapeHtml(thaiDateAbbr())}"></div>
+            ${signerCardHtml('m_apv', 'ผู้อนุมัติ', { rank: apvOfficer ? apvOfficer['ยศ'] : '', name: apvOfficer ? apvOfficer['ชื่อ-สกุล'] : approverNameDefault, position: apvOfficer ? apvOfficer['ตำแหน่ง'] : '', sig: apvSigUse, photo: apvOfficer ? apvOfficer['รูปถ่าย'] : '' })}
+            <div class="field" style="margin-top:10px;"><label>วันที่ลงนาม</label><input class="input" id="m_apvDate" value="${escapeHtml(thaiDateAbbr())}"></div>
           </div>
           <div class="mf-section">
             <div class="mf-section-title"><span class="mf-step">5</span> ผู้จ่ายพัสดุ</div>
-            ${signerPickerHtml('m_iss', issIdx, issOfficer ? issOfficer['ยศ'] : '', issOfficer ? issOfficer['ชื่อ-สกุล'] : '', issOfficer ? issOfficer['ตำแหน่ง'] : '')}
-            <div class="field"><label>วันที่ลงนาม</label><input class="input" id="m_issDate" value="${escapeHtml(thaiDateAbbr())}"></div>
+            ${signerCardHtml('m_iss', 'ผู้จ่ายพัสดุ', { rank: issOfficer ? issOfficer['ยศ'] : '', name: issOfficer ? issOfficer['ชื่อ-สกุล'] : '', position: issOfficer ? issOfficer['ตำแหน่ง'] : '', sig: '', photo: issOfficer ? issOfficer['รูปถ่าย'] : '' })}
+            <div class="field" style="margin-top:10px;"><label>วันที่ลงนาม</label><input class="input" id="m_issDate" value="${escapeHtml(thaiDateAbbr())}"></div>
           </div>
         </div>
         <div class="mf-preview">
@@ -8279,30 +8351,33 @@ function openPrintMemoForm(opts) {
     if (b.dataset.view === 'preview') refreshMemoLivePreview();
   });
 
-  wireSignerPicker('m_req'); wireSignerPicker('m_apv'); wireSignerPicker('m_iss');
+  wireSignerCard('m_req', 'ผู้ขอเบิก/ยืม');
+  wireSignerCard('m_apv', 'ผู้อนุมัติ');
+  wireSignerCard('m_iss', 'ผู้จ่ายพัสดุ');
 
   function wireItemRow() {
-    document.querySelectorAll('.mf-item-del').forEach(b => b.onclick = () => { b.closest('.mf-item').remove(); refreshMemoLivePreview(); });
+    document.querySelectorAll('#m_itemsWrap .mf-item').forEach(item => {
+      if (item.dataset.wired) return;
+      item.dataset.wired = '1';
+      const del = item.querySelector('.mf-item-del');
+      if (del) del.onclick = () => { item.remove(); refreshMemoLivePreview(); };
+      item.querySelector('.memo-item-trigger').onclick = () =>
+        openAssetPickerSheet('', a => {                       // เลือกได้ทุกสถานะ (onlyAvailable=false)
+          item.querySelector('.memo-item-name').value = a['ชื่อครุภัณฑ์'] || '';
+          item.querySelector('.memo-item-brand').value = a['ยี่ห้อ/รุ่น'] || '';
+          item.querySelector('.memo-item-serial').value = a['หมายเลขเครื่อง'] || '';
+          item.querySelector('.memo-item-unit').value = unitForCategory(a['หมวดหมู่']);
+          item.querySelector('.memo-item-title').textContent = a['ชื่อครุภัณฑ์'] || '';
+          item.querySelector('.memo-item-sub').textContent =
+            [a['หมายเลขเครื่อง'] ? 'S/N ' + a['หมายเลขเครื่อง'] : '', a['ยี่ห้อ/รุ่น']].filter(Boolean).join(' · ') || a['รหัสครุภัณฑ์'];
+          refreshMemoLivePreview();
+        }, false);
+    });
   }
   wireItemRow();
   document.getElementById('btnAddItem').onclick = () => {
-    const wrap = document.getElementById('m_itemsWrap');
-    const div = document.createElement('div');
-    div.className = 'mf-item'; div.setAttribute('data-item', '');
-       div.innerHTML = `
-      <div class="mf-item-head"><span>รายการเพิ่มเติม</span><button type="button" class="mf-item-del">ลบ</button></div>
-      <div class="memo-two-col">
-        <div class="field"><label>ชื่อพัสดุ</label><input class="input memo-item-name"></div>
-      </div>
-      <div class="memo-two-col">
-        <div class="field" style="max-width:90px;"><label>จำนวน</label><input class="input memo-item-qty" type="number" min="1" value="1"></div>
-        <div class="field" style="max-width:120px;"><label>หน่วยนับ</label><input class="input memo-item-unit" list="unitDatalist" value="เครื่อง"></div>
-        <div class="field"><label>ยี่ห้อ/รุ่น</label><input class="input memo-item-brand"></div>
-      </div>
-      <div class="memo-two-col">
-        <div class="field"><label>หมายเลขเครื่อง/SN</label><input class="input memo-item-serial"></div>
-      </div>`;
-    wrap.appendChild(div);
+    document.getElementById('m_itemsWrap').insertAdjacentHTML('beforeend',
+      memoItemRowHtml({ name: '', brand: '', serial: '', qty: 1, unit: 'เครื่อง' }, 'รายการเพิ่มเติม', true));
     wireItemRow();
     refreshMemoLivePreview();
   };
@@ -9678,18 +9753,20 @@ function auditCommitteeSettingsSectionHtml(s) {
   const c = getAuditCommittee();
   const person = (idx, label) => {
     const p = c[idx];
-    const officerIdx = findOfficerIndexByName(p.name);
-    const locked = officerIdx !== '';
+    const full = ((p.rank || '') + ' ' + (p.name || '')).trim();
     return `
     <div class="memo-section-label" style="margin-top:${idx === 0 ? '0' : '10px'};">${label}</div>
-    <div class="field"><label>เลือกรายชื่อจากทำเนียบ จนท.ในสังกัด</label>
-      <select class="input ac-pick" data-idx="${idx}">${officerSelectOptions(officerIdx)}</select>
+    <input type="hidden" class="ac-rank" data-idx="${idx}" value="${escapeHtml(p.rank)}">
+    <input type="hidden" class="ac-name" data-idx="${idx}" value="${escapeHtml(p.name)}">
+    <div class="glass list-item ac-trigger" data-idx="${idx}" style="cursor:pointer;">
+      <div class="li-icon">${ICONS.user}</div>
+      <div class="li-body">
+        <div class="li-title ac-title" data-idx="${idx}">${escapeHtml(full || 'แตะเพื่อเลือกรายชื่อ')}</div>
+        <div class="li-sub">เลือกจากทำเนียบ หรือพิมพ์ชื่อเอง</div>
+      </div>
+      <span class="status-badge status-ready" style="flex:none;">เลือก</span>
     </div>
-    <div class="memo-two-col">
-      <div class="field" style="max-width:130px;"><label>ยศ</label><input class="input ac-rank" data-idx="${idx}" value="${escapeHtml(p.rank)}" ${locked ? 'readonly' : ''}></div>
-      <div class="field"><label>ชื่อ-สกุล</label><input class="input ac-name" data-idx="${idx}" value="${escapeHtml(p.name)}" ${locked ? 'readonly' : ''}></div>
-    </div>
-    <div class="field"><label>ตำแหน่ง</label><input class="input ac-position" data-idx="${idx}" value="${escapeHtml(p.position)}"></div>`;
+    <div class="field" style="margin-top:8px;"><label>ตำแหน่ง</label><input class="input ac-position" data-idx="${idx}" value="${escapeHtml(p.position)}"></div>`;
   };
   return `
     <div class="section-title" style="margin-top:20px; font-size:14px;">คณะกรรมการตรวจสอบพัสดุประจำปี</div>
@@ -9707,23 +9784,23 @@ function auditCommitteeSettingsSectionHtml(s) {
     </div>`;
 }
 function wireAuditCommitteeSettingsHandlers() {
-  document.querySelectorAll('.ac-pick').forEach(pick => {
-    pick.onchange = () => {
-      const idx = pick.dataset.idx;
-      const rankEl = document.querySelector('.ac-rank[data-idx="' + idx + '"]');
-      const nameEl = document.querySelector('.ac-name[data-idx="' + idx + '"]');
-      const posEl = document.querySelector('.ac-position[data-idx="' + idx + '"]');
-      if (pick.value === '' || pick.value === '__other__') {
-        rankEl.readOnly = false; nameEl.readOnly = false;
-        if (pick.value === '__other__') { rankEl.value = ''; nameEl.value = ''; rankEl.focus(); }
-        return;
-      }
-      const u = state.users[Number(pick.value)];
-      if (!u) return;
-      rankEl.value = u['ยศ'] || '';
-      nameEl.value = u['ชื่อ-สกุล'] || '';
-      posEl.value = u['ตำแหน่ง'] || '';
-      rankEl.readOnly = true; nameEl.readOnly = true;
+  document.querySelectorAll('.ac-trigger').forEach(t => {
+    t.onclick = () => {
+      const idx = t.dataset.idx;
+      const q = sel => document.querySelector(sel + '[data-idx="' + idx + '"]');
+      const cur = (q('.ac-rank').value + ' ' + q('.ac-name').value).trim();
+      openOfficerPickerSheet(cur, (name, u) => {
+        if (u) {
+          q('.ac-rank').value = u['ยศ'] || '';
+          q('.ac-name').value = u['ชื่อ-สกุล'] || '';
+          q('.ac-position').value = u['ตำแหน่ง'] || '';
+        } else {
+          const s = splitRankName(name);
+          q('.ac-rank').value = s.rank;
+          q('.ac-name').value = s.name;
+        }
+        q('.ac-title').textContent = (q('.ac-rank').value + ' ' + q('.ac-name').value).trim();
+      });
     };
   });
   const btn = document.getElementById('btnSaveAuditCommittee');
