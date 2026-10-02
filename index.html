@@ -3862,6 +3862,18 @@ body:has(#modalRoot .overlay){
   white-space:nowrap !important;
   overflow:visible;
 }   
+
+   @media print{
+  html, body,
+  body:has(#modalRoot .overlay){
+    position:static !important;
+    inset:auto !important;
+    width:auto !important;
+    height:auto !important;
+    overflow:visible !important;
+    transform:none !important;
+  }
+}
    
 </style>
 </head>
@@ -7514,7 +7526,7 @@ function printOfficerPortfolio(u, holdings) {
   const pa = document.getElementById('printArea');
   pa.classList.add('report-print-area');
   pa.innerHTML = html;
-  triggerPrint(() => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; });
+  triggerPrint(() => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; }, { immediate: true });
 }
 
    function printAllOfficers() {
