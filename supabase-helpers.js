@@ -33,6 +33,11 @@ const GAS_UPLOAD_URL = 'https://script.google.com/macros/s/AKfycbw9mgyNR0My7CPuR
 // ไว้ก่อนไฟล์นี้ ไม่งั้น window.supabase จะยังไม่มี
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+function todayStr() {
+  const d = new Date(), pad = n => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+}
+
 // ==================== ID GENERATOR (แทน genId_ ฝั่ง GAS) ====================
 function genId(prefix) {
   const d = new Date();
@@ -218,6 +223,20 @@ async function sGetSystemSettings() {
   return s;
 }
 
+async function fetchAll(table, columns = '*', orderCol) {
+  const size = 1000; let from = 0, out = [];
+  while (true) {
+    let q = sb.from(table).select(columns).range(from, from + size - 1);
+    if (orderCol) q = q.order(orderCol, { ascending: true });
+    const { data, error } = await q;
+    if (error) throw new Error(table + ': ' + error.message);
+    out = out.concat(data || []);
+    if (!data || data.length < size) break;
+    from += size;
+  }
+  return out;
+}
+
 async function sGetAll() {
   const [assetsR, borrowR, maintR, componentsR, usersR] = await Promise.all([
     sb.from('assets').select('*').order('created_at', { ascending: true }),
@@ -386,7 +405,7 @@ async function sRejectBorrow(p, actor) {
 async function sReturnAsset(p, actor) {
   const { data: b, error: e1 } = await sb.from('borrow').select('*').eq('id', p.borrowId).single();
   if (e1 || !b) throw new Error('ไม่พบรายการยืมรหัส ' + p.borrowId);
-  const upd = { return_date: p.returnDate || new Date().toISOString().slice(0, 10), status: 'คืนแล้ว' };
+  const upd = { return_date: p.returnDate || todayStr() , status: 'คืนแล้ว' };
   if (p.conditionPhotoReturn) upd.photo_in = p.conditionPhotoReturn;
   const { error } = await sb.from('borrow').update(upd).eq('id', p.borrowId);
   if (error) throw new Error(error.message);
@@ -446,7 +465,7 @@ async function sRenewBorrow(p, actor) {
   if (e1 || !b) throw new Error('ไม่พบรายการยืมรหัส ' + p.borrowId);
   if (b.status !== 'กำลังยืม') throw new Error('ยืมต่อได้เฉพาะรายการที่ยังไม่คืนเท่านั้น');
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayStr()
 
   // ปิดรายการเดิมเป็น "คืนแล้ว" ณ วันนี้
   const { error: e2 } = await sb.from('borrow').update({ status: 'คืนแล้ว', return_date: today }).eq('id', p.borrowId);
@@ -465,6 +484,14 @@ async function sRenewBorrow(p, actor) {
 
   await logActivitySb(actor, 'ยืมต่อ (คนเดิม)', b.borrower + ' → ' + b.asset_name);
   return { renewed: true, newId };
+}
+
+function markOverdue(borrow) {
+  const today = todayStr();
+  borrow.forEach(b => {
+    const due = String(b['กำหนดคืน'] || '').slice(0, 10);
+    if (b['สถานะ'] === 'กำลังยืม' && due && due < today) b['สถานะ'] = 'เกินกำหนด';
+  });
 }
 
 async function sAddMaint(p, actor) {
@@ -560,13 +587,19 @@ async function sUpdateUserRole(p, actor) {
   return { updated: true, photoUrl: upd.photo };
 }
 async function sDeleteUser(p, actor) {
-  let q = sb.from('users').delete();
-  if (p.officerId) q = q.eq('id', p.officerId);
-  else if (p.identifier) q = q.or(`line_user_id.eq.${p.identifier},username.eq.${p.identifier},name.eq.${p.identifier}`);
-  else throw new Error('ไม่พบตัวระบุผู้ใช้สำหรับลบ');
-  const { error } = await q;
+  let id = p.officerId;
+  if (!id) {
+    if (!p.identifier) throw new Error('ไม่พบตัวระบุผู้ใช้สำหรับลบ');
+    for (const col of ['line_user_id', 'username', 'name']) {
+      const { data } = await sb.from('users').select('id').eq(col, p.identifier);
+      if (data && data.length === 1) { id = data[0].id; break; }
+      if (data && data.length > 1) throw new Error('พบรายชื่อซ้ำหลายรายการ ลบอัตโนมัติไม่ได้');
+    }
+    if (!id) throw new Error('ไม่พบผู้ใช้ที่ต้องการลบ');
+  }
+  const { error } = await sb.from('users').delete().eq('id', id);
   if (error) throw new Error('ลบไม่สำเร็จ: ' + error.message);
-  await logActivitySb(actor, 'ลบรายชื่อ จนท.', p.officerId || p.identifier);
+  await logActivitySb(actor, 'ลบรายชื่อ จนท.', id);
   return { deleted: true };
 }
 
