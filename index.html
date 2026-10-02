@@ -6034,7 +6034,7 @@ function openQuickStatusForm(a) {
   };
 }
    
-function triggerPrint(cleanupFn, options = {}) {
+function triggerPrint(cleanupFn) {
   const pa = document.getElementById('printArea');
   const imgs = Array.from(pa.querySelectorAll('img'));
   let cleaned = false, started = false;
@@ -6046,12 +6046,11 @@ function triggerPrint(cleanupFn, options = {}) {
   };
 
   const prepareLayout = () => {
-    // 1) ดึงทิศทาง/ขอบจาก @page ของรายงาน แล้วลบทิ้ง เหลือกฎเดียวที่เราสร้างเอง
     let landscape = false, margin = '0';
     pa.querySelectorAll('style').forEach(st => {
       st.textContent = st.textContent.replace(/@page\s*\{([^}]*)\}/g, (m, body) => {
-        const s = /size\s*:\s*([^;]+)/.exec(body), g = /margin\s*:\s*([^;]+)/.exec(body);
-        if (s && /landscape/i.test(s[1])) landscape = true;
+        const ss = /size\s*:\s*([^;]+)/.exec(body), g = /margin\s*:\s*([^;]+)/.exec(body);
+        if (ss && /landscape/i.test(ss[1])) landscape = true;
         if (g) margin = g[1].trim();
         return '';
       });
@@ -6062,7 +6061,6 @@ function triggerPrint(cleanupFn, options = {}) {
     dyn.textContent = '@page{size:A4 ' + (landscape ? 'landscape' : 'portrait') + ';margin:' + margin + ';}';
     document.head.appendChild(dyn);
 
-    // 2) วัดว่าเนื้อหากว้างเกินพื้นที่พิมพ์ไหม ถ้าเกินให้ย่อ (zoom) พอดีหน้า
     const parts = margin.split(/\s+/);
     const hMm = parseFloat(parts.length === 1 ? parts[0] : parts[1]) || 0;
     const availPx = ((landscape ? 297 : 210) - hMm * 2) * 96 / 25.4;
@@ -6084,24 +6082,7 @@ function triggerPrint(cleanupFn, options = {}) {
     window.print();
     setTimeout(cleanupOnce, 4000);
   };
-  const start = () => {
-    if (started) return;
-    started = true;
-    if (options && options.syncUserGesture) {
-      pa.style.setProperty('display','block','important');
-      pa.style.setProperty('visibility','visible','important');
-      void pa.offsetWidth;
-      void pa.offsetHeight;
-      void pa.getBoundingClientRect().height;
-      doPrint();
-      return;
-    }
-    doPrint();
-  };
-  if (options && options.syncUserGesture) {
-    start();
-    return;
-  }
+  const start = () => { if (started) return; started = true; doPrint(); };
   let remaining = imgs.length;
   imgs.forEach(img => {
     if (img.complete) { remaining--; return; }
@@ -6109,9 +6090,6 @@ function triggerPrint(cleanupFn, options = {}) {
     img.addEventListener('load', done);
     img.addEventListener('error', done);
   });
-  // รอให้ฟอนต์ที่ใช้ในเอกสารพิมพ์ถูกโหลดจริงก่อนเรียก window.print()
-  // โดยเฉพาะ Safari บน iPhone/iPad ที่ document.fonts.ready อย่างเดียว
-  // อาจเสร็จก่อน @font-face ของ TH Sarabun New ถูกใช้งานจริง
   const fontsReady = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
   const paperFontsReady = (document.fonts && document.fonts.load)
     ? Promise.all([
@@ -7525,9 +7503,8 @@ function printOfficerPortfolio(u, holdings) {
       </div>
     </div>`;
   const pa = document.getElementById('printArea');
-  pa.classList.add('report-print-area');
   pa.innerHTML = html;
-  triggerPrint(() => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; }, { syncUserGesture: true });
+  triggerPrint(() => { pa.innerHTML = ''; });
 }
 
    function printAllOfficers() {
@@ -9729,7 +9706,10 @@ function printAuditReport() {
 const MC_SHORT = { 'อาวุธปืน':'ปืน', 'สื่อสาร':'วิทยุ', 'ยานพาหนะ':'รถ', 'คอมพิวเตอร์/IT':'คอมฯ', 'เครื่องแบบ/สนาม':'เครื่องแบบ' };
 
 const mcKey = u => officerId(u) || u['ชื่อ-สกุล'] || '';
-function mcRecordFor(u) { return (state.mcRecords || []).find(r => r['รหัสจนท.'] === mcKey(u)); }
+function mcRecordFor(u) {
+  const key = String(mcKey(u) || '').trim();
+  return (state.mcRecords || []).find(r => String(r['รหัสจนท.'] || '').trim() === key);
+}
 
 // พัสดุที่ จนท. คนนี้ถืออยู่ตอนนี้ (รายการยืมที่ยังไม่คืน)
 function mcHoldingsOf(u) {
@@ -11033,6 +11013,13 @@ function mcResultForItem(rec, item) {
       const save = document.getElementById('ckSave');
       if (counter) counter.innerHTML = `<b>${done}</b>/${items.length}${bad ? ' · ไม่ครบ ' + bad : ''}`;
       if (noteWrap) noteWrap.style.display = bad ? '' : 'none';
+      document.querySelectorAll('#ckList .ck-row').forEach(row => {
+        const i = Number(row.dataset.i);
+        const ok = row.querySelector('.ck-ok');
+        const badBtn = row.querySelector('.ck-bad');
+        if (ok) ok.classList.toggle('on', st[i] === 1);
+        if (badBtn) badBtn.classList.toggle('on', st[i] === 2);
+      });
       if (save) {
         save.disabled = done < items.length;
         save.textContent = done < items.length ? 'ตรวจให้ครบทุกชิ้นก่อน' : (bad ? 'บันทึก "มีปัญหา"' : 'บันทึก "ครบ"');
@@ -11229,90 +11216,8 @@ function mcResultForItem(rec, item) {
     if (!pa) return;
     pa.className = 'report-print-area';
 
-    const isMobilePrint = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
-      (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent));
-    if (isMobilePrint) {
-      // แบ่งเป็นหน้า A4 จริงทีละหน้า แล้วหมุนเนื้อหา 90° เหมือน บชก.3
-      // ไม่ใช้ page-break-before และไม่ใช้ overflow:hidden เพื่อไม่ให้เกิดหน้าว่าง/ข้อมูลหาย
-      // จำนวนแถวต่อหน้าแยกตามลักษณะหน้า เพื่อให้หัวรายงานและส่วนลงนามไม่เบียดกัน
-      const FIRST_PAGE_ROWS = 7;
-      const OTHER_PAGE_ROWS = 11;
-      const LAST_PAGE_RESERVED_ROWS = 8;
-      const rowHtml = detailRows.map((r,i)=>`<tr>
-        <td class="center">${i+1}</td>
-        <td class="officer">${r.officer ? `<strong>${escapeHtml(r.officer)}</strong><br><span>${escapeHtml(r.position)}</span>` : ''}</td>
-        <td>${escapeHtml(r.name)}</td>
-        <td class="asset-no">${escapeHtml(r.assetNo)}</td>
-        <td class="center qty">${r.qty ? toThaiNumber(r.qty) : '-'}</td>
-        <td class="center">${resultBadge(r.result)}</td>
-        <td>${escapeHtml(r.note || '')}</td>
-        <td>${r.inspector ? `${escapeHtml(r.inspector)}<br><span>${escapeHtml(r.checkedAt)}</span>` : ''}</td>
-      </tr>`);
-      const chunks=[];
-      if(rowHtml.length){
-        let pos=0;
-        const firstCount=Math.min(FIRST_PAGE_ROWS,rowHtml.length);
-        chunks.push(rowHtml.slice(pos,pos+firstCount));
-        pos+=firstCount;
-        while(pos<rowHtml.length){
-          const remain=rowHtml.length-pos;
-          const take=remain<=LAST_PAGE_RESERVED_ROWS ? remain : Math.min(OTHER_PAGE_ROWS,remain);
-          chunks.push(rowHtml.slice(pos,pos+take));
-          pos+=take;
-        }
-      } else chunks.push([]);
-      const headHtml=`<div class="head"><div class="title">รายงานผลการตรวจประจำเดือน</div><div class="org">${escapeHtml(orgName)}</div><div class="period">ประจำเดือน ${escapeHtml(monthName)} พ.ศ. ${toThaiNumber(thaiYear)}</div></div>
-        <div class="summary"><div class="summary-box"><b>${toThaiNumber(source.length)}</b><span>ผู้ที่ต้องตรวจ</span></div><div class="summary-box"><b>${toThaiNumber(done)}</b><span>ตรวจแล้ว</span></div><div class="summary-box"><b>${toThaiNumber(bad)}</b><span>มีปัญหา</span></div><div class="summary-box"><b>${toThaiNumber(totalQty)}</b><span>ครุภัณฑ์ที่ถือครอง</span></div></div>`;
-      const tableHead=`<thead><tr><th>ลำดับ</th><th>ผู้ครอบครอง / ตำแหน่ง</th><th>ชื่อครุภัณฑ์</th><th>หมายเลขครุภัณฑ์</th><th>จำนวน</th><th>ผลตรวจ</th><th>หมายเหตุ</th><th>ผู้ตรวจ / วันที่</th></tr></thead>`;
-      const pages=chunks.map((chunk,idx)=>{
-        const first=idx===0,last=idx===chunks.length-1;
-        const body=chunk.length?chunk.join(''):'<tr><td colspan="8" class="center">ไม่มีข้อมูลครุภัณฑ์ที่ต้องตรวจ</td></tr>';
-        const tail=last?`${rowHtml.length?`<tr class="total"><td colspan="4" class="center">รวม</td><td class="center">${toThaiNumber(totalQty)}</td><td colspan="3"></td></tr>`:''}<div class="note">หมายเหตุ: รายงานนี้จัดแสดงตาม <strong>ชื่อครุภัณฑ์ + หมายเลขครุภัณฑ์ + จำนวน</strong> เพื่อให้ง่ายต่อการตรวจสอบรายการของแต่ละผู้ครอบครอง</div><div class="signatures"><div class="sig"><div class="line"></div>ผู้ตรวจประจำเดือน</div><div class="sig"><div class="line"></div>ผู้รับรอง / หัวหน้าหน่วย</div></div>`:'';
-        return `<div class="mcr-mobile-page${last?' last':''}"><div class="mcr-mobile-page-inner"><div class="mcr">${first?headHtml:''}<table><colgroup><col style="width:4%"><col style="width:18%"><col style="width:23%"><col style="width:15%"><col style="width:7%"><col style="width:9%"><col style="width:13%"><col style="width:11%"></colgroup>${first?tableHead:''}<tbody>${body}</tbody></table>${tail}</div></div></div>`;
-      }).join('');
-      pa.innerHTML=`<style>
-        @page{size:A4 portrait;margin:0;}
-        html,body{margin:0 !important;padding:0 !important;background:#fff !important;}
-        #printArea.report-print-area{width:210mm !important;min-width:210mm !important;max-width:210mm !important;margin:0 !important;padding:0 !important;background:#fff !important;}
-        .mcr-mobile-page{position:relative;width:210mm;height:297mm;margin:0 !important;padding:0 !important;box-sizing:border-box;page-break-after:always;break-after:page;overflow:hidden;background:#fff;}
-        .mcr-mobile-page.last{page-break-after:auto;break-after:auto;}
-        .mcr-mobile-page-inner{position:absolute;top:0;left:210mm;width:297mm;height:210mm;box-sizing:border-box;padding:8mm 9mm;transform-origin:0 0;transform:rotate(90deg);overflow:hidden;background:#fff;}
-        .mcr-mobile-page-inner .mcr{display:block;width:279mm;max-width:279mm;min-width:0;margin:0;padding:0;box-sizing:border-box;font-family:'TH Sarabun New','Sarabun','Kanit',sans-serif;color:#111;font-size:13pt;line-height:1.2;}
-        .mcr-mobile-page-inner .mcr *{box-sizing:border-box;}
-        .mcr-mobile-page-inner .mcr .head{text-align:center;margin:0 0 4mm;}
-        .mcr-mobile-page-inner .mcr .head .title{font-size:20pt;font-weight:700;line-height:1.1;margin:0 0 1mm;}
-        .mcr-mobile-page-inner .mcr .head .org{font-size:15pt;font-weight:600;margin:0 0 .8mm;}
-        .mcr-mobile-page-inner .mcr .head .period{font-size:13pt;color:#333;}
-        .mcr-mobile-page-inner .mcr .summary{display:grid;grid-template-columns:repeat(4,1fr);gap:3mm;margin:0 0 4mm;}
-        .mcr-mobile-page-inner .mcr .summary-box{border:1px solid #777;border-radius:1.5mm;padding:2mm 2.5mm;text-align:center;min-height:15mm;}
-        .mcr-mobile-page-inner .mcr .summary-box b{display:block;font-size:16pt;line-height:1.05;}
-        .mcr-mobile-page-inner .mcr .summary-box span{font-size:10.5pt;line-height:1.1;}
-        .mcr-mobile-page-inner .mcr table{display:table;width:279mm;max-width:279mm;min-width:279mm;margin:0;border-collapse:collapse;table-layout:fixed;font-size:11.5pt;}
-        .mcr-mobile-page-inner .mcr th,.mcr-mobile-page-inner .mcr td{border:1px solid #333;padding:1.5mm 1.7mm;vertical-align:middle;line-height:1.12;overflow-wrap:anywhere;word-break:break-word;}
-        .mcr-mobile-page-inner .mcr th{background:#e9edf0;text-align:center;font-weight:700;font-size:11.5pt;}
-        .mcr-mobile-page-inner .mcr td.center{text-align:center;}
-        .mcr-mobile-page-inner .mcr td.officer strong{font-size:11.5pt;line-height:1.1;}
-        .mcr-mobile-page-inner .mcr td.officer span,.mcr-mobile-page-inner .mcr td span{font-size:9.5pt;color:#444;}
-        .mcr-mobile-page-inner .mcr .asset-no{font-weight:700;text-align:center;overflow-wrap:anywhere;word-break:break-word;}
-        .mcr-mobile-page-inner .mcr .qty{font-weight:700;font-size:12pt;}
-        .mcr-mobile-page-inner .mcr .result{display:inline-block;padding:.7mm 1.8mm;border-radius:1mm;font-weight:700;white-space:nowrap;font-size:10.5pt;}
-        .mcr-mobile-page-inner .mcr .result.ok{background:#e8f6ee;color:#126b43;}
-        .mcr-mobile-page-inner .mcr .result.bad{background:#fdecef;color:#a1263b;}
-        .mcr-mobile-page-inner .mcr .result.pending{background:#fff4dc;color:#8a5a00;}
-        .mcr-mobile-page-inner .mcr .total td{font-weight:700;background:#f7f7f7;}
-        .mcr-mobile-page-inner .mcr .note{margin-top:3mm;font-size:10pt;color:#555;line-height:1.2;}
-        .mcr-mobile-page-inner .mcr .signatures{display:grid;grid-template-columns:1fr 1fr;gap:25mm;margin-top:9mm;page-break-inside:avoid;break-inside:avoid;}
-        .mcr-mobile-page-inner .mcr .sig{text-align:center;font-size:11pt;}
-        .mcr-mobile-page-inner .mcr .sig .line{margin:0 auto 1.5mm;width:70%;border-bottom:1px dotted #333;height:8mm;}
-        .mcr-mobile-page-inner .mcr tr{page-break-inside:avoid;break-inside:avoid;}
-      </style>${pages}`;
-    } else {
-      pa.innerHTML = html;
-    }
-    triggerPrint(() => {
-      pa.innerHTML = '';
-      pa.className = '';
-    });
+    pa.innerHTML = html;
+    triggerPrint(() => { pa.innerHTML = ''; });
   }
 
   function renderMonthlyEnhanced(){
