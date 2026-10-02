@@ -5677,8 +5677,9 @@ function openOfficerPickerSheet(currentName, onPick) {
   if (!window.matchMedia('(pointer:coarse)').matches) setTimeout(() => input.focus(), 60);
 }
    
-function openAssetPickerSheet(currentId, onPick, onlyAvailable = true) {
-  const available = onlyAvailable ? state.assets.filter(a => a['สถานะ'] === 'พร้อมใช้งาน') : state.assets.slice();
+function openAssetPickerSheet(currentId, onPick, onlyAvailable = true, excludeFn = null) {
+  let available = onlyAvailable ? state.assets.filter(a => a['สถานะ'] === 'พร้อมใช้งาน') : state.assets.slice();
+  if (typeof excludeFn === 'function') available = available.filter(a => !excludeFn(a));
   let pickCat = 'all', pickQ = '';
   const openGroups = new Set();          // กลุ่มที่ผู้ใช้กดเปิดเอง
   const closedGroups = new Set();        // กลุ่มที่ผู้ใช้กดพับเอง
@@ -8029,9 +8030,9 @@ desk.addEventListener('focusout', () => {
 function buildMemoItemList(opts) {
   if (opts.borrow) {
     const b = opts.borrow;
-    // หาข้อมูลครุภัณฑ์ต้นทาง เพื่อดึงยี่ห้อ/รุ่น, หมายเลขเครื่อง และหมวดหมู่ (สำหรับเลือกหน่วยนับ)
     const asset = state.assets.find(a => a['รหัสครุภัณฑ์'] === b['รหัสครุภัณฑ์']);
     return [{
+      id: b['รหัสครุภัณฑ์'] || '',
       name: b['ชื่อครุภัณฑ์'] || '',
       brand: asset ? (asset['ยี่ห้อ/รุ่น'] || '') : '',
       serial: asset ? (asset['หมายเลขเครื่อง'] || '') : '',
@@ -8039,8 +8040,8 @@ function buildMemoItemList(opts) {
       unit: unitForCategory(asset ? asset['หมวดหมู่'] : '')
     }];
   }
-  if (opts.items) return opts.items.map(a => ({ name: a['ชื่อครุภัณฑ์'] || '', brand: a['ยี่ห้อ/รุ่น'] || '', serial: a['หมายเลขเครื่อง'] || '', qty: 1, unit: unitForCategory(a['หมวดหมู่']) }));
-  return [{ name: '', brand: '', serial: '', qty: 1, unit: 'เครื่อง' }];
+  if (opts.items) return opts.items.map(a => ({ id: a['รหัสครุภัณฑ์'] || '', name: a['ชื่อครุภัณฑ์'] || '', brand: a['ยี่ห้อ/รุ่น'] || '', serial: a['หมายเลขเครื่อง'] || '', qty: 1, unit: unitForCategory(a['หมวดหมู่']) }));
+  return [{ id: '', name: '', brand: '', serial: '', qty: 1, unit: 'เครื่อง' }];
 }
 function itemPhraseList(items) {
   const phrases = items.map(it => {
@@ -8169,6 +8170,7 @@ function memoItemRowHtml(it, label, removable) {
   return `
   <div class="mf-item" data-item>
     <div class="mf-item-head"><span>${escapeHtml(label)}</span>${removable ? `<button type="button" class="mf-item-del">ลบ</button>` : ''}</div>
+    <input type="hidden" class="memo-item-id" value="${escapeHtml(it.id || '')}">
     <input type="hidden" class="memo-item-name" value="${escapeHtml(it.name || '')}">
     <input type="hidden" class="memo-item-brand" value="${escapeHtml(it.brand || '')}">
     <input type="hidden" class="memo-item-serial" value="${escapeHtml(it.serial || '')}">
@@ -8355,6 +8357,18 @@ function openPrintMemoForm(opts) {
   wireSignerCard('m_apv', 'ผู้อนุมัติ');
   wireSignerCard('m_iss', 'ผู้จ่ายพัสดุ');
 
+  // ครุภัณฑ์ที่ "ห้ามเลือก": กำลังยืม/เกินกำหนด/รออนุมัติ หรือถูกเลือกในแถวอื่นของฟอร์มนี้แล้ว
+  const isBlockedAsset = (a, selfItem) => {
+    const id = a['รหัสครุภัณฑ์'];
+    if (a['สถานะ'] === 'กำลังยืม') return true;
+    if (state.borrow.some(b => b['รหัสครุภัณฑ์'] === id &&
+        ['กำลังยืม', 'เกินกำหนด', 'รออนุมัติ'].includes(b['สถานะ']))) return true;
+    const taken = Array.from(document.querySelectorAll('#m_itemsWrap .mf-item'))
+      .filter(it => it !== selfItem)
+      .map(it => it.querySelector('.memo-item-id').value);
+    return taken.includes(id);
+  };
+
   function wireItemRow() {
     document.querySelectorAll('#m_itemsWrap .mf-item').forEach(item => {
       if (item.dataset.wired) return;
@@ -8362,22 +8376,30 @@ function openPrintMemoForm(opts) {
       const del = item.querySelector('.mf-item-del');
       if (del) del.onclick = () => { item.remove(); refreshMemoLivePreview(); };
       item.querySelector('.memo-item-trigger').onclick = () =>
-        openAssetPickerSheet('', a => {                       // เลือกได้ทุกสถานะ (onlyAvailable=false)
-          item.querySelector('.memo-item-name').value = a['ชื่อครุภัณฑ์'] || '';
-          item.querySelector('.memo-item-brand').value = a['ยี่ห้อ/รุ่น'] || '';
-          item.querySelector('.memo-item-serial').value = a['หมายเลขเครื่อง'] || '';
-          item.querySelector('.memo-item-unit').value = unitForCategory(a['หมวดหมู่']);
-          item.querySelector('.memo-item-title').textContent = a['ชื่อครุภัณฑ์'] || '';
-          item.querySelector('.memo-item-sub').textContent =
-            [a['หมายเลขเครื่อง'] ? 'S/N ' + a['หมายเลขเครื่อง'] : '', a['ยี่ห้อ/รุ่น']].filter(Boolean).join(' · ') || a['รหัสครุภัณฑ์'];
-          refreshMemoLivePreview();
-        }, false);
+        openAssetPickerSheet(
+          item.querySelector('.memo-item-id').value,
+          (assetId) => {                                   // ได้ "รหัส" กลับมา ไม่ใช่ object
+            const a = state.assets.find(x => x['รหัสครุภัณฑ์'] === assetId);
+            if (!a) { toast('ไม่พบข้อมูลครุภัณฑ์'); return; }
+            item.querySelector('.memo-item-id').value = a['รหัสครุภัณฑ์'] || '';
+            item.querySelector('.memo-item-name').value = a['ชื่อครุภัณฑ์'] || '';
+            item.querySelector('.memo-item-brand').value = a['ยี่ห้อ/รุ่น'] || '';
+            item.querySelector('.memo-item-serial').value = a['หมายเลขเครื่อง'] || '';
+            item.querySelector('.memo-item-unit').value = unitForCategory(a['หมวดหมู่']);
+            item.querySelector('.memo-item-title').textContent = a['ชื่อครุภัณฑ์'] || '';
+            item.querySelector('.memo-item-sub').textContent =
+              [a['หมายเลขเครื่อง'] ? 'S/N ' + a['หมายเลขเครื่อง'] : '', a['ยี่ห้อ/รุ่น']].filter(Boolean).join(' · ') || a['รหัสครุภัณฑ์'];
+            refreshMemoLivePreview();
+          },
+          false,                                           // ไม่จำกัดแค่ "พร้อมใช้งาน"
+          (a) => isBlockedAsset(a, item)                   // แต่ตัดรายการที่ถูกยืมอยู่ออก
+        );
     });
   }
   wireItemRow();
   document.getElementById('btnAddItem').onclick = () => {
     document.getElementById('m_itemsWrap').insertAdjacentHTML('beforeend',
-      memoItemRowHtml({ name: '', brand: '', serial: '', qty: 1, unit: 'เครื่อง' }, 'รายการเพิ่มเติม', true));
+        memoItemRowHtml({ id: '', name: '', brand: '', serial: '', qty: 1, unit: 'เครื่อง' }, 'รายการเพิ่มเติม', true)
     wireItemRow();
     refreshMemoLivePreview();
   };
