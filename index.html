@@ -7780,7 +7780,7 @@ async function commitDocNo(docNoText) {
     await apiPost('updateSystemSettings', { docNoNext: next });
     state.settings.docNoNext = next;
   } catch (e) { console.warn('อัปเดตเลขหนังสือถัดไปไม่สำเร็จ', e); }
-   
+}
 function openPrintMemoForm(opts) {
   const items = buildMemoItemList(opts);
   const borrow = opts.borrow || null;
@@ -7942,7 +7942,6 @@ function openPrintMemoForm(opts) {
   };
 }
 
-/* ========================================================= REPORTS */
 /* ========================================================= REPORTS (v2) */
 function rpMonthKey(v) { const d = toDate(v); if (isNaN(d)) return ''; return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
 function rpLastMonths(n) {
