@@ -5473,6 +5473,86 @@ function openScannerSheet() {
     activeHtml5Qr = null; // สำคัญ: เคลียร์ตัวแปรเมื่อเปิดกล้องไม่สำเร็จ กันปุ่มปิดหน้าต่างค้าง
   });
 }
+
+   /* ---------- เลือกผู้ยืมจากทำเนียบ (ค้นหาได้ / พิมพ์ชื่อเองได้) ---------- */
+function openOfficerPickerSheet(currentName, onPick) {
+  const root = document.createElement('div');
+  document.body.appendChild(root);
+  const low = s => String(s == null ? '' : s).toLowerCase();
+  let q = '';
+
+  root.innerHTML = `
+    <div class="overlay" style="z-index:95;">
+      <div class="sheet" style="max-height:92vh;">
+        <button class="sheet-close" id="opClose" type="button">${ICONS.close}</button>
+        <div class="sheet-handle"></div>
+        <div class="sheet-title">เลือกผู้ยืม</div>
+        <div class="search-row"><input class="input" id="opSearch" placeholder="ค้นหาชื่อ / ตำแหน่ง หรือพิมพ์ชื่อเอง..." autocomplete="off"></div>
+        <div class="hint" id="opCount" style="margin:0 0 10px;"></div>
+        <div id="opList"></div>
+      </div>
+    </div>`;
+
+  const close = () => root.remove();
+  const listEl = root.querySelector('#opList');
+  const countEl = root.querySelector('#opCount');
+
+  function drawList() {
+    const needle = low(q.trim());
+    const list = (state.users || []).filter(u =>
+      !needle || low(officerFullName(u) + ' ' + (u['ตำแหน่ง'] || '') + ' ' + (u['หน่วยงาน'] || '')).includes(needle));
+
+    const rows = list.map(u => {
+      const full = officerFullName(u);
+      const avatar = u['รูปถ่าย']
+        ? `<img class="li-avatar" src="${u['รูปถ่าย']}" alt="">`
+        : `<div class="li-icon">${ICONS.user}</div>`;
+      const selected = currentName && eqCiJs_(full, currentName);
+      return `<div class="glass list-item op-item" data-idx="${state.users.indexOf(u)}">
+        ${avatar}
+        <div class="li-body">
+          <div class="li-title">${escapeHtml(full)}</div>
+          <div class="li-sub">${escapeHtml(u['ตำแหน่ง'] || 'ไม่ระบุตำแหน่ง')}</div>
+        </div>
+        ${selected ? '<div class="status-badge status-ready">เลือกอยู่</div>' : ''}
+      </div>`;
+    }).join('');
+
+    // ถ้าพิมพ์อะไรไว้ ให้มีตัวเลือก "ใช้ชื่อที่พิมพ์" เสมอ
+    const typed = q.trim();
+    const custom = typed ? `<div class="glass list-item op-custom" style="border-style:dashed;">
+        <div class="li-icon">${ICONS.edit}</div>
+        <div class="li-body">
+          <div class="li-title">ใช้ชื่อ "${escapeHtml(typed)}"</div>
+          <div class="li-sub">ผู้ยืมที่ไม่อยู่ในทำเนียบ (พิมพ์ชื่อเอง)</div>
+        </div>
+        <div class="status-badge status-pending">ใช้ชื่อนี้</div>
+      </div>` : '';
+
+    countEl.textContent = 'พบ ' + list.length + ' คนในทำเนียบ';
+    listEl.innerHTML = custom + (rows || (typed ? '' : emptyState('ยังไม่มีรายชื่อในทำเนียบ — พิมพ์ชื่อเพื่อใช้ชื่อเองได้')));
+
+    listEl.querySelectorAll('.op-item').forEach(el => el.onclick = () => {
+      const u = state.users[Number(el.dataset.idx)];
+      onPick(officerFullName(u), u);
+      close();
+    });
+    const c = listEl.querySelector('.op-custom');
+    if (c) c.onclick = () => { onPick(typed, null); close(); };
+  }
+
+  root.querySelector('#opClose').onclick = close;
+  const input = root.querySelector('#opSearch');
+  input.oninput = (e) => { q = e.target.value; drawList(); };
+  // กด Enter = เลือกคนแรกที่เจอ (ถ้าไม่เจอใครให้ใช้ชื่อที่พิมพ์)
+  input.onkeydown = (e) => {
+    if (e.key !== 'Enter') return;
+    const first = listEl.querySelector('.op-item') || listEl.querySelector('.op-custom');
+    if (first) first.click();
+  };
+  drawList();
+  setTimeout(() => input.focus(), 60);
+}
    
 function openAssetPickerSheet(currentId, onPick, onlyAvailable = true) {
   const available = onlyAvailable ? state.assets.filter(a => a['สถานะ'] === 'พร้อมใช้งาน') : state.assets.slice();
@@ -6285,6 +6365,11 @@ function openBorrowEditForm(b) {
     };
   });
   document.getElementById('btnCancel').onclick = closeSheet;
+  document.getElementById('ef_borrowerTrigger').onclick = () =>
+  openOfficerPickerSheet(val('ef_borrower'), (name) => {
+    document.getElementById('ef_borrower').value = name;
+    document.getElementById('ef_borrowerName').textContent = name;
+  });
   document.getElementById('btnSaveEdit').onclick = async () => {
     if (!val('ef_borrower').trim()) { toast('กรุณากรอกชื่อผู้ยืม'); return; }
     if (!val('ef_borrowdate') || !val('ef_duedate')) { toast('กรุณาระบุวันที่ยืมและกำหนดคืน'); return; }
@@ -6361,12 +6446,17 @@ function openBorrowForm(presetId) {
 
     <div class="mf-section">
       <div class="mf-section-title"><span class="mf-step">2</span> ผู้ยืมและกำหนดคืน</div>
-      <div class="field">
-  <label>ผู้ยืม (พิมพ์เพื่อค้นหาจากทำเนียบ จนท.ในสังกัด หรือพิมพ์ชื่อเอง)</label>
-  <input class="input" id="f_borrower" list="borrowerDatalist" placeholder="พิมพ์ชื่อ-สกุลผู้ยืม" autocomplete="off">
-  <datalist id="borrowerDatalist">
-    ${state.users.map(u => `<option value="${escapeHtml(officerFullName(u))}" label="${escapeHtml(officerLabel(u))}"></option>`).join('')}
-  </datalist>
+<div class="field">
+  <label>ผู้ยืม</label>
+  <div class="glass list-item" id="ef_borrowerTrigger" style="cursor:pointer;">
+    <div class="li-icon">${ICONS.user}</div>
+    <div class="li-body">
+      <div class="li-title" id="ef_borrowerName">${escapeHtml(b['ผู้ยืม'])}</div>
+      <div class="li-sub">แตะเพื่อเปลี่ยนผู้ยืม</div>
+    </div>
+    <span class="status-badge status-ready" style="flex:none;">เปลี่ยน</span>
+  </div>
+  <input type="hidden" id="ef_borrower" value="${escapeHtml(b['ผู้ยืม'])}">
 </div>
       <div class="memo-two-col">
         <div class="field"><label>วันที่ยืม</label><input class="input" type="date" id="f_borrowdate" value="${isoDate()}"></div>
@@ -6461,6 +6551,15 @@ function selectAsset(id) {
 }
    
   document.getElementById('f_assetTrigger').onclick = () => openAssetPickerSheet(val('f_asset'), selectAsset);
+  document.getElementById('f_borrowerTrigger').onclick = () =>
+  openOfficerPickerSheet(val('f_borrower'), (name, u) => {
+    document.getElementById('f_borrower').value = name;
+    document.getElementById('f_borrowerName').textContent = name;
+    document.getElementById('f_borrowerSub').textContent = u ? (u['ตำแหน่ง'] || 'ไม่ระบุตำแหน่ง') : 'พิมพ์ชื่อเอง';
+    document.getElementById('f_borrowerIcon').innerHTML = (u && u['รูปถ่าย'])
+      ? `<img src="${u['รูปถ่าย']}" style="width:100%;height:100%;object-fit:cover;border-radius:13px;">`
+      : ICONS.user;
+  }); 
     // [แก้ไข] ถ้ามี presetId (มาจากการปัดแถวครุภัณฑ์) ให้เลือกชิ้นนั้นก่อน
   const presetAsset = presetId && available.find(a => a['รหัสครุภัณฑ์'] === presetId);
   if (presetAsset) selectAsset(presetAsset['รหัสครุภัณฑ์']);
