@@ -6092,8 +6092,20 @@ function triggerPrint(cleanupFn) {
     img.addEventListener('load', done);
     img.addEventListener('error', done);
   });
+  // รอให้ฟอนต์ที่ใช้ในเอกสารพิมพ์ถูกโหลดจริงก่อนเรียก window.print()
+  // โดยเฉพาะ Safari บน iPhone/iPad ที่ document.fonts.ready อย่างเดียว
+  // อาจเสร็จก่อน @font-face ของ TH Sarabun New ถูกใช้งานจริง
   const fontsReady = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
-  fontsReady.then(() => { if (remaining === 0) setTimeout(start, 60); else setTimeout(start, 2500); });
+  const paperFontsReady = (document.fonts && document.fonts.load)
+    ? Promise.all([
+        fontsReady,
+        document.fonts.load("400 15pt 'TH Sarabun New'", 'ภาษาไทย'),
+        document.fonts.load("700 18pt 'TH Sarabun New'", 'รายงานสรุปพัสดุในความครอบครอง'),
+        document.fonts.load("400 15pt 'Sarabun'", 'ภาษาไทย'),
+        document.fonts.load("400 15pt 'Kanit'", 'ภาษาไทย')
+      ])
+    : fontsReady;
+  paperFontsReady.then(() => { if (remaining === 0) setTimeout(start, 60); else setTimeout(start, 2500); });
 }
    
    async function printQrBatch(list) {
