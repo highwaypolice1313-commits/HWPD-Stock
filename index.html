@@ -8249,11 +8249,11 @@ function rpGroupSummaryHtml() {
         <div class="gs-sumc"><b>${byName.length.toLocaleString()}</b><span>ชนิด/ชื่อ</span></div>
         <div class="gs-sumc"><b style="color:var(--ok)">${readyPct}%</b><span>พร้อมใช้งาน</span></div>
       </div>
-      ${vehicleBlock}
-      <div class="gs-head">
+           <div class="gs-head">
         <div class="gs-search"><input id="gsSearch" placeholder="ค้นหาชื่อครุภัณฑ์..." autocomplete="off"></div>
         <button class="gs-csv" id="btnRpGroupCsv" type="button">ส่งออก CSV</button>
       </div>
+      ${vehicleBlock}
       <div class="gs-list ${state.rpGroupAll ? 'gs-all' : ''}" id="gsList">${rpGroupRowsHtml(byName, cat === 'all', GS_LIMIT)}</div>
       ${byName.length > GS_LIMIT ? `<button class="gs-showall" id="gsShowAll" type="button">${state.rpGroupAll ? 'ย่อรายการ' : 'แสดงทั้งหมด (' + byName.length + ' ชนิด)'}</button>` : ''}
     </div>`;
