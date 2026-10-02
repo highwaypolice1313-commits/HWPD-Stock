@@ -6084,11 +6084,24 @@ function triggerPrint(cleanupFn, options = {}) {
     window.print();
     setTimeout(cleanupOnce, 4000);
   };
-  const start = () => { if (started) return; started = true; doPrint(); };
-  // iOS Safari may lose the print user-gesture if window.print() is deferred
-  // until fonts/images promises resolve. Keep the same shared print pipeline,
-  // but allow the profile button to enter it synchronously.
-  if (options.immediate) { start(); return; }
+  const start = () => {
+    if (started) return;
+    started = true;
+    if (options && options.syncUserGesture) {
+      pa.style.setProperty('display','block','important');
+      pa.style.setProperty('visibility','visible','important');
+      void pa.offsetWidth;
+      void pa.offsetHeight;
+      void pa.getBoundingClientRect().height;
+      doPrint();
+      return;
+    }
+    doPrint();
+  };
+  if (options && options.syncUserGesture) {
+    start();
+    return;
+  }
   let remaining = imgs.length;
   imgs.forEach(img => {
     if (img.complete) { remaining--; return; }
@@ -6144,7 +6157,7 @@ function triggerPrint(cleanupFn, options = {}) {
     .qr-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4mm;font-family:'Kanit',sans-serif;}
     .qr-cell{text-align:center;border:1px dashed #999;padding:3mm;break-inside:avoid;}</style>
     <div class="qr-grid">${cells.join('')}</div>`;
-  triggerPrint(() => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; }, { immediate: true });
+  triggerPrint(() => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; });
 }
 function openQrView(a) {
   showSheet(`
@@ -7514,7 +7527,7 @@ function printOfficerPortfolio(u, holdings) {
   const pa = document.getElementById('printArea');
   pa.classList.add('report-print-area');
   pa.innerHTML = html;
-  triggerPrint(() => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; });
+  triggerPrint(() => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; }, { syncUserGesture: true });
 }
 
    function printAllOfficers() {
@@ -9866,17 +9879,19 @@ function mcCardHtml({ u, sum, rec }) {
   </div>`;
 }
 
-async function mcSave(u, result, note) {
+async function mcSave(u, result, note, itemResults = []) {
   const sum = mcSummary(u);
+  const itemSnapshot = mcEncodeItemResults(itemResults);
+  const snapshotBase = (sum.text ? sum.text + ' | ' : '') + sum.names;
   const payload = {
     year: state.mcYear, month: state.mcMonth, officerId: mcKey(u), officerName: officerFullName(u),
-    result, note, holdingsSnapshot: (sum.text ? sum.text + ' | ' : '') + sum.names
+    result, note, holdingsSnapshot: itemSnapshot ? snapshotBase + ' ' + itemSnapshot : snapshotBase
   };
   try {
     await apiPost('saveMonthlyCheck', payload);
     const rec = {
       'รหัสจนท.': payload.officerId, 'ชื่อผู้ถูกตรวจ': payload.officerName, 'ผล': result, 'หมายเหตุ': note,
-      'ผู้ตรวจ': state.user.name, 'วันที่ตรวจ': new Date()
+      'ผู้ตรวจ': state.user.name, 'วันที่ตรวจ': new Date(), 'holdingsSnapshot': payload.holdingsSnapshot
     };
     const i = state.mcRecords.findIndex(r => r['รหัสจนท.'] === payload.officerId);
     if (i === -1) state.mcRecords.push(rec); else state.mcRecords[i] = rec;
@@ -10630,6 +10645,61 @@ function compareMonthlyOfficers(a, b) {
    - เพิ่ม List / Card view
    - เพิ่มพิมพ์รายงาน
    ========================================================= */
+function mcEncodeItemResults(itemResults) {
+  try { return 'MC_ITEMS_V1:' + encodeURIComponent(JSON.stringify(Array.isArray(itemResults) ? itemResults : [])); }
+  catch (e) { return ''; }
+}
+function mcDecodeItemResults(rec) {
+  const raw = String(rec && rec['holdingsSnapshot'] || '');
+  const m = /(?:^|\s)MC_ITEMS_V1:([^\s]*)/.exec(raw);
+  if (!m) return [];
+  try { return JSON.parse(decodeURIComponent(m[1])) || []; } catch (e) { return []; }
+}
+function mcSaveNoteText(rec) { return rec && rec['หมายเหตุ'] ? String(rec['หมายเหตุ']).trim() : ''; }
+function mcBuildCheckItems(u) {
+  const items = [];
+  mcHoldingsOf(u).forEach((b, borrowIndex) => {
+    const borrowKey = String(b['รหัสรายการ'] || b['รหัสครุภัณฑ์'] || ('row-' + borrowIndex)).trim();
+    const asset = (state.assets || []).find(a => a['รหัสครุภัณฑ์'] === b['รหัสครุภัณฑ์']) || null;
+    const serial = String(asset && asset['หมายเลขเครื่อง'] || '').trim();
+    const plate = String(asset && asset['ทะเบียนรถ'] || '').trim();
+    items.push({
+      key:'asset:' + borrowKey, type:'asset', borrowKey, componentId:'', borrow:b, component:null,
+      label:b['ชื่อครุภัณฑ์'] || (asset && asset['ชื่อครุภัณฑ์']) || '-',
+      serial:serial || (plate ? 'ทะเบียน ' + plate : 'ไม่ระบุหมายเลขเครื่อง'),
+      qty:1, sub:asset && asset['ยี่ห้อ/รุ่น'] ? asset['ยี่ห้อ/รุ่น'] : ''
+    });
+    parseCompRefs(b['รหัสส่วนควบที่ยืม']).forEach((r, compIndex) => {
+      const c = state.components.find(x => x['รหัสส่วนควบ'] === r.id);
+      items.push({
+        key:'component:' + borrowKey + ':' + r.id + ':' + compIndex, type:'component', borrowKey,
+        componentId:r.id, borrow:b, component:c || null, label:c ? compDisplayName(c) : r.id,
+        serial:'', qty:Number(r.n) || 1, sub:r.n > 1 ? 'จำนวน × ' + r.n : '',
+        displayLabel:'ส่วนควบ: ' + (c ? compDisplayName(c) : r.id)
+      });
+    });
+  });
+  return items;
+}
+function mcResultForItem(rec, item) {
+  const saved = mcDecodeItemResults(rec);
+  const exact = saved.find(x => x && x.key === item.key);
+  if (exact && exact.result) return exact.result;
+  const overall = rec && rec['ผล'];
+  if (overall !== 'มีปัญหา') return overall || 'ยังไม่ตรวจ';
+  const head = mcSaveNoteText(rec).split('|')[0] || mcSaveNoteText(rec);
+  if (item.type === 'asset') {
+    const serial = String(item.serial || '').replace(/^ไม่ระบุหมายเลขเครื่อง$/, '').trim();
+    if (serial && head.includes('S/N ' + serial)) return 'ไม่ครบ';
+    if (head.includes(String(item.label || '').trim())) return 'ไม่ครบ';
+  } else {
+    const label = String(item.displayLabel || item.label || '').trim();
+    if (label && head.includes(label)) return 'ไม่ครบ';
+    if (String(item.label || '').trim() && head.includes(String(item.label).trim())) return 'ไม่ครบ';
+  }
+  return 'ครบ';
+}
+
 (function installEnhancedMonthlyPage(){
   const MC_VIEW_KEY = 'hpMonthlyCheckViewV2';
   let mcViewModeState = 'grid';
@@ -10914,30 +10984,14 @@ function compareMonthlyOfficers(a, b) {
   }
 
   function mcChecklistSheetEnhanced(u){
-    const items = [];
-    mcHoldingsOf(u).forEach(b => {
-      const asset = mcAssetByBorrow(b);
-      items.push({
-        label: b['ชื่อครุภัณฑ์'] || '-',
-        serial: mcSerialTextFromBorrow(b),
-        sub: asset && asset['ยี่ห้อ/รุ่น'] ? asset['ยี่ห้อ/รุ่น'] : ''
-      });
-      parseCompRefs(b['รหัสส่วนควบที่ยืม']).forEach(r => {
-        const c = state.components.find(x => x['รหัสส่วนควบ'] === r.id);
-        items.push({
-          label: 'ส่วนควบ: ' + (c ? compDisplayName(c) : r.id),
-          serial: '',
-          sub: r.n > 1 ? 'จำนวน × ' + r.n : ''
-        });
-      });
-    });
-
+    const items = mcBuildCheckItems(u);
     if (!items.length) { mcProblemSheet(u); return; }
 
     const rec = mcRecordFor(u);
-    // ถ้าเคยบันทึกผลแล้ว ให้เปิดรายละเอียดพร้อมสถานะเดิมทันที
-    // โดยเฉพาะผล "ครบ" ต้องแสดงเป็นตรวจครบทุกชิ้น ไม่ใช่ย้อนกลับไปเป็น 0/จำนวน
-    const st = items.map(() => (rec && rec['ผล'] === 'ครบ') ? 1 : 0);
+    const st = items.map(it => {
+      const r = mcResultForItem(rec, it);
+      return r === 'ครบ' ? 1 : (r === 'ไม่ครบ' ? 2 : 0);
+    });
 
     showSheet(`
       <div class="sheet-title">ตรวจพัสดุ · ${escapeHtml(officerFullName(u))}</div>
@@ -10957,8 +11011,8 @@ function compareMonthlyOfficers(a, b) {
               ${it.serial ? `<div class="ck-serial">S/N ${escapeHtml(it.serial)}</div>` : ''}
               ${it.sub ? `<small style="display:block;color:var(--ink-dim);margin-top:2px;">${escapeHtml(it.sub)}</small>` : ''}
             </div>
-            <button type="button" class="mc-btn ok ck-ok ${st[i] === 1 ? 'on' : ''}">✓ ครบ</button>
-            <button type="button" class="mc-btn bad ck-bad ${st[i] === 2 ? 'on' : ''}">✗ ไม่ครบ</button>
+            <button type="button" class="mc-btn ok ck-ok">✓ ครบ</button>
+            <button type="button" class="mc-btn bad ck-bad">✗ ไม่ครบ</button>
           </div>`).join('')}
       </div>
       <div class="field" id="ckNoteWrap" style="margin-top:10px;display:none;">
@@ -11007,13 +11061,17 @@ function compareMonthlyOfficers(a, b) {
       if (!btn || btn.disabled) return;
       const badItems = items.filter((_,i)=>st[i]===2);
       setButtonBusy(btn, true);
+      const itemResults = items.map((it,i) => ({
+        key: it.key, result: st[i] === 1 ? 'ครบ' : (st[i] === 2 ? 'ไม่ครบ' : 'ยังไม่ตรวจ')
+      }));
       if (!badItems.length) {
-        await mcSave(u, 'ครบ', '');
+        await mcSave(u, 'ครบ', '', itemResults);
       } else {
         const extra = (document.getElementById('ckNote').value || '').trim();
         const serialProblems = badItems.map(it => it.serial ? `S/N ${it.serial}` : it.label);
         await mcSave(u, 'มีปัญหา',
-          'ไม่ครบ/ผิดปกติ: ' + serialProblems.join(', ') + (extra ? ' | ' + extra : '')
+          'ไม่ครบ/ผิดปกติ: ' + serialProblems.join(', ') + (extra ? ' | ' + extra : ''),
+          itemResults
         );
       }
       closeSheet();
