@@ -3803,25 +3803,31 @@ body:has(#modalRoot .overlay){
   text-align:center;
 }
 
-/* แถว ยศ + ลายเซ็น */
+/* แถว ยศ + ลายเซ็น
+   ยศต้องอยู่ในคอลัมน์เดียวกับลายเซ็น/ชื่อ
+   โดยวางชิดด้านซ้ายของคอลัมน์นั้น */
 .pf-sign-rank{
   display:grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns:1fr 1fr;
   align-items:center;
   min-height:14mm;
   padding:0 !important;
 }
 
-/* ยศอยู่ฝั่งซ้าย */
+/* ยศอยู่ต้นคอลัมน์ขวา
+   (ตำแหน่งเดียวกับจุดเริ่มของกลุ่มลายเซ็น/ชื่อ) */
 .pf-sign-rank .pf-rank{
-  text-align:center;
+  grid-column:2;
+  justify-self:start;
+  text-align:left;
   white-space:nowrap;
 }
 
-/* ลายเซ็นอยู่ฝั่งขวา */
+/* ลายเซ็นอยู่กลางคอลัมน์ขวา */
 .pf-doc .pf-sigimg{
   position:static;
   display:block;
+  grid-column:2;
   justify-self:center;
   height:12mm;
   width:auto;
@@ -3832,7 +3838,7 @@ body:has(#modalRoot .overlay){
 }
 
 /* ชื่อ / ตำแหน่ง / วันที่
-   ให้อยู่ใต้ "ลายเซ็น" ฝั่งขวา */
+   ให้อยู่ใต้ลายเซ็นฝั่งขวา */
 .pf-sign > div:not(.pf-sign-rank){
   width:50%;
   margin-left:50%;
@@ -3843,7 +3849,7 @@ body:has(#modalRoot .overlay){
 .pf-sign > div{
   line-height:19pt;
   min-height:19pt;
-}   
+}
    
 </style>
 </head>
