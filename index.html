@@ -3843,6 +3843,12 @@ body:has(#modalRoot .overlay){
 .pf-sign > div{
   line-height:19pt;
   min-height:19pt;
+}
+
+/* ตำแหน่งในบล็อกลายเซ็นทุกเอกสารต้องอยู่บรรทัดเดียว ห้ามตัดขึ้นบรรทัดใหม่ */
+.pf-sign [id*="position"]{
+  white-space:nowrap !important;
+  overflow:visible;
 }   
    
 </style>
