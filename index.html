@@ -6042,6 +6042,10 @@ function triggerPrint(cleanupFn) {
     if (cleaned) return; cleaned = true;
     const d = document.getElementById('dynPageStyle'); if (d) d.remove();
     pa.style.removeProperty('zoom'); pa.style.removeProperty('width');
+    pa.style.removeProperty('display');
+    pa.style.removeProperty('visibility');
+    pa.style.removeProperty('opacity');
+    pa.style.removeProperty('position');
     if (cleanupFn) cleanupFn();
   };
 
@@ -6079,10 +6083,17 @@ function triggerPrint(cleanupFn) {
 
   const doPrint = () => {
     prepareLayout();
+    // ทำให้ Safari iPhone/iPad มี layout ของพื้นที่พิมพ์จริงก่อนเรียก window.print()
+    // โดยยังใช้ triggerPrint() ตัวเดียวกับการพิมพ์ทุกอุปกรณ์ ไม่แยกหน้าต่าง/ระบบพิมพ์
+    pa.style.setProperty('display', 'block', 'important');
+    pa.style.setProperty('visibility', 'visible', 'important');
+    pa.style.setProperty('opacity', '1', 'important');
+    pa.style.setProperty('position', 'static', 'important');
+    void pa.offsetHeight;
     const onAfter = () => { window.removeEventListener('afterprint', onAfter); cleanupOnce(); };
     window.addEventListener('afterprint', onAfter);
     window.print();
-    setTimeout(cleanupOnce, 4000);
+    setTimeout(cleanupOnce, 10000);
   };
   const start = () => { if (started) return; started = true; doPrint(); };
   let remaining = imgs.length;
@@ -6092,20 +6103,8 @@ function triggerPrint(cleanupFn) {
     img.addEventListener('load', done);
     img.addEventListener('error', done);
   });
-  // รอให้ฟอนต์ที่ใช้ในเอกสารพิมพ์ถูกโหลดจริงก่อนเรียก window.print()
-  // โดยเฉพาะ Safari บน iPhone/iPad ที่ document.fonts.ready อย่างเดียว
-  // อาจเสร็จก่อน @font-face ของ TH Sarabun New ถูกใช้งานจริง
   const fontsReady = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
-  const paperFontsReady = (document.fonts && document.fonts.load)
-    ? Promise.all([
-        fontsReady,
-        document.fonts.load("400 15pt 'TH Sarabun New'", 'ภาษาไทย'),
-        document.fonts.load("700 18pt 'TH Sarabun New'", 'รายงานสรุปพัสดุในความครอบครอง'),
-        document.fonts.load("400 15pt 'Sarabun'", 'ภาษาไทย'),
-        document.fonts.load("400 15pt 'Kanit'", 'ภาษาไทย')
-      ])
-    : fontsReady;
-  paperFontsReady.then(() => { if (remaining === 0) setTimeout(start, 60); else setTimeout(start, 2500); });
+  fontsReady.then(() => { if (remaining === 0) setTimeout(start, 60); else setTimeout(start, 2500); });
 }
    
    async function printQrBatch(list) {
@@ -9937,7 +9936,9 @@ function mcChecklistSheet(u) {
   const items = mcItemsOf(u);
   if (!items.length) { mcProblemSheet(u); return; }   // ไม่มีพัสดุ -> ใช้หน้าต่างเดิม
   const rec = mcRecordFor(u);
-  const st = items.map(() => 0);   // 0 = ยังไม่ตรวจ, 1 = ครบ, 2 = ไม่ครบ
+  // ถ้าเดือนนี้บันทึกผลรวมว่า "ครบ" ไว้แล้ว ให้คงสถานะครบของทุกชิ้นไว้เมื่อเปิดตรวจซ้ำ
+  // เพื่อไม่ให้ปุ่มกลับไปเป็น "ยังไม่ตรวจ" ทั้งที่ผลตรวจถูกบันทึกแล้ว
+  const st = items.map(() => rec && rec['ผล'] === 'ครบ' ? 1 : 0);   // 0 = ยังไม่ตรวจ, 1 = ครบ, 2 = ไม่ครบ
 
   showSheet(`
     <div class="sheet-title">ตรวจพัสดุ — ${escapeHtml(officerFullName(u))}</div>
