@@ -3763,6 +3763,30 @@ body:has(#modalRoot .overlay){
   overscroll-behavior:contain;
   touch-action:pan-y;
 }
+
+/* ===== เลือกผู้ยืม: ลดภาระตอนเลื่อน (iPad) ===== */
+.op-sheet .list-item,
+.op-sheet .glass{
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+  box-shadow:none !important;
+  transition:none !important;
+  animation:none !important;
+  transform:none !important;
+}
+.op-sheet .list-item:hover{ transform:none !important; }
+.op-sheet .list-item{
+  content-visibility:auto;               /* ไม่วาดแถวที่อยู่นอกจอ */
+  contain-intrinsic-size:auto 66px;
+}
+.op-sheet .li-avatar{
+  width:42px; height:42px;
+  background:var(--panel-soft);
+}
+.op-sheet #opList{
+  -webkit-overflow-scrolling:touch;
+  transform:translateZ(0);               /* ยกขึ้น GPU layer */
+}   
    
 </style>
 </head>
@@ -5524,7 +5548,7 @@ function openOfficerPickerSheet(currentName, onPick) {
 
   root.innerHTML = `
     <div class="overlay" style="z-index:95;">
-      <div class="sheet" style="max-height:92vh;">
+      <div class="sheet op-sheet" style="max-height:92vh;">
         <button class="sheet-close" id="opClose" type="button">${ICONS.close}</button>
         <div class="sheet-handle"></div>
         <div class="sheet-title">เลือกผู้ยืม</div>
@@ -5546,7 +5570,7 @@ function openOfficerPickerSheet(currentName, onPick) {
     const rows = list.map(u => {
       const full = officerFullName(u);
       const avatar = u['รูปถ่าย']
-        ? `<img class="li-avatar" src="${u['รูปถ่าย']}" alt="">`
+        ? `<img class="li-avatar" src="${u['รูปถ่าย']}" alt="" loading="lazy" decoding="async">`
         : `<div class="li-icon">${ICONS.user}</div>`;
       const selected = currentName && eqCiJs_(full, currentName);
       return `<div class="glass list-item op-item" data-idx="${state.users.indexOf(u)}">
