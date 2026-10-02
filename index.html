@@ -6034,7 +6034,7 @@ function openQuickStatusForm(a) {
   };
 }
    
-function triggerPrint(cleanupFn, options = {}) {
+function triggerPrint(cleanupFn) {
   const pa = document.getElementById('printArea');
   const imgs = Array.from(pa.querySelectorAll('img'));
   let cleaned = false, started = false;
@@ -6082,13 +6082,14 @@ function triggerPrint(cleanupFn, options = {}) {
     const onAfter = () => { window.removeEventListener('afterprint', onAfter); cleanupOnce(); };
     window.addEventListener('afterprint', onAfter);
     window.print();
-    setTimeout(cleanupOnce, 4000);
+    // iOS Safari อาจยังแสดงหน้าตัวอย่างพิมพ์อยู่หลัง 4 วินาที
+    // ห้ามล้าง #printArea ด้วย timeout เพราะจะทำให้ตัวอย่างกลายเป็นหน้าว่าง
+    if (!(/iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+          (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent)))) {
+      setTimeout(cleanupOnce, 4000);
+    }
   };
   const start = () => { if (started) return; started = true; doPrint(); };
-  // iOS Safari may lose the print user-gesture if window.print() is deferred
-  // until fonts/images promises resolve. Keep the same shared print pipeline,
-  // but allow the profile button to enter it synchronously.
-  if (options.immediate) { start(); return; }
   let remaining = imgs.length;
   imgs.forEach(img => {
     if (img.complete) { remaining--; return; }
@@ -6097,8 +6098,8 @@ function triggerPrint(cleanupFn, options = {}) {
     img.addEventListener('error', done);
   });
   // รอให้ฟอนต์ที่ใช้ในเอกสารพิมพ์ถูกโหลดจริงก่อนเรียก window.print()
-  // โดยเฉพาะ Safari บน iPhone/iPad ที่ document.fonts.ready อย่างเดียว
-  // อาจเสร็จก่อน @font-face ของ TH Sarabun New ถูกใช้งานจริง
+  // หมายเหตุ: สำหรับ iOS Safari จะเริ่มพิมพ์ทันทีใน user gesture ด้านล่าง
+  // และจะไม่ล้าง #printArea ด้วย timeout ระหว่างที่หน้าตัวอย่างยังเปิดอยู่
   const fontsReady = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
   const paperFontsReady = (document.fonts && document.fonts.load)
     ? Promise.all([
@@ -6109,7 +6110,15 @@ function triggerPrint(cleanupFn, options = {}) {
         document.fonts.load("400 15pt 'Kanit'", 'ภาษาไทย')
       ])
     : fontsReady;
-  paperFontsReady.then(() => { if (remaining === 0) setTimeout(start, 60); else setTimeout(start, 2500); });
+  const isIOSPrint = /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+                     (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent));
+  if (isIOSPrint) {
+    // Safari ต้องเรียก window.print() ในช่วงการกดปุ่มโดยตรง มิฉะนั้นอาจได้หน้าว่าง
+    // ใช้ triggerPrint ตัวเดิมและ layout เดิม ไม่เปิดหน้าต่างหรือเอกสารใหม่
+    start();
+  } else {
+    paperFontsReady.then(() => { if (remaining === 0) setTimeout(start, 60); else setTimeout(start, 2500); });
+  }
 }
    
    async function printQrBatch(list) {
@@ -6144,7 +6153,7 @@ function triggerPrint(cleanupFn, options = {}) {
     .qr-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4mm;font-family:'Kanit',sans-serif;}
     .qr-cell{text-align:center;border:1px dashed #999;padding:3mm;break-inside:avoid;}</style>
     <div class="qr-grid">${cells.join('')}</div>`;
-  triggerPrint(() => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; }, { immediate: true });
+  triggerPrint(() => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; });
 }
 function openQrView(a) {
   showSheet(`
@@ -9941,7 +9950,9 @@ function mcChecklistSheet(u) {
   const items = mcItemsOf(u);
   if (!items.length) { mcProblemSheet(u); return; }   // ไม่มีพัสดุ -> ใช้หน้าต่างเดิม
   const rec = mcRecordFor(u);
-  const st = items.map(() => 0);   // 0 = ยังไม่ตรวจ, 1 = ครบ, 2 = ไม่ครบ
+  // คืนสถานะที่บันทึกไว้: ถ้าผลรวมเป็น “ครบ” ให้ทุกชิ้นแสดงว่าครบเหมือนเดิม
+  // สำหรับผล “มีปัญหา” ยังคงให้ผู้ตรวจเลือกตรวจรายชิ้นใหม่ตามพฤติกรรมเดิม
+  const st = items.map(() => (rec && rec['ผล'] === 'ครบ') ? 1 : 0); // 0 = ยังไม่ตรวจ, 1 = ครบ, 2 = ไม่ครบ
 
   showSheet(`
     <div class="sheet-title">ตรวจพัสดุ — ${escapeHtml(officerFullName(u))}</div>
@@ -9979,6 +9990,8 @@ function mcChecklistSheet(u) {
     const i = Number(row.dataset.i);
     const ok = row.querySelector('.ck-ok'), bd = row.querySelector('.ck-bad');
     const set = v => { st[i] = v; ok.classList.toggle('on', v === 1); bd.classList.toggle('on', v === 2); refresh(); };
+    ok.classList.toggle('on', st[i] === 1);
+    bd.classList.toggle('on', st[i] === 2);
     ok.onclick = () => set(1);
     bd.onclick = () => set(2);
   });
@@ -10957,8 +10970,8 @@ function compareMonthlyOfficers(a, b) {
               ${it.serial ? `<div class="ck-serial">S/N ${escapeHtml(it.serial)}</div>` : ''}
               ${it.sub ? `<small style="display:block;color:var(--ink-dim);margin-top:2px;">${escapeHtml(it.sub)}</small>` : ''}
             </div>
-            <button type="button" class="mc-btn ok ck-ok ${st[i] === 1 ? 'on' : ''}">✓ ครบ</button>
-            <button type="button" class="mc-btn bad ck-bad ${st[i] === 2 ? 'on' : ''}">✗ ไม่ครบ</button>
+            <button type="button" class="mc-btn ok ck-ok">✓ ครบ</button>
+            <button type="button" class="mc-btn bad ck-bad">✗ ไม่ครบ</button>
           </div>`).join('')}
       </div>
       <div class="field" id="ckNoteWrap" style="margin-top:10px;display:none;">
