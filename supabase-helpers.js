@@ -238,26 +238,22 @@ async function fetchAll(table, columns = '*', orderCol) {
 }
 
 async function sGetAll() {
-  const [assetsR, borrowR, maintR, componentsR, usersR] = await Promise.all([
-    sb.from('assets').select('*').order('created_at', { ascending: true }),
-    sb.from('borrow').select('*').order('created_at', { ascending: true }),
-    sb.from('maint').select('*').order('created_at', { ascending: true }),
-    sb.from('components').select('*'),
-    sb.from('users').select('id,line_user_id,name,position,unit,role,rank,memo_role,photo,username,created_at,signature')
+  const [assetsD, borrowD, maintD, componentsD, usersD] = await Promise.all([
+    fetchAll('assets', '*', 'created_at'),
+    fetchAll('borrow', '*', 'created_at'),
+    fetchAll('maint', '*', 'created_at'),
+    fetchAll('components', '*', 'created_at'),
+    fetchAll('users', 'id,line_user_id,name,position,unit,role,rank,memo_role,photo,username,created_at,signature', 'created_at')
   ]);
-  [assetsR, borrowR, maintR, componentsR, usersR].forEach(r => { if (r.error) throw new Error(r.error.message); });
-
   const settings = await sGetSystemSettings();
-  const assets = assetsR.data.map(assetToThai);
-  const borrow = borrowR.data.map(borrowToThai);
-  const maint = maintR.data.map(maintToThai);
-  const components = componentsR.data.map(componentToThai);
-  const users = usersR.data.map(userToThai);
-
-  return {
-    assets, borrow, maint, components, users, settings,
-    dashboard: buildDashboardJS(assets, borrow, maint, settings.renewalAlertDays)
-  };
+  const assets = assetsD.map(assetToThai);
+  const borrow = borrowD.map(borrowToThai);
+  const maint = maintD.map(maintToThai);
+  const components = componentsD.map(componentToThai);
+  const users = usersD.map(userToThai);
+  markOverdue(borrow);
+  return { assets, borrow, maint, components, users, settings,
+    dashboard: buildDashboardJS(assets, borrow, maint, settings.renewalAlertDays) };
 }
 
 async function sGetUsers() {
@@ -477,7 +473,7 @@ async function sRenewBorrow(p, actor) {
     id: newId, asset_id: b.asset_id, asset_name: b.asset_name, borrower: b.borrower,
     borrower_line_id: b.borrower_line_id || '', borrow_date: today, due_date: p.dueDate || null,
     status: 'กำลังยืม', approver: actor, note: p.note !== undefined ? p.note : (b.note || ''),
-    component_ids: b.component_ids || '', photo_out: b.photo_out || ''
+    component_ids: b.component_ids || '', photo_out: b.photo_out || '' ,sig_borrower: b.sig_borrower || '',sig_approver: b.sig_approver || '',
   };
   const { error: e3 } = await sb.from('borrow').insert(row);
   if (e3) throw new Error('เปิดรายการยืมใหม่ไม่สำเร็จ: ' + e3.message);
