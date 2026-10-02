@@ -3723,14 +3723,41 @@ html{scroll-behavior:smooth;}
   .command-hint{ display:none !important; }
 }
 
-/* ===== แก้เลื่อนไม่ได้บน iPad ===== */
-.overlay{
+/* ===== แก้เลื่อนไม่ได้บน iPad (v2) ===== */
+
+/* 1) ให้ html/body เลิกเป็นตัวเลื่อนแยก ใช้ clip แทน hidden */
+html, body{
+  overflow-x:clip;
+  height:auto;
+  min-height:100%;
+}
+
+/* 2) ตอนมีหน้าต่างเปิดอยู่ ล็อกหน้าหลักไม่ให้เลื่อนตาม */
+body:has(#modalRoot .overlay){
+  overflow:hidden;
+  position:fixed;
+  width:100%;
+  inset:0;
+}
+
+/* 3) หน้าต่างทั้งหมด */
+.overlay, .command-overlay{
   height:100vh; height:100dvh;
   overscroll-behavior:contain;
+  touch-action:none;               /* พื้นหลังมืด ไม่ต้องเลื่อน */
 }
 .sheet{
   max-height:92vh !important;
-  max-height:92dvh !important;      /* !important เพื่อชนะ inline style max-height:92vh */
+  max-height:92dvh !important;
+  overflow-y:auto !important;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+  touch-action:pan-y;
+}
+
+/* 4) ค้นหาด่วน: ให้รายการผลลัพธ์เป็นตัวเลื่อน */
+.command-sheet{ touch-action:auto; }
+.command-results{
   overflow-y:auto !important;
   -webkit-overflow-scrolling:touch;
   overscroll-behavior:contain;
