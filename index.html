@@ -6382,11 +6382,7 @@ function openBorrowDetail(id) {
     };
   }
   if (isAdmin() && status === 'รออนุมัติ') {
-    document.getElementById('btnApprove').onclick = () => openApproveSheet(b); {
-      const btn = document.getElementById('btnApprove'); if (btn.disabled) return; setButtonBusy(btn, true, 'กำลังอนุมัติ...'); setLoading(true, 'กำลังอนุมัติคำขอ...');
-      try { await apiPost('approveBorrowRequest', { borrowId: id }); closeSheet(); toast('อนุมัติการยืมแล้ว'); await reloadThen(renderBorrow); }
-      catch (err) { toast(err.message || 'อนุมัติไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(btn, false); }
-    };
+    document.getElementById('btnApprove').onclick = () => openApproveSheet(b);
     document.getElementById('btnReject').onclick = async () => {
       if (!await confirmSheet('ยืนยันการปฏิเสธคำขอยืมนี้?', {title:'ปฏิเสธคำขอยืม', okText:'ปฏิเสธ', tone:'bad'})) return;
       const btn = document.getElementById('btnReject'); if (btn.disabled) return; setButtonBusy(btn, true, 'กำลังปฏิเสธ...'); setLoading(true, 'กำลังปฏิเสธคำขอ...');
@@ -6806,12 +6802,21 @@ function selectAsset(id) {
 }
    
   document.getElementById('f_assetTrigger').onclick = () => openAssetPickerSheet(val('f_asset'), selectAsset);
-  document.getElementById('f_borrowerTrigger').onclick = () =>
-     function resetBorrowerSig() {
+  function resetBorrowerSig() {
     document.getElementById('f_sigBorrower').value = '';
     document.getElementById('f_sigIcon').innerHTML = ICONS.edit;
     document.getElementById('f_sigTitle').textContent = 'แตะเพื่อเซ็นชื่อ';
   }
+  document.getElementById('f_borrowerTrigger').onclick = () =>
+    openOfficerPickerSheet(val('f_borrower'), (name, u) => {
+      if (name !== val('f_borrower')) resetBorrowerSig();   // เปลี่ยนคน = ลายเซ็นเดิมใช้ไม่ได้
+      document.getElementById('f_borrower').value = name;
+      document.getElementById('f_borrowerName').textContent = name;
+      document.getElementById('f_borrowerSub').textContent = u ? (u['ตำแหน่ง'] || 'ไม่ระบุตำแหน่ง') : 'พิมพ์ชื่อเอง';
+      document.getElementById('f_borrowerIcon').innerHTML = (u && u['รูปถ่าย'])
+        ? `<img src="${u['รูปถ่าย']}" style="width:100%;height:100%;object-fit:cover;border-radius:13px;">`
+        : ICONS.user;
+    });
   document.getElementById('f_sigTrigger').onclick = () => {
     if (!val('f_borrower').trim()) { toast('กรุณาเลือกผู้ยืมก่อน'); return; }
     openSignatureSheet({
@@ -6822,6 +6827,28 @@ function selectAsset(id) {
         document.getElementById('f_sigTitle').textContent = 'เซ็นแล้ว (แตะเพื่อเซ็นใหม่)';
       }
     });
+  };
+  if (admin) {
+    const resetApvSig = () => {
+      document.getElementById('f_sigApprover').value = '';
+      document.getElementById('f_sigApvIcon').innerHTML = ICONS.edit;
+      document.getElementById('f_sigApvTitle').textContent = 'ลายเซ็นผู้อนุมัติ (ไม่บังคับ)';
+    };
+    document.getElementById('f_approverPick').addEventListener('change', resetApvSig);
+    document.getElementById('f_sigApvTrigger').onclick = () => {
+      const pv = val('f_approverPick');
+      const off = (pv !== '' && pv !== '__other__') ? state.users[Number(pv)] : null;
+      if (!val('f_approver').trim() && !off) { toast('กรุณาเลือกผู้อนุมัติก่อน'); return; }
+      openSignatureSheet({
+        title: 'ลายเซ็นผู้อนุมัติ', name: val('f_approver'), saved: off ? off['ลายเซ็น'] : '',
+        onDone: v => {
+          document.getElementById('f_sigApprover').value = v;
+          document.getElementById('f_sigApvIcon').innerHTML = `<img src="${v}" style="width:100%;height:100%;object-fit:contain;">`;
+          document.getElementById('f_sigApvTitle').textContent = 'เซ็นแล้ว (แตะเพื่อเซ็นใหม่)';
+        }
+      });
+    };
+  }
   };
   if (admin) {
     const resetApvSig = () => {
@@ -7412,7 +7439,8 @@ function openUserForm(u) {
       document.getElementById('u_photo').value = data;
       document.getElementById('u_photoPreview').innerHTML = `<img src="${data}">`;
     }).catch(err => toast(err.message || 'เตรียมรูปไม่สำเร็จ'));
-      const setUserSig = v => {
+  };
+  const setUserSig = v => {
     document.getElementById('u_sig').value = v;
     document.getElementById('u_sigPreview').innerHTML = v ? `<img src="${v}">` : ICONS.edit;
   };
@@ -7422,7 +7450,7 @@ function openUserForm(u) {
   };
   document.getElementById('u_sigDraw').onclick = () =>
     openSignatureSheet({ title: 'ลายเซ็นประจำตัว', name: val('u_name'), onDone: setUserSig });
-  document.getElementById('u_sigClear').onclick = () => setUserSig(''); 
+  document.getElementById('u_sigClear').onclick = () => setUserSig('');
   };
   document.getElementById('btnCancel').onclick = closeSheet;
   document.getElementById('btnSave').onclick = async () => {
@@ -7438,7 +7466,7 @@ function openUserForm(u) {
       if (!editing) {
         await apiPost('addUser', {
           name: val('u_name'), rank: val('u_rank'), position: val('u_position'), unit: val('u_unit'),
-          role: val('u_role'), memoRole: val('u_memorole'), ...photoPayload
+          role: val('u_role'), memoRole: val('u_memorole'), ...photoPayload, signature: sigUrl
         });
       } else {
         await apiPost('updateUserRole', {
@@ -7446,7 +7474,7 @@ function openUserForm(u) {
           lineUserId: (!officerId(u) && u['LINEUserId']) || undefined,
           username: (!officerId(u) && u['ชื่อผู้ใช้']) || undefined,
           name: val('u_name'), rank: val('u_rank'), position: val('u_position'), unit: val('u_unit'),
-          role: val('u_role'), memoRole: val('u_memorole'), ...photoPayload
+          role: val('u_role'), memoRole: val('u_memorole'), ...photoPayload, signature: sigUrl
         });
       }
       closeSheet();
@@ -7998,6 +8026,7 @@ function signerPickerHtml(prefix, defaultIdx, rankVal, nameVal, positionVal, sig
   return `
     <input type="hidden" id="${prefix}Sig" value="${escapeHtml(sigVal || '')}">
     <div class="memo-signer-pick"><select class="input" id="${prefix}Pick">${officerSelectOptions(defaultIdx)}</select></div>
+    <div class="memo-two-col">
       <div class="field" style="max-width:130px;"><label>ยศ</label><input class="input" id="${prefix}Rank" value="${escapeHtml(rankVal||'')}"></div>
       <div class="field"><label>ชื่อ-สกุล</label><input class="input" id="${prefix}Name" value="${escapeHtml(nameVal||'')}"></div>
     </div>
