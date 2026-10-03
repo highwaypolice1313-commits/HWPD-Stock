@@ -4459,7 +4459,7 @@ async function completeLogin({ role, name, token }) {
   pill.textContent = role === 'admin' ? 'แอดมิน' : 'ดูอย่างเดียว';
   pill.classList.toggle('viewer', role !== 'admin');
   document.getElementById('profileName').textContent = state.user.name;
-  document.getElementById('usersTabBtn').style.display = isAdmin() ? 'flex' : 'none';
+  document.getElementById('usersTabBtn').style.display = 'flex';
   document.getElementById('settingsTabBtn').style.display = 'flex';
   document.getElementById('auditTabBtn').style.display = isAdmin() ? 'flex' : 'none';
   document.getElementById('monthlyTabBtn').style.display = isAdmin() ? 'flex' : 'none';
@@ -5025,7 +5025,7 @@ function renderTab(name) {
 }
 
 function renderTabNow(name) {
- if ((name === 'users' || name === 'audit' || name === 'monthly') && !isAdmin()) name = 'dashboard';
+if ((name === 'audit' || name === 'monthly') && !isAdmin()) name = 'dashboard';
   state.tab = name;
   window.__countStat = true;   // [เพิ่ม] เพิ่งเปิดหน้าจากเมนู -> อนุญาตให้ stat-num นับขึ้น
   document.querySelectorAll('.tab').forEach(t => {
@@ -7357,7 +7357,6 @@ function selectAsset(id) {
 
 /* ========================================================= USERS / OFFICERS */
 async function renderUsers() {
-  if (!isAdmin()) return;
   if (state.usersView === undefined) state.usersView = getViewMode('users');
   const el = document.getElementById('view-users');
   el.innerHTML = emptyState('กำลังโหลดรายชื่อเจ้าหน้าที่...');
@@ -7383,15 +7382,17 @@ function drawUsers() {
       <span class="section-actions">
         ${viewToggleHtml('users', state.usersView)}
         <button class="icon-btn" id="btnPrintAllUsers" title="พิมพ์รายชื่อทั้งหมด" aria-label="พิมพ์รายชื่อทั้งหมด">${ICONS.print}</button>
-        <button class="icon-btn" id="btnAddUser" title="เพิ่มรายชื่อ"><svg viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
-      </span>
+        ${isAdmin() ? `<button class="icon-btn" id="btnAddUser" title="เพิ่มรายชื่อ"><svg viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>` : ''}      </span>
     </div>
     <div class="search-row"><input class="input" id="userSearchInput" placeholder="ค้นหาชื่อหรือตำแหน่ง..." value="${escapeHtml(state.userSearch)}"></div>
-    <div class="hint" style="margin-top:0;">ทำเนียบนี้ใช้สำหรับเลือกชื่อแบบดรอปดาวน์ในหน้าเบิก-ยืม และบันทึกขอเบิกพัสดุ ไม่ได้ผูกกับการเข้าสู่ระบบ — กำหนด "บทบาทในบันทึกเบิก-ยืม" ให้แต่ละคนเพื่อให้ระบบเลือกผู้อนุมัติ/ผู้จ่ายพัสดุอัตโนมัติตอนพิมพ์บันทึกข้อความ</div>
+       <div class="hint" style="margin-top:0;">${isAdmin()
+      ? 'ทำเนียบนี้ใช้สำหรับเลือกชื่อแบบดรอปดาวน์ในหน้าเบิก-ยืม และบันทึกขอเบิกพัสดุ ไม่ได้ผูกกับการเข้าสู่ระบบ — กำหนด "บทบาทในบันทึกเบิก-ยืม" ให้แต่ละคนเพื่อให้ระบบเลือกผู้อนุมัติ/ผู้จ่ายพัสดุอัตโนมัติตอนพิมพ์บันทึกข้อความ'
+      : 'แตะที่รายชื่อเพื่อดูโปรไฟล์และพิมพ์รายงานได้ (ผู้ดูอย่างเดียวไม่สามารถแก้ไขข้อมูลได้)'}</div>
     <div id="userList" class="${isGrid ? 'asset-grid' : ''}">${shown.length ? shown.map(isGrid ? userCard : userRow).join('') : emptyState(state.users.length ? 'ไม่พบรายชื่อที่ค้นหา' : 'ยังไม่มีรายชื่อ จนท.ในสังกัด')}</div>
     
   `;
-  document.getElementById('btnAddUser').onclick = () => openUserForm();
+  const addUserBtn = document.getElementById('btnAddUser');
+  if (addUserBtn) addUserBtn.onclick = () => openUserForm();
   document.getElementById('btnPrintAllUsers').onclick = printAllOfficers;
   document.getElementById('userSearchInput').oninput = (e) => {
     state.userSearch = e.target.value;
@@ -7601,6 +7602,7 @@ function activityRow(a) {
   </div>`;
 }
 function openUserForm(u) {
+  if (!isAdmin()) { toast('ผู้ดูอย่างเดียวไม่มีสิทธิ์แก้ไขข้อมูล'); return; }
   const editing = !!u;
   const photoVal = editing && u['รูปถ่าย'] ? u['รูปถ่าย'] : '';
   showSheet(`
@@ -7738,7 +7740,7 @@ function commandPaletteItems(q='') {
   const push=(kind,id,title,sub,icon,run)=>{ if(!needle || (title+' '+sub).toLowerCase().includes(needle)) out.push({kind,id,title,sub,icon,run}); };
   (state.assets||[]).forEach(a=>push('asset',a['รหัสครุภัณฑ์'],a['ชื่อครุภัณฑ์']||'-',(a['รหัสครุภัณฑ์']||'')+' · '+(a['หมายเลขเครื่อง']||a['ผู้ครอบครอง/หน่วยงาน']||''),catIcon(a['หมวดหมู่']),()=>openAssetDetail(a['รหัสครุภัณฑ์'])));
   (state.borrow||[]).forEach(b=>push('borrow',b['รหัสรายการ'],b['ชื่อครุภัณฑ์']||'-',(b['ผู้ยืม']||'-')+' · '+(b['รหัสครุภัณฑ์']||''),ICONS.swap,()=>openBorrowDetail(b['รหัสรายการ'])));
-  (state.users||[]).forEach((u,i)=>push('user',String(i),officerFullName(u)||'-',(u['ตำแหน่ง']||'')+' · '+(u['รหัสจนท.']||''),ICONS.user,()=>{ if(isAdmin()) openUserForm(u); }));
+  (state.users||[]).forEach((u,i)=>push('user',String(i),officerFullName(u)||'-',(u['ตำแหน่ง']||'')+' · '+(u['รหัสจนท.']||''),ICONS.user,()=>{ isAdmin() ? openUserForm(u) : openOfficerProfile(u); }
   return out.slice(0,30);
 }
 function openCommandPalette(initial='') {
