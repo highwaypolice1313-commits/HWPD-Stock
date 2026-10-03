@@ -7740,7 +7740,7 @@ function commandPaletteItems(q='') {
   const push=(kind,id,title,sub,icon,run)=>{ if(!needle || (title+' '+sub).toLowerCase().includes(needle)) out.push({kind,id,title,sub,icon,run}); };
   (state.assets||[]).forEach(a=>push('asset',a['รหัสครุภัณฑ์'],a['ชื่อครุภัณฑ์']||'-',(a['รหัสครุภัณฑ์']||'')+' · '+(a['หมายเลขเครื่อง']||a['ผู้ครอบครอง/หน่วยงาน']||''),catIcon(a['หมวดหมู่']),()=>openAssetDetail(a['รหัสครุภัณฑ์'])));
   (state.borrow||[]).forEach(b=>push('borrow',b['รหัสรายการ'],b['ชื่อครุภัณฑ์']||'-',(b['ผู้ยืม']||'-')+' · '+(b['รหัสครุภัณฑ์']||''),ICONS.swap,()=>openBorrowDetail(b['รหัสรายการ'])));
-  (state.users||[]).forEach((u,i)=>push('user',String(i),officerFullName(u)||'-',(u['ตำแหน่ง']||'')+' · '+(u['รหัสจนท.']||''),ICONS.user,()=>{ isAdmin() ? openUserForm(u) : openOfficerProfile(u); }
+  (state.users||[]).forEach((u,i)=>push('user',String(i),officerFullName(u)||'-',(u['ตำแหน่ง']||'')+' · '+(u['รหัสจนท.']||''),ICONS.user,()=>{ isAdmin() ? openUserForm(u) : openOfficerProfile(u); }));
   return out.slice(0,30);
 }
 function openCommandPalette(initial='') {
