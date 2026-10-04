@@ -6874,7 +6874,7 @@ function openSignatureSheet(opts) {
 function openBorrowForm(presetId) {
   const available = state.assets.filter(isAssetBorrowable);
   const admin = isAdmin();
-  const defaultApproverIdx = (() => { const list = officersByMemoRole('ผู้อนุมัติ ลำดับที่ 1'); return list.length ? state.users.indexOf(list[0]) : ''; })();
+  const defaultApprover = officersByMemoRole('ผู้อนุมัติ ลำดับที่ 1')[0] || null;
   showSheet(`
     <div class="sheet-title">${admin ? 'บันทึกการยืม' : 'ขอยืมครุภัณฑ์'}</div>
     ${!admin ? `<div class="hint" style="margin-top:0;margin-bottom:12px;">คำขอของท่านจะถูกส่งให้แอดมินตรวจสอบและอนุมัติก่อนจึงจะยืมได้จริง</div>` : ''}
@@ -6931,14 +6931,13 @@ function openBorrowForm(presetId) {
 
     ${admin ? `<div class="mf-section">
       <div class="mf-section-title"><span class="mf-step">3</span> ผู้อนุมัติ</div>
-      <select class="input" id="f_approverPick">${officerSelectOptions(defaultApproverIdx)}</select>
-      <input class="input" id="f_approver" placeholder="พิมพ์ชื่อผู้อนุมัติ" style="margin-top:8px; display:none;">
-      <div class="glass list-item" id="f_sigApvTrigger" style="cursor:pointer; margin-top:8px;">
-        <div class="li-icon" id="f_sigApvIcon">${ICONS.edit}</div>
-        <div class="li-body"><div class="li-title" id="f_sigApvTitle">ลายเซ็นผู้อนุมัติ (ไม่บังคับ)</div><div class="li-sub">เซ็นสด หรือใช้ลายเซ็นที่บันทึกไว้</div></div>
-        <span class="status-badge status-ready" style="flex:none;">เซ็น</span>
-      </div>
-      <input type="hidden" id="f_sigApprover" value="">
+      ${signerCardHtml('f_apv', 'ผู้อนุมัติ', {
+        rank: defaultApprover ? defaultApprover['ยศ'] : '',
+        name: defaultApprover ? defaultApprover['ชื่อ-สกุล'] : '',
+        position: defaultApprover ? defaultApprover['ตำแหน่ง'] : '',
+        sig: '',
+        photo: defaultApprover ? defaultApprover['รูปถ่าย'] : ''
+      })}
     </div>` : ''}
 
     <div class="mf-section">
@@ -6966,18 +6965,6 @@ function openBorrowForm(presetId) {
     }).catch(err => toast(err.message || 'เตรียมรูปไม่สำเร็จ'));
   };
   if (!available.length) { toast('ไม่มีครุภัณฑ์ที่พร้อมให้ยืมและยังไม่มีผู้ยืมในขณะนี้'); }
-
-  // ---------- ตัวเลือกผู้อนุมัติ (ดรอปดาวน์ + ช่องพิมพ์เอง) ----------
-  function wirePicker(pickId, textId) {
-    const pick = document.getElementById(pickId), text = document.getElementById(textId);
-    pick.onchange = () => {
-      if (pick.value === '__other__') { text.style.display = 'block'; text.value = ''; text.focus(); }
-      else if (pick.value === '') { text.style.display = 'none'; text.value = ''; }
-      else { text.style.display = 'none'; text.value = officerFullName(state.users[Number(pick.value)]); }
-    };
-    if (pick.value && pick.value !== '__other__' && pick.value !== '') pick.onchange();
-  }
-  if (admin) wirePicker('f_approverPick', 'f_approver');
 
   // ---------- ส่วนควบของอาวุธปืน ----------
   function refreshComponentPicker() {
@@ -7047,27 +7034,7 @@ function openBorrowForm(presetId) {
   };
 
   // ---------- ลายเซ็นผู้อนุมัติ (เฉพาะแอดมิน) ----------
-  if (admin) {
-    const resetApvSig = () => {
-      document.getElementById('f_sigApprover').value = '';
-      document.getElementById('f_sigApvIcon').innerHTML = ICONS.edit;
-      document.getElementById('f_sigApvTitle').textContent = 'ลายเซ็นผู้อนุมัติ (ไม่บังคับ)';
-    };
-    document.getElementById('f_approverPick').addEventListener('change', resetApvSig);
-    document.getElementById('f_sigApvTrigger').onclick = () => {
-      const pv = val('f_approverPick');
-      const off = (pv !== '' && pv !== '__other__') ? state.users[Number(pv)] : null;
-      if (!val('f_approver').trim() && !off) { toast('กรุณาเลือกผู้อนุมัติก่อน'); return; }
-      openSignatureSheet({
-        title: 'ลายเซ็นผู้อนุมัติ', name: val('f_approver'), saved: off ? off['ลายเซ็น'] : '',
-        onDone: v => {
-          document.getElementById('f_sigApprover').value = v;
-          document.getElementById('f_sigApvIcon').innerHTML = `<img src="${v}" style="width:100%;height:100%;object-fit:contain;">`;
-          document.getElementById('f_sigApvTitle').textContent = 'เซ็นแล้ว (แตะเพื่อเซ็นใหม่)';
-        }
-      });
-    };
-  }
+  if (admin) wireSignerCard('f_apv', 'ผู้อนุมัติ');
 
   // ---------- ถ้ามี presetId (มาจากทะเบียนครุภัณฑ์/ปัดแถว) ให้เลือกชิ้นนั้นก่อน ----------
   const presetAsset = presetId && available.find(a => a['รหัสครุภัณฑ์'] === presetId);
@@ -7127,10 +7094,10 @@ function openBorrowForm(presetId) {
       let conditionPhotoOut = val('f_conditionPhotoVal');
       if (isInlineImage(conditionPhotoOut)) conditionPhotoOut = await uploadImageToDrive(conditionPhotoOut, 'borrow-' + assetId);
       const sigBorrower = await uploadSignature(val('f_sigBorrower'), 'borrower-' + assetId);
-      const sigApprover = admin ? await uploadSignature(val('f_sigApprover'), 'approver-' + assetId) : '';
+      const sigApprover = admin ? await uploadSignature(val('f_apvSig'), 'approver-' + assetId) : '';
       const payload = {
         assetId, assetName: asset ? asset['ชื่อครุภัณฑ์'] : '', borrower: val('f_borrower'), borrowerLineId: '',
-        borrowDate: val('f_borrowdate'), dueDate: val('f_duedate'), approver: admin ? val('f_approver') : '',
+        borrowDate: val('f_borrowdate'), dueDate: val('f_duedate'), approver: admin ? (val('f_apvRank') + ' ' + val('f_apvName')).trim() : '',
         note: val('f_bnote'), componentIds, conditionPhotoOut, sigBorrower, sigApprover
       };
       await apiPost(admin ? 'borrowAsset' : 'requestBorrow', payload);
@@ -8378,7 +8345,7 @@ function collectMemoFormData() {
    
 let memoPreviewDesk = null;
 function refreshMemoLivePreview() {
-  if (!memoPreviewDesk) return;
+  if (!memoPreviewDesk || !document.body.contains(memoPreviewDesk)) return;
   const memo = collectMemoFormData();
   mountPaper(memoPreviewDesk, wrapPfDoc(buildMemoBodyHtml(memo), false));
 }
