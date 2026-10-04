@@ -8084,7 +8084,7 @@ function openCommandPalette(initial='') {
 if (!window.matchMedia('(pointer:coarse)').matches) {
   setTimeout(() => { input.focus(); input.select(); }, 40);
 }
-
+}
 function closeCommandPalette() {
   const root = document.getElementById('modalRoot');
   if (root) root.innerHTML = '';
