@@ -348,8 +348,10 @@ async function sUpdateAsset(p, actor) {
   return { updated: true };
 }
 async function sDeleteAsset(id, actor) {
+  const { data: old } = await sb.from('assets').select('image_url').eq('id', id).maybeSingle();
   const { error } = await sb.from('assets').delete().eq('id', id);
   if (error) throw new Error('ลบครุภัณฑ์ไม่สำเร็จ: ' + error.message);
+  if (old) await gasDeleteImage(old.image_url);
   await logActivitySb(actor, 'ลบครุภัณฑ์', id);
   return { deleted: true };
 }
@@ -804,4 +806,15 @@ async function sMigrateImagesToDrive(actor) {
   }
   await logActivitySb(actor, 'ย้ายรูปเก่าไป Drive', 'สำเร็จ ' + migrated + ' / ล้มเหลว ' + failed);
   return { migrated, failed };
+}
+
+async function gasDeleteImage(url) {
+  if (!url || !/googleusercontent\.com\/d\//.test(url)) return;
+  try {
+    await fetch(GAS_UPLOAD_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'deleteImage', uploadKey: GAS_UPLOAD_KEY, payload: { url } })
+    });
+  } catch (e) { /* ลบรูปไม่สำเร็จไม่ควรทำให้งานหลักล้ม */ }
 }
