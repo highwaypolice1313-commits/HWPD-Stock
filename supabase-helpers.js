@@ -765,10 +765,43 @@ async function supaApiPost(action, payload, role, actorName) {
     case 'deleteMemo': return await sDeleteMemo(payload.id, actorName);
     case 'updateSystemSettings': return await sUpdateSystemSettings(payload, actorName);
     case 'saveAuditRecord': return await sSaveAuditRecord(payload, actorName);
-    case 'migrateImagesToDrive': return { migrated: 0, failed: 0 };
+    case 'migrateImagesToDrive': return await sMigrateImagesToDrive(actorName);
     case 'changeRolePassword': return await sChangeRolePassword(payload);
     case 'saveMonthlyCheck': return await sSaveMonthlyCheck(payload, actorName);
     case 'clearMonthlyCheck': return await sClearMonthlyCheck(payload, actorName);
     default: throw new Error('ไม่รู้จัก action: ' + action);
   }
+}
+
+async function sMigrateImagesToDrive(actor) {
+  const targets = [
+    ['assets', 'image_url'], ['users', 'photo'], ['users', 'signature'],
+    ['borrow', 'photo_out'], ['borrow', 'photo_in'],
+    ['borrow', 'sig_borrower'], ['borrow', 'sig_approver'], ['maint', 'photo']
+  ];
+  let migrated = 0, failed = 0;
+  for (const [table, col] of targets) {
+    const { data, error } = await sb.from(table).select('id,' + col).like(col, 'data:image%');
+    if (error) { failed++; continue; }
+    for (const row of data || []) {
+      try {
+        const { url } = await gasUploadImageToDrive(row[col], table + '-' + col + '-' + row.id);
+        if (!url) throw new Error('no url');
+        const { error: e2 } = await sb.from(table).update({ [col]: url }).eq('id', row.id);
+        if (e2) throw e2;
+        migrated++;
+      } catch (e) { failed++; }
+    }
+  }
+  // ตราครุฑ (อยู่ใน system_settings)
+  const { data: g } = await sb.from('system_settings').select('value').eq('key', 'garudaLogo').maybeSingle();
+  if (g && /^data:image\//i.test(g.value || '')) {
+    try {
+      const { url } = await gasUploadImageToDrive(g.value, 'garuda');
+      await sb.from('system_settings').upsert({ key: 'garudaLogo', value: url, updated_at: new Date().toISOString() });
+      migrated++;
+    } catch (e) { failed++; }
+  }
+  await logActivitySb(actor, 'ย้ายรูปเก่าไป Drive', 'สำเร็จ ' + migrated + ' / ล้มเหลว ' + failed);
+  return { migrated, failed };
 }
