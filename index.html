@@ -3732,12 +3732,6 @@ html, body{
   min-height:100%;
 }
 
-/* 2) ตอนมีหน้าต่างเปิดอยู่ ล็อกหน้าหลักไม่ให้เลื่อนตาม */
-body:has(#modalRoot .overlay){
-  overflow:hidden;
-  overscroll-behavior:none;
-}
-
 /* 3) หน้าต่างทั้งหมด */
 .overlay, .command-overlay{
   height:100vh; height:100dvh;
@@ -3862,8 +3856,7 @@ body:has(#modalRoot .overlay){
 }   
 
    @media print{
-  html, body,
-  body:has(#modalRoot .overlay){
+  html, body, body.modal-open{
     position:static !important;
     inset:auto !important;
     width:auto !important;
@@ -4017,9 +4010,6 @@ body:has(#modalRoot .overlay){
   .hero-card::before{ animation:none !important; }
 }
 
-/* แทนกฎ position:fixed เดิม: แค่ล็อกการเลื่อน ไม่ต้องย้าย body */
-body:has(#modalRoot .overlay){ overflow:hidden; }
-
    /* ===== IPAD SCROLL PERFORMANCE PATCH ===== */
 html{ scroll-behavior:auto; }
 
@@ -4078,6 +4068,42 @@ html{ scroll-behavior:auto; }
 #view-monthly .mc-swipe-card{ touch-action:pan-y !important; }
 
 @media print{ body::before{ display:none !important; } }
+
+   /* ===== MEMO FORM: iPad scroll fix ===== */
+body.modal-open{ overflow:hidden; overscroll-behavior:none; }
+
+@media (min-width:900px){
+  /* หน้าต่างสูงคงที่ แล้วให้ข้างในแยกเลื่อนเอง */
+  .sheet.memo-form-sheet{
+    display:flex !important; flex-direction:column;
+    height:min(92dvh, 960px) !important; max-height:min(92dvh, 960px) !important;
+    overflow:hidden !important;
+  }
+  .memo-form-sheet .mf-grid{
+    flex:1 1 auto; min-height:0; overflow:hidden;
+    align-items:stretch; grid-template-rows:minmax(0,1fr);
+  }
+  .memo-form-sheet .mf-fields{
+    overflow-y:auto !important; min-height:0;
+    -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
+    touch-action:pan-y; padding-right:6px;
+  }
+  .memo-form-sheet .mf-preview{
+    position:static !important; display:flex !important; flex-direction:column;
+    min-height:0; contain:layout paint;
+  }
+  .memo-form-sheet .mf-preview .paper-desk{
+    flex:1 1 auto; min-height:0; max-height:none !important;
+    overscroll-behavior:contain;
+  }
+  .memo-form-sheet .btn-row{ flex:none; }
+}
+
+/* เงากระดาษเบาลงบนจอสัมผัส */
+@media (pointer:coarse){
+  .paper-scale .a4-page{ box-shadow:0 1px 3px rgba(20,32,45,.2); }
+  .paper-desk{ box-shadow:none; }
+}
    
 </style>
 </head>
@@ -8614,10 +8640,15 @@ function refreshMemoLivePreview() {
   clearTimeout(refreshMemoLivePreview._t);
   refreshMemoLivePreview._t = setTimeout(() => {
     if (!memoPreviewDesk || !document.body.contains(memoPreviewDesk)) return;
-    if (!memoPreviewDesk.offsetParent) return;   // ฟอร์มถูกซ่อนอยู่ใต้หน้าต่างอื่น ไม่ต้องวาด
-    const memo = collectMemoFormData();
-    mountPaper(memoPreviewDesk, wrapPfDoc(buildMemoBodyHtml(memo), false));
-  }, 120);
+    if (!memoPreviewDesk.offsetParent) return;
+    const run = () => {
+      if (!memoPreviewDesk || !document.body.contains(memoPreviewDesk)) return;
+      const memo = collectMemoFormData();
+      mountPaper(memoPreviewDesk, wrapPfDoc(buildMemoBodyHtml(memo), false));
+    };
+    if (window.requestIdleCallback) requestIdleCallback(run, { timeout: 600 });
+    else run();
+  }, 300);
 }
    
 /* ---------- เลขหนังสือรันอัตโนมัติ ---------- */
@@ -8887,8 +8918,7 @@ function openPrintMemoForm(opts) {
 
   memoPreviewDesk = document.getElementById('mfPreviewDesk');
   registerPaper(memoPreviewDesk);
-  document.getElementById('mfFields').addEventListener('input', debounce(refreshMemoLivePreview, 200));
-  document.getElementById('mfFields').addEventListener('change', refreshMemoLivePreview);
+   document.getElementById('mfFields').addEventListener('input', refreshMemoLivePreview);
   refreshMemoLivePreview();
 
   document.getElementById('btnCancel').onclick = closeSheet;
@@ -11722,6 +11752,15 @@ function compareMonthlyOfficers(a, b) {
   // Function declarations ใน global scope จะถูกเรียกจากระบบ navigation
   // จึงกำหนด property ไว้ด้วยเพื่อรองรับโค้ดเดิมที่เรียกผ่าน window
   try { renderMonthly = renderMonthlyEnhanced; } catch(e) {}
+})();
+
+/* สลับคลาส modal-open เมื่อมี popup (ดูเฉพาะลูกตรงของ #modalRoot ไม่ใช่ทั้ง subtree) */
+(function watchModalRoot() {
+  const root = document.getElementById('modalRoot');
+  if (!root) return;
+  const sync = () => document.body.classList.toggle('modal-open', !!root.querySelector(':scope > .overlay'));
+  new MutationObserver(sync).observe(root, { childList: true });
+  sync();
 })();
 
 
