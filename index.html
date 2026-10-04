@@ -4019,6 +4019,65 @@ body:has(#modalRoot .overlay){
 
 /* แทนกฎ position:fixed เดิม: แค่ล็อกการเลื่อน ไม่ต้องย้าย body */
 body:has(#modalRoot .overlay){ overflow:hidden; }
+
+   /* ===== IPAD SCROLL PERFORMANCE PATCH ===== */
+html{ scroll-behavior:auto; }
+
+@media (pointer:coarse), (hover:none), (max-width:1024px){
+  /* 1) ปิด blur ทุกจุด (รวมธีม liquid/frost/aurora) */
+  *,*::before,*::after{
+    -webkit-backdrop-filter:none !important;
+    backdrop-filter:none !important;
+  }
+
+  /* 2) พื้นหลัง: ย้ายไปไว้ชั้น fixed แยก ไม่วาดใหม่ตอนเลื่อน */
+  body, :root[data-theme] body{
+    background:var(--bg-0) !important;
+    background-attachment:scroll !important;
+  }
+  body::before{
+    content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
+    transform:translateZ(0);
+    background:
+      radial-gradient(900px 520px at 92% -12%,var(--gold-wash),transparent 60%),
+      radial-gradient(760px 500px at -8% 18%,var(--navy-wash),transparent 58%),
+      linear-gradient(180deg,var(--bg-1),var(--bg-0));
+  }
+
+  /* 3) เงาเบาลง */
+  :root{
+    --premium-shadow-soft:0 1px 3px rgba(0,0,0,.08);
+    --premium-shadow:0 2px 8px rgba(0,0,0,.12);
+    --shadow-sm:0 1px 3px rgba(0,0,0,.08);
+    --shadow-md:0 2px 8px rgba(0,0,0,.12);
+    --shadow-lg:0 4px 14px rgba(0,0,0,.16);
+  }
+  :root[data-glass]{ --glass-shadow:0 1px 3px rgba(0,0,0,.12); }
+
+  /* 4) ธีมกระจกเมื่อไม่มี blur ต้องทึบขึ้นเพื่อให้อ่านออก */
+  :root[data-glass] .sheet,
+  :root[data-glass] .topbar{ background:var(--bg-1) !important; }
+
+  /* 5) ตัดแอนิเมชันที่ไม่จำเป็น */
+  .hero-card::before{ display:none !important; }
+  .list-item,.asset-card,.stat-card,.chart-card,.mc-card{ transition:none !important; }
+  .list-item:hover,.asset-card:hover,.mc-card:hover{ transform:none !important; }
+
+  /* 6) ยกชั้นแถบที่ติดจอ + กันเลื่อนทะลุใน scroller ซ้อน */
+  .topbar{ transform:translateZ(0); }
+  .tabbar{ will-change:transform; }
+  .sheet,.paper-desk,.command-results,.theme-grid{
+    -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
+  }
+}
+@media (max-width:899px){
+  :root[data-glass] .tabbar{ background:var(--bg-1) !important; }
+}
+
+/* การ์ดปัดตรวจประจำเดือน: ให้เบราว์เซอร์เลื่อนแนวตั้งเอง */
+#view-monthly .mc-swipe-card{ touch-action:pan-y !important; }
+
+@media print{ body::before{ display:none !important; } }
    
 </style>
 </head>
@@ -4626,11 +4685,14 @@ async function completeLogin({ role, name, token }) {
   const ui = loadUi();
   const VALID_TABS = ['dashboard','assets','borrow','maint','memos','users','reports','settings','audit','monthly'];
   const startTab = VALID_TABS.includes(ui.tab) ? ui.tab : 'dashboard';
-  const restoreScroll = () => {
-    if (!ui.scrollY) return;
-    // รอให้หน้า render เสร็จก่อน แล้วลองหลายรอบเผื่อหน้าที่โหลดข้อมูลแบบ async
-    [60, 300, 800, 1500].forEach(ms => setTimeout(() => window.scrollTo(0, ui.scrollY), ms));
-  };
+   const restoreScroll = () => {
+  if (!ui.scrollY) return;
+  let stopped = false;
+  const stop = () => { stopped = true; };
+  window.addEventListener('touchstart', stop, { once:true, passive:true });
+  window.addEventListener('wheel', stop, { once:true, passive:true });
+  [60, 300, 800].forEach(ms => setTimeout(() => { if (!stopped) window.scrollTo(0, ui.scrollY); }, ms));
+   };
   try {
     await loadAll(true);
     renderTabNow._restore = true;
@@ -4866,7 +4928,6 @@ async function reloadThen(renderFn) {
   try { await loadAll(); } catch (e) { /* loadAll แจ้ง toast แล้ว */ }
   try { if (renderFn) renderFn(); } catch (e) { console.error(e); }
   requestAnimationFrame(() => window.scrollTo(0, y));
-  setTimeout(() => window.scrollTo(0, y), 120);
 }
 
 async function refreshData() {
@@ -5185,7 +5246,7 @@ window.addEventListener('online', () => setConnection(true));
 window.addEventListener('offline', () => { setConnection(false); toast('ขณะนี้อุปกรณ์ออฟไลน์'); });
 
 function renderTab(name) {
-  if (document.startViewTransition && !renderTab._running) {
+ if (document.startViewTransition && !renderTab._running && !window.matchMedia('(pointer:coarse)').matches) {
     renderTab._running = true;
     try {
       const vt = document.startViewTransition(() => renderTabNow(name));
@@ -8016,7 +8077,6 @@ function restorePageScroll() {
   pageScrollBeforeSheet = null;
   window.scrollTo(0, y);
   requestAnimationFrame(() => window.scrollTo(0, y));
-  setTimeout(() => window.scrollTo(0, y), 80);
 }
    
 /* ===== ระบบซ้อนหน้า: ปิดแล้วกลับหน้าก่อนหน้า (เก็บ DOM จริง ปุ่มยังกดได้) ===== */
@@ -8243,37 +8303,59 @@ function drawMemos() {
     <div class="hint" style="margin-top:0;">${isAdmin() ? 'แตะที่เอกสารเพื่อเปิดดู/แก้ไข แล้วบันทึกหรือพิมพ์ได้' : 'แตะที่เอกสารเพื่อเปิดดูหรือพิมพ์ได้เท่านั้น — ผู้ดูอย่างเดียวแก้ไขหรือลบเอกสารไม่ได้'}</div>
     <div class="${isGrid ? 'memo-grid' : ''}" id="memoGrid">${list.length ? list.map(isGrid ? memoCard : memoRow).join('') : emptyState('ยังไม่มีเอกสารที่บันทึกไว้ — กดปุ่ม + เพื่อสร้างเอกสารใหม่')}</div>
   `;
+
+  const openMemo = (m) => {
+    if (!m) return;
+    openMemoEditor({
+      id: m['รหัสใบเบิก'],
+      docHtml: m['เนื้อหาเอกสาร(HTML)'],
+      borrowId: m['รหัสรายการยืม'],
+      readOnly: !isAdmin()
+    });
+  };
+
+  // ยกเลิก observer ของรอบวาดก่อนหน้า (กันค้างเมื่อสลับมุมมอง/วาดหน้าใหม่)
+  if (drawMemos._io) { drawMemos._io.disconnect(); drawMemos._io = null; }
+
   if (isGrid) {
-    document.querySelectorAll('.memo-card').forEach(card => {
+    // สร้างกระดาษ A4 ตัวอย่างเฉพาะการ์ดที่เลื่อนมาใกล้จอ ไม่สร้างทุกใบพร้อมกัน
+    const mountThumb = (card) => {
       const m = list.find(x => x['รหัสใบเบิก'] === card.dataset.id);
       const thumb = card.querySelector('[data-thumb]');
-      if (m && thumb) mountPaper(thumb, wrapPfDoc(m['เนื้อหาเอกสาร(HTML)'], false));
-      card.onclick = () => {
-        if (!m) return;
-        openMemoEditor({
-          id: m['รหัสใบเบิก'],
-          docHtml: m['เนื้อหาเอกสาร(HTML)'],
-          borrowId: m['รหัสรายการยืม'],
-          readOnly: !isAdmin()
+      if (m && thumb && !thumb.dataset.mounted) {
+        thumb.dataset.mounted = '1';
+        mountPaper(thumb, wrapPfDoc(m['เนื้อหาเอกสาร(HTML)'], false));
+      }
+    };
+
+    let io = null;
+    if ('IntersectionObserver' in window) {
+      io = new IntersectionObserver((entries) => {
+        entries.forEach(en => {
+          if (!en.isIntersecting) return;
+          io.unobserve(en.target);
+          mountThumb(en.target);
         });
-      };
+      }, { rootMargin: '400px' });
+      drawMemos._io = io;
+    }
+
+    document.querySelectorAll('.memo-card').forEach(card => {
+      const m = list.find(x => x['รหัสใบเบิก'] === card.dataset.id);
+      if (io) io.observe(card);
+      else mountThumb(card);   // เบราว์เซอร์เก่าที่ไม่มี IntersectionObserver
+      card.onclick = () => openMemo(m);
     });
   } else {
     document.querySelectorAll('.memo-row').forEach(row => {
       const m = list.find(x => x['รหัสใบเบิก'] === row.dataset.id);
-      row.onclick = () => {
-        if (!m) return;
-        openMemoEditor({
-          id: m['รหัสใบเบิก'],
-          docHtml: m['เนื้อหาเอกสาร(HTML)'],
-          borrowId: m['รหัสรายการยืม'],
-          readOnly: !isAdmin()
-        });
-      };
+      row.onclick = () => openMemo(m);
     });
   }
+
   wireViewToggle(drawMemos, '#view-memos', 'memosView');
 }
+   
 function memoRow(m) {
   return `<div class="glass list-item memo-row" data-id="${escapeHtml(m['รหัสใบเบิก'])}">
     <div class="li-icon">${ICONS.log}</div>
@@ -11026,7 +11108,6 @@ function compareMonthlyOfficers(a, b) {
         if (mode === 'h') { try { card.setPointerCapture(pid); } catch(_){} card.classList.add('dragging'); }
       }
       if (mode === 'h') { dx = mx; paint(dx); }
-      else { window.scrollBy(0, py - e.clientY); py = e.clientY; }   // เลื่อนหน้าเองเมื่อลากแนวตั้ง
     });
     card.addEventListener('pointerup', e => {
       if (e.pointerId !== pid) return; pid = null;
