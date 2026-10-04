@@ -4153,6 +4153,24 @@ html.touch-device .memo-form-sheet .mf-preview{
 html.touch-device .memo-form-sheet .mf-grid[data-view="form"] .mf-preview{ display:none !important; }
 html.touch-device .memo-form-sheet .mf-grid[data-view="preview"] .mf-fields{ display:none !important; }
 html.touch-device .memo-form-sheet .mf-preview .paper-desk{ max-height:62vh !important; }   
+
+   /* ===== iPad/จอสัมผัส: แก้เลื่อนใน modal ===== */
+@media (pointer:coarse){
+  /* 1) เลิกบล็อกท่าทางที่ overlay */
+  .overlay, .command-overlay{ touch-action:auto !important; }
+  .sheet{ touch-action:auto !important; }
+  .command-results{ touch-action:auto !important; }
+
+  /* 2) กระดาษตัวอย่างไม่เป็นตัวเลื่อนซ้อน ปล่อยให้หน้าต่างหลักเลื่อน */
+  .paper-desk{
+    overflow:hidden !important;
+    overscroll-behavior:auto !important;
+    touch-action:auto !important;
+    max-height:none !important;
+  }
+  .memo-doc-sheet .paper-desk,
+  .memo-form-sheet .mf-preview .paper-desk{ max-height:none !important; }
+}
    
 </style>
 </head>
@@ -11814,9 +11832,9 @@ function compareMonthlyOfficers(a, b) {
   const root = document.getElementById('modalRoot');
   if (!root) return;
   let locked = false, lockY = 0;
-
+   
 const lock = () => {
-  if (document.documentElement.classList.contains('touch-device')) return; // iPad ใช้ overflow:hidden จาก .modal-open แทน
+  if (window.matchMedia('(pointer:coarse)').matches) { locked = true; return; }
   lockY = window.scrollY;
   const b = document.body.style;
   b.position = 'fixed';
