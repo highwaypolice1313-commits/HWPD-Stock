@@ -6619,8 +6619,7 @@ function openBorrowDetail(id) {
 }
 
 function openApproveSheet(b) {
-  const l1 = officersByMemoRole('ผู้อนุมัติ ลำดับที่ 1')[0];
-  const defIdx = l1 ? String(state.users.indexOf(l1)) : '';
+  const defaultApprover = officersByMemoRole('ผู้อนุมัติ ลำดับที่ 1')[0] || null;
   showSheet(`
     <div class="sheet-title">อนุมัติคำขอยืม</div>
     <div class="glass" style="padding:12px 14px; margin-bottom:12px;">
@@ -6628,53 +6627,37 @@ function openApproveSheet(b) {
       <div style="font-size:12.5px; color:var(--ink-dim);">ผู้ยืม ${escapeHtml(b['ผู้ยืม'])}</div>
     </div>
     <div class="field"><label>ผู้อนุมัติ</label>
-      <select class="input" id="ap_pick">${officerSelectOptions(defIdx)}</select>
-      <input class="input" id="ap_name" placeholder="พิมพ์ชื่อผู้อนุมัติ" style="margin-top:8px; display:none;">
-    </div>
-    <div class="field"><label>ลายเซ็นผู้อนุมัติ (จำเป็น)</label>
-      <div class="glass list-item" id="ap_sigTrigger" style="cursor:pointer;">
-        <div class="li-icon" id="ap_sigIcon">${ICONS.edit}</div>
-        <div class="li-body"><div class="li-title" id="ap_sigTitle">แตะเพื่อเซ็นชื่อ</div><div class="li-sub">เซ็นสด หรือใช้ลายเซ็นที่บันทึกไว้ของผู้อนุมัติ</div></div>
-        <span class="status-badge status-ready" style="flex:none;">เซ็น</span>
-      </div>
-      <input type="hidden" id="ap_sig" value="">
+      ${signerCardHtml('ap_apv', 'ผู้อนุมัติ', {
+        rank: defaultApprover ? defaultApprover['ยศ'] : '',
+        name: defaultApprover ? defaultApprover['ชื่อ-สกุล'] : '',
+        position: defaultApprover ? defaultApprover['ตำแหน่ง'] : '',
+        sig: '',
+        photo: defaultApprover ? defaultApprover['รูปถ่าย'] : ''
+      })}
     </div>
     <div class="btn-row"><button class="btn btn-ghost" id="apCancel">ยกเลิก</button><button class="btn btn-ok" id="apOk">อนุมัติ</button></div>
   `);
-  const officer = () => { const v = val('ap_pick'); return (v !== '' && v !== '__other__') ? state.users[Number(v)] : null; };
-  const approverName = () => { const o = officer(); return o ? officerFullName(o) : val('ap_name').trim(); };
-  document.getElementById('ap_pick').onchange = () => {
-    document.getElementById('ap_name').style.display = val('ap_pick') === '__other__' ? 'block' : 'none';
-    document.getElementById('ap_sig').value = '';
-    document.getElementById('ap_sigIcon').innerHTML = ICONS.edit;
-    document.getElementById('ap_sigTitle').textContent = 'แตะเพื่อเซ็นชื่อ';
-  };
-  document.getElementById('ap_sigTrigger').onclick = () => {
-    if (!approverName()) { toast('กรุณาเลือกผู้อนุมัติก่อน'); return; }
-    const o = officer();
-    openSignatureSheet({
-      title: 'ลายเซ็นผู้อนุมัติ', name: approverName(), saved: o ? o['ลายเซ็น'] : '',
-      onDone: v => {
-        document.getElementById('ap_sig').value = v;
-        document.getElementById('ap_sigIcon').innerHTML = `<img src="${v}" style="width:100%;height:100%;object-fit:contain;">`;
-        document.getElementById('ap_sigTitle').textContent = 'เซ็นแล้ว (แตะเพื่อเซ็นใหม่)';
-      }
-    });
-  };
+
+  wireSignerCard('ap_apv', 'ผู้อนุมัติ');
+
+  const approverName = () => (val('ap_apvRank') + ' ' + val('ap_apvName')).trim();
+
   document.getElementById('apCancel').onclick = closeSheet;
   document.getElementById('apOk').onclick = async () => {
     if (!approverName()) { toast('กรุณาเลือกผู้อนุมัติ'); return; }
-    if (!val('ap_sig')) { toast('กรุณาเซ็นชื่อผู้อนุมัติก่อน'); return; }
+    if (!val('ap_apvSig')) { toast('กรุณาเซ็นชื่อผู้อนุมัติก่อน'); return; }
     const btn = document.getElementById('apOk'); if (btn.disabled) return;
     setButtonBusy(btn, true, 'กำลังอนุมัติ...'); setLoading(true, 'กำลังอนุมัติคำขอ...');
     try {
-      const sigApprover = await uploadSignature(val('ap_sig'), 'approver-' + b['รหัสรายการ']);
+      const sigApprover = await uploadSignature(val('ap_apvSig'), 'approver-' + b['รหัสรายการ']);
       await apiPost('approveBorrowRequest', { borrowId: b['รหัสรายการ'], approverName: approverName(), sigApprover });
       closeAllSheets(); toast('อนุมัติการยืมแล้ว'); await reloadThen(renderBorrow);
     } catch (err) { toast(err.message || 'อนุมัติไม่สำเร็จ'); }
     finally { setLoading(false); setButtonBusy(btn, false); }
   };
 }
+
+   
 function openBorrowEditForm(b) {
   showSheet(`
     <div class="sheet-title">แก้ไขข้อมูลการยืม</div>
