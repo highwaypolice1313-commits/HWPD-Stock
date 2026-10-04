@@ -4107,6 +4107,10 @@ body.modal-open{ overflow:hidden; overscroll-behavior:none; }
 
 .overlay, .command-overlay{ overscroll-behavior:none; }
 .command-results, .sheet{ overscroll-behavior:contain; }
+
+   /* ค้นหาด่วน: ให้ scroller เหลือชั้นเดียวคือ .command-results */
+.sheet.command-sheet{ overflow:hidden !important; }
+.command-results{ overscroll-behavior:contain; -webkit-overflow-scrolling:touch; }
    
 </style>
 </head>
@@ -8076,10 +8080,9 @@ function openCommandPalette(initial='') {
 
   draw();
 
-  setTimeout(() => {
-    input.focus();
-    input.select();
-  }, 40);
+// บน iPad/มือถือ ไม่โฟกัสอัตโนมัติ เพื่อไม่ให้คีย์บอร์ดบังผลลัพธ์และขยับ viewport
+if (!window.matchMedia('(pointer:coarse)').matches) {
+  setTimeout(() => { input.focus(); input.select(); }, 40);
 }
 
 function closeCommandPalette() {
@@ -11758,51 +11761,43 @@ function compareMonthlyOfficers(a, b) {
 })();
 
 /* สลับคลาส modal-open เมื่อมี popup (ดูเฉพาะลูกตรงของ #modalRoot ไม่ใช่ทั้ง subtree) */
+/* ล็อกหน้าหลักตอนมี popup: ตรึง body แล้วคืนตำแหน่งเลื่อนตอนปิด */
 (function watchModalRoot() {
   const root = document.getElementById('modalRoot');
   if (!root) return;
-  const sync = () => document.body.classList.toggle('modal-open', !!root.querySelector(':scope > .overlay'));
+  let locked = false, lockY = 0;
+
+  const lock = () => {
+    lockY = window.scrollY;
+    const b = document.body.style;
+    b.position = 'fixed';
+    b.top = (-lockY) + 'px';
+    b.left = '0';
+    b.right = '0';
+    b.width = '100%';
+    locked = true;
+  };
+  const unlock = () => {
+    const b = document.body.style;
+    b.position = '';
+    b.top = '';
+    b.left = '';
+    b.right = '';
+    b.width = '';
+    locked = false;
+    window.scrollTo({ top: lockY, left: 0, behavior: 'instant' });
+  };
+  const sync = () => {
+    const open = !!root.querySelector(':scope > .overlay');
+    document.body.classList.toggle('modal-open', open);
+    if (open && !locked) lock();
+    else if (!open && locked) unlock();
+  };
+
   new MutationObserver(sync).observe(root, { childList: true });
   sync();
 })();
 
-   /* กันแรงเลื่อนทะลุไปหน้าหลักเมื่อมี popup เปิดอยู่ (iOS/iPadOS) */
-(function lockOverlayScrollChaining() {
-  let lastY = 0;
-
-  // หา scroller ในสุดที่มีเนื้อหาเกินกรอบจริง (หยุดที่ overlay)
-  function innerScroller(el) {
-    while (el && el.nodeType === 1) {
-      if (el.classList && (el.classList.contains('overlay') || el.classList.contains('command-overlay'))) return null;
-      const oy = getComputedStyle(el).overflowY;
-      if ((oy === 'auto' || oy === 'scroll') && el.scrollHeight > el.clientHeight + 1) return el;
-      el = el.parentElement;
-    }
-    return null;
-  }
-
-  document.addEventListener('touchstart', e => {
-    if (e.touches.length === 1) lastY = e.touches[0].clientY;
-  }, { passive: true });
-
-  document.addEventListener('touchmove', e => {
-    if (e.touches.length !== 1) return;                       // ซูมสองนิ้วปล่อยผ่าน
-    const t = e.target;
-    if (!t.closest || !t.closest('.overlay, .command-overlay')) return;   // ไม่ใช่ popup = ไม่ยุ่ง
-
-    const y = e.touches[0].clientY;
-    const dy = y - lastY;                                     // บวก = นิ้วลง = เลื่อนขึ้น
-    lastY = y;
-    if (dy === 0) return;
-
-    const sc = innerScroller(t);
-    if (!sc) { if (e.cancelable) e.preventDefault(); return; }   // ไม่มีอะไรให้เลื่อน
-
-    const atTop = sc.scrollTop <= 0;
-    const atBottom = sc.scrollTop + sc.clientHeight >= sc.scrollHeight - 1;
-    if (((dy > 0 && atTop) || (dy < 0 && atBottom)) && e.cancelable) e.preventDefault();
-  }, { passive: false });
-})();
 
 init();   // <-- ของเดิม คงไว้ตามเดิม
 /* ===== จดจำตำแหน่งเลื่อนของหน้า ===== */
