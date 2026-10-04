@@ -10239,6 +10239,12 @@ function renderSettings() {
         <div class="btn-row" style="margin-top:10px;"><button class="btn btn-ghost" id="btnMigrateImages">ย้ายรูปเก่าไป Drive</button></div>
       </div>
 
+   <div class="section-title" style="margin-top:6px; font-size:14px;">ล้างไฟล์รูปที่ไม่มีใครใช้</div>
+      <div class="glass" style="padding:16px; margin-bottom:16px;">
+      <div class="hint" style="margin-top:0;">สแกนโฟลเดอร์รูปบนไดร์ฟ แล้วย้ายไฟล์ที่ไม่มีรายการไหนอ้างถึงลงถังขยะ (กู้คืนได้ 30 วัน ข้ามไฟล์ที่เพิ่งอัปโหลดใน 24 ชม.)</div>
+  <div class="btn-row" style="margin-top:10px;"><button class="btn btn-ghost" id="btnCleanOrphans">สแกนและล้างไฟล์กำพร้า</button></div>
+      </div>
+
       <div class="section-title" style="margin-top:6px; font-size:14px;">สำรองข้อมูล</div>
       <div class="glass" style="padding:16px;">
         <div class="hint" style="margin-top:0;">ดาวน์โหลดข้อมูลทั้งหมดในระบบเป็นไฟล์ JSON ไว้สำรองหรือย้ายระบบ</div>
@@ -10330,6 +10336,29 @@ function renderSettings() {
     finally { setLoading(false); setButtonBusy(btn, false); }
   };
 
+  document.getElementById('btnCleanOrphans').onclick = async () => {
+  const btn = document.getElementById('btnCleanOrphans');
+  if (btn.disabled) return;
+  setButtonBusy(btn, true, 'กำลังสแกน...'); setLoading(true, 'กำลังสแกนไฟล์รูปบนไดร์ฟ...');
+  let r;
+  try { r = await apiPost('scanOrphanImages', {}); }
+  catch (err) { toast(err.message || 'สแกนไม่สำเร็จ'); return; }
+  finally { setLoading(false); setButtonBusy(btn, false); }
+
+  if (!r.orphanCount) { toast('ไม่พบไฟล์กำพร้า (ไฟล์ทั้งหมด ' + r.totalFiles + ' ใช้งานอยู่)'); return; }
+  const mb = (r.orphanBytes / 1048576).toFixed(2);
+  if (!await confirmSheet(
+    'พบไฟล์ที่ไม่มีใครใช้ ' + r.orphanCount + ' ไฟล์ (' + mb + ' MB) จากทั้งหมด ' + r.totalFiles + ' ไฟล์\nต้องการย้ายลงถังขยะไดร์ฟหรือไม่? (กู้คืนได้ 30 วัน)',
+    { title: 'ล้างไฟล์กำพร้า', okText: 'ย้ายลงถังขยะ', tone: 'bad' })) return;
+
+  setButtonBusy(btn, true, 'กำลังล้าง...'); setLoading(true, 'กำลังย้ายไฟล์ลงถังขยะ...');
+  try {
+    const d = await apiPost('trashOrphanImages', { ids: r.ids });
+    toast('ย้ายลงถังขยะแล้ว ' + d.trashed + ' ไฟล์' + (d.skipped ? ' / ข้าม ' + d.skipped : ''));
+  } catch (err) { toast(err.message || 'ล้างไม่สำเร็จ'); }
+  finally { setLoading(false); setButtonBusy(btn, false); }
+}; 
+   
   document.getElementById('btnExportAll').onclick = () => {
     const data = {
       assets: state.assets, borrow: state.borrow, maint: state.maint, components: state.components,
