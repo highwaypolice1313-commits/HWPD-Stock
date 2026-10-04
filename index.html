@@ -4001,6 +4001,24 @@ body:has(#modalRoot .overlay){
     radial-gradient(480px 400px at 90% 90%, rgba(191,90,242,.55), transparent 62%),
     linear-gradient(160deg,#0a2a6b,#1b4fd0 55%,#5a3fd0);
 }   
+
+   /* ลดภาระการเรนเดอร์บนมือถือ/แท็บเล็ต */
+@media (max-width:1024px), (hover:none) and (pointer:coarse){
+  .overlay, .command-overlay, .sheet, .command-sheet, .nav-more-sheet,
+  .topbar, .tabbar, .role-select-card,
+  .stat-card, .chart-card, .rp-card, .rp-kpi,
+  :root[data-glass] .sheet, :root[data-glass] .topbar{
+    -webkit-backdrop-filter:none !important;
+    backdrop-filter:none !important;
+  }
+  .overlay{ background:rgba(10,20,32,.55); }
+  .tabbar{ background:color-mix(in srgb,var(--panel) 96%,transparent) !important; }
+  .nav-more-sheet{ background:var(--panel) !important; }
+  .hero-card::before{ animation:none !important; }
+}
+
+/* แทนกฎ position:fixed เดิม: แค่ล็อกการเลื่อน ไม่ต้องย้าย body */
+body:has(#modalRoot .overlay){ overflow:hidden; }
    
 </style>
 </head>
@@ -7235,10 +7253,12 @@ function openBorrowForm(presetId) {
     setButtonBusy(saveBtn, true);
     setLoading(true, admin ? 'กำลังบันทึกการยืม...' : 'กำลังส่งคำขอ...');
     try {
-      let conditionPhotoOut = val('f_conditionPhotoVal');
-      if (isInlineImage(conditionPhotoOut)) conditionPhotoOut = await uploadImageToDrive(conditionPhotoOut, 'borrow-' + assetId);
-      const sigBorrower = await uploadSignature(val('f_sigBorrower'), 'borrower-' + assetId);
-      const sigApprover = admin ? await uploadSignature(val('f_apvSig'), 'approver-' + assetId) : '';
+      const photoRaw = val('f_conditionPhotoVal');
+      const [conditionPhotoOut, sigBorrower, sigApprover] = await Promise.all([
+      isInlineImage(photoRaw) ? uploadImageToDrive(photoRaw, 'borrow-' + assetId) : photoRaw,
+      uploadSignature(val('f_sigBorrower'), 'borrower-' + assetId),
+      admin ? uploadSignature(val('f_apvSig'), 'approver-' + assetId) : ''
+      ]);
       const payload = {
         assetId, assetName: asset ? asset['ชื่อครุภัณฑ์'] : '', borrower: val('f_borrower'), borrowerLineId: '',
         borrowDate: val('f_borrowdate'), dueDate: val('f_duedate'), approver: admin ? (val('f_apvRank') + ' ' + val('f_apvName')).trim() : '',
@@ -8509,9 +8529,13 @@ function collectMemoFormData() {
    
 let memoPreviewDesk = null;
 function refreshMemoLivePreview() {
-  if (!memoPreviewDesk || !document.body.contains(memoPreviewDesk)) return;
-  const memo = collectMemoFormData();
-  mountPaper(memoPreviewDesk, wrapPfDoc(buildMemoBodyHtml(memo), false));
+  clearTimeout(refreshMemoLivePreview._t);
+  refreshMemoLivePreview._t = setTimeout(() => {
+    if (!memoPreviewDesk || !document.body.contains(memoPreviewDesk)) return;
+    if (!memoPreviewDesk.offsetParent) return;   // ฟอร์มถูกซ่อนอยู่ใต้หน้าต่างอื่น ไม่ต้องวาด
+    const memo = collectMemoFormData();
+    mountPaper(memoPreviewDesk, wrapPfDoc(buildMemoBodyHtml(memo), false));
+  }, 120);
 }
    
 /* ---------- เลขหนังสือรันอัตโนมัติ ---------- */
