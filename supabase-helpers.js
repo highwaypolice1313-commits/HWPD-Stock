@@ -27,7 +27,29 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 // สคริปต์ Google Apps Script ตัวเดิม (มี action 'uploadImage' อัปโหลดขึ้น Drive อยู่แล้ว)
 // ใช้ค่าเดียวกับ API_URL ใน index.html เดิม — ถ้า deploy ใหม่ให้แก้ URL นี้เท่านั้น
-const GAS_UPLOAD_URL = 'https://script.google.com/macros/s/AKfycbw9mgyNR0My7CPuRRX1bRStNcuv1O6nTSivhZssA8svIOOul0VW9v32_rhGwJBDOkp37A/exec';
+const GAS_UPLOAD_URL = 'https://script.google.com/macros/s/AKfycbyT5Vwy1LrUt8tJmTEZ4wbYnUy2A80TMxb-is5E5SHp2ZTU1rHall6VZM_uL_7wnSr0/exec';
+const GAS_UPLOAD_KEY = 'k8Xp2mQvR9tLw4NzY7bHc3Fd';
+
+async function gasUploadImageToDrive(dataUrl, fileName) {
+  if (!dataUrl) return { url: '' };
+  if (!/^data:image\//i.test(dataUrl)) return { url: dataUrl };
+
+  const res = await fetch(GAS_UPLOAD_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({
+      action: 'uploadImage',
+      uploadKey: GAS_UPLOAD_KEY,
+      payload: { dataUrl, fileName: fileName || 'image' }
+    })
+  });
+  const text = await res.text();
+  let j;
+  try { j = JSON.parse(text); } catch (e) { throw new Error('เซิร์ฟเวอร์อัปโหลดรูปตอบกลับไม่ถูกต้อง'); }
+  if (!j.ok) throw new Error(j.error || 'อัปโหลดรูปไม่สำเร็จ');
+  return { url: j.data && j.data.url ? j.data.url : '' };
+}
+
 
 // ต้องโหลด <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 // ไว้ก่อนไฟล์นี้ ไม่งั้น window.supabase จะยังไม่มี
@@ -75,33 +97,6 @@ async function supaLoginWithRole(role, password) {
 }
 function supaLoginAsViewer() {
   return { role: 'viewer', token: makeLocalToken('viewer'), displayName: 'ผู้ดูอย่างเดียว' };
-}
-
-// ==================== IMAGE UPLOAD — ขึ้น Google Drive ผ่าน Apps Script เดิม ====================
-// รับ dataUrl (base64) แล้วส่งให้ GAS ตัวเดิมอัปโหลดขึ้น Drive เหมือนระบบก่อนย้าย
-// คืนค่า { url } เป็น URL รูปบน Drive เพื่อเก็บลง Supabase เป็น text ธรรมดา
-async function gasUploadImageToDrive(dataUrl, fileName) {
-  if (!dataUrl) return { url: '' };
-  if (!/^data:image\//i.test(dataUrl)) return { url: dataUrl };
-
-  // ส่ง sessionToken/actorName ไปด้วย เพราะ GAS backend เดิมต้องใช้ยืนยันตัวตน
-  const _st = (typeof state !== 'undefined') ? state : null;
-
-  const res = await fetch(GAS_UPLOAD_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({
-      action: 'uploadImage',
-      sessionToken: _st ? _st.sessionToken : '',
-      actorName: _st && _st.user ? _st.user.name : '',
-      payload: { dataUrl, fileName: fileName || 'image' }
-    })
-  });
-  const text = await res.text();
-  let j;
-  try { j = JSON.parse(text); } catch (e) { throw new Error('เซิร์ฟเวอร์อัปโหลดรูปตอบกลับไม่ถูกต้อง'); }
-  if (!j.ok) throw new Error(j.error || 'อัปโหลดรูปไม่สำเร็จ');
-  return { url: j.data && j.data.url ? j.data.url : '' };
 }
 
 // ==================== FIELD MAPPING: DB row (English) <-> Thai keys ที่หน้าเว็บใช้ ====================
