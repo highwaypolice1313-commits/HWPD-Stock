@@ -4172,56 +4172,6 @@ html.touch-device .memo-form-sheet .mf-preview .paper-desk{ max-height:62vh !imp
   .memo-form-sheet .mf-preview .paper-desk{ max-height:none !important; }
 }
    
-
-/* ===== iPad modal scroll stability fix =====
-   จำกัดเฉพาะ iPad/touch ขนาด tablet: ไม่แตะ logic หรือ desktop print/scroll */
-@media (pointer: coarse) and (min-width: 768px) and (max-width: 1366px) {
-  /* ให้ overlay เป็นเพียงกรอบรับ gesture ไม่เป็น scroll container */
-  #modalRoot > .overlay,
-  #modalRoot > .command-overlay {
-    overflow: hidden !important;
-    touch-action: none !important;
-    overscroll-behavior: none !important;
-  }
-
-  /* ป้องกัน body เป็น scroll owner ตัวที่สองขณะ modal เปิด */
-  body.modal-open {
-    overflow: clip !important;
-    overscroll-behavior: none !important;
-  }
-
-  /* modal ปกติ: มี scroll owner เพียงตัวเดียว */
-  #modalRoot > .overlay > .sheet {
-    overflow-x: hidden !important;
-    overflow-y: auto !important;
-    touch-action: pan-y !important;
-    overscroll-behavior: contain !important;
-    -webkit-overflow-scrolling: auto !important;
-    scroll-behavior: auto !important;
-  }
-
-  /* command/search modal: ให้เฉพาะรายการผลลัพธ์เป็นตัวเลื่อน */
-  #modalRoot > .command-overlay > .command-sheet {
-    overflow: hidden !important;
-    touch-action: none !important;
-    overscroll-behavior: none !important;
-  }
-  #modalRoot > .command-overlay .command-results {
-    overflow-x: hidden !important;
-    overflow-y: auto !important;
-    touch-action: pan-y !important;
-    overscroll-behavior: contain !important;
-    -webkit-overflow-scrolling: auto !important;
-    scroll-behavior: auto !important;
-  }
-
-  /* ไม่ให้ element ชั้นลูกที่ไม่ใช่พื้นที่เลื่อนแย่ง gesture ไปจาก sheet */
-  #modalRoot > .overlay > .sheet > * {
-    touch-action: inherit;
-  }
-}
-/* ===== end iPad modal scroll stability fix ===== */
-
 </style>
 </head>
 <body>
