@@ -4104,6 +4104,9 @@ body.modal-open{ overflow:hidden; overscroll-behavior:none; }
   .paper-scale .a4-page{ box-shadow:0 1px 3px rgba(20,32,45,.2); }
   .paper-desk{ box-shadow:none; }
 }
+
+.overlay, .command-overlay{ overscroll-behavior:none; }
+.command-results, .sheet{ overscroll-behavior:contain; }
    
 </style>
 </head>
@@ -11763,6 +11766,43 @@ function compareMonthlyOfficers(a, b) {
   sync();
 })();
 
+   /* กันแรงเลื่อนทะลุไปหน้าหลักเมื่อมี popup เปิดอยู่ (iOS/iPadOS) */
+(function lockOverlayScrollChaining() {
+  let lastY = 0;
+
+  // หา scroller ในสุดที่มีเนื้อหาเกินกรอบจริง (หยุดที่ overlay)
+  function innerScroller(el) {
+    while (el && el.nodeType === 1) {
+      if (el.classList && (el.classList.contains('overlay') || el.classList.contains('command-overlay'))) return null;
+      const oy = getComputedStyle(el).overflowY;
+      if ((oy === 'auto' || oy === 'scroll') && el.scrollHeight > el.clientHeight + 1) return el;
+      el = el.parentElement;
+    }
+    return null;
+  }
+
+  document.addEventListener('touchstart', e => {
+    if (e.touches.length === 1) lastY = e.touches[0].clientY;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', e => {
+    if (e.touches.length !== 1) return;                       // ซูมสองนิ้วปล่อยผ่าน
+    const t = e.target;
+    if (!t.closest || !t.closest('.overlay, .command-overlay')) return;   // ไม่ใช่ popup = ไม่ยุ่ง
+
+    const y = e.touches[0].clientY;
+    const dy = y - lastY;                                     // บวก = นิ้วลง = เลื่อนขึ้น
+    lastY = y;
+    if (dy === 0) return;
+
+    const sc = innerScroller(t);
+    if (!sc) { if (e.cancelable) e.preventDefault(); return; }   // ไม่มีอะไรให้เลื่อน
+
+    const atTop = sc.scrollTop <= 0;
+    const atBottom = sc.scrollTop + sc.clientHeight >= sc.scrollHeight - 1;
+    if (((dy > 0 && atTop) || (dy < 0 && atBottom)) && e.cancelable) e.preventDefault();
+  }, { passive: false });
+})();
 
 init();   // <-- ของเดิม คงไว้ตามเดิม
 /* ===== จดจำตำแหน่งเลื่อนของหน้า ===== */
