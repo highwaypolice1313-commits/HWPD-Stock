@@ -4111,6 +4111,48 @@ body.modal-open{ overflow:hidden; overscroll-behavior:none; }
    /* ค้นหาด่วน: ให้ scroller เหลือชั้นเดียวคือ .command-results */
 .sheet.command-sheet{ overflow:hidden !important; }
 .command-results{ overscroll-behavior:contain; -webkit-overflow-scrolling:touch; }
+
+/* ===== TOUCH-DEVICE (iPad Pro M4 ฯลฯ) ===== */
+
+/* ปิด blur ทุกจุด (specificity สูงกว่า .command-overlay !important) */
+html.touch-device *,
+html.touch-device *::before,
+html.touch-device *::after{
+  -webkit-backdrop-filter:none !important;
+  backdrop-filter:none !important;
+}
+html.touch-device .hero-card::before{ display:none !important; animation:none !important; }
+html.touch-device .sheet,
+html.touch-device .command-sheet{ box-shadow:0 4px 14px rgba(0,0,0,.18) !important; }
+html.touch-device[data-glass] .sheet{ background:var(--bg-1) !important; }
+html.touch-device .command-item{ transition:none !important; }
+html.touch-device .command-item:hover{ transform:none !important; }
+html.touch-device .paper-scale .a4-page{ box-shadow:0 1px 3px rgba(20,32,45,.2); }
+
+/* กัน iPad ซูมเองตอนโฟกัสช่องกรอก */
+html.touch-device .input,
+html.touch-device select.input,
+html.touch-device .command-search{ font-size:16px !important; }
+
+/* modal สร้างเอกสาร: ใช้โหมดแท็บ (scroller เดียว) แทนสองฝั่ง */
+html.touch-device .sheet.memo-form-sheet{
+  display:block !important;
+  height:auto !important;
+  max-height:92dvh !important;
+  overflow-x:hidden !important;
+  overflow-y:auto !important;
+  -webkit-overflow-scrolling:touch;
+  touch-action:pan-y;
+}
+html.touch-device .memo-form-sheet .mf-tabs{ display:flex !important; }
+html.touch-device .memo-form-sheet .mf-grid{ display:block !important; overflow:visible !important; }
+html.touch-device .memo-form-sheet .mf-fields{ overflow:visible !important; padding-right:0; }
+html.touch-device .memo-form-sheet .mf-preview{
+  position:static !important; display:block !important; contain:none !important;
+}
+html.touch-device .memo-form-sheet .mf-grid[data-view="form"] .mf-preview{ display:none !important; }
+html.touch-device .memo-form-sheet .mf-grid[data-view="preview"] .mf-fields{ display:none !important; }
+html.touch-device .memo-form-sheet .mf-preview .paper-desk{ max-height:62vh !important; }   
    
 </style>
 </head>
@@ -4352,6 +4394,12 @@ function applyTheme(id) {
   try { localStorage.setItem(THEME_KEY, id); } catch (e) {}
 }
 applyTheme(currentTheme());
+   (function markTouchDevice(){
+  const isTouchTablet = (navigator.maxTouchPoints || 0) > 1 &&
+    /Macintosh|iPad|iPhone|Android/i.test(navigator.userAgent);
+  if (isTouchTablet) document.documentElement.classList.add('touch-device');
+})();
+   
 try {
   const mediaDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
   mediaDark?.addEventListener?.('change', e => {
@@ -11767,16 +11815,15 @@ function compareMonthlyOfficers(a, b) {
   if (!root) return;
   let locked = false, lockY = 0;
 
-  const lock = () => {
-    lockY = window.scrollY;
-    const b = document.body.style;
-    b.position = 'fixed';
-    b.top = (-lockY) + 'px';
-    b.left = '0';
-    b.right = '0';
-    b.width = '100%';
-    locked = true;
-  };
+const lock = () => {
+  if (document.documentElement.classList.contains('touch-device')) return; // iPad ใช้ overflow:hidden จาก .modal-open แทน
+  lockY = window.scrollY;
+  const b = document.body.style;
+  b.position = 'fixed';
+  b.top = (-lockY) + 'px';
+  b.left = '0'; b.right = '0'; b.width = '100%';
+  locked = true;
+};
   const unlock = () => {
     const b = document.body.style;
     b.position = '';
