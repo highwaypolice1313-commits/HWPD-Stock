@@ -728,10 +728,78 @@ async function sChangeRolePassword(p) {
   return { updated: !!data };
 }
 
+async function gasCall(action, payload) {
+  const res = await fetch(GAS_UPLOAD_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action, uploadKey: GAS_UPLOAD_KEY, payload })
+  });
+  const j = JSON.parse(await res.text());
+  if (!j.ok) throw new Error(j.error || 'เซิร์ฟเวอร์รูปภาพผิดพลาด');
+  return j.data;
+}
+
+// ดึงรหัสไฟล์ไดร์ฟจากข้อความ (รองรับ lh3.../d/ID, drive.google.com/file/d/ID, uc?id=ID)
+function collectDriveIds(text, set) {
+  const re = /(?:\/d\/|[?&]id=)([\w-]{20,})/g;
+  let m; text = String(text || '');
+  while ((m = re.exec(text))) set.add(m[1]);
+}
+
+const ORPHAN_GRACE_MS = 24 * 60 * 60 * 1000;   // ไม่แตะไฟล์ที่อัปโหลดภายใน 24 ชม.
+
+async function sScanOrphanImages() {
+  const refs = new Set();
+  const cols = [
+    ['assets', 'image_url'], ['users', 'photo'], ['users', 'signature'],
+    ['borrow', 'photo_out'], ['borrow', 'photo_in'],
+    ['borrow', 'sig_borrower'], ['borrow', 'sig_approver'], ['maint', 'photo']
+  ];
+  // ถ้าอ่านตารางไหนไม่สำเร็จ fetchAll จะ throw -> หยุดทั้งหมด ไม่เสี่ยงลบมั่ว
+  for (const [t, c] of cols) {
+    const rows = await fetchAll(t, 'id,' + c, 'id');
+    rows.forEach(r => collectDriveIds(r[c], refs));
+  }
+  // เอกสารใบเบิก: รูป/ลายเซ็นฝังอยู่ใน HTML (ดึงทีละน้อยเพราะไฟล์ใหญ่)
+  for (let from = 0; ; from += 50) {
+    const { data, error } = await sb.from('memos').select('id,html').order('id').range(from, from + 49);
+    if (error) throw new Error('memos: ' + error.message);
+    (data || []).forEach(r => collectDriveIds(r.html, refs));
+    if (!data || data.length < 50) break;
+  }
+  // ตราครุฑ + ค่าตั้งค่าอื่น ๆ
+  const { data: st, error: es } = await sb.from('system_settings').select('value');
+  if (es) throw new Error('system_settings: ' + es.message);
+  (st || []).forEach(r => collectDriveIds(r.value, refs));
+
+  const { files } = await gasCall('listImages', {});
+  if (files.length > 20 && refs.size === 0) throw new Error('ไม่พบรูปที่ถูกอ้างอิงเลย ผิดปกติ จึงหยุดเพื่อความปลอดภัย');
+
+  const now = Date.now();
+  const orphans = files.filter(f => !refs.has(f.id) && now - f.created > ORPHAN_GRACE_MS);
+  return {
+    totalFiles: files.length, referenced: refs.size,
+    orphanCount: orphans.length,
+    orphanBytes: orphans.reduce((s, f) => s + (Number(f.size) || 0), 0),
+    ids: orphans.map(f => f.id)
+  };
+}
+
+async function sTrashOrphanImages(p, actor) {
+  const ids = Array.isArray(p.ids) ? p.ids : [];
+  let trashed = 0, skipped = 0;
+  for (let i = 0; i < ids.length; i += 100) {
+    const r = await gasCall('trashFiles', { ids: ids.slice(i, i + 100) });
+    trashed += r.trashed; skipped += r.skipped;
+  }
+  await logActivitySb(actor, 'ล้างไฟล์รูปกำพร้า', 'ลงถังขยะ ' + trashed + ' / ข้าม ' + skipped);
+  return { trashed, skipped };
+}
+
 const ADMIN_ACTIONS = ['addAsset', 'updateAsset', 'deleteAsset', 'borrowAsset', 'returnAsset', 'updateBorrow', 'deleteBorrow', 'renewBorrow',
   'approveBorrowRequest', 'rejectBorrowRequest', 'addMaint', 'updateMaint', 'addUser', 'updateUserRole',
   'deleteUser', 'addComponent', 'updateComponent', 'deleteComponent', 'deleteMemo', 'updateSystemSettings',
-  'saveAuditRecord', 'migrateImagesToDrive', 'changeRolePassword','saveMonthlyCheck', 'clearMonthlyCheck'];
+  'saveAuditRecord', 'migrateImagesToDrive', 'changeRolePassword','saveMonthlyCheck', 'clearMonthlyCheck' , 'scanOrphanImages', 'trashOrphanImages'];
 const AUTH_ACTIONS = ['requestBorrow', 'addMemo', 'updateMemo', 'uploadImage'];
 
 async function supaApiPost(action, payload, role, actorName) {
@@ -771,6 +839,8 @@ async function supaApiPost(action, payload, role, actorName) {
     case 'changeRolePassword': return await sChangeRolePassword(payload);
     case 'saveMonthlyCheck': return await sSaveMonthlyCheck(payload, actorName);
     case 'clearMonthlyCheck': return await sClearMonthlyCheck(payload, actorName);
+    case 'scanOrphanImages': return await sScanOrphanImages();
+    case 'trashOrphanImages': return await sTrashOrphanImages(payload, actorName);
     default: throw new Error('ไม่รู้จัก action: ' + action);
   }
 }
