@@ -4502,6 +4502,7 @@ async function compressImageDataUrl(dataUrl, maxBytes = 60000) {
         let out = '';
         for (let i = 0; i < 7; i++) {
           canvas.width = w; canvas.height = h;
+          ctx.fillStyle = '#fff';   
           ctx.clearRect(0, 0, w, h);
           ctx.drawImage(img, 0, 0, w, h);
           out = canvas.toDataURL('image/jpeg', quality);
@@ -6820,8 +6821,11 @@ function sigFileToPng(file) {   // ไฟล์ลายเซ็นที่อ
 // อัปโหลดลายเซ็นขึ้น Drive "โดยไม่ผ่านการบีบเป็น JPEG" (uploadImageToDrive จะทำพื้นหลังดำ)
 async function uploadSignature(v, name) {
   if (!v) return '';
-  return v;   // เก็บ data URL ของลายเซ็นลง Supabase ตรง ๆ ไม่ผ่าน GAS
+  if (!/^data:image\//i.test(v)) return v;           // เป็น URL อยู่แล้ว
+  const r = await gasUploadImageToDrive(v, 'sig-' + (name || 'x'));
+  return r.url;                                      // PNG โปร่งใสยังคงเดิม
 }
+   
 // หน้าต่างเซ็นชื่อ: opts = {title, name, saved(URL ลายเซ็นที่บันทึกไว้, ไม่บังคับ), onDone(v)}
 function openSignatureSheet(opts) {
   const saved = opts.saved || '';
