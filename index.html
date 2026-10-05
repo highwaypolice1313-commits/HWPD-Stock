@@ -4166,111 +4166,120 @@ body.modal-open{ overflow:hidden; overscroll-behavior:none; }
 }
 
 /* =========================================================
-   DESKTOP NAVBAR — ย่อ/ขยาย
+   DESKTOP NAVBAR — V3 / สไตล์แบบที่ 3
+   - คง Navbar เดิมทั้งหมด
+   - ปุ่มย่อ/ขยายเป็นปุ่มสี่เหลี่ยมมุมมนเล็ก ๆ ที่ยื่นจากขอบ
+   - เพิ่มโปรไฟล์ผู้ใช้งานด้านล่างแบบ UI-only
    ========================================================= */
 @media (min-width:900px){
-  /* ปุ่มย่อ/ขยาย: แถบเล็กแบบตัวอย่าง เกาะขอบ Navbar เดิม */
   .nav-collapse-btn{
     position:absolute !important;
-    top:70px !important;
-    right:-11px !important;
-    width:22px !important;
-    height:46px !important;
+    top:68px !important;
+    right:-15px !important;
+    width:34px !important;
+    height:42px !important;
     margin:0 !important;
     padding:0 !important;
     display:flex !important;
     align-items:center !important;
     justify-content:center !important;
-    border:1px solid rgba(255,255,255,.42) !important;
-    border-left:0 !important;
-    border-radius:0 9px 9px 0 !important;
-    background:rgba(255,255,255,.22) !important;
-    color:rgba(255,255,255,.95) !important;
-    box-shadow:0 3px 10px rgba(20,35,55,.12) !important;
-    backdrop-filter:blur(10px) saturate(140%);
-    -webkit-backdrop-filter:blur(10px) saturate(140%);
+    border:1px solid rgba(255,255,255,.52) !important;
+    border-radius:9px !important;
+    background:rgba(255,255,255,.16) !important;
+    color:rgba(255,255,255,.92) !important;
+    box-shadow:0 7px 18px rgba(5,20,40,.16), inset 0 1px 0 rgba(255,255,255,.16) !important;
+    backdrop-filter:blur(12px) saturate(145%);
+    -webkit-backdrop-filter:blur(12px) saturate(145%);
     cursor:pointer !important;
-    z-index:20 !important;
-    transition:background .16s ease,border-color .16s ease,transform .16s ease;
+    z-index:90 !important;
+    transition:background .18s ease, border-color .18s ease, box-shadow .18s ease, transform .18s ease !important;
   }
-  .nav-collapse-btn::before{ display:none !important; }
   .nav-collapse-btn:hover{
-    background:rgba(255,255,255,.34) !important;
-    border-color:rgba(255,255,255,.62) !important;
-    transform:translateX(1px) !important;
+    background:rgba(255,255,255,.25) !important;
+    border-color:rgba(255,255,255,.72) !important;
+    box-shadow:0 9px 20px rgba(5,20,40,.20), inset 0 1px 0 rgba(255,255,255,.22) !important;
   }
-  .nav-collapse-btn:active{ transform:translateX(1px) scale(.97) !important; }
-  .nav-collapse-btn:focus-visible{ outline:2px solid rgba(10,132,255,.55) !important; outline-offset:2px; }
+  .nav-collapse-btn:active{ transform:scale(.96) !important; }
+  .nav-collapse-btn:focus-visible{ outline:2px solid rgba(90,170,255,.75) !important; outline-offset:3px; }
 
-  /* Chevron เดี่ยวแบบในตัวอย่าง — ไม่มี SVG/ไอคอนซ้อน */
   .nav-collapse-chevron{
-    width:7px !important;
-    height:7px !important;
+    width:8px !important;
+    height:8px !important;
     display:block !important;
-    border-left:1.6px solid currentColor !important;
-    border-bottom:1.6px solid currentColor !important;
-    transform:rotate(45deg) !important;
-    margin-left:3px !important;
+    border-right:1.8px solid currentColor !important;
+    border-bottom:1.8px solid currentColor !important;
+    transform:rotate(135deg) !important;
+    margin-left:4px !important;
     flex:none !important;
   }
 
   :root[data-theme="liquid"] .nav-collapse-btn{
-    background:rgba(255,255,255,.58) !important;
+    background:rgba(255,255,255,.46) !important;
     border-color:rgba(255,255,255,.82) !important;
-    color:rgba(45,65,88,.86) !important;
-    box-shadow:0 4px 12px rgba(35,70,110,.12),inset 0 1px 0 rgba(255,255,255,.9) !important;
+    color:#36506b !important;
+    box-shadow:0 8px 20px rgba(36,80,120,.14), inset 0 1px 0 rgba(255,255,255,.92) !important;
   }
   :root[data-theme="liquid"] .nav-collapse-btn:hover{
-    background:rgba(255,255,255,.76) !important;
-    color:#0a5fd8 !important;
+    background:rgba(255,255,255,.66) !important;
+    color:#0a6fdc !important;
   }
 
-  /* ย่อแล้วปุ่มยังเกาะขอบขวาของ Navbar เดิม */
+  /* โปรไฟล์ผู้ใช้งานด้านล่าง */
+  .nav-user-card{
+    margin-top:auto !important;
+    flex:0 0 auto !important;
+    display:flex !important;
+    align-items:center !important;
+    gap:10px !important;
+    min-height:62px !important;
+    padding:10px 10px 8px !important;
+    border-top:1px solid rgba(255,255,255,.11) !important;
+    color:#fff !important;
+  }
+  .nav-user-avatar{
+    width:38px !important;
+    height:38px !important;
+    flex:0 0 38px !important;
+    border-radius:12px !important;
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    color:rgba(255,255,255,.92) !important;
+    background:rgba(255,255,255,.10) !important;
+    border:1px solid rgba(255,255,255,.16) !important;
+  }
+  .nav-user-avatar svg{width:20px !important;height:20px !important;}
+  .nav-user-info{min-width:0 !important; display:flex !important; flex-direction:column !important; gap:2px !important;}
+  .nav-user-name{
+    color:#fff !important; font-size:12.5px !important; font-weight:600 !important;
+    white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important;
+  }
+  .nav-user-role{color:rgba(255,255,255,.56) !important; font-size:10.5px !important; white-space:nowrap !important;}
+
   body.nav-collapsed .tabbar{
     width:82px !important;
-    padding-left:11px;
-    padding-right:11px;
+    padding-left:11px !important;
+    padding-right:11px !important;
   }
   body.nav-collapsed .tabbar::before{
     content:"พท." !important;
-    text-align:center;
-    font-size:16px;
-    padding:4px 0 8px;
+    text-align:center !important;
+    font-size:16px !important;
+    padding:4px 0 8px !important;
   }
-  body.nav-collapsed .tabbar::after{
-    content:"" !important;
-    padding:0;
-    margin:0 0 10px;
-  }
-  body.nav-collapsed .tab{
-    justify-content:center;
-    padding:12px 8px;
-    gap:0;
-  }
-  body.nav-collapsed .tab .lbl{ display:none; }
-  body.nav-collapsed .nav-collapse-btn{
-    top:58px !important;
-    right:-13px !important;
-  }
-  body.nav-collapsed .nav-collapse-chevron{ transform:rotate(225deg) !important; margin-left:-3px !important; }
-  body.nav-collapsed .topbar{
-    margin-left:114px !important;
-    width:calc(100% - 114px) !important;
-  }
-  body.nav-collapsed .page{
-    margin-left:114px !important;
-    width:calc(100% - 114px) !important;
-  }
-  body.nav-collapsed .tabbar::before{
-    white-space:nowrap;
-    overflow:hidden;
-  }
+  body.nav-collapsed .tabbar::after{content:"" !important;padding:0 !important;margin:0 0 10px !important;}
+  body.nav-collapsed .tab{justify-content:center !important;padding:12px 8px !important;gap:0 !important;}
+  body.nav-collapsed .tab .lbl{display:none !important;}
+  body.nav-collapsed .nav-collapse-btn{top:58px !important;right:-15px !important;}
+  body.nav-collapsed .nav-collapse-chevron{transform:rotate(-45deg) !important;margin-left:-4px !important;}
+  body.nav-collapsed .nav-user-card{justify-content:center !important;padding:10px 0 8px !important;}
+  body.nav-collapsed .nav-user-avatar{width:40px !important;height:40px !important;border-radius:50% !important;}
+  body.nav-collapsed .nav-user-info{display:none !important;}
+  body.nav-collapsed .topbar{margin-left:114px !important;width:calc(100% - 114px) !important;}
+  body.nav-collapsed .page{margin-left:114px !important;width:calc(100% - 114px) !important;}
 }
 @media (min-width:900px) and (max-width:1199px){
-  body.nav-collapsed .topbar,
-  body.nav-collapsed .page{
-    margin-left:114px !important;
-  }
+  body.nav-collapsed .topbar, body.nav-collapsed .page{margin-left:114px !important;}
 }
 
 /* ลดขนาด transition ของ navbar ให้ย่อ/ขยายลื่นโดยไม่แตะ page transition */
@@ -4438,6 +4447,16 @@ body.modal-open{ overflow:hidden; overscroll-behavior:none; }
     <span class="ico"><svg viewBox="0 0 20 20" fill="none"><circle cx="4.5" cy="10" r="1.5" fill="currentColor"/><circle cx="10" cy="10" r="1.5" fill="currentColor"/><circle cx="15.5" cy="10" r="1.5" fill="currentColor"/></svg></span>
     <span class="lbl">เมนู</span>
   </button>
+
+  <div class="nav-user-card" id="navUserCard" aria-label="ผู้ใช้งานปัจจุบัน">
+    <div class="nav-user-avatar" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.2" stroke="currentColor" stroke-width="1.5"/><path d="M5.5 19c.9-3.3 3.2-5 6.5-5s5.6 1.7 6.5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </div>
+    <div class="nav-user-info">
+      <div class="nav-user-name" id="navUserName">ผู้ใช้งาน</div>
+      <div class="nav-user-role" id="navUserRole">กำลังโหลด...</div>
+    </div>
+  </div>
 </div>
 
 <div id="modalRoot"></div>
@@ -5611,9 +5630,7 @@ document.getElementById('tabMore').addEventListener('click', openMoreMenu);
     document.body.classList.toggle('nav-collapsed', !!collapsed);
     btn.setAttribute('aria-label', collapsed ? 'ขยายเมนู' : 'ย่อเมนู');
     btn.title = collapsed ? 'ขยายเมนู' : 'ย่อเมนู';
-    btn.innerHTML = collapsed
-      ? '<svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M12.5 4.5L7 10l5.5 5.5M7 4.5l5.5 5.5L7 15.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
-      : '<svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M7.5 4.5L13 10l-5.5 5.5M13 4.5L7.5 10l5.5 5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    btn.innerHTML = '<span class="nav-collapse-chevron" aria-hidden="true"></span>';
     try { localStorage.setItem(key, collapsed ? '1' : '0'); } catch(e) {}
     requestAnimationFrame(() => { if (typeof layoutNav === 'function') layoutNav(); });
   };
@@ -5635,6 +5652,22 @@ document.getElementById('tabMore').addEventListener('click', openMoreMenu);
     }
   };
   window.addEventListener('resize', syncViewport, {passive:true});
+})();
+
+/* ---------- navbar profile: UI sync only ---------- */
+(function syncNavbarProfile(){
+  const nameEl = document.getElementById('profileName');
+  const roleEl = document.getElementById('rolePill');
+  const navName = document.getElementById('navUserName');
+  const navRole = document.getElementById('navUserRole');
+  if (!nameEl || !roleEl || !navName || !navRole) return;
+  const sync = () => {
+    navName.textContent = nameEl.textContent || 'ผู้ใช้งาน';
+    navRole.textContent = roleEl.textContent || 'ผู้ใช้งาน';
+  };
+  sync();
+  new MutationObserver(sync).observe(nameEl, {childList:true, characterData:true, subtree:true});
+  new MutationObserver(sync).observe(roleEl, {childList:true, characterData:true, subtree:true, attributes:true});
 })();
 
 
