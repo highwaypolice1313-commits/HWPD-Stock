@@ -289,7 +289,7 @@ input[type="date"]::-webkit-date-and-time-value{ text-align:left; }
 .tab .lbl{font-size:10.5px; font-weight:400; white-space:nowrap;}
 .tab.active{color:var(--navy); background:var(--gold-wash);}
 .tab.active .lbl{font-weight:600;}
-.tab-dot{position:absolute; top:-3px; right:-5px; width:8px;height:8px;border-radius:50%; background:var(--bad); border:1.5px solid #fff;}
+.tab-dot{position:absolute; top:-8px; right:-9px; min-width:18px; height:18px; padding:0 4px; border-radius:999px; background:#ff3b30; color:#fff; border:2px solid rgba(255,255,255,.96); box-shadow:0 3px 9px rgba(255,59,48,.28); display:none; align-items:center; justify-content:center; font-family:var(--font-num); font-size:9px; font-weight:700; line-height:1; z-index:4; pointer-events:none;}
 
 .overlay{
   position:fixed; inset:0; background:rgba(15,25,38,.46); backdrop-filter:blur(4px); z-index:80;
@@ -4169,78 +4169,55 @@ body.modal-open{ overflow:hidden; overscroll-behavior:none; }
    DESKTOP NAVBAR — ย่อ/ขยาย
    ========================================================= */
 @media (min-width:900px){
-  /* ปุ่มย่อ/ขยาย Navbar — สไตล์ Minimal Sidebar */
+  /* ปุ่มย่อ/ขยายแบบปุ่มเล็กที่เกาะขอบ Navbar — ไม่เปลี่ยนโครงสร้าง Navbar เดิม */
   .nav-collapse-btn{
-    position:relative;
-    width:42px;
-    height:42px;
-    margin:2px 10px 14px;
-    padding:0;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    border:0;
-    border-radius:12px;
-    background:rgba(127,127,127,.10);
-    color:currentColor;
-    box-shadow:none;
-    cursor:pointer;
-    outline:none;
-    isolation:isolate;
-    transition:background .18s ease,transform .18s ease,box-shadow .18s ease,color .18s ease;
+    position:absolute !important;
+    top:72px !important;
+    right:-13px !important;
+    width:30px !important;
+    height:48px !important;
+    margin:0 !important;
+    padding:0 !important;
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    border:1px solid rgba(255,255,255,.38) !important;
+    border-left:0 !important;
+    border-radius:0 12px 12px 0 !important;
+    background:rgba(255,255,255,.18) !important;
+    color:rgba(255,255,255,.9) !important;
+    box-shadow:0 5px 14px rgba(20,35,55,.14) !important;
+    backdrop-filter:blur(12px) saturate(150%);
+    -webkit-backdrop-filter:blur(12px) saturate(150%);
+    cursor:pointer !important;
+    z-index:8 !important;
+    transition:background .18s ease,transform .18s ease,border-color .18s ease,box-shadow .18s ease;
   }
-  .nav-collapse-btn::before{
-    content:"";
-    position:absolute;
-    inset:0;
-    border-radius:inherit;
-    pointer-events:none;
-    background:linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,0));
-    opacity:.7;
-  }
+  .nav-collapse-btn::before{ display:none !important; }
   .nav-collapse-btn:hover{
-    background:rgba(127,127,127,.17);
-    box-shadow:0 2px 8px rgba(0,0,0,.06);
-    transform:none;
+    background:rgba(255,255,255,.28) !important;
+    border-color:rgba(255,255,255,.55) !important;
+    transform:translateX(2px) !important;
+    box-shadow:0 7px 16px rgba(20,35,55,.18) !important;
   }
-  .nav-collapse-btn:active{
-    transform:scale(.94);
-    box-shadow:inset 0 1px 3px rgba(0,0,0,.08);
-  }
-  .nav-collapse-btn:focus-visible{
-    box-shadow:0 0 0 3px rgba(10,132,255,.20);
-  }
-  .nav-collapse-btn svg{
-    position:relative;
-    z-index:1;
-    width:22px;
-    height:22px;
-    transition:transform .22s ease;
-  }
-  .nav-collapse-btn svg path{
-    stroke-width:1.7;
-  }
-  body.nav-collapsed .nav-collapse-btn svg{
-    transform:none;
-  }
+  .nav-collapse-btn:active{ transform:translateX(2px) scale(.96) !important; }
+  .nav-collapse-btn:focus-visible{ outline:2px solid rgba(10,132,255,.65) !important; outline-offset:2px; }
+  .nav-collapse-btn svg{ width:17px !important;height:17px !important; transition:transform .22s ease; }
 
-  /* Liquid Glass — ให้ปุ่มเป็น glass ที่เห็นขอบและชั้นของกระจกชัดเจน */
+  /* Liquid Glass: ให้ปุ่มดูเป็นชิ้นกระจกที่ติดอยู่กับขอบ ไม่กลืนกับพื้น */
   :root[data-theme="liquid"] .nav-collapse-btn{
-    background:rgba(255,255,255,.34) !important;
-    border:1px solid rgba(255,255,255,.58);
-    color:rgba(35,55,80,.88) !important;
-    box-shadow:0 4px 12px rgba(35,65,105,.10), inset 0 1px 0 rgba(255,255,255,.72) !important;
-    -webkit-backdrop-filter:blur(14px) saturate(170%);
-    backdrop-filter:blur(14px) saturate(170%);
-  }
-  :root[data-theme="liquid"] .nav-collapse-btn::before{
-    background:linear-gradient(180deg,rgba(255,255,255,.38),rgba(255,255,255,.04));
+    background:rgba(255,255,255,.48) !important;
+    border-color:rgba(255,255,255,.76) !important;
+    color:rgba(25,55,90,.82) !important;
+    box-shadow:0 6px 18px rgba(35,70,110,.14),inset 0 1px 0 rgba(255,255,255,.92) !important;
   }
   :root[data-theme="liquid"] .nav-collapse-btn:hover{
-    background:rgba(255,255,255,.48) !important;
-    box-shadow:0 5px 14px rgba(35,65,105,.14), inset 0 1px 0 rgba(255,255,255,.88) !important;
+    background:rgba(255,255,255,.68) !important;
+    color:#0a5fd8 !important;
+    border-color:rgba(255,255,255,.9) !important;
   }
 
+  /* ย่อแล้วปุ่มยังเกาะขอบขวาของ Navbar เดิม */
   body.nav-collapsed .tabbar{
     width:82px !important;
     padding-left:11px;
@@ -4262,13 +4239,12 @@ body.modal-open{ overflow:hidden; overscroll-behavior:none; }
     padding:12px 8px;
     gap:0;
   }
-  body.nav-collapsed .tab .lbl{
-    display:none;
-  }
+  body.nav-collapsed .tab .lbl{ display:none; }
   body.nav-collapsed .nav-collapse-btn{
-    margin-left:auto;
-    margin-right:auto;
+    top:58px !important;
+    right:-13px !important;
   }
+  body.nav-collapsed .nav-collapse-btn svg{ transform:rotate(180deg); }
   body.nav-collapsed .topbar{
     margin-left:114px !important;
     width:calc(100% - 114px) !important;
@@ -4296,47 +4272,6 @@ body.modal-open{ overflow:hidden; overscroll-behavior:none; }
   }
 }
 
-
-/* =========================================================
-   DESKTOP SIDEBAR — Reference style / Liquid Glass
-   ปรับเฉพาะรูปลักษณ์ Navbar ไม่แตะการทำงานของเมนู
-   ========================================================= */
-@media (min-width:900px){
-  .tabbar{width:268px !important;left:18px !important;top:18px !important;bottom:18px !important;height:calc(100vh - 36px) !important;padding:22px 14px 18px !important;gap:5px !important;border-radius:28px !important;overflow-x:hidden !important;overflow-y:auto !important;background:rgba(255,255,255,.82) !important;border:1px solid rgba(255,255,255,.82) !important;box-shadow:0 18px 48px rgba(28,52,76,.12),inset 0 1px 0 rgba(255,255,255,.95) !important;}
-  .tabbar::before{content:"ระบบพัสดุครุภัณฑ์" !important;color:var(--ink) !important;font-size:18px !important;font-weight:700 !important;padding:8px 14px 3px !important;text-align:left !important;}
-  .tabbar::after{content:"ตำรวจทางหลวง" !important;color:var(--ink-faint) !important;font-size:11px !important;padding:0 14px 18px !important;margin-bottom:7px !important;border-bottom:1px solid rgba(100,120,140,.14) !important;}
-  .nav-collapse-btn{position:absolute !important;top:24px !important;right:13px !important;width:34px !important;height:34px !important;margin:0 !important;border-radius:11px !important;background:rgba(120,140,160,.07) !important;border:1px solid rgba(120,140,160,.10) !important;color:var(--ink-dim) !important;box-shadow:none !important;backdrop-filter:none !important;-webkit-backdrop-filter:none !important;z-index:5;}
-  .nav-collapse-btn::before{display:none !important;}
-  .nav-collapse-btn svg{width:18px !important;height:18px !important;transition:transform .22s ease !important;}
-  .nav-collapse-btn:hover{background:rgba(60,100,140,.11) !important;color:var(--ink) !important;transform:none !important;box-shadow:none !important;}
-  .nav-collapse-btn:active{transform:scale(.93) !important;}
-  .tab{min-height:46px !important;padding:9px 12px !important;border-radius:13px !important;gap:12px !important;color:var(--ink-dim) !important;background:transparent !important;transform:none !important;box-shadow:none !important;}
-  .tab .ico{width:21px !important;height:21px !important;flex:0 0 21px;position:relative !important;}
-  .tab .ico svg{width:21px !important;height:21px !important;}
-  .tab .lbl{font-size:13.5px !important;font-weight:450 !important;}
-  .tab:hover{background:rgba(100,130,155,.075) !important;color:var(--ink) !important;transform:none !important;}
-  .tab.active{color:var(--navy) !important;background:linear-gradient(90deg,rgba(10,132,255,.15),rgba(10,132,255,.055)) !important;box-shadow:inset 3px 0 0 #0a84ff !important;}
-  .tab.active .lbl{font-weight:650 !important;}
-  .tab-dot{position:absolute !important;top:-7px !important;right:-9px !important;min-width:17px !important;height:17px !important;padding:0 4px !important;border-radius:999px !important;display:none;align-items:center !important;justify-content:center !important;background:#ff3b30 !important;color:#fff !important;border:2px solid rgba(255,255,255,.95) !important;box-shadow:0 3px 8px rgba(255,59,48,.28) !important;font-family:var(--font-num) !important;font-size:9px !important;font-weight:700 !important;line-height:1 !important;z-index:3;}
-  body.nav-collapsed .tabbar{width:78px !important;padding:22px 10px 18px !important;border-radius:24px !important;}
-  body.nav-collapsed .tabbar::before{content:"พ." !important;text-align:center !important;font-size:18px !important;padding:7px 0 12px !important;}
-  body.nav-collapsed .tabbar::after{content:"" !important;padding:0 !important;margin:0 0 10px !important;}
-  body.nav-collapsed .nav-collapse-btn{right:50% !important;top:23px !important;transform:translateX(50%) !important;}
-  body.nav-collapsed .nav-collapse-btn svg{transform:rotate(180deg) !important;}
-  body.nav-collapsed .tab{min-height:48px !important;justify-content:center !important;padding:10px 7px !important;border-radius:14px !important;}
-  body.nav-collapsed .tab .lbl{display:none !important;}
-  body.nav-collapsed .tab .ico{flex:0 0 22px !important;}
-  body.nav-collapsed .tab.active{box-shadow:none !important;background:rgba(10,132,255,.14) !important;}
-  body.nav-collapsed .tab-dot{top:3px !important;right:2px !important;}
-  body.nav-collapsed .topbar{margin-left:106px !important;width:calc(100% - 106px) !important;}
-  body.nav-collapsed .page{margin-left:106px !important;width:calc(100% - 106px) !important;}
-  :root[data-theme="liquid"] .tabbar{background:rgba(255,255,255,.58) !important;border-color:rgba(255,255,255,.72) !important;box-shadow:0 20px 55px rgba(40,80,120,.14),inset 0 1px 0 rgba(255,255,255,.90) !important;-webkit-backdrop-filter:blur(24px) saturate(165%) !important;backdrop-filter:blur(24px) saturate(165%) !important;}
-  :root[data-theme="liquid"] .tabbar::after{border-bottom-color:rgba(90,120,150,.16) !important;}
-  :root[data-theme="liquid"] .tab:hover{background:rgba(255,255,255,.34) !important;}
-  :root[data-theme="liquid"] .tab.active{background:linear-gradient(90deg,rgba(10,132,255,.27),rgba(255,255,255,.28)) !important;}
-  :root[data-theme="liquid"] .nav-collapse-btn{background:rgba(255,255,255,.38) !important;border-color:rgba(255,255,255,.66) !important;box-shadow:0 5px 14px rgba(40,70,100,.10),inset 0 1px 0 rgba(255,255,255,.85) !important;}
-  :root[data-theme="liquid"] .nav-collapse-btn:hover{background:rgba(255,255,255,.54) !important;}
-}
 </style>
 </head>
 <body>
@@ -4434,8 +4369,8 @@ body.modal-open{ overflow:hidden; overscroll-behavior:none; }
 
 <div class="tabbar" role="navigation" aria-label="เมนูหลัก">
   <button class="nav-collapse-btn" id="navCollapseBtn" type="button" aria-label="ย่อเมนู" title="ย่อ/ขยายเมนู">
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M14.5 7L9.5 12L14.5 17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path d="M7.5 4.5L13 10l-5.5 5.5M13 4.5L7.5 10l5.5 5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
   </button>
   <span class="tab-pill" id="tabPill" aria-hidden="true"></span>
@@ -5223,7 +5158,7 @@ const compAvail = c => c['สถานะ'] === 'พร้อมใช้งา�
 function updateBorrowDot() {
   const dot = document.getElementById('borrowTabDot');
   if (!dot) return;
-  const pending = state.borrow.filter(b => b['สถานะ'] === 'รออนุมัติ').length;
+  const pending = (state.borrow || []).filter(b => b['สถานะ'] === 'รออนุมัติ').length;
   const show = isAdmin() && pending > 0;
   dot.textContent = pending > 99 ? '99+' : String(pending);
   dot.style.display = show ? 'inline-flex' : 'none';
@@ -11839,7 +11774,7 @@ function compareMonthlyOfficers(a, b) {
         .mcr-mobile-page-inner .mcr .sig{text-align:center;font-size:11pt;}
         .mcr-mobile-page-inner .mcr .sig .line{margin:0 auto 1.5mm;width:70%;border-bottom:1px dotted #333;height:8mm;}
         .mcr-mobile-page-inner .mcr tr{page-break-inside:avoid;break-inside:avoid;}
-      \n</style>${pages}`;
+      </style>${pages}`;
     } else {
       pa.innerHTML = html;
     }
