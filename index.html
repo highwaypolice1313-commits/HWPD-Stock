@@ -4388,6 +4388,31 @@ body.modal-open{ overflow:hidden; overscroll-behavior:none; }
   }
 }
 </style>
+
+<style id="mobile-ipad-hide-profile-final">
+/* ซ่อนโปรไฟล์ทุกจุดบนมือถือและ iPad: ไม่ให้ชื่อ/คำว่า "แอดมิน" โผล่นอกเมนูหรือในเมนู */
+@media (max-width: 1024px) {
+  .topbar .profile,
+  .topbar #profileName,
+  .topbar .profile-name,
+  .topbar .user-profile,
+  .topbar .nav-profile,
+  #navUserCard,
+  .nav-user-card {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    max-width: 0 !important;
+    min-width: 0 !important;
+    height: 0 !important;
+    max-height: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+}
+</style>
 </head>
 <body>
 
