@@ -7642,8 +7642,12 @@ function openBorrowForm(presetId) {
     });
   document.getElementById('f_sigTrigger').onclick = () => {
     if (!val('f_borrower').trim()) { toast('กรุณาเลือกผู้ยืมก่อน'); return; }
+    const idx = findOfficerIndexByName(val('f_borrower'));
+    const officer = idx !== '' ? state.users[Number(idx)] : null;
     openSignatureSheet({
-      title: 'ลายเซ็นผู้ยืม', name: val('f_borrower'),
+      title: 'ลายเซ็นผู้ยืม',
+      name: val('f_borrower'),
+      saved: officer ? (officer['ลายเซ็น'] || '') : '',
       onDone: v => {
         document.getElementById('f_sigBorrower').value = v;
         document.getElementById('f_sigIcon').innerHTML = `<img src="${v}" style="width:100%;height:100%;object-fit:contain;">`;
@@ -7721,8 +7725,38 @@ function openBorrowForm(presetId) {
         borrowDate: val('f_borrowdate'), dueDate: val('f_duedate'), approver: admin ? (val('f_apvRank') + ' ' + val('f_apvName')).trim() : '',
         note: val('f_bnote'), componentIds, conditionPhotoOut, sigBorrower, sigApprover
       };
-      await apiPost(admin ? 'borrowAsset' : 'requestBorrow', payload);
-      closeSheet(); toast(admin ? 'บันทึกการยืมแล้ว' : 'ส่งคำขอยืมแล้ว รอแอดมินอนุมัติ'); await reloadThen(renderBorrow);
+      const borrowRes = await apiPost(admin ? 'borrowAsset' : 'requestBorrow', payload);
+      if (admin) {
+        // แอดมินทำรายการยืมจากทะเบียนครุภัณฑ์: บันทึกการยืมเสร็จแล้ว
+        // ให้เปิดฟอร์ม "บันทึกขอเบิก-ยืม" ของรายการเดียวกันต่อทันที
+        // เพื่อไม่ต้องกลับไปสร้างเอกสารซ้ำอีกครั้ง
+        await loadAll();
+        let createdBorrow = null;
+        const returnedId = borrowRes && (borrowRes.id || borrowRes.borrowId || borrowRes['รหัสรายการ']);
+        if (returnedId) {
+          createdBorrow = state.borrow.find(b => String(b['รหัสรายการ']) === String(returnedId)) || null;
+        }
+        if (!createdBorrow) {
+          const candidates = state.borrow.filter(b =>
+            String(b['รหัสครุภัณฑ์']) === String(assetId) &&
+            String(b['ผู้ยืม'] || '') === String(val('f_borrower') || '') &&
+            String(b['วันที่ยืม'] || '') === String(val('f_borrowdate') || '')
+          );
+          createdBorrow = candidates.length ? candidates[candidates.length - 1] : null;
+        }
+        closeSheet();
+        if (createdBorrow) {
+          toast('บันทึกการยืมแล้ว — กำลังเปิดบันทึกขอเบิก-ยืม');
+          openPrintMemoForm({ borrow: createdBorrow });
+        } else {
+          toast('บันทึกการยืมแล้ว แต่ไม่พบรายการสำหรับสร้างเอกสาร');
+          renderBorrow();
+        }
+      } else {
+        closeSheet();
+        toast('ส่งคำขอยืมแล้ว รอแอดมินอนุมัติ');
+        await reloadThen(renderBorrow);
+      }
     } catch (err) { toast(err.message || 'ทำรายการไม่สำเร็จ'); }
     finally { setLoading(false); setButtonBusy(saveBtn, false); }
   };
