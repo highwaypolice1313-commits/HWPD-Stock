@@ -4172,56 +4172,56 @@ body.modal-open{ overflow:hidden; overscroll-behavior:none; }
    - เพิ่มโปรไฟล์ผู้ใช้งานด้านล่างแบบ UI-only
    ========================================================= */
 @media (min-width:900px){
+  /* ปุ่มย่อ/ขยาย — ออกแบบตามปุ่ม hamburger ในภาพอ้างอิง */
   .nav-collapse-btn{
     position:absolute !important;
-    top:68px !important;
-    right:-15px !important;
-    width:34px !important;
-    height:42px !important;
+    top:20px !important;
+    right:-14px !important;
+    width:40px !important;
+    height:40px !important;
     margin:0 !important;
     padding:0 !important;
     display:flex !important;
     align-items:center !important;
     justify-content:center !important;
-    border:1px solid rgba(255,255,255,.52) !important;
-    border-radius:9px !important;
-    background:rgba(255,255,255,.16) !important;
+    border:1px solid rgba(255,255,255,.20) !important;
+    border-radius:10px !important;
+    background:rgba(20,44,72,.96) !important;
     color:rgba(255,255,255,.92) !important;
-    box-shadow:0 7px 18px rgba(5,20,40,.16), inset 0 1px 0 rgba(255,255,255,.16) !important;
-    backdrop-filter:blur(12px) saturate(145%);
-    -webkit-backdrop-filter:blur(12px) saturate(145%);
+    box-shadow:0 7px 18px rgba(5,20,40,.20), 0 0 0 1px rgba(255,255,255,.04) !important;
     cursor:pointer !important;
     z-index:90 !important;
     transition:background .18s ease, border-color .18s ease, box-shadow .18s ease, transform .18s ease !important;
   }
-  .nav-collapse-btn:hover{
-    background:rgba(255,255,255,.25) !important;
-    border-color:rgba(255,255,255,.72) !important;
-    box-shadow:0 9px 20px rgba(5,20,40,.20), inset 0 1px 0 rgba(255,255,255,.22) !important;
-  }
-  .nav-collapse-btn:active{ transform:scale(.96) !important; }
-  .nav-collapse-btn:focus-visible{ outline:2px solid rgba(90,170,255,.75) !important; outline-offset:3px; }
-
-  .nav-collapse-chevron{
-    width:8px !important;
-    height:8px !important;
+  .nav-collapse-btn::before{
+    content:"" !important;
+    width:15px !important;
+    height:2px !important;
+    border-radius:2px !important;
+    background:currentColor !important;
+    box-shadow:0 -5px 0 currentColor, 0 5px 0 currentColor !important;
     display:block !important;
-    border-right:1.8px solid currentColor !important;
-    border-bottom:1.8px solid currentColor !important;
-    transform:rotate(135deg) !important;
-    margin-left:4px !important;
-    flex:none !important;
   }
+  .nav-collapse-btn:hover{
+    background:rgba(31,61,94,.98) !important;
+    border-color:rgba(255,255,255,.32) !important;
+    box-shadow:0 9px 22px rgba(5,20,40,.26), 0 0 0 1px rgba(255,255,255,.05) !important;
+  }
+  .nav-collapse-btn:active{ transform:scale(.95) !important; }
+  .nav-collapse-btn:focus-visible{ outline:2px solid rgba(90,170,255,.75) !important; outline-offset:3px; }
+  .nav-collapse-chevron{ display:none !important; }
 
   :root[data-theme="liquid"] .nav-collapse-btn{
-    background:rgba(255,255,255,.46) !important;
-    border-color:rgba(255,255,255,.82) !important;
-    color:#36506b !important;
-    box-shadow:0 8px 20px rgba(36,80,120,.14), inset 0 1px 0 rgba(255,255,255,.92) !important;
+    background:rgba(28,57,86,.82) !important;
+    border-color:rgba(255,255,255,.38) !important;
+    color:rgba(255,255,255,.96) !important;
+    box-shadow:0 8px 22px rgba(36,80,120,.18), inset 0 1px 0 rgba(255,255,255,.14) !important;
+    backdrop-filter:blur(14px) saturate(150%) !important;
+    -webkit-backdrop-filter:blur(14px) saturate(150%) !important;
   }
   :root[data-theme="liquid"] .nav-collapse-btn:hover{
-    background:rgba(255,255,255,.66) !important;
-    color:#0a6fdc !important;
+    background:rgba(35,71,105,.92) !important;
+    border-color:rgba(255,255,255,.52) !important;
   }
 
   /* โปรไฟล์ผู้ใช้งานด้านล่าง */
@@ -4255,6 +4255,26 @@ body.modal-open{ overflow:hidden; overscroll-behavior:none; }
     white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important;
   }
   .nav-user-role{color:rgba(255,255,255,.56) !important; font-size:10.5px !important; white-space:nowrap !important;}
+  .nav-user-logout{
+    margin-left:auto !important;
+    width:36px !important;
+    height:36px !important;
+    flex:0 0 36px !important;
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    border:1px solid rgba(255,255,255,.10) !important;
+    border-radius:10px !important;
+    background:rgba(255,255,255,.07) !important;
+    color:rgba(255,255,255,.72) !important;
+    cursor:pointer !important;
+    transition:background .18s ease,color .18s ease,transform .18s ease !important;
+  }
+  .nav-user-logout svg{width:18px !important;height:18px !important;}
+  .nav-user-logout:hover{background:rgba(255,255,255,.13) !important;color:#fff !important;}
+  .nav-user-logout:active{transform:scale(.94) !important;}
+  :root[data-theme="liquid"] .nav-user-logout{background:rgba(255,255,255,.10) !important;border-color:rgba(255,255,255,.18) !important;}
+  :root[data-theme="liquid"] .nav-user-logout:hover{background:rgba(255,255,255,.18) !important;}
 
   body.nav-collapsed .tabbar{
     width:82px !important;
@@ -4262,19 +4282,20 @@ body.modal-open{ overflow:hidden; overscroll-behavior:none; }
     padding-right:11px !important;
   }
   body.nav-collapsed .tabbar::before{
-    content:"พท." !important;
-    text-align:center !important;
-    font-size:16px !important;
-    padding:4px 0 8px !important;
+    content:"" !important;
+    height:0 !important;
+    padding:0 !important;
+    margin:0 !important;
   }
   body.nav-collapsed .tabbar::after{content:"" !important;padding:0 !important;margin:0 0 10px !important;}
   body.nav-collapsed .tab{justify-content:center !important;padding:12px 8px !important;gap:0 !important;}
   body.nav-collapsed .tab .lbl{display:none !important;}
-  body.nav-collapsed .nav-collapse-btn{top:58px !important;right:-15px !important;}
-  body.nav-collapsed .nav-collapse-chevron{transform:rotate(-45deg) !important;margin-left:-4px !important;}
-  body.nav-collapsed .nav-user-card{justify-content:center !important;padding:10px 0 8px !important;}
+  body.nav-collapsed .nav-collapse-btn{top:20px !important;right:-14px !important;}
+  body.nav-collapsed .nav-collapse-chevron{display:none !important;}
+  body.nav-collapsed .nav-user-card{justify-content:center !important;flex-direction:column !important;gap:8px !important;padding:10px 0 8px !important;}
   body.nav-collapsed .nav-user-avatar{width:40px !important;height:40px !important;border-radius:50% !important;}
   body.nav-collapsed .nav-user-info{display:none !important;}
+  body.nav-collapsed .nav-user-logout{margin-left:0 !important;width:36px !important;height:34px !important;flex-basis:34px !important;}
   body.nav-collapsed .topbar{margin-left:114px !important;width:calc(100% - 114px) !important;}
   body.nav-collapsed .page{margin-left:114px !important;width:calc(100% - 114px) !important;}
 }
@@ -4456,6 +4477,9 @@ body.modal-open{ overflow:hidden; overscroll-behavior:none; }
       <div class="nav-user-name" id="navUserName">ผู้ใช้งาน</div>
       <div class="nav-user-role" id="navUserRole">กำลังโหลด...</div>
     </div>
+    <button class="nav-user-logout" id="navLogoutBtn" type="button" title="ออกจากระบบ" aria-label="ออกจากระบบ">
+      <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M8 3.5H5.5a1.5 1.5 0 00-1.5 1.5v10a1.5 1.5 0 001.5 1.5H8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M12.5 13.5L16.5 10l-4-3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M16.2 10H8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+    </button>
   </div>
 </div>
 
@@ -4865,11 +4889,14 @@ document.querySelectorAll('.role-select-card').forEach(card => {
 document.getElementById('btnBackToRoles').addEventListener('click', showRoleSelect);
 document.getElementById('rl_password').addEventListener('keydown', (e) => { if (e.key === 'Enter') doRoleLogin(); });
 document.getElementById('btnRoleLogin').addEventListener('click', doRoleLogin);
-document.getElementById('btnLogout').addEventListener('click', async () => {
+async function handleLogout(){
   if (!await confirmSheet('ยืนยันการออกจากระบบ?', {title:'ออกจากระบบ', okText:'ออกจากระบบ', tone:'bad'})) return;
   clearSession();
   location.reload();
-});
+}
+document.getElementById('btnLogout').addEventListener('click', handleLogout);
+const navLogoutBtn = document.getElementById('navLogoutBtn');
+if (navLogoutBtn) navLogoutBtn.addEventListener('click', handleLogout);
 
 async function doRoleLogin() {
   const password = val('rl_password');
