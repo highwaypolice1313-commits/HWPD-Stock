@@ -5711,6 +5711,8 @@ if (document.fonts && document.fonts.ready) document.fonts.ready.then(layoutNav)
 /* ---------- sheet เมนูทั้งหมด ---------- */
 function openMoreMenu() {
   const items = [...document.querySelectorAll('.tab-secondary')].filter(b => b.style.display !== 'none');
+  const userName = state.user?.name || document.getElementById('navUserName')?.textContent || 'ผู้ใช้งาน';
+  const userRole = state.user?.role || document.getElementById('navUserRole')?.textContent || '';
   showSheet(`
     <div class="sheet-title">เมนูทั้งหมด</div>
     <div class="more-grid">
@@ -5719,8 +5721,24 @@ function openMoreMenu() {
           <span class="more-ico">${b.querySelector('.ico svg').outerHTML}</span>
           <span>${escapeHtml(b.querySelector('.lbl').textContent)}</span>
         </button>`).join('')}
+    </div>
+    <div class="mobile-more-user">
+      <div class="mobile-more-user-avatar">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.2" stroke="currentColor" stroke-width="1.5"/><path d="M5.5 19c.9-3.3 3.2-5 6.5-5s5.6 1.7 6.5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </div>
+      <div class="mobile-more-user-info">
+        <div class="mobile-more-user-name">${escapeHtml(userName)}</div>
+        <div class="mobile-more-user-role">${escapeHtml(userRole)}</div>
+      </div>
+      <button class="mobile-more-logout" id="mobileMoreLogout" type="button" aria-label="ออกจากระบบ" title="ออกจากระบบ">
+        <svg viewBox="0 0 20 20" fill="none"><path d="M8 3.5H5.5a1.5 1.5 0 00-1.5 1.5v10a1.5 1.5 0 001.5 1.5H8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M12.5 13.5L16.5 10l-4-3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M16.2 10H8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      </button>
     </div>`, 'nav-more-sheet');
   document.querySelectorAll('.more-item').forEach(x => x.onclick = () => { closeSheet(); renderTab(x.dataset.go); });
+  document.getElementById('mobileMoreLogout')?.addEventListener('click', () => {
+    closeSheet();
+    document.getElementById('btnLogout')?.click();
+  });
 }
 document.getElementById('tabMore').addEventListener('click', openMoreMenu);
 
@@ -11957,7 +11975,125 @@ function compareMonthlyOfficers(a, b) {
         .mcr-mobile-page-inner .mcr .sig{text-align:center;font-size:11pt;}
         .mcr-mobile-page-inner .mcr .sig .line{margin:0 auto 1.5mm;width:70%;border-bottom:1px dotted #333;height:8mm;}
         .mcr-mobile-page-inner .mcr tr{page-break-inside:avoid;break-inside:avoid;}
-      </style>${pages}`;
+      
+
+/* =========================================================
+   FINAL TOUCH MODAL SCROLL — ใช้รูปแบบเดียวกันทุกธีม
+   จำกัดเฉพาะมือถือ / iPad เพื่อไม่กระทบการทำงานบนคอมพิวเตอร์
+   ========================================================= */
+@media (max-width:1024px), (hover:none) and (pointer:coarse){
+  #modalRoot > .overlay{
+    overflow:hidden !important;
+    overscroll-behavior:none !important;
+    touch-action:none !important;
+  }
+
+  #modalRoot > .overlay > .sheet{
+    width:100% !important;
+    max-height:92dvh !important;
+    max-height:92vh !important;
+    overflow-x:hidden !important;
+    overflow-y:auto !important;
+    -webkit-overflow-scrolling:touch !important;
+    overscroll-behavior:contain !important;
+    touch-action:pan-y !important;
+    scroll-behavior:auto !important;
+  }
+
+  #modalRoot > .command-overlay{
+    overflow:hidden !important;
+    overscroll-behavior:none !important;
+    touch-action:none !important;
+  }
+
+  #modalRoot > .command-overlay > .command-sheet{
+    max-height:92dvh !important;
+    max-height:92vh !important;
+    overflow:hidden !important;
+  }
+
+  #modalRoot > .command-overlay .command-results{
+    overflow-x:hidden !important;
+    overflow-y:auto !important;
+    -webkit-overflow-scrolling:touch !important;
+    overscroll-behavior:contain !important;
+    touch-action:pan-y !important;
+  }
+
+  /* ไม่ให้กล่องตัวอย่าง/กระดาษกลายเป็นตัวเลื่อนซ้อน */
+  #modalRoot > .overlay > .sheet .paper-desk{
+    overflow:visible !important;
+    max-height:none !important;
+    -webkit-overflow-scrolling:auto !important;
+    overscroll-behavior:initial !important;
+    touch-action:auto !important;
+  }
+
+  /* ทุกธีมใช้พื้นฐานเดียวกัน ต่างกันเฉพาะสี/หน้าตา */
+  #modalRoot > .overlay > .sheet,
+  #modalRoot > .overlay > .sheet.glass,
+  #modalRoot > .overlay > .sheet.memo-form-sheet,
+  #modalRoot > .overlay > .sheet.memo-doc-sheet,
+  #modalRoot > .overlay > .sheet.op-sheet,
+  #modalRoot > .overlay > .sheet.nav-more-sheet{
+    -webkit-overflow-scrolling:touch !important;
+    touch-action:pan-y !important;
+  }
+
+  /* โปรไฟล์ไม่เป็น item ของ bottom menu บนมือถือ/iPad */
+  .tabbar > .nav-user-card{
+    display:none !important;
+  }
+}
+
+/* =========================================================
+   MOBILE / iPAD NAV PROFILE
+   โปรไฟล์ต้องอยู่ในเมนูทั้งหมด ไม่ลอยต่อท้าย bottom bar
+   ========================================================= */
+@media (max-width:899px){
+  .tabbar > .nav-user-card{
+    display:none !important;
+  }
+}
+
+
+.mobile-more-user{
+  display:none;
+}
+@media (max-width:899px){
+  .mobile-more-user{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-top:12px;
+    padding:10px 11px;
+    border:1px solid var(--panel-line);
+    border-radius:16px;
+    background:color-mix(in srgb, var(--panel-soft) 82%, transparent);
+  }
+  .mobile-more-user-avatar{
+    width:38px;
+    height:38px;
+    flex:0 0 38px;
+    border-radius:12px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:var(--navy);
+    color:#fff;
+  }
+  .mobile-more-user-avatar svg{width:20px;height:20px;}
+  .mobile-more-user-info{min-width:0;flex:1;display:flex;flex-direction:column;gap:2px;}
+  .mobile-more-user-name{font-size:13px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink);}
+  .mobile-more-user-role{font-size:10.5px;color:var(--ink-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .mobile-more-logout{
+    width:38px;height:38px;flex:0 0 38px;border-radius:11px;
+    border:1px solid var(--panel-line);background:var(--panel);
+    color:var(--ink-dim);display:flex;align-items:center;justify-content:center;
+  }
+  .mobile-more-logout svg{width:18px;height:18px;}
+}
+</style>${pages}`;
     } else {
       pa.innerHTML = html;
     }
