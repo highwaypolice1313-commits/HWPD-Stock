@@ -4365,6 +4365,20 @@ body.modal-open{ overflow:hidden; overscroll-behavior:none; }
   }
 }
 
+
+
+/* NAVBAR V6 — เพิ่มระยะจริงระหว่างปุ่มย่อกับเมนูแรก
+   UI only: แก้เฉพาะระยะห่าง ไม่เปลี่ยน event หรือ logic */
+@media (min-width:900px){
+  /* ปุ่มย่อและ tab-pill อยู่ก่อนเมนูแรกใน DOM ดังนั้นให้เว้นพื้นที่
+     ด้วย selector ตามลำดับจริง แทน :first-of-type ที่ไม่ตรง element */
+  .tabbar > .tab-pill + .tab{
+    margin-top:32px !important;
+  }
+  body.nav-collapsed .tabbar > .tab-pill + .tab{
+    margin-top:32px !important;
+  }
+}
 </style>
 </head>
 <body>
