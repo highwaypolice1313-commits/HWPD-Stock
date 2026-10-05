@@ -4353,7 +4353,8 @@ body.modal-open{ overflow:hidden; overscroll-behavior:none; }
   /* ตอนย่อ: ปุ่มยังเต็มและอยู่ด้านในเหมือนเดิม */
   body.nav-collapsed .nav-collapse-btn{
     top:16px !important;
-    right:12px !important;
+    right:21px !important;
+    left:auto !important;
     width:40px !important;
     height:40px !important;
     min-width:40px !important;
@@ -4377,6 +4378,13 @@ body.modal-open{ overflow:hidden; overscroll-behavior:none; }
   }
   body.nav-collapsed .tabbar > .tab-pill + .tab{
     margin-top:32px !important;
+  }
+
+  /* V7: จัดปุ่ม Hamburger ให้อยู่กึ่งกลาง Navbar ตอนย่อ */
+  body.nav-collapsed .nav-collapse-btn{
+    right:21px !important;
+    left:auto !important;
+    transform:none !important;
   }
 }
 </style>
