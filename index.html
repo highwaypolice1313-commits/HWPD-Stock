@@ -4169,52 +4169,60 @@ body.modal-open{ overflow:hidden; overscroll-behavior:none; }
    DESKTOP NAVBAR — ย่อ/ขยาย
    ========================================================= */
 @media (min-width:900px){
-  /* ปุ่มย่อ/ขยายแบบปุ่มเล็กที่เกาะขอบ Navbar — ไม่เปลี่ยนโครงสร้าง Navbar เดิม */
+  /* ปุ่มย่อ/ขยาย: แถบเล็กแบบตัวอย่าง เกาะขอบ Navbar เดิม */
   .nav-collapse-btn{
     position:absolute !important;
-    top:72px !important;
-    right:-13px !important;
-    width:30px !important;
-    height:48px !important;
+    top:70px !important;
+    right:-11px !important;
+    width:22px !important;
+    height:46px !important;
     margin:0 !important;
     padding:0 !important;
     display:flex !important;
     align-items:center !important;
     justify-content:center !important;
-    border:1px solid rgba(255,255,255,.38) !important;
+    border:1px solid rgba(255,255,255,.42) !important;
     border-left:0 !important;
-    border-radius:0 12px 12px 0 !important;
-    background:rgba(255,255,255,.18) !important;
-    color:rgba(255,255,255,.9) !important;
-    box-shadow:0 5px 14px rgba(20,35,55,.14) !important;
-    backdrop-filter:blur(12px) saturate(150%);
-    -webkit-backdrop-filter:blur(12px) saturate(150%);
+    border-radius:0 9px 9px 0 !important;
+    background:rgba(255,255,255,.22) !important;
+    color:rgba(255,255,255,.95) !important;
+    box-shadow:0 3px 10px rgba(20,35,55,.12) !important;
+    backdrop-filter:blur(10px) saturate(140%);
+    -webkit-backdrop-filter:blur(10px) saturate(140%);
     cursor:pointer !important;
-    z-index:8 !important;
-    transition:background .18s ease,transform .18s ease,border-color .18s ease,box-shadow .18s ease;
+    z-index:20 !important;
+    transition:background .16s ease,border-color .16s ease,transform .16s ease;
   }
   .nav-collapse-btn::before{ display:none !important; }
   .nav-collapse-btn:hover{
-    background:rgba(255,255,255,.28) !important;
-    border-color:rgba(255,255,255,.55) !important;
-    transform:translateX(2px) !important;
-    box-shadow:0 7px 16px rgba(20,35,55,.18) !important;
+    background:rgba(255,255,255,.34) !important;
+    border-color:rgba(255,255,255,.62) !important;
+    transform:translateX(1px) !important;
   }
-  .nav-collapse-btn:active{ transform:translateX(2px) scale(.96) !important; }
-  .nav-collapse-btn:focus-visible{ outline:2px solid rgba(10,132,255,.65) !important; outline-offset:2px; }
-  .nav-collapse-btn svg{ width:17px !important;height:17px !important; transition:transform .22s ease; }
+  .nav-collapse-btn:active{ transform:translateX(1px) scale(.97) !important; }
+  .nav-collapse-btn:focus-visible{ outline:2px solid rgba(10,132,255,.55) !important; outline-offset:2px; }
 
-  /* Liquid Glass: ให้ปุ่มดูเป็นชิ้นกระจกที่ติดอยู่กับขอบ ไม่กลืนกับพื้น */
+  /* Chevron เดี่ยวแบบในตัวอย่าง — ไม่มี SVG/ไอคอนซ้อน */
+  .nav-collapse-chevron{
+    width:7px !important;
+    height:7px !important;
+    display:block !important;
+    border-left:1.6px solid currentColor !important;
+    border-bottom:1.6px solid currentColor !important;
+    transform:rotate(45deg) !important;
+    margin-left:3px !important;
+    flex:none !important;
+  }
+
   :root[data-theme="liquid"] .nav-collapse-btn{
-    background:rgba(255,255,255,.48) !important;
-    border-color:rgba(255,255,255,.76) !important;
-    color:rgba(25,55,90,.82) !important;
-    box-shadow:0 6px 18px rgba(35,70,110,.14),inset 0 1px 0 rgba(255,255,255,.92) !important;
+    background:rgba(255,255,255,.58) !important;
+    border-color:rgba(255,255,255,.82) !important;
+    color:rgba(45,65,88,.86) !important;
+    box-shadow:0 4px 12px rgba(35,70,110,.12),inset 0 1px 0 rgba(255,255,255,.9) !important;
   }
   :root[data-theme="liquid"] .nav-collapse-btn:hover{
-    background:rgba(255,255,255,.68) !important;
+    background:rgba(255,255,255,.76) !important;
     color:#0a5fd8 !important;
-    border-color:rgba(255,255,255,.9) !important;
   }
 
   /* ย่อแล้วปุ่มยังเกาะขอบขวาของ Navbar เดิม */
@@ -4244,7 +4252,7 @@ body.modal-open{ overflow:hidden; overscroll-behavior:none; }
     top:58px !important;
     right:-13px !important;
   }
-  body.nav-collapsed .nav-collapse-btn svg{ transform:rotate(180deg); }
+  body.nav-collapsed .nav-collapse-chevron{ transform:rotate(225deg) !important; margin-left:-3px !important; }
   body.nav-collapsed .topbar{
     margin-left:114px !important;
     width:calc(100% - 114px) !important;
@@ -4368,11 +4376,7 @@ body.modal-open{ overflow:hidden; overscroll-behavior:none; }
   </button>
 
 <div class="tabbar" role="navigation" aria-label="เมนูหลัก">
-  <button class="nav-collapse-btn" id="navCollapseBtn" type="button" aria-label="ย่อเมนู" title="ย่อ/ขยายเมนู">
-    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
-      <path d="M7.5 4.5L13 10l-5.5 5.5M13 4.5L7.5 10l5.5 5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-  </button>
+  <button class="nav-collapse-btn" id="navCollapseBtn" type="button" aria-label="ย่อเมนู" title="ย่อ/ขยายเมนู"><span class="nav-collapse-chevron" aria-hidden="true"></span></button>
   <span class="tab-pill" id="tabPill" aria-hidden="true"></span>
 
   <button class="tab active" data-tab="dashboard">
