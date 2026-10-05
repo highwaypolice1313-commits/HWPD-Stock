@@ -6605,7 +6605,7 @@ function openAssetDetail(id) {
     ${assetTimelineHtml(a, id)}
     <div class="btn-row">
       <button class="btn btn-ghost" id="btnShowQr">แสดง QR โค้ด</button>
-      <button class="btn btn-ghost" id="btnPrintAssetForm">${isAdmin() ? 'พิมพ์บันทึกขอเบิก' : (isAssetBorrowable(a) ? 'ขอยืมครุภัณฑ์' : 'ครุภัณฑ์นี้ยังไม่พร้อมให้ยืม')}</button>
+      <button class="btn btn-ghost" id="btnPrintAssetForm">${isAssetBorrowable(a) ? 'ขอยืมครุภัณฑ์' : 'ครุภัณฑ์นี้ยังไม่พร้อมให้ยืม'}</button>
     </div>
     ${isAdmin() ? `<div class="btn-row">
       <button class="btn btn-ghost" id="btnQuickStatus">เปลี่ยนสถานะด่วน</button>
@@ -6634,12 +6634,20 @@ function openAssetDetail(id) {
         openBorrowForm(id);
       };
     } else {
-      // แอดมินยังใช้ปุ่มเดิมได้ตามสิทธิ์เดิม
+      // แอดมินใช้ปุ่มเดิมในทะเบียนครุภัณฑ์เข้าสู่ขั้นตอนขอยืมเช่นเดียวกับผู้ดูอย่างเดียว
+      const borrowable = isAssetBorrowable(a);
+      assetActionBtn.textContent = borrowable ? 'ขอยืมครุภัณฑ์' : 'ครุภัณฑ์นี้ยังไม่พร้อมให้ยืม';
+      assetActionBtn.disabled = !borrowable;
+      assetActionBtn.style.opacity = borrowable ? '' : '.55';
+      assetActionBtn.style.cursor = borrowable ? 'pointer' : 'not-allowed';
       assetActionBtn.onclick = () => {
-        const activeBorrow = state.borrow.find(b =>
-          b['รหัสครุภัณฑ์'] === id && (b['สถานะ'] === 'กำลังยืม' || b['สถานะ'] === 'เกินกำหนด'));
-        if (activeBorrow) openPrintMemoForm({ borrow: activeBorrow });
-        else openPrintMemoForm({ items: [a], components: componentsOf(id) });
+        if (!isAssetBorrowable(a)) {
+          const hold = assetBorrowState(id);
+          toast(hold ? 'ครุภัณฑ์นี้มีผู้ยืมหรือมีคำขอยืมอยู่แล้ว' : 'ครุภัณฑ์นี้ยังไม่พร้อมให้ยืม');
+          return;
+        }
+        closeSheet();
+        openBorrowForm(id);
       };
     }
   }
