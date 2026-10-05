@@ -4310,6 +4310,61 @@ body.modal-open{ overflow:hidden; overscroll-behavior:none; }
   }
 }
 
+
+/* =========================================================
+   NAVBAR V5 — ปุ่มย่อ/ขยายแบบเต็มปุ่ม + ไม่ให้เมนูขยับ
+   UI ONLY: ไม่เปลี่ยน logic เดิม
+   ========================================================= */
+@media (min-width:900px){
+  .tabbar{
+    overflow-x:hidden !important;
+    overflow-y:auto !important;
+  }
+
+  /* จองพื้นที่บนสุดให้ปุ่มโดยเฉพาะ ปุ่มจึงไม่ทับเมนู */
+  .tabbar > .tab:first-of-type{
+    margin-top:12px !important;
+  }
+
+  /* ปุ่มเต็มปุ่ม อยู่ด้านในขอบ Navbar ไม่ถูก overflow ตัด */
+  .nav-collapse-btn{
+    top:16px !important;
+    right:12px !important;
+    width:40px !important;
+    height:40px !important;
+    min-width:40px !important;
+    min-height:40px !important;
+    border-radius:10px !important;
+    box-sizing:border-box !important;
+    z-index:100 !important;
+  }
+
+  /* เว้นหัวเรื่องด้านขวาไม่ให้ชนปุ่ม */
+  .tabbar::before{
+    padding-right:62px !important;
+    box-sizing:border-box !important;
+  }
+
+  /* Hover แล้วเมนูต้องไม่เลื่อน */
+  .tabbar .tab:hover{
+    transform:none !important;
+  }
+
+  /* ตอนย่อ: ปุ่มยังเต็มและอยู่ด้านในเหมือนเดิม */
+  body.nav-collapsed .nav-collapse-btn{
+    top:16px !important;
+    right:12px !important;
+    width:40px !important;
+    height:40px !important;
+    min-width:40px !important;
+    min-height:40px !important;
+  }
+
+  body.nav-collapsed .tabbar > .tab:first-of-type{
+    margin-top:12px !important;
+  }
+}
+
 </style>
 </head>
 <body>
