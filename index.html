@@ -11563,9 +11563,25 @@ function openBulkAuditModal(action = 'set') {
         </div>
       </div>`;
   } else {
-    pa.innerHTML = html;
+    // Desktop เท่านั้น: ขยายพื้นที่พิมพ์ของ บชก.3 ให้เท่ากับ A4 แนวนอนเต็มแผ่น
+    // โดยไม่แตะกฎพิมพ์ของรายงาน/หน้าอื่น และไม่กระทบการพิมพ์บนมือถือ
+    document.documentElement.classList.add('bchok3-landscape-print');
+    pa.innerHTML = html.replace(
+      '<style>@page{ size: A4 landscape; margin: 8mm; }',
+      '<style>@page{ size: A4 landscape; margin: 8mm; }' +
+      '@media print{'+
+      'html.bchok3-landscape-print{width:297mm !important;min-width:297mm !important;max-width:297mm !important;}'+
+      'html.bchok3-landscape-print body{width:297mm !important;min-width:297mm !important;max-width:297mm !important;}'+
+      '#printArea.report-print-area{width:100% !important;min-width:0 !important;max-width:none !important;}'+
+      '#printArea.report-print-area > div{width:100% !important;max-width:none !important;}'+
+      '}'
+    );
   }
-  triggerPrint(() => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; });
+  triggerPrint(() => {
+    document.documentElement.classList.remove('bchok3-landscape-print');
+    pa.classList.remove('report-print-area');
+    pa.innerHTML = '';
+  });
 }
    
 async function clearAuditStatus(assetId) {
