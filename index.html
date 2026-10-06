@@ -4536,7 +4536,7 @@ body.modal-open{ overflow:hidden; overscroll-behavior:none; }
     touch-action:manipulation !important;
   }
 
-  /* โปรไฟล์ทุกชนิดห้ามแสดงบนมือถือ/iPad */
+  /* คอมพิวเตอร์คงพฤติกรรมเดิม ส่วน iPad จอสัมผัสจะใช้ topbar */
   .topbar .profile,
   .topbar #profileName,
   .topbar .profile-name,
@@ -4562,6 +4562,68 @@ body.modal-open{ overflow:hidden; overscroll-behavior:none; }
     padding:0 !important;
     overflow:hidden !important;
   }
+}
+
+/* iPad แนวนอนบางรุ่นมี viewport กว้างกว่า 899px
+   จึงใช้ touch capability แยกจาก desktop computer */
+@media (min-width:900px) and (hover:none) and (pointer:coarse){
+  .topbar{
+    flex-wrap:nowrap !important;
+    gap:8px !important;
+    padding-left:12px !important;
+    padding-right:12px !important;
+  }
+  .topbar .brand{
+    flex:1 1 auto !important;
+    min-width:0 !important;
+  }
+  .topbar .profile{
+    display:flex !important;
+    visibility:visible !important;
+    width:auto !important;
+    min-width:0 !important;
+    max-width:none !important;
+    height:auto !important;
+    margin-left:auto !important;
+    padding:0 !important;
+    overflow:visible !important;
+    flex:0 0 auto !important;
+    align-items:center !important;
+    justify-content:flex-end !important;
+    flex-wrap:nowrap !important;
+    gap:6px !important;
+  }
+  .topbar .desktop-tools{ display:none !important; }
+  .topbar .role-pill{
+    display:inline-flex !important;
+    visibility:visible !important;
+    width:auto !important;
+    height:auto !important;
+    flex:none !important;
+    font-size:10px !important;
+    padding:4px 8px !important;
+  }
+  .topbar .profile-name{
+    display:block !important;
+    visibility:visible !important;
+    width:auto !important;
+    height:auto !important;
+    margin:0 !important;
+    padding:0 !important;
+    overflow:hidden !important;
+    max-width:110px !important;
+    font-size:11px !important;
+    white-space:nowrap !important;
+    text-overflow:ellipsis !important;
+  }
+  .topbar #btnLogout{
+    display:inline-flex !important;
+    visibility:visible !important;
+    width:36px !important;
+    height:36px !important;
+    flex:none !important;
+  }
+  #navUserCard,.nav-user-card{ display:none !important; }
 }
 </style>
    
@@ -10388,6 +10450,8 @@ function drawAuditView() {
       <div class="audit-progress-track"><div class="audit-progress-fill" style="width:${pct}%;"></div></div>
      <div class="btn-row">
      <button class="btn btn-ok" id="btnBulkAudit">ตรวจนับหลายรายการพร้อมกัน</button>
+     <button class="btn btn-danger" id="btnClearAuditAll">ล้างผลตรวจทั้งหมด</button>
+     <button class="btn btn-ghost" id="btnClearAuditSelected">ล้างผลตรวจเฉพาะรายการ</button>
      <button class="btn btn-primary" id="btnPrintOfficialGeneral">พิมพ์รายงานครุภัณฑ์ทั่วไป (แบบราชการ)</button>
      ${state.assets.some(a => a['หมวดหมู่'] === 'สื่อสาร') ? `<button class="btn btn-ghost" id="btnPrintCommsReport">พิมพ์รายงานเครื่องมือสื่อสาร</button>` : ''}
      ${showVehicleBtn ? `<button class="btn btn-ghost" id="btnPrintVehicleReport">พิมพ์แบบ บชก.3 (ยานพาหนะ)</button>` : ''}
@@ -10427,6 +10491,8 @@ function drawAuditView() {
   });
   document.getElementById('btnPrintOfficialGeneral').onclick = printOfficialGeneralReport;
      document.getElementById('btnBulkAudit').onclick = openBulkAuditModal;
+     document.getElementById('btnClearAuditAll').onclick = clearAllAuditResults;
+     document.getElementById('btnClearAuditSelected').onclick = () => openBulkAuditModal('clear');
      const commsBtn = document.getElementById('btnPrintCommsReport');
      if (commsBtn) commsBtn.onclick = printCommsAuditReport;
      const vBtn = document.getElementById('btnPrintVehicleReport');
@@ -10454,34 +10520,73 @@ function auditRow(a) {
     </div>
   </div>`;
 }
-function openBulkAuditModal() {
+function openBulkAuditModal(action = 'set') {
+  const clearMode = action === 'clear';
   const selected = new Set();
-  let bCat = 'all', bQ = '', bPendingOnly = true;
+  let bCat = 'all', bQ = '', bPendingOnly = !clearMode;
   const root = document.createElement('div');
+  root.className = 'bulk-audit-modal-root';
+  root.style.position = 'relative';
+  root.style.zIndex = '90';
   document.body.appendChild(root);
 
   function filteredList() {
     let list = state.assets.filter(a => bCat === 'all' || a['หมวดหมู่'] === bCat);
     const q = bQ.toLowerCase();
     if (q) list = list.filter(a => String(a['ชื่อครุภัณฑ์']||'').toLowerCase().includes(q) || String(a['รหัสครุภัณฑ์']||'').toLowerCase().includes(q));
-    if (bPendingOnly) list = list.filter(a => !auditIsChecked(a));
+    if (clearMode) list = list.filter(a => auditIsChecked(a));
+    else if (bPendingOnly) list = list.filter(a => !auditIsChecked(a));
     return list;
   }
 
-  function draw() {
-    // จำตำแหน่งเลื่อนไว้ก่อนวาดใหม่ เพื่อไม่ให้หน้าเด้งกลับไปบนสุดทุกครั้งที่ติ๊ก
-    const prevSheet = root.querySelector('.sheet');
-    const prevScroll = prevSheet ? prevSheet.scrollTop : 0;
+  function closeModal() { root.remove(); }
 
+  /* ยืนยันภายใน modal นี้เอง เพื่อไม่ให้ confirmSheet ของ #modalRoot ไปอยู่ใต้ modal หลัก */
+  function confirmInsideBulk(message, opts = {}) {
+    return new Promise(resolve => {
+      const oldConfirm = root.querySelector('.bulk-confirm-overlay');
+      if (oldConfirm) oldConfirm.remove();
+
+      const overlay = document.createElement('div');
+      overlay.className = 'overlay bulk-confirm-overlay';
+      overlay.style.cssText = 'position:fixed !important; inset:0 !important; z-index:1000 !important; display:flex !important; align-items:center !important; justify-content:center !important; background:rgba(15,25,38,.58) !important; touch-action:none !important;';
+      const tone = opts.tone || 'warn';
+      const icon = tone === 'bad' ? ICONS.warn : ICONS.info;
+      overlay.innerHTML = `
+        <div class="sheet confirm-sheet" role="dialog" aria-modal="true" style="position:relative; z-index:1001 !important; max-width:520px; width:calc(100% - 28px); border-radius:24px; margin:14px; padding:24px 20px;">
+          <div class="confirm-icon">${icon}</div>
+          <div class="confirm-title">${escapeHtml(opts.title || 'ยืนยันรายการ')}</div>
+          <div class="confirm-message">${escapeHtml(message)}</div>
+          <div class="confirm-actions">
+            <button class="btn btn-ghost" id="bulkConfirmNo">ยกเลิก</button>
+            <button class="btn ${tone === 'bad' ? 'btn-danger' : 'btn-primary'}" id="bulkConfirmYes">${escapeHtml(opts.okText || 'ยืนยัน')}</button>
+          </div>
+        </div>`;
+      root.appendChild(overlay);
+
+      const finish = value => { overlay.remove(); resolve(value); };
+      overlay.querySelector('#bulkConfirmNo').onclick = () => finish(false);
+      overlay.querySelector('#bulkConfirmYes').onclick = () => finish(true);
+      overlay.addEventListener('click', e => { if (e.target === overlay) finish(false); });
+      setTimeout(() => overlay.querySelector('#bulkConfirmYes')?.focus(), 30);
+    });
+  }
+
+  function draw() {
+    const prevSheet = root.querySelector('.sheet:not(.confirm-sheet)');
+    const prevScroll = prevSheet ? prevSheet.scrollTop : 0;
     const list = filteredList();
     const allChecked = list.length > 0 && list.every(a => selected.has(a['รหัสครุภัณฑ์']));
     const catCounts = getCategories().map(c => ({ c, n: state.assets.filter(a => a['หมวดหมู่']===c).length })).filter(x => x.n);
+    const title = clearMode ? 'ล้างผลตรวจที่เลือก' : 'ตรวจนับหลายรายการพร้อมกัน';
+    const step3 = clearMode ? 'ล้างผลตรวจให้ ' + selected.size + ' รายการที่เลือก' : 'บันทึกผลตรวจให้ ' + selected.size + ' รายการที่เลือก';
+
     root.innerHTML = `
-      <div class="overlay" style="z-index:95;">
+      <div class="overlay" style="z-index:95 !important;">
         <div class="sheet" style="max-height:92vh;">
           <button class="sheet-close" id="baClose" type="button">${ICONS.close}</button>
           <div class="sheet-handle"></div>
-          <div class="sheet-title">ตรวจนับหลายรายการพร้อมกัน</div>
+          <div class="sheet-title">${title}</div>
 
           <div class="mf-section">
             <div class="mf-section-title"><span class="mf-step">1</span> ค้นหา / กรองรายการ</div>
@@ -10490,9 +10595,10 @@ function openBulkAuditModal() {
               <div class="chip ${bCat==='all'?'active':''}" data-bcat="all">ทุกหมวดหมู่</div>
               ${catCounts.map(x => `<div class="chip ${bCat===x.c?'active':''}" data-bcat="${escapeHtml(x.c)}">${escapeHtml(x.c)}</div>`).join('')}
             </div>
+            ${clearMode ? '' : `
             <div class="chip-row">
               <div class="chip ${bPendingOnly?'active':''}" id="baPendingChip">เฉพาะที่ยังไม่ตรวจ</div>
-            </div>
+            </div>`}
           </div>
 
           <div class="mf-section">
@@ -10511,16 +10617,18 @@ function openBulkAuditModal() {
                 <div class="li-body"><div class="li-title">${escapeHtml(a['ชื่อครุภัณฑ์'])}</div><div class="li-sub">${escapeHtml(a['รหัสครุภัณฑ์'])}</div></div>
                 <div class="status-badge ${statusClass(st)}">${st}</div>
               </label>`;
-            }).join('') : emptyState('ไม่พบรายการที่ตรงกับตัวกรอง')}
+            }).join('') : emptyState(clearMode ? 'ยังไม่มีรายการที่มีผลตรวจให้ล้าง' : 'ไม่พบรายการที่ตรงกับตัวกรอง')}
             </div>
           </div>
 
           <div style="position:sticky; bottom:0; z-index:5; background:var(--panel); border-top:1px solid var(--panel-line); padding:10px 0 4px;">
-            <div class="mf-section-title" style="margin-bottom:8px;"><span class="mf-step">3</span> บันทึกผลตรวจให้ ${selected.size} รายการที่เลือก</div>
+            <div class="mf-section-title" style="margin-bottom:8px;"><span class="mf-step">3</span> ${step3}</div>
             <div class="btn-row" style="margin-top:0;">
-              <button class="audit-btn ok" id="baOk" style="flex:1; padding:13px;">พบปกติ</button>
-              <button class="audit-btn warn" id="baWarn" style="flex:1; padding:13px;">ชำรุด</button>
-              <button class="audit-btn bad" id="baBad" style="flex:1; padding:13px;">สูญหาย</button>
+              ${clearMode
+                ? `<button class="btn btn-danger" id="baClear" style="flex:1; padding:13px;">ล้างผลตรวจที่เลือก</button>`
+                : `<button class="audit-btn ok" id="baOk" style="flex:1; padding:13px;">พบปกติ</button>
+                   <button class="audit-btn warn" id="baWarn" style="flex:1; padding:13px;">ชำรุด</button>
+                   <button class="audit-btn bad" id="baBad" style="flex:1; padding:13px;">สูญหาย</button>`}
             </div>
           </div>
         </div>
@@ -10529,31 +10637,64 @@ function openBulkAuditModal() {
     const newSheet = root.querySelector('.sheet');
     if (newSheet) newSheet.scrollTop = prevScroll;
 
-    document.getElementById('baClose').onclick = closeModal;
-    const searchEl = document.getElementById('baSearch');
-    searchEl.oninput = (e) => { bQ = e.target.value; const pos = e.target.selectionStart; draw(); const again = document.getElementById('baSearch'); if (again) { again.focus(); try { again.setSelectionRange(pos, pos); } catch(err){} } };
-    document.querySelectorAll('[data-bcat]').forEach(c => c.onclick = () => { bCat = c.dataset.bcat; draw(); });
-    document.getElementById('baPendingChip').onclick = () => { bPendingOnly = !bPendingOnly; draw(); };
-    document.getElementById('baSelectAll').onchange = (e) => {
+    root.querySelector('#baClose').onclick = closeModal;
+    const searchEl = root.querySelector('#baSearch');
+    searchEl.oninput = (e) => {
+      bQ = e.target.value;
+      const pos = e.target.selectionStart;
+      draw();
+      const again = root.querySelector('#baSearch');
+      if (again) { again.focus(); try { again.setSelectionRange(pos, pos); } catch(err){} }
+    };
+    root.querySelectorAll('[data-bcat]').forEach(c => c.onclick = () => { bCat = c.dataset.bcat; draw(); });
+    const pendingChip = root.querySelector('#baPendingChip');
+    if (pendingChip) pendingChip.onclick = () => { bPendingOnly = !bPendingOnly; draw(); };
+
+    root.querySelector('#baSelectAll').onchange = (e) => {
       if (e.target.checked) list.forEach(a => selected.add(a['รหัสครุภัณฑ์']));
       else list.forEach(a => selected.delete(a['รหัสครุภัณฑ์']));
       draw();
     };
-    document.querySelectorAll('.ba-chk').forEach(chk => chk.onchange = () => {
+    root.querySelectorAll('.ba-chk').forEach(chk => chk.onchange = () => {
       if (chk.checked) selected.add(chk.dataset.id); else selected.delete(chk.dataset.id);
       draw();
     });
-    document.getElementById('baOk').onclick = () => applyBulk('พบปกติ');
-    document.getElementById('baWarn').onclick = () => applyBulk('ชำรุด');
-    document.getElementById('baBad').onclick = () => applyBulk('สูญหาย');
+
+    if (clearMode) {
+      root.querySelector('#baClear').onclick = clearSelectedAuditResults;
+    } else {
+      root.querySelector('#baOk').onclick = () => applyBulk('พบปกติ');
+      root.querySelector('#baWarn').onclick = () => applyBulk('ชำรุด');
+      root.querySelector('#baBad').onclick = () => applyBulk('สูญหาย');
+    }
   }
 
-  function closeModal() { root.remove(); }
+  async function clearSelectedAuditResults() {
+    const ids = Array.from(selected);
+    if (!ids.length) { toast('กรุณาเลือกอย่างน้อย 1 รายการที่มีผลตรวจ'); return; }
+    if (!await confirmInsideBulk('ยืนยันล้างผลตรวจของ ' + ids.length + ' รายการที่เลือก?', {title:'ล้างผลตรวจ', okText:'ล้างผลตรวจ', tone:'bad'})) return;
+
+    setLoading(true, 'กำลังล้างผลตรวจ 0/' + ids.length + '...');
+    const loadingText = document.getElementById('loadingText');
+    let done = 0, failed = 0;
+    for (const id of ids) {
+      try { await clearAuditStatus(id); }
+      catch (err) { failed++; }
+      done++;
+      if (loadingText) loadingText.textContent = 'กำลังล้างผลตรวจ ' + done + '/' + ids.length + '...';
+    }
+    setLoading(false);
+    closeModal();
+    selected.clear();
+    drawAuditView();
+    toast('ล้างผลตรวจแล้ว ' + (ids.length - failed) + '/' + ids.length + ' รายการ' + (failed ? ' (ล้มเหลว ' + failed + ')' : ''));
+  }
 
   async function applyBulk(status) {
     const ids = Array.from(selected);
     if (!ids.length) { toast('กรุณาเลือกอย่างน้อย 1 รายการ'); return; }
-    if (!await confirmSheet('ยืนยันบันทึกผลตรวจ "' + status + '" ให้ทั้งหมด ' + ids.length + ' รายการ?', {title:'บันทึกผลตรวจหลายรายการ', okText:'บันทึกผลตรวจ'})) return;
+    if (!await confirmInsideBulk('ยืนยันบันทึกผลตรวจ "' + status + '" ให้ทั้งหมด ' + ids.length + ' รายการ?', {title:'บันทึกผลตรวจหลายรายการ', okText:'บันทึกผลตรวจ'})) return;
+
     setLoading(true, 'กำลังบันทึกผลตรวจ 0/' + ids.length + '...');
     const loadingText = document.getElementById('loadingText');
     let done = 0, failed = 0;
@@ -10577,6 +10718,7 @@ function openBulkAuditModal() {
 
   draw();
 }
+
   function printVehicleAuditReport() {
   const orgName = (state.settings && state.settings.orgName) || ORG_NAME;
   const phone = (state.settings && state.settings.orgPhone) || ORG_PHONE;
@@ -10684,6 +10826,55 @@ function openBulkAuditModal() {
   triggerPrint(() => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; });
 }
    
+async function clearAuditStatus(assetId) {
+  const asset = state.assets.find(a => a['รหัสครุภัณฑ์'] === assetId);
+  await apiPost('saveAuditRecord', {
+    assetId,
+    assetName: asset ? asset['ชื่อครุภัณฑ์'] : '',
+    year: state.auditYear,
+    status: 'ยังไม่ตรวจ',
+    foundStatus: '',
+    conditionScore: '',
+    lastUsedDate: '',
+    committeeDecision: '',
+    note: ''
+  });
+  const idx = state.auditRecords.findIndex(r => r['รหัสครุภัณฑ์'] === assetId);
+  if (idx !== -1) state.auditRecords.splice(idx, 1);
+}
+
+async function clearAllAuditResults() {
+  const ids = state.auditRecords
+    .filter(r => r['ผล'] && r['ผล'] !== 'ยังไม่ตรวจ')
+    .map(r => r['รหัสครุภัณฑ์']);
+
+  if (!ids.length) {
+    toast('ยังไม่มีผลตรวจให้ล้าง');
+    return;
+  }
+
+  if (!await confirmSheet('ยืนยันล้างผลตรวจทั้งหมด ' + ids.length + ' รายการของปี พ.ศ. ' + (state.auditYear + 543) + '?', {
+    title:'ล้างผลตรวจทั้งหมด',
+    okText:'ล้างผลตรวจทั้งหมด',
+    tone:'bad'
+  })) return;
+
+  setLoading(true, 'กำลังล้างผลตรวจ 0/' + ids.length + '...');
+  const loadingText = document.getElementById('loadingText');
+  let done = 0, failed = 0;
+
+  for (const id of ids) {
+    try { await clearAuditStatus(id); }
+    catch (err) { failed++; }
+    done++;
+    if (loadingText) loadingText.textContent = 'กำลังล้างผลตรวจ ' + done + '/' + ids.length + '...';
+  }
+
+  setLoading(false);
+  drawAuditView();
+  toast('ล้างผลตรวจแล้ว ' + (ids.length - failed) + '/' + ids.length + ' รายการ' + (failed ? ' (ล้มเหลว ' + failed + ')' : ''));
+}
+
 async function setAuditStatus(assetId, status) {
   const asset = state.assets.find(a => a['รหัสครุภัณฑ์'] === assetId);
   try {
