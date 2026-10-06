@@ -372,37 +372,179 @@ input[type="date"]::-webkit-date-and-time-value{ text-align:left; }
 .app-in{animation:appIn .4s ease-out;}
 
 /* =========================================================
-   PRINT — พิมพ์เฉพาะ #printArea (กระดาษ A4 ไม่มีขอบเบราว์เซอร์)
+   PRINT ENGINE v2
+   A4 FIXED PHYSICAL SIZE
+   Desktop / iPad / iPhone / Android ใช้ขนาดเอกสารเดียวกัน
    ========================================================= */
-#printArea{display:none;}
-@page{ size:A4; margin:0; }
+
+#printArea{
+  display:none;
+}
+
+/* ขนาดกระดาษจริง */
+@page{
+  size:A4 portrait;
+  margin:0;
+}
+
 @media print{
-  html,body{
-    background:#fff !important; height:auto !important; width:auto !important;
-    padding:0 !important; margin:0 !important; overflow:visible !important;
-    min-height:0 !important;
+
+  html{
+    width:210mm !important;
+    min-width:210mm !important;
+    max-width:210mm !important;
+    margin:0 !important;
+    padding:0 !important;
+    background:#fff !important;
+    overflow:visible !important;
+
+    /* ห้าม browser ปรับขนาดตัวอักษร */
+    -webkit-text-size-adjust:none !important;
+    text-size-adjust:none !important;
   }
-  /* ซ่อนทุกอย่างใต้ body ยกเว้น #printArea (และ style/script ที่ไม่แสดงผลอยู่แล้ว) */
-  body > *:not(#printArea):not(style):not(script){ display:none !important; }
+
+  body{
+    width:210mm !important;
+    min-width:210mm !important;
+    max-width:210mm !important;
+
+    margin:0 !important;
+    padding:0 !important;
+
+    background:#fff !important;
+    overflow:visible !important;
+
+    /* สำคัญมากสำหรับ iOS */
+    -webkit-text-size-adjust:none !important;
+    text-size-adjust:none !important;
+
+    /* ป้องกัน browser ทำ font boosting */
+    -webkit-font-smoothing:auto !important;
+  }
+
+  /* ซ่อน UI ทั้งระบบ */
+  body > *:not(#printArea):not(style):not(script){
+    display:none !important;
+  }
+
+  /* =========================================
+     กระดาษ A4 จริง
+     ========================================= */
 
   #printArea{
-    display:block !important; visibility:visible !important; opacity:1 !important;
-    position:static !important; width:210mm; margin:0; background:#fff; color:#000;
-    box-sizing:border-box; padding:22mm 20mm 20mm 25mm;
-    -webkit-print-color-adjust:exact; print-color-adjust:exact;
-  }
-  #printArea *{ visibility:visible !important; }  /* กันกฎอื่นซ่อนเนื้อหาข้างใน */
-  #printArea.qr-print-area{ padding:20mm; text-align:center; font-family:'Kanit',sans-serif; }
-  #printArea.report-print-area{ width:100%; padding:0; }
+    display:block !important;
 
-  /* แบบ บชก.3 — แนวนอน: ใช้พื้นที่พิมพ์ A4 แนวนอนเต็มความกว้าง */
-  #printArea.report-print-area.b3-landscape-print{
-    width:281mm !important;
-    min-width:281mm !important;
-    max-width:281mm !important;
-    padding:0 !important;
+    visibility:visible !important;
+    opacity:1 !important;
+
+    position:static !important;
+
+    width:210mm !important;
+    min-width:210mm !important;
+    max-width:210mm !important;
+
+    min-height:297mm !important;
+
     margin:0 !important;
+
+    padding:22mm 20mm 20mm 25mm !important;
+
     box-sizing:border-box !important;
+
+    background:#fff !important;
+    color:#000 !important;
+
+    /* สำคัญ:
+       ห้ามใช้ zoom / transform กับพื้นที่พิมพ์ */
+    zoom:1 !important;
+    transform:none !important;
+
+    /* ป้องกัน flex/grid ของหน้าหลักเข้ามามีผล */
+    display:block !important;
+
+    -webkit-print-color-adjust:exact !important;
+    print-color-adjust:exact !important;
+  }
+
+  #printArea *{
+    visibility:visible !important;
+  }
+
+  /* เอกสารราชการ */
+  #printArea .pf-doc{
+    width:100% !important;
+    max-width:none !important;
+
+    font-size:16pt !important;
+    line-height:18pt !important;
+
+    -webkit-text-size-adjust:none !important;
+    text-size-adjust:none !important;
+  }
+
+  /* QR */
+  #printArea.qr-print-area{
+    width:210mm !important;
+    min-width:210mm !important;
+    max-width:210mm !important;
+
+    min-height:297mm !important;
+
+    padding:20mm !important;
+
+    box-sizing:border-box !important;
+
+    text-align:center !important;
+
+    font-family:'Kanit',sans-serif !important;
+  }
+
+  /* รายงาน */
+  #printArea.report-print-area{
+    width:210mm !important;
+    min-width:210mm !important;
+    max-width:210mm !important;
+
+    min-height:297mm !important;
+
+    padding:0 !important;
+
+    box-sizing:border-box !important;
+  }
+
+  /* รูปในเอกสารห้ามถูกย่อด้วย max-width */
+  #printArea img{
+    max-width:none !important;
+  }
+
+  /* ตารางไม่ให้ browser บีบตาม viewport */
+  #printArea table{
+    max-width:none !important;
+  }
+
+  /* ป้องกัน element ที่มี transform จาก preview */
+  #printArea .paper-scale{
+    transform:none !important;
+    width:210mm !important;
+  }
+
+  #printArea .paper-sizer{
+    width:210mm !important;
+    height:auto !important;
+  }
+
+  /* ไม่ให้ scrollbar / touch layout มีผลตอนพิมพ์ */
+  #printArea,
+  #printArea *{
+    overflow:visible !important;
+    touch-action:auto !important;
+  }
+
+  /* ห้าม element ภายในเปลี่ยนขนาดตาม viewport */
+  #printArea input,
+  #printArea textarea,
+  #printArea select{
+    max-width:none !important;
   }
 }
 
@@ -7469,90 +7611,344 @@ function openQuickStatusForm(a) {
 }
    
 function triggerPrint(cleanupFn, options = {}) {
+
   const pa = document.getElementById('printArea');
+  if (!pa) {
+    toast('ไม่พบพื้นที่สำหรับพิมพ์');
+    return;
+  }
+
   const imgs = Array.from(pa.querySelectorAll('img'));
-  let cleaned = false, started = false;
+
+  let cleaned = false;
+  let started = false;
+
   const cleanupOnce = () => {
-    if (cleaned) return; cleaned = true;
-    const d = document.getElementById('dynPageStyle'); if (d) d.remove();
-    pa.style.removeProperty('zoom'); pa.style.removeProperty('width');
-    if (cleanupFn) cleanupFn();
+
+    if (cleaned) return;
+
+    cleaned = true;
+
+    const dyn = document.getElementById('dynPageStyle');
+    if (dyn) dyn.remove();
+
+    /* สำคัญ:
+       ล้างค่าที่อาจถูกใส่จากระบบเดิม */
+    pa.style.removeProperty('zoom');
+    pa.style.removeProperty('transform');
+    pa.style.removeProperty('width');
+    pa.style.removeProperty('min-width');
+    pa.style.removeProperty('max-width');
+
+    if (cleanupFn) {
+      cleanupFn();
+    }
   };
+
+  /* =========================================
+     เตรียมหน้ากระดาษ
+     ========================================= */
 
   const prepareLayout = () => {
-    // 1) ดึงทิศทาง/ขอบจาก @page ของรายงาน แล้วลบทิ้ง เหลือกฎเดียวที่เราสร้างเอง
-    let landscape = false, margin = '0';
+
+    /* ลบ style @page เก่าที่ฝังอยู่ในรายงาน
+       แต่เก็บข้อมูล orientation / margin เอาไว้ */
+
+    let landscape = false;
+    let margin = '0';
+
     pa.querySelectorAll('style').forEach(st => {
-      st.textContent = st.textContent.replace(/@page\s*\{([^}]*)\}/g, (m, body) => {
-        const s = /size\s*:\s*([^;]+)/.exec(body), g = /margin\s*:\s*([^;]+)/.exec(body);
-        if (s && /landscape/i.test(s[1])) landscape = true;
-        if (g) margin = g[1].trim();
-        return '';
-      });
+
+      st.textContent = st.textContent.replace(
+        /@page\s*\{([^}]*)\}/g,
+        (m, body) => {
+
+          const sizeMatch =
+            /size\s*:\s*([^;]+)/i.exec(body);
+
+          const marginMatch =
+            /margin\s*:\s*([^;]+)/i.exec(body);
+
+          if (
+            sizeMatch &&
+            /landscape/i.test(sizeMatch[1])
+          ) {
+            landscape = true;
+          }
+
+          if (marginMatch) {
+            margin = marginMatch[1].trim();
+          }
+
+          return '';
+        }
+      );
     });
-    const old = document.getElementById('dynPageStyle'); if (old) old.remove();
-    const dyn = document.createElement('style');
+
+    const old =
+      document.getElementById('dynPageStyle');
+
+    if (old) {
+      old.remove();
+    }
+
+    /* orientation เท่านั้นที่อนุญาตให้เปลี่ยน */
+    const dyn =
+      document.createElement('style');
+
     dyn.id = 'dynPageStyle';
-    dyn.textContent = '@page{size:A4 ' + (landscape ? 'landscape' : 'portrait') + ';margin:' + margin + ';}';
+
+    dyn.textContent =
+      '@page{' +
+      'size:A4 ' +
+      (landscape ? 'landscape' : 'portrait') +
+      ';margin:' +
+      margin +
+      ';}';
+
     document.head.appendChild(dyn);
 
-    // 2) วัดว่าเนื้อหากว้างเกินพื้นที่พิมพ์ไหม ถ้าเกินให้ย่อ (zoom) พอดีหน้า
-    const parts = margin.split(/\s+/);
-    const hMm = parseFloat(parts.length === 1 ? parts[0] : parts[1]) || 0;
-    const availPx = ((landscape ? 297 : 210) - hMm * 2) * 96 / 25.4;
-    const prevStyle = pa.getAttribute('style') || '';
-    pa.style.cssText += ';display:block;position:absolute;left:-10000px;top:0;visibility:hidden;width:' + availPx + 'px;';
-    const need = pa.scrollWidth;
-    pa.setAttribute('style', prevStyle);
-    pa.style.removeProperty('zoom'); pa.style.removeProperty('width');
+    /*
+      สำคัญมาก
 
-    // บชก.3 แนวนอน: width:100% เดิมอิง body แนวตั้ง ทำให้ตารางไม่เต็มหน้า
-    // ใช้ความกว้างพื้นที่พิมพ์จริงของ A4 landscape แทน
-    if (landscape && pa.classList.contains('b3-landscape-print')) {
-      pa.style.setProperty('width', availPx + 'px', 'important');
-      pa.style.setProperty('min-width', availPx + 'px', 'important');
-      pa.style.setProperty('max-width', availPx + 'px', 'important');
+      ห้าม:
+        - วัด scrollWidth
+        - คำนวณ zoom
+        - scale ตาม viewport
+        - width ตามมือถือ
+
+      เพราะเอกสารต้องเป็น A4 จริง
+    */
+
+    pa.style.removeProperty('zoom');
+    pa.style.removeProperty('transform');
+
+    /*
+      แก้ บชก.3 แนวนอน:
+      A4 แนวนอนกว้าง 297mm แต่พื้นที่ใช้งานต้องหัก margin ของ @page
+      เช่น @page margin: 8mm => 297 - 8 - 8 = 281mm
+      ส่วนเอกสารแนวตั้งยังคง 210mm ตามเดิม
+    */
+    let paperWidthMm = 210;
+
+    if (landscape) {
+      const m = margin.trim().split(/\s+/)
+        .filter(Boolean)
+        .map(v => parseFloat(v));
+
+      let horizontalMarginMm = 0;
+
+      if (m.length === 1) {
+        horizontalMarginMm = isFinite(m[0]) ? m[0] : 0;
+      } else if (m.length === 2 || m.length === 3) {
+        horizontalMarginMm = isFinite(m[1]) ? m[1] : 0;
+      } else if (m.length >= 4) {
+        horizontalMarginMm =
+          (isFinite(m[1]) ? m[1] : 0) +
+          (isFinite(m[3]) ? m[3] : 0);
+      }
+
+      paperWidthMm = 297 - (horizontalMarginMm * 2);
+
+      // กันค่าผิดปกติจาก @page
+      paperWidthMm = Math.max(240, Math.min(297, paperWidthMm));
     }
 
-    if (need > availPx + 2) {
-      pa.style.setProperty('width', need + 'px', 'important');
-      pa.style.zoom = String(availPx / need);
-    }
+    pa.style.setProperty(
+      'width',
+      paperWidthMm + 'mm',
+      'important'
+    );
+
+    pa.style.setProperty(
+      'min-width',
+      paperWidthMm + 'mm',
+      'important'
+    );
+
+    pa.style.setProperty(
+      'max-width',
+      paperWidthMm + 'mm',
+      'important'
+    );
   };
+
+  /* =========================================
+     สั่งพิมพ์
+     ========================================= */
 
   const doPrint = () => {
+
     prepareLayout();
-    const onAfter = () => { window.removeEventListener('afterprint', onAfter); cleanupOnce(); };
-    window.addEventListener('afterprint', onAfter);
-    window.print();
-    setTimeout(cleanupOnce, 4000);
+
+    /*
+      บังคับ reflow ก่อน window.print()
+      สำคัญกับ Safari / iPadOS
+    */
+    void pa.offsetHeight;
+
+    requestAnimationFrame(() => {
+
+      requestAnimationFrame(() => {
+
+        const onAfter = () => {
+
+          window.removeEventListener(
+            'afterprint',
+            onAfter
+          );
+
+          cleanupOnce();
+        };
+
+        window.addEventListener(
+          'afterprint',
+          onAfter
+        );
+
+        window.print();
+
+        /*
+          fallback สำหรับ browser ที่ไม่ยิง afterprint
+        */
+        setTimeout(
+          cleanupOnce,
+          5000
+        );
+
+      });
+
+    });
   };
-  const start = () => { if (started) return; started = true; doPrint(); };
-  // iOS Safari may lose the print user-gesture if window.print() is deferred
-  // until fonts/images promises resolve. Keep the same shared print pipeline,
-  // but allow the profile button to enter it synchronously.
-  if (options.immediate) { start(); return; }
+
+  const start = () => {
+
+    if (started) return;
+
+    started = true;
+
+    doPrint();
+  };
+
+  /*
+    iPhone / iPad:
+    ถ้าเป็น immediate ให้เข้า window.print()
+    จาก click flow โดยเร็วที่สุด
+  */
+
+  if (options.immediate) {
+
+    start();
+
+    return;
+  }
+
+  /* =========================================
+     รอรูป
+     ========================================= */
+
   let remaining = imgs.length;
+
   imgs.forEach(img => {
-    if (img.complete) { remaining--; return; }
-    const done = () => { remaining--; if (remaining <= 0) start(); };
-    img.addEventListener('load', done);
-    img.addEventListener('error', done);
+
+    if (img.complete) {
+
+      remaining--;
+
+      return;
+    }
+
+    const done = () => {
+
+      remaining--;
+
+      if (remaining <= 0) {
+
+        start();
+      }
+    };
+
+    img.addEventListener(
+      'load',
+      done,
+      { once:true }
+    );
+
+    img.addEventListener(
+      'error',
+      done,
+      { once:true }
+    );
+
   });
-  // รอให้ฟอนต์ที่ใช้ในเอกสารพิมพ์ถูกโหลดจริงก่อนเรียก window.print()
-  // โดยเฉพาะ Safari บน iPhone/iPad ที่ document.fonts.ready อย่างเดียว
-  // อาจเสร็จก่อน @font-face ของ TH Sarabun New ถูกใช้งานจริง
-  const fontsReady = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
-  const paperFontsReady = (document.fonts && document.fonts.load)
-    ? Promise.all([
-        fontsReady,
-        document.fonts.load("400 15pt 'TH Sarabun New'", 'ภาษาไทย'),
-        document.fonts.load("700 18pt 'TH Sarabun New'", 'รายงานสรุปพัสดุในความครอบครอง'),
-        document.fonts.load("400 15pt 'Sarabun'", 'ภาษาไทย'),
-        document.fonts.load("400 15pt 'Kanit'", 'ภาษาไทย')
-      ])
-    : fontsReady;
-  paperFontsReady.then(() => { if (remaining === 0) setTimeout(start, 60); else setTimeout(start, 2500); });
+
+  /* =========================================
+     รอฟอนต์
+     ========================================= */
+
+  const fontsReady =
+    (
+      document.fonts &&
+      document.fonts.ready
+    )
+      ? document.fonts.ready
+      : Promise.resolve();
+
+  const paperFontsReady =
+    (
+      document.fonts &&
+      document.fonts.load
+    )
+      ? Promise.all([
+
+          fontsReady,
+
+          document.fonts.load(
+            "400 15pt 'TH Sarabun New'",
+            'ภาษาไทย'
+          ),
+
+          document.fonts.load(
+            "700 18pt 'TH Sarabun New'",
+            'รายงานสรุปพัสดุในความครอบครอง'
+          ),
+
+          document.fonts.load(
+            "400 15pt 'Sarabun'",
+            'ภาษาไทย'
+          ),
+
+          document.fonts.load(
+            "400 15pt 'Kanit'",
+            'ภาษาไทย'
+          )
+
+        ])
+      : fontsReady;
+
+  paperFontsReady.then(() => {
+
+    if (remaining <= 0) {
+
+      setTimeout(
+        start,
+        60
+      );
+
+    } else {
+
+      /*
+        เผื่อ Safari โหลด font/image ช้า
+      */
+      setTimeout(
+        start,
+        2500
+      );
+
+    }
+
+  });
+
 }
    
    async function printQrBatch(list) {
@@ -11167,13 +11563,9 @@ function openBulkAuditModal(action = 'set') {
         </div>
       </div>`;
   } else {
-    pa.classList.add('b3-landscape-print');
     pa.innerHTML = html;
   }
-  triggerPrint(() => {
-    pa.classList.remove('report-print-area', 'b3-landscape-print');
-    pa.innerHTML = '';
-  });
+  triggerPrint(() => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; });
 }
    
 async function clearAuditStatus(assetId) {
