@@ -5042,6 +5042,43 @@ html, body{ overflow-x:clip; height:auto; min-height:100%; }
 }
 </style>
 
+
+<style id="final-refresh-white-fix">
+/* ปุ่มรีเฟรช: หลังโหลดเสร็จต้องกลับเป็นสีขาวเดิม
+   และไม่ให้สถานะ focus/active ของ iOS/iPad ค้างเป็นสีน้ำตาล */
+.topbar .refresh-btn,
+.topbar .refresh-btn:hover,
+.topbar .refresh-btn:focus,
+.topbar .refresh-btn:focus-visible,
+.topbar .refresh-btn:active,
+.topbar .refresh-btn.loading{
+  background:#fff !important;
+  background-color:#fff !important;
+  color:var(--ink) !important;
+  border-color:var(--panel-line) !important;
+  box-shadow:none !important;
+  -webkit-appearance:none !important;
+  appearance:none !important;
+}
+
+.topbar .refresh-btn:active{
+  transform:none !important;
+}
+
+.topbar .refresh-btn.loading{
+  opacity:.72 !important;
+}
+
+.topbar .refresh-btn.loading svg{
+  animation:topbarRefreshSpin .75s linear infinite !important;
+}
+
+.topbar .refresh-btn:not(.loading){
+  opacity:1 !important;
+  filter:none !important;
+}
+</style>
+
 </head>
 <body>
 
@@ -5937,6 +5974,12 @@ async function refreshData() {
       btn.removeAttribute('aria-busy');
       btn.style.removeProperty('transform');
       btn.style.removeProperty('opacity');
+      btn.style.removeProperty('background');
+      btn.style.removeProperty('background-color');
+      btn.style.removeProperty('color');
+      btn.style.removeProperty('border-color');
+      btn.style.removeProperty('box-shadow');
+      btn.style.removeProperty('filter');
       try { btn.blur(); } catch (_) {}
     }
   }
