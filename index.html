@@ -57,32 +57,6 @@ html{ -webkit-text-size-adjust:100%; text-size-adjust:100%; }
   --gold:#d9704a; --gold-deep:#a8482a; --gold-wash:rgba(217,112,74,.14); --gold-line:rgba(217,112,74,.4);
   --side-1:#3a1f22; --side-2:#241214;
 }
-:root[data-theme="night"]{
-  --dawn-1:#16283f; --dawn-2:#14233a; --dawn-3:#0f1c2d; --dawn-4:#0d1a2a; --bg-0:#09121d; --bg-1:#0c1727;
-  --panel:#122236; --panel-soft:#172b42; --panel-line:#24405c; --panel-hi:#1b3350;
-  --ink:#e6eef5; --ink-dim:#a3b4c2; --ink-faint:#70859a;
-  --navy:#3d7bd6; --navy-deep:#1e4f9a; --navy-wash:rgba(61,123,214,.16); --navy-line:rgba(61,123,214,.45);
-  --gold:#d6a24a; --gold-deep:#e0b565; --gold-wash:rgba(214,162,74,.16); --gold-line:rgba(214,162,74,.45);
-  --off:#93a3b1; --side-1:#0d1c30; --side-2:#07111e;
-}
-:root[data-theme="night"] .topbar{background:linear-gradient(180deg,rgba(12,23,39,.94),rgba(12,23,39,.72));}
-:root[data-theme="night"] .chip,
-:root[data-theme="night"] .btn-ghost,
-:root[data-theme="night"] .icon-btn,
-:root[data-theme="night"] .refresh-btn,
-:root[data-theme="night"] .pagination button,
-:root[data-theme="night"] .sheet-close,
-:root[data-theme="night"] .zbtn,
-:root[data-theme="night"] .mf-item,
-:root[data-theme="night"] .mf-tabs button.active,
-:root[data-theme="night"] .sheet,
-:root[data-theme="night"] .loading-card{background:var(--panel); color:var(--ink);}
-:root[data-theme="night"] .input,
-:root[data-theme="night"] select.input{background:var(--panel-soft); color:var(--ink);}
-:root[data-theme="night"] .input:focus{background:var(--panel);}
-:root[data-theme="night"] .section-title{color:var(--ink);}
-:root[data-theme="night"] .loading-overlay{background:rgba(9,18,29,.6);}
-
 
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; min-width:0;}
 html,body{margin:0;padding:0;height:100%;}
@@ -3723,148 +3697,6 @@ html{scroll-behavior:smooth;}
   .command-hint{ display:none !important; }
 }
 
-/* ===== แก้เลื่อนไม่ได้บน iPad (v2) ===== */
-
-/* 1) ให้ html/body เลิกเป็นตัวเลื่อนแยก ใช้ clip แทน hidden */
-html, body{
-  overflow-x:clip;
-  height:auto;
-  min-height:100%;
-}
-
-/* 3) หน้าต่างทั้งหมด */
-.overlay, .command-overlay{
-  height:100vh; height:100dvh;
-  overscroll-behavior:contain;
-  touch-action:none;               /* พื้นหลังมืด ไม่ต้องเลื่อน */
-}
-.sheet{
-  max-height:92vh !important;
-  max-height:92dvh !important;
-  overflow-y:auto !important;
-  -webkit-overflow-scrolling:touch;
-  overscroll-behavior:contain;
-  touch-action:pan-y;
-}
-
-/* 4) ค้นหาด่วน: ให้รายการผลลัพธ์เป็นตัวเลื่อน */
-.command-sheet{ touch-action:auto; }
-.command-results{
-  overflow-y:auto !important;
-  -webkit-overflow-scrolling:touch;
-  overscroll-behavior:contain;
-  touch-action:pan-y;
-}
-
-/* ===== เลือกผู้ยืม: ลดภาระตอนเลื่อน (iPad) ===== */
-.op-sheet .list-item,
-.op-sheet .glass{
-  backdrop-filter:none !important;
-  -webkit-backdrop-filter:none !important;
-  box-shadow:none !important;
-  transition:none !important;
-  animation:none !important;
-  transform:none !important;
-}
-.op-sheet .list-item:hover{ transform:none !important; }
-.op-sheet .list-item{
-  content-visibility:auto;               /* ไม่วาดแถวที่อยู่นอกจอ */
-  contain-intrinsic-size:auto 66px;
-}
-.op-sheet .li-avatar{
-  width:42px; height:42px;
-  background:var(--panel-soft);
-}
-.op-sheet #opList{
-  -webkit-overflow-scrolling:touch;
-  transform:translateZ(0);               /* ยกขึ้น GPU layer */
-}   
-
-   /* ===== ลายเซ็น ===== */
-.sig-canvas{display:block;width:100%;height:210px;border:1.5px dashed var(--navy-line);border-radius:16px;background:#fff;touch-action:none;cursor:crosshair;}
-.sig-saved{border:1px solid var(--panel-line);border-radius:16px;background:#fff;padding:16px;text-align:center;}
-.sig-saved img{max-width:100%;max-height:180px;}
-.photo-upload-row .preview-box.sig-box{width:120px;border-radius:12px;background:#fff;}
-.photo-upload-row .preview-box.sig-box img{object-fit:contain;}
-
-/* ===== ลายเซ็นเอกสารใบเบิก ===== */
-
-.pf-sign{
-  width:10cm;
-  margin:16pt 0 0 4.1cm;
-  text-align:center;
-}
-
-/* แถว ยศ + ลายเซ็น
-   ยศอยู่ฝั่งซ้ายของกลุ่มลายเซ็น โดย "ตัวอักษรสุดท้ายของยศ"
-   จัดให้ตรงกับจุดเริ่มต้นของวงเล็บเปิดชื่อ ( ของบรรทัดถัดไป */
-.pf-sign-rank{
-  display:grid;
-  grid-template-columns: 1fr 1fr;
-  align-items:center;
-  min-height:14mm;
-  padding:0 !important;
-}
-
-/* ยศ: ใช้คอลัมน์ซ้ายเป็นพื้นที่เดิม เพื่อไม่ให้กระทบตำแหน่งลายเซ็น
-   จากนั้น JavaScript จะขยับเฉพาะตัวอักษรยศให้ "ตัวสุดท้าย" ตรงกับ ( ของชื่อ */
-.pf-sign-rank .pf-rank{
-  grid-column:1;
-  justify-self:end;
-  text-align:right;
-  white-space:nowrap;
-  margin:0;
-  transform:translateX(0);
-}
-
-/* ตำแหน่ง/ชื่อ/วันที่ ห้ามตัดขึ้นบรรทัดใหม่ */
-.pf-sign > div:not(.pf-sign-rank){
-  white-space:nowrap !important;
-}
-
-/* ลายเซ็นอยู่ฝั่งขวา */
-.pf-doc .pf-sigimg{
-  position:static;
-  display:block;
-  justify-self:center;
-  height:12mm;
-  width:auto;
-  max-width:4.4cm;
-  object-fit:contain;
-  transform:none;
-  pointer-events:none;
-}
-
-/* ชื่อ / ตำแหน่ง / วันที่
-   ให้อยู่ใต้ "ลายเซ็น" ฝั่งขวา */
-.pf-sign > div:not(.pf-sign-rank){
-  width:50%;
-  margin-left:50%;
-  text-align:center;
-  box-sizing:border-box;
-}
-
-.pf-sign > div{
-  line-height:19pt;
-  min-height:19pt;
-}
-
-/* ตำแหน่งในบล็อกลายเซ็นทุกเอกสารต้องอยู่บรรทัดเดียว ห้ามตัดขึ้นบรรทัดใหม่ */
-.pf-sign [id*="position"]{
-  white-space:nowrap !important;
-  overflow:visible;
-}   
-
-   @media print{
-  html, body, body.modal-open{
-    position:static !important;
-    inset:auto !important;
-    width:auto !important;
-    height:auto !important;
-    overflow:visible !important;
-    transform:none !important;
-  }
-}
 
 /* =========================================================
    ธีม LIQUID GLASS (สไตล์ iOS) — วางท้ายสุดของ <style>
@@ -4097,12 +3929,6 @@ body.modal-open{ overflow:hidden; overscroll-behavior:none; }
   html.touch-device .memo-doc-sheet{
     -webkit-backdrop-filter:none !important;
     backdrop-filter:none !important;
-  }
-
-  /* Liquid Glass บนจอสัมผัสยังโปร่งใส */
-  :root[data-theme="liquid"] html.touch-device .memo-form-sheet,
-  :root[data-theme="liquid"] html.touch-device .memo-doc-sheet{
-    background:rgba(255,255,255,.72) !important;
   }
 
   /* ค้นหาด่วน: scroller เดียว */
@@ -4389,131 +4215,6 @@ body.modal-open{ overflow:hidden; overscroll-behavior:none; }
 }
 </style>
 
-
-<style id="final-touch-modal-nav-v12">
-/* =========================================================
-   FINAL V12 — TOUCH MODAL / MOBILE NAV
-   ทุกธีมใช้พฤติกรรมการเลื่อนแบบเดียวกันกับ Liquid Glass
-   ไม่มี nested scroller ที่ไม่จำเป็น
-   ========================================================= */
-@media (max-width:1024px), (hover:none) and (pointer:coarse){
-  html, body{
-    overflow-x:clip !important;
-  }
-
-  body.modal-open{
-    overflow:hidden !important;
-    overscroll-behavior:none !important;
-  }
-
-  /* พื้นหลัง modal ไม่เลื่อน — sheet เป็นตัวเลื่อนเพียงตัวเดียว */
-  #modalRoot > .overlay{
-    position:fixed !important;
-    inset:0 !important;
-    width:100% !important;
-    height:100dvh !important;
-    overflow:hidden !important;
-    touch-action:none !important;
-    overscroll-behavior:none !important;
-  }
-
-  #modalRoot > .overlay > .sheet{
-    box-sizing:border-box !important;
-    max-height:92dvh !important;
-    height:auto !important;
-    overflow-x:hidden !important;
-    overflow-y:auto !important;
-    -webkit-overflow-scrolling:touch !important;
-    overscroll-behavior-y:contain !important;
-    overscroll-behavior-x:none !important;
-    touch-action:pan-y !important;
-    scroll-behavior:auto !important;
-  }
-
-  /* ฟอร์มบันทึกข้อความ: ไม่สร้างตัวเลื่อนซ้อน */
-  #modalRoot > .overlay > .sheet.memo-form-sheet{
-    display:block !important;
-    max-height:92dvh !important;
-    overflow-y:auto !important;
-    -webkit-overflow-scrolling:touch !important;
-  }
-  .memo-form-sheet .mf-grid,
-  .memo-form-sheet .mf-fields,
-  .memo-form-sheet .mf-preview{
-    overflow:visible !important;
-    min-height:0 !important;
-  }
-  .memo-form-sheet .mf-grid{
-    display:block !important;
-  }
-  .memo-form-sheet .mf-fields{
-    display:block !important;
-    padding-right:0 !important;
-  }
-  .memo-form-sheet .mf-preview{
-    position:static !important;
-    display:block !important;
-    contain:none !important;
-  }
-  .memo-form-sheet .mf-grid[data-view="form"] .mf-preview{display:none !important;}
-  .memo-form-sheet .mf-grid[data-view="preview"] .mf-fields{display:none !important;}
-
-  /* กระดาษเป็นเนื้อหา ไม่ใช่ scroll container */
-  #modalRoot .paper-desk,
-  #modalRoot .memo-form-sheet .paper-desk{
-    overflow:visible !important;
-    max-height:none !important;
-    -webkit-overflow-scrolling:auto !important;
-    overscroll-behavior:initial !important;
-    touch-action:auto !important;
-  }
-
-  /* modal เอกสาร */
-  #modalRoot > .overlay > .sheet.memo-doc-sheet{
-    max-height:92dvh !important;
-    overflow-y:auto !important;
-    overflow-x:hidden !important;
-    -webkit-overflow-scrolling:touch !important;
-    overscroll-behavior:contain !important;
-    touch-action:pan-y !important;
-  }
-
-  /* modal เลือกรายการ / ทั่วไป ใช้ sheet เดียว */
-  #modalRoot > .overlay > .sheet.op-sheet,
-  #modalRoot > .overlay > .sheet.glass,
-  #modalRoot > .overlay > .sheet.nav-more-sheet,
-  #modalRoot > .overlay > .sheet.confirm-sheet{
-    overflow-y:auto !important;
-    overflow-x:hidden !important;
-    -webkit-overflow-scrolling:touch !important;
-    overscroll-behavior:contain !important;
-    touch-action:pan-y !important;
-  }
-
-  /* ค้นหาด่วน: results เท่านั้นที่เลื่อน */
-  #modalRoot > .command-overlay{
-    position:fixed !important;
-    inset:0 !important;
-    overflow:hidden !important;
-    touch-action:none !important;
-  }
-  #modalRoot > .command-overlay > .command-sheet{
-    overflow:hidden !important;
-    max-height:92dvh !important;
-  }
-  #modalRoot > .command-overlay .command-results{
-    overflow-x:hidden !important;
-    overflow-y:auto !important;
-    -webkit-overflow-scrolling:touch !important;
-    overscroll-behavior:contain !important;
-    touch-action:pan-y !important;
-  }
-
-  /* ลดเฉพาะเอฟเฟกต์บนรายการ ไม่แตะหน้าตาธีม */
-  .list-item:hover,.asset-card:hover,.mc-card:hover{
-    transform:none !important;
-  }
-
   /* =======================================================
      MOBILE / IPAD BOTTOM NAV — ห้ามตัวแถบเองกลายเป็น scroller
      ======================================================= */
@@ -4563,6 +4264,146 @@ body.modal-open{ overflow:hidden; overscroll-behavior:none; }
     overflow:hidden !important;
   }
 }
+<style id="unified-touch-scroll">
+/* =========================================================
+   UNIFIED SCROLL — ทุกธีมใช้ชุดเดียวกัน (แทน 3 บล็อกเดิม)
+   ========================================================= */
+
+/* ---------- A. ใช้ทุกขนาดจอ ---------- */
+html, body{ overflow-x:clip; height:auto; min-height:100%; }
+.overlay, .command-overlay{
+  height:100vh; height:100dvh;
+  overscroll-behavior:contain;
+  touch-action:none;                 /* พื้นหลังมืดไม่ต้องเลื่อน */
+}
+.sheet{
+  max-height:92vh !important; max-height:92dvh !important;
+  overflow-y:auto !important;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+  touch-action:pan-y;
+}
+.command-sheet{ touch-action:auto; }
+.command-results{
+  overflow-y:auto !important;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+  touch-action:pan-y;
+}
+
+/* ---------- B. จอสัมผัส (มือถือ / iPad) ---------- */
+@media (max-width:1024px), (hover:none) and (pointer:coarse){
+
+  body.modal-open{ overflow:hidden !important; overscroll-behavior:none !important; }
+
+  /* B1. พื้นหลัง: เลิก attachment:fixed (ตัวทำ iOS กระตุกอันดับต้น ๆ)
+         ใช้ชั้น fixed แยกที่ยก GPU layer แทน — หน้าตาเหมือนเดิมทุกธีม */
+  body{ background-attachment:scroll !important; }
+  body::before{
+    content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
+    background:inherit; background-attachment:scroll;
+    transform:translateZ(0);
+  }
+
+  /* B2. overlay: ไม่เบลอทั้งจอ ไม่เป็นตัวเลื่อน */
+  #modalRoot > .overlay,
+  #modalRoot > .command-overlay{
+    position:fixed !important; inset:0 !important;
+    height:100dvh !important;
+    overflow:hidden !important;
+    touch-action:none !important;
+    overscroll-behavior:none !important;
+    -webkit-backdrop-filter:none !important;
+    backdrop-filter:none !important;
+  }
+
+  /* B3. sheet = ตัวเลื่อนเดียว + ยกขึ้น GPU layer ของตัวเอง */
+  #modalRoot > .overlay > .sheet{
+    box-sizing:border-box !important;
+    height:auto !important;
+    max-height:92dvh !important;
+    overflow-x:hidden !important;
+    overflow-y:auto !important;
+    -webkit-overflow-scrolling:touch !important;
+    overscroll-behavior-y:contain !important;
+    overscroll-behavior-x:none !important;
+    touch-action:pan-y !important;
+    transform:translateZ(0);
+  }
+
+  /* B4. ฟอร์มบันทึกข้อความ: ไม่มีตัวเลื่อนซ้อน + คงแท็บ "กรอกข้อมูล/ตัวอย่าง"
+         (บล็อก v12 เดิมไม่มีกฎ mf-tabs ทำให้ iPad แนวนอน ≥900px สลับไปดูตัวอย่างไม่ได้) */
+  #modalRoot > .overlay > .sheet.memo-form-sheet{ display:block !important; }
+  .memo-form-sheet .mf-tabs{ display:flex !important; position:sticky; top:0; z-index:5; }
+  .memo-form-sheet .mf-grid{ display:block !important; overflow:visible !important; min-height:0 !important; }
+  .memo-form-sheet .mf-fields{ display:block !important; overflow:visible !important; min-height:0 !important; padding-right:0 !important; }
+  .memo-form-sheet .mf-preview{ display:block !important; position:static !important; overflow:visible !important; min-height:0 !important; contain:none !important; }
+  .memo-form-sheet .mf-grid[data-view="form"] .mf-preview{ display:none !important; }
+  .memo-form-sheet .mf-grid[data-view="preview"] .mf-fields{ display:none !important; }
+
+  /* กระดาษ A4 เป็นเนื้อหา ไม่ใช่กล่องเลื่อน */
+  #modalRoot .paper-desk{
+    overflow:visible !important; max-height:none !important;
+    -webkit-overflow-scrolling:auto !important; overscroll-behavior:initial !important;
+    touch-action:auto !important; box-shadow:none !important;
+  }
+
+  /* B5. ค้นหาด่วน: เฉพาะรายการผลลัพธ์ที่เลื่อน */
+  #modalRoot > .command-overlay > .command-sheet{ overflow:hidden !important; max-height:92dvh !important; }
+  #modalRoot > .command-overlay .command-results{
+    overflow-x:hidden !important; overflow-y:auto !important;
+    -webkit-overflow-scrolling:touch !important;
+    overscroll-behavior:contain !important; touch-action:pan-y !important;
+  }
+
+  /* B6. ของข้างใน sheet ทุกชนิด (เดิมมีเฉพาะ .op-sheet) */
+  #modalRoot .sheet .list-item,
+  #modalRoot .sheet .glass{
+    box-shadow:none !important;
+    transition:none !important;
+    animation:none !important;
+    transform:none !important;
+    -webkit-backdrop-filter:none !important;
+    backdrop-filter:none !important;
+  }
+  #modalRoot .sheet .list-item{
+    content-visibility:auto;            /* ไม่วาดแถวที่อยู่นอกจอ */
+    contain-intrinsic-size:auto 66px;
+  }
+
+  /* B7. หน้าหลัก: ลดค่าวาดต่อเฟรม (ธีมที่กำหนดเงาเองยังชนะ เช่น brutal/terminal/liquid) */
+  .glass, .stat-card, .chart-card, .list-item, .asset-card, .memo-card, .rp-card, .rp-kpi, .mc-card{
+    box-shadow:0 1px 3px rgba(0,0,0,.07);
+    transition:none !important;
+  }
+  .list-item:hover, .asset-card:hover, .stat-card:hover, .chart-card:hover, .mc-card:hover{ transform:none !important; }
+  .list-item{ content-visibility:auto; contain-intrinsic-size:auto 72px; }
+  .asset-card, .memo-card{ content-visibility:auto; contain-intrinsic-size:auto 150px; }
+  .hero-card::before{ animation:none !important; }
+
+  /* B8. กัน iPad ซูมเองตอนโฟกัสช่องกรอก */
+  html.touch-device .input,
+  html.touch-device select.input,
+  html.touch-device .command-search{ font-size:16px !important; }
+
+  /* B9. แถบเมนูล่าง: ตัวแถบห้ามเป็นตัวเลื่อน (คงจาก v12) */
+  .tabbar{
+    position:fixed !important; left:12px !important; right:12px !important; top:auto !important;
+    bottom:calc(10px + env(safe-area-inset-bottom)) !important;
+    height:60px !important; max-height:60px !important;
+    overflow:visible !important; touch-action:none !important;
+  }
+  .tabbar .tab, .tabbar .tab-more{ touch-action:manipulation !important; }
+
+  /* B10. โปรไฟล์ไม่แสดงบนมือถือ/iPad (คงจาก v12) */
+  .topbar .profile, .topbar #profileName, .topbar .profile-name,
+  #navUserCard, .nav-user-card{
+    display:none !important; visibility:hidden !important;
+    width:0 !important; height:0 !important; margin:0 !important; padding:0 !important; overflow:hidden !important;
+  }
+}
+</style>
+   
 </style>
 </head>
 <body>
