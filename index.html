@@ -4983,6 +4983,65 @@ html, body{ overflow-x:clip; height:auto; min-height:100%; }
 }
 </style>
 
+<style id="final-topbar-profile-name-refresh-fix">
+/* FINAL TOPBAR DETAIL FIX — เฉพาะมือถือ + iPad
+   ไม่เปลี่ยน desktop และไม่แตะ logic หน้าอื่น */
+@media (max-width:1024px), (hover:none) and (pointer:coarse){
+  .topbar .profile-name,
+  .topbar #profileName{
+    display:inline-block !important;
+    visibility:visible !important;
+    opacity:1 !important;
+    color:var(--ink-dim) !important;
+    width:auto !important;
+    min-width:48px !important;
+    max-width:110px !important;
+    height:auto !important;
+    min-height:1em !important;
+    margin:0 !important;
+    padding:0 !important;
+    flex:0 0 auto !important;
+    overflow:hidden !important;
+    white-space:nowrap !important;
+    text-overflow:ellipsis !important;
+    line-height:1.25 !important;
+  }
+
+  .topbar .profile{
+    min-width:0 !important;
+    flex:0 0 auto !important;
+    overflow:visible !important;
+  }
+
+  .topbar .refresh-btn{
+    position:relative !important;
+    transform:none !important;
+  }
+
+  .topbar .refresh-btn.loading{
+    pointer-events:none !important;
+    opacity:.72 !important;
+  }
+
+  .topbar .refresh-btn.loading svg{
+    animation:topbarRefreshSpin .75s linear infinite !important;
+  }
+}
+
+@keyframes topbarRefreshSpin{
+  to{ transform:rotate(360deg); }
+}
+
+@media (max-width:380px){
+  .topbar .profile-name,
+  .topbar #profileName{
+    min-width:42px !important;
+    max-width:78px !important;
+    font-size:10px !important;
+  }
+}
+</style>
+
 </head>
 <body>
 
@@ -5859,7 +5918,11 @@ async function reloadThen(renderFn) {
 async function refreshData() {
   const btn = document.getElementById('refreshBtn');
   if (btn?.disabled) return;
-  if (btn) { btn.disabled = true; btn.classList.add('loading'); }
+  if (btn) {
+    btn.disabled = true;
+    btn.classList.add('loading');
+    btn.setAttribute('aria-busy','true');
+  }
   try {
     await loadAll(true);
     renderTab(state.tab || 'dashboard');
@@ -5868,7 +5931,14 @@ async function refreshData() {
     setConnection(false);
     toast(err.message || 'รีเฟรชข้อมูลไม่สำเร็จ');
   } finally {
-    if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
+    if (btn) {
+      btn.disabled = false;
+      btn.classList.remove('loading');
+      btn.removeAttribute('aria-busy');
+      btn.style.removeProperty('transform');
+      btn.style.removeProperty('opacity');
+      try { btn.blur(); } catch (_) {}
+    }
   }
 }
 
