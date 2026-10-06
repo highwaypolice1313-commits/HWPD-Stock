@@ -4833,6 +4833,156 @@ html, body{ overflow-x:clip; height:auto; min-height:100%; }
 }
 </style>
    
+
+<style id="final-topbar-mobile-ipad-fix">
+/* =========================================================
+   FINAL TOPBAR FIX — MOBILE + iPAD ONLY
+   บังคับให้แถบผู้ใช้ด้านบนกลับมาแสดงจริงหลัง CSS ชุดก่อนหน้า
+   ไม่แตะ logic / event / desktop computer
+   ========================================================= */
+@media (max-width:1024px), (hover:none) and (pointer:coarse){
+  .topbar{
+    position:sticky !important;
+    top:0 !important;
+    z-index:200 !important;
+    display:flex !important;
+    visibility:visible !important;
+    opacity:1 !important;
+    width:100% !important;
+    min-width:0 !important;
+    box-sizing:border-box !important;
+    flex-wrap:nowrap !important;
+    align-items:center !important;
+    justify-content:space-between !important;
+    overflow:visible !important;
+  }
+
+  .topbar .brand{
+    display:flex !important;
+    visibility:visible !important;
+    opacity:1 !important;
+    flex:1 1 auto !important;
+    min-width:0 !important;
+    overflow:hidden !important;
+  }
+
+  .topbar .profile{
+    display:flex !important;
+    visibility:visible !important;
+    opacity:1 !important;
+    width:auto !important;
+    min-width:0 !important;
+    max-width:none !important;
+    height:auto !important;
+    margin-left:auto !important;
+    padding:0 !important;
+    overflow:visible !important;
+    flex:0 0 auto !important;
+    flex-wrap:nowrap !important;
+    align-items:center !important;
+    justify-content:flex-end !important;
+    gap:6px !important;
+  }
+
+  /* คืนชุดเครื่องมือด้านขวาบนด้วย แต่ย่อเฉพาะข้อความเพื่อให้พอดีมือถือ */
+  .topbar .desktop-tools{
+    display:flex !important;
+    visibility:visible !important;
+    opacity:1 !important;
+    flex:0 0 auto !important;
+    align-items:center !important;
+    gap:6px !important;
+  }
+  .topbar .last-sync{
+    display:none !important;
+  }
+  .topbar .connection-dot{
+    display:inline-block !important;
+    visibility:visible !important;
+    flex:0 0 auto !important;
+  }
+  .topbar .command-trigger,
+  .topbar .refresh-btn{
+    display:inline-flex !important;
+    visibility:visible !important;
+    opacity:1 !important;
+    width:36px !important;
+    height:36px !important;
+    min-width:36px !important;
+    min-height:36px !important;
+    flex:0 0 36px !important;
+  }
+
+  .topbar .role-pill{
+    display:inline-flex !important;
+    visibility:visible !important;
+    opacity:1 !important;
+    width:auto !important;
+    min-width:0 !important;
+    height:auto !important;
+    flex:0 0 auto !important;
+    white-space:nowrap !important;
+    font-size:10px !important;
+    padding:4px 8px !important;
+  }
+
+  .topbar .profile-name,
+  .topbar #profileName{
+    display:block !important;
+    visibility:visible !important;
+    opacity:1 !important;
+    width:auto !important;
+    min-width:0 !important;
+    height:auto !important;
+    margin:0 !important;
+    padding:0 !important;
+    overflow:hidden !important;
+    flex:0 1 auto !important;
+    max-width:90px !important;
+    font-size:11px !important;
+    line-height:1.2 !important;
+    white-space:nowrap !important;
+    text-overflow:ellipsis !important;
+  }
+
+  .topbar #btnLogout{
+    display:inline-flex !important;
+    visibility:visible !important;
+    opacity:1 !important;
+    width:36px !important;
+    height:36px !important;
+    min-width:36px !important;
+    min-height:36px !important;
+    flex:0 0 36px !important;
+    align-items:center !important;
+    justify-content:center !important;
+  }
+
+  /* ไม่ให้การ์ดผู้ใช้ในเมนูมาซ้อนกับ topbar */
+  #navUserCard,.nav-user-card{ display:none !important; }
+}
+
+@media (max-width:899px){
+  .topbar{ padding:8px 9px 8px !important; gap:5px !important; }
+  .topbar .brand{ gap:7px !important; }
+  .topbar .brand-badge{ width:36px !important; height:36px !important; border-radius:11px !important; }
+  .topbar .brand-title{ font-size:13px !important; }
+  .topbar .brand-sub{ font-size:9px !important; }
+  .topbar .profile{ gap:4px !important; }
+  .topbar .desktop-tools{ gap:4px !important; }
+  .topbar .command-trigger,
+  .topbar .refresh-btn,
+  .topbar #btnLogout{ width:34px !important; height:34px !important; min-width:34px !important; min-height:34px !important; flex-basis:34px !important; }
+  .topbar .role-pill{ font-size:9px !important; padding:3px 6px !important; }
+  .topbar .profile-name,#profileName{ max-width:60px !important; font-size:10px !important; }
+}
+
+@media (max-width:360px){
+  .topbar .profile-name,#profileName{ max-width:42px !important; }
+  .topbar .role-pill{ max-width:54px !important; overflow:hidden !important; text-overflow:ellipsis !important; }
+}
+</style>
+
 </head>
 <body>
 
