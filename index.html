@@ -5080,62 +5080,39 @@ html, body{ overflow-x:clip; height:auto; min-height:100%; }
 </style>
 
 
-<style id="liquid-desktop-sidebar-profile-contrast-fix">
-/* LIQUID GLASS — desktop sidebar user profile
-   แก้เฉพาะโปรไฟล์/ปุ่มออกจากระบบของ sidebar บนคอมพิวเตอร์
-   ไม่แตะ mobile/iPad และไม่เปลี่ยน logic ใด ๆ */
+<style id="liquid-desktop-profile-contrast-only">
+/* Liquid Glass: ปรับเฉพาะความชัดของโปรไฟล์ด้านล่างเมนูบนคอม
+   คงโครงสร้าง ตำแหน่ง และระบบพิมพ์เดิมทั้งหมด */
 @media (min-width:900px) and (hover:hover) and (pointer:fine){
   :root[data-theme="liquid"] .nav-user-card{
     background:rgba(255,255,255,.46) !important;
-    border-top:1px solid rgba(255,255,255,.72) !important;
+    border-top-color:rgba(255,255,255,.72) !important;
     border-bottom:1px solid rgba(255,255,255,.38) !important;
-    border-radius:16px !important;
-    margin:10px 8px 8px !important;
-    padding:10px !important;
     color:var(--ink) !important;
     box-shadow:0 8px 22px rgba(40,70,150,.10),
                inset 0 1px 0 rgba(255,255,255,.78) !important;
     -webkit-backdrop-filter:blur(18px) saturate(170%) !important;
     backdrop-filter:blur(18px) saturate(170%) !important;
   }
-
   :root[data-theme="liquid"] .nav-user-avatar{
     color:var(--ink) !important;
     background:rgba(255,255,255,.58) !important;
     border-color:rgba(255,255,255,.78) !important;
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.85) !important;
   }
-
   :root[data-theme="liquid"] .nav-user-name{
     color:var(--ink) !important;
   }
-
   :root[data-theme="liquid"] .nav-user-role{
     color:var(--ink-dim) !important;
   }
-
   :root[data-theme="liquid"] .nav-user-logout{
     background:rgba(255,255,255,.58) !important;
     border-color:rgba(255,255,255,.78) !important;
     color:var(--ink) !important;
-    box-shadow:0 3px 10px rgba(40,70,150,.08),
-               inset 0 1px 0 rgba(255,255,255,.85) !important;
   }
-
   :root[data-theme="liquid"] .nav-user-logout:hover{
     background:rgba(255,255,255,.78) !important;
     color:#0a5fd8 !important;
-  }
-}
-</style>
-
-
-<style id="liquid-desktop-sidebar-profile-position-fix">
-/* รักษาตำแหน่งเดิมของโปรไฟล์ด้านล่างเมนูซ้าย
-   ให้ชิดตำแหน่งล่างเดิมเหมือนก่อนแก้สี */
-@media (min-width:900px) and (hover:hover) and (pointer:fine){
-  :root[data-theme="liquid"] .nav-user-card{
-    margin: auto 8px 0 !important;
   }
 }
 </style>
