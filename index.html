@@ -5728,8 +5728,6 @@ if (document.fonts && document.fonts.ready) document.fonts.ready.then(layoutNav)
 /* ---------- sheet เมนูทั้งหมด ---------- */
 function openMoreMenu() {
   const items = [...document.querySelectorAll('.tab-secondary')].filter(b => b.style.display !== 'none');
-  const userName = state.user?.name || document.getElementById('navUserName')?.textContent || 'ผู้ใช้งาน';
-  const userRole = state.user?.role || document.getElementById('navUserRole')?.textContent || '';
   showSheet(`
     <div class="sheet-title">เมนูทั้งหมด</div>
     <div class="more-grid">
@@ -5738,13 +5736,8 @@ function openMoreMenu() {
           <span class="more-ico">${b.querySelector('.ico svg').outerHTML}</span>
           <span>${escapeHtml(b.querySelector('.lbl').textContent)}</span>
         </button>`).join('')}
-    </div>
-</div>`, 'nav-more-sheet');
+    </div>`, 'nav-more-sheet');
   document.querySelectorAll('.more-item').forEach(x => x.onclick = () => { closeSheet(); renderTab(x.dataset.go); });
-  document.getElementById('mobileMoreLogout')?.addEventListener('click', () => {
-    closeSheet();
-    document.getElementById('btnLogout')?.click();
-  });
 }
 document.getElementById('tabMore').addEventListener('click', openMoreMenu);
 
