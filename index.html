@@ -4214,56 +4214,7 @@ body.modal-open{ overflow:hidden; overscroll-behavior:none; }
   }
 }
 </style>
-
-  /* =======================================================
-     MOBILE / IPAD BOTTOM NAV — ห้ามตัวแถบเองกลายเป็น scroller
-     ======================================================= */
-  .tabbar{
-    position:fixed !important;
-    left:12px !important;
-    right:12px !important;
-    bottom:calc(10px + env(safe-area-inset-bottom)) !important;
-    top:auto !important;
-    height:60px !important;
-    max-height:60px !important;
-    overflow:visible !important;
-    overflow-x:visible !important;
-    overflow-y:visible !important;
-    touch-action:none !important;
-    -webkit-overflow-scrolling:auto !important;
-  }
-  .tabbar .tab,
-  .tabbar .tab-more{
-    touch-action:manipulation !important;
-  }
-
-  /* โปรไฟล์ทุกชนิดห้ามแสดงบนมือถือ/iPad */
-  .topbar .profile,
-  .topbar #profileName,
-  .topbar .profile-name,
-  .topbar .user-profile,
-  .topbar .nav-profile,
-  #navUserCard,
-  .nav-user-card,
-  .mobile-more-user,
-  .mobile-more-user-avatar,
-  .mobile-more-user-info,
-  .mobile-more-user-name,
-  .mobile-more-user-role,
-  .mobile-more-logout{
-    display:none !important;
-    visibility:hidden !important;
-    width:0 !important;
-    min-width:0 !important;
-    max-width:0 !important;
-    height:0 !important;
-    min-height:0 !important;
-    max-height:0 !important;
-    margin:0 !important;
-    padding:0 !important;
-    overflow:hidden !important;
-  }
-}
+   
 <style id="unified-touch-scroll">
 /* =========================================================
    UNIFIED SCROLL — ทุกธีมใช้ชุดเดียวกัน (แทน 3 บล็อกเดิม)
