@@ -5080,9 +5080,39 @@ html, body{ overflow-x:clip; height:auto; min-height:100%; }
 </style>
 
 
+<style id="memo-liquid-balanced-v2">
+:root[data-theme="liquid"] .memo-form-sheet{
+  background:rgba(255,255,255,.72) !important;
+  border-color:rgba(255,255,255,.72) !important;
+}
+:root[data-theme="liquid"] .memo-form-sheet .mf-section{
+  background:rgba(255,255,255,.64) !important;
+  border-color:rgba(255,255,255,.70) !important;
+}
+:root[data-theme="liquid"] .memo-form-sheet .mf-tabs{
+  background:rgba(255,255,255,.76) !important;
+  border-color:rgba(255,255,255,.74) !important;
+}
+:root[data-theme="liquid"] .memo-form-sheet .input,
+:root[data-theme="liquid"] .memo-form-sheet select.input,
+:root[data-theme="liquid"] .memo-form-sheet textarea.input{
+  background:rgba(255,255,255,.72) !important;
+}
+@media (max-width:1024px), (hover:none) and (pointer:coarse){
+  :root[data-theme="liquid"] .memo-form-sheet{
+    background:rgba(255,255,255,.74) !important;
+  }
+  :root[data-theme="liquid"] .memo-form-sheet .mf-section{
+    background:rgba(255,255,255,.66) !important;
+  }
+  :root[data-theme="liquid"] .memo-form-sheet .mf-tabs{
+    background:rgba(255,255,255,.78) !important;
+  }
+}
+</style>
+
+
 <style id="liquid-desktop-profile-contrast-only">
-/* Liquid Glass: ปรับเฉพาะความชัดของโปรไฟล์ด้านล่างเมนูบนคอม
-   คงโครงสร้าง ตำแหน่ง และระบบพิมพ์เดิมทั้งหมด */
 @media (min-width:900px) and (hover:hover) and (pointer:fine){
   :root[data-theme="liquid"] .nav-user-card{
     background:rgba(255,255,255,.46) !important;
@@ -5099,12 +5129,8 @@ html, body{ overflow-x:clip; height:auto; min-height:100%; }
     background:rgba(255,255,255,.58) !important;
     border-color:rgba(255,255,255,.78) !important;
   }
-  :root[data-theme="liquid"] .nav-user-name{
-    color:var(--ink) !important;
-  }
-  :root[data-theme="liquid"] .nav-user-role{
-    color:var(--ink-dim) !important;
-  }
+  :root[data-theme="liquid"] .nav-user-name{ color:var(--ink) !important; }
+  :root[data-theme="liquid"] .nav-user-role{ color:var(--ink-dim) !important; }
   :root[data-theme="liquid"] .nav-user-logout{
     background:rgba(255,255,255,.58) !important;
     border-color:rgba(255,255,255,.78) !important;
@@ -13102,48 +13128,3 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 </script>
 </body>
 </html>
-
-
-<style id="memo-liquid-balanced-v2">
-/* =========================================================
-   สร้างเอกสารบันทึกข้อความ — Liquid Glass (สมดุล)
-   ลดความโปร่งใสจากเดิมเล็กน้อย แต่ไม่ทำให้ขาวทึบ
-   จำกัดเฉพาะหน้าสร้างเอกสารบันทึกข้อความ
-   ========================================================= */
-:root[data-theme="liquid"] .memo-form-sheet{
-  background:rgba(255,255,255,.72) !important;
-  border-color:rgba(255,255,255,.72) !important;
-}
-
-/* กล่องแต่ละส่วนยังคงเห็นพื้น Liquid Glass อยู่ */
-:root[data-theme="liquid"] .memo-form-sheet .mf-section{
-  background:rgba(255,255,255,.64) !important;
-  border-color:rgba(255,255,255,.70) !important;
-}
-
-/* แถบแท็บชัดขึ้น แต่ไม่ขาวทึบ */
-:root[data-theme="liquid"] .memo-form-sheet .mf-tabs{
-  background:rgba(255,255,255,.76) !important;
-  border-color:rgba(255,255,255,.74) !important;
-}
-
-/* ช่องกรอกให้อ่านง่ายกว่าพื้นหลัง แต่ยังคงความเป็นกระจก */
-:root[data-theme="liquid"] .memo-form-sheet .input,
-:root[data-theme="liquid"] .memo-form-sheet select.input,
-:root[data-theme="liquid"] .memo-form-sheet textarea.input{
-  background:rgba(255,255,255,.72) !important;
-}
-
-/* มือถือ / iPad ใช้ระดับเดียวกัน */
-@media (max-width:1024px), (hover:none) and (pointer:coarse){
-  :root[data-theme="liquid"] .memo-form-sheet{
-    background:rgba(255,255,255,.74) !important;
-  }
-  :root[data-theme="liquid"] .memo-form-sheet .mf-section{
-    background:rgba(255,255,255,.66) !important;
-  }
-  :root[data-theme="liquid"] .memo-form-sheet .mf-tabs{
-    background:rgba(255,255,255,.78) !important;
-  }
-}
-</style>
