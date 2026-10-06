@@ -13066,53 +13066,46 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 </html>
 
 
-<style id="memo-liquid-less-transparent-v1">
+<style id="memo-liquid-balanced-v2">
 /* =========================================================
-   สร้างเอกสารบันทึกข้อความ — Liquid Glass
-   ลดความโปร่งใสเฉพาะหน้าฟอร์มนี้ เพื่อให้อ่านง่ายขึ้น
-   ไม่กระทบ modal / หน้า / การพิมพ์ส่วนอื่น
+   สร้างเอกสารบันทึกข้อความ — Liquid Glass (สมดุล)
+   ลดความโปร่งใสจากเดิมเล็กน้อย แต่ไม่ทำให้ขาวทึบ
+   จำกัดเฉพาะหน้าสร้างเอกสารบันทึกข้อความ
    ========================================================= */
 :root[data-theme="liquid"] .memo-form-sheet{
-  background:rgba(255,255,255,.88) !important;
-  border-color:rgba(255,255,255,.88) !important;
+  background:rgba(255,255,255,.72) !important;
+  border-color:rgba(255,255,255,.72) !important;
 }
 
-/* ส่วนกรอกข้อมูลแต่ละกล่อง: ทึบขึ้นจากกระจกเดิม */
+/* กล่องแต่ละส่วนยังคงเห็นพื้น Liquid Glass อยู่ */
 :root[data-theme="liquid"] .memo-form-sheet .mf-section{
-  background:rgba(255,255,255,.82) !important;
-  border-color:rgba(255,255,255,.86) !important;
+  background:rgba(255,255,255,.64) !important;
+  border-color:rgba(255,255,255,.70) !important;
 }
 
-/* แถบแท็บให้อ่านข้อความชัดขึ้น */
+/* แถบแท็บชัดขึ้น แต่ไม่ขาวทึบ */
 :root[data-theme="liquid"] .memo-form-sheet .mf-tabs{
-  background:rgba(255,255,255,.90) !important;
-  border-color:rgba(255,255,255,.88) !important;
+  background:rgba(255,255,255,.76) !important;
+  border-color:rgba(255,255,255,.74) !important;
 }
 
-/* ช่องกรอกในหน้าสร้างเอกสาร ให้พื้นชัดขึ้นอีกเล็กน้อย */
+/* ช่องกรอกให้อ่านง่ายกว่าพื้นหลัง แต่ยังคงความเป็นกระจก */
 :root[data-theme="liquid"] .memo-form-sheet .input,
 :root[data-theme="liquid"] .memo-form-sheet select.input,
 :root[data-theme="liquid"] .memo-form-sheet textarea.input{
-  background:rgba(255,255,255,.88) !important;
+  background:rgba(255,255,255,.72) !important;
 }
 
-/* ส่วนหัว/คำอธิบายไม่ให้พื้นหลังด้านหลังรบกวนตัวหนังสือ */
-:root[data-theme="liquid"] .memo-form-sheet .mf-section-title,
-:root[data-theme="liquid"] .memo-form-sheet .hint,
-:root[data-theme="liquid"] .memo-form-sheet label{
-  text-shadow:0 1px 1px rgba(255,255,255,.45);
-}
-
-/* บนมือถือ/iPad ให้ใช้ค่าทึบเดียวกัน ไม่ถูกกฎ touch เดิมลดความทึบ */
+/* มือถือ / iPad ใช้ระดับเดียวกัน */
 @media (max-width:1024px), (hover:none) and (pointer:coarse){
   :root[data-theme="liquid"] .memo-form-sheet{
-    background:rgba(255,255,255,.90) !important;
+    background:rgba(255,255,255,.74) !important;
   }
   :root[data-theme="liquid"] .memo-form-sheet .mf-section{
-    background:rgba(255,255,255,.84) !important;
+    background:rgba(255,255,255,.66) !important;
   }
   :root[data-theme="liquid"] .memo-form-sheet .mf-tabs{
-    background:rgba(255,255,255,.92) !important;
+    background:rgba(255,255,255,.78) !important;
   }
 }
 </style>
