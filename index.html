@@ -4337,7 +4337,9 @@ html, body{ overflow-x:clip; height:auto; min-height:100%; }
   html.touch-device select.input,
   html.touch-device .command-search{ font-size:16px !important; }
 
-  /* B9. แถบเมนูล่าง: ตัวแถบห้ามเป็นตัวเลื่อน (คงจาก v12) */
+/* B9/B10 — เฉพาะโหมดมือถือ/แท็บเล็ตแนวตั้ง (<900px) เท่านั้น
+   ช่วง ≥900px ใช้ sidebar ของเดสก์ท็อป ห้ามแตะ */
+@media (max-width:899px){
   .tabbar{
     position:fixed !important; left:12px !important; right:12px !important; top:auto !important;
     bottom:calc(10px + env(safe-area-inset-bottom)) !important;
@@ -4346,12 +4348,12 @@ html, body{ overflow-x:clip; height:auto; min-height:100%; }
   }
   .tabbar .tab, .tabbar .tab-more{ touch-action:manipulation !important; }
 
-  /* B10. โปรไฟล์ไม่แสดงบนมือถือ/iPad (คงจาก v12) */
   .topbar .profile, .topbar #profileName, .topbar .profile-name,
   #navUserCard, .nav-user-card{
     display:none !important; visibility:hidden !important;
     width:0 !important; height:0 !important; margin:0 !important; padding:0 !important; overflow:hidden !important;
-  }
+     }
+   }
 }
 </style>
    
