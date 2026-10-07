@@ -12476,17 +12476,6 @@ function renderSettings() {
           <div class="chip ${themeFilter==='light'?'active':''}" data-tf="light">สว่าง (${THEMES.filter(t => t.mode !== 'dark').length})</div>
           <div class="chip ${themeFilter==='dark'?'active':''}" data-tf="dark">มืด (${THEMES.filter(t => t.mode === 'dark').length})</div>
         </div>
-
-            <div class="section-title" style="margin-top:6px; font-size:14px;">รูปแบบการพิมพ์</div>
-<div class="glass" style="padding:14px; margin-bottom:16px;">
-  <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
-    <input type="checkbox" id="st_pdfmode" ${isPdfMode() ? 'checked' : ''} style="width:18px;height:18px;">
-    <span>บันทึกเป็นไฟล์ PDF แทนการเปิดหน้าต่างพิมพ์</span>
-  </label>
-  <div class="hint">เหมาะกับมือถือ/iPad ที่พิมพ์ตรงไม่ได้ หรือต้องการเก็บเป็นไฟล์</div>
-</div>
-
-
         <div id="themeSwatchRow" class="theme-grid">
           ${themeList.map(t => `
             <div class="theme-card ${active===t.id?'active':''}" data-theme-id="${t.id}" title="${t.tag || ''}">
@@ -12496,6 +12485,14 @@ function renderSettings() {
         </div>
         <div class="hint" style="margin-top:10px;">เลื่อนในกรอบเพื่อดูธีมเพิ่มเติม · บันทึกไว้เฉพาะเครื่อง/เบราว์เซอร์นี้</div>
       </div>
+                  <div class="section-title" style="margin-top:6px; font-size:14px;">รูปแบบการพิมพ์</div>
+<div class="glass" style="padding:14px; margin-bottom:16px;">
+  <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+    <input type="checkbox" id="st_pdfmode" ${isPdfMode() ? 'checked' : ''} style="width:18px;height:18px;">
+    <span>บันทึกเป็นไฟล์ PDF แทนการเปิดหน้าต่างพิมพ์</span>
+  </label>
+  <div class="hint">เหมาะกับมือถือ/iPad ที่พิมพ์ตรงไม่ได้ หรือต้องการเก็บเป็นไฟล์</div>
+</div>
     </div>
     
     <div class="settings-panel" data-panel="committee" style="display:${state.settingsTab==='committee'?'block':'none'};">
