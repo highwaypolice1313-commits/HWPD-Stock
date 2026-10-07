@@ -7984,60 +7984,111 @@ function triggerPrint(cleanupFn, options = {}) {
 
 }
    
-   async function printQrBatch(list) {
-  if (!list.length) { toast('ไม่มีรายการให้พิมพ์ QR'); return; }
-  if (typeof QRCode === 'undefined') { toast('ไม่พบไฟล์ qrcode.min.js'); return; }
-  if (list.length > 60 && !await confirmSheet('จะพิมพ์ QR ' + list.length + ' ใบ ต้องการดำเนินการต่อหรือไม่?', {title:'พิมพ์ QR จำนวนมาก', okText:'พิมพ์ต่อ'})) return;
-  setLoading(true, 'กำลังสร้าง QR โค้ด...');
+/* ========== ป้าย QR ติดครุภัณฑ์ (แบบมินิ) ========== */
+/* [ปรับตรงนี้] ขนาดป้ายทั้งหมดอยู่ที่นี่ที่เดียว หน่วยเป็น มม. */
+const QR_LABEL = {
+  size: 20,        // กว้าง = สูงของป้าย
+  qr: 14,          // ขนาดตัว QR (ต่ำกว่า 12 เริ่มสแกนยาก)
+  gap: 4,          // ระยะห่างระหว่างป้ายในแผ่น A4
+  margin: 10,      // ขอบกระดาษ
+  cut: '0.3mm dashed #777'   // เส้นประตัด
+};
+
+/* ข้อความใต้ QR: หมายเลขเครื่อง -> ทะเบียนรถ -> รหัสครุภัณฑ์ */
+function qrLabelText(a) {
+  return String(a['หมายเลขเครื่อง'] || '').trim()
+      || String(a['ทะเบียนรถ'] || '').trim()
+      || String(a['รหัสครุภัณฑ์'] || '').trim();
+}
+
+/* สร้างรูป QR (dataURL) — ฝัง "รหัสครุภัณฑ์" ไว้ เพื่อให้ปุ่มสแกนยังหาครุภัณฑ์เจอ */
+async function qrDataUrl(code, px) {
   const tmp = document.createElement('div');
   tmp.style.cssText = 'position:fixed;left:-9999px;top:0;';
   document.body.appendChild(tmp);
+  try {
+    new QRCode(tmp, {
+      text: code, width: px, height: px,
+      colorDark: '#000000', colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+    await new Promise(r => setTimeout(r, 20));
+    const cv = tmp.querySelector('canvas'), im = tmp.querySelector('img');
+    return cv ? cv.toDataURL('image/png') : (im ? im.src : '');
+  } finally { document.body.removeChild(tmp); }
+}
+
+/* HTML ของป้าย 1 ใบ */
+function qrLabelCellHtml(src, text) {
+  const L = QR_LABEL;
+  const len = text.length;
+  const fs = len <= 8 ? 6.5 : (len <= 12 ? 5.5 : 4.5);   // ยิ่งยาวยิ่งย่อตัวอักษร
+  return `<div class="qr-cell">
+    <img src="${src}" style="width:${L.qr}mm;height:${L.qr}mm;max-width:none;display:block;image-rendering:pixelated;">
+    <div class="qr-txt" style="font-size:${fs}pt;">${escapeHtml(text)}</div>
+  </div>`;
+}
+
+/* CSS ของป้าย (ใช้ร่วมกันทั้งพิมพ์ใบเดียวและพิมพ์ทั้งหมด) */
+function qrLabelCss() {
+  const L = QR_LABEL;
+  return `
+    .qr-sheet{ box-sizing:border-box; padding:${L.margin}mm; font-family:'Kanit',sans-serif; color:#000; }
+    .qr-grid{ display:grid; grid-template-columns:repeat(auto-fill, ${L.size}mm); gap:${L.gap}mm; justify-content:start; }
+    .qr-cell{
+      width:${L.size}mm; height:${L.size}mm; box-sizing:border-box; padding:1mm 0.5mm 0.5mm;
+      border:${L.cut}; background:#fff;
+      display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.6mm;
+      break-inside:avoid; page-break-inside:avoid; overflow:hidden;
+    }
+    .qr-txt{ width:100%; text-align:center; font-weight:600; line-height:1.1; word-break:break-all; letter-spacing:.02em; }
+  `;
+}
+
+async function printQrBatch(list) {
+  if (!list.length) { toast('ไม่มีรายการให้พิมพ์ QR'); return; }
+  if (typeof QRCode === 'undefined') { toast('ไม่พบไฟล์ qrcode.min.js'); return; }
+  if (list.length > 200 && !await confirmSheet('จะพิมพ์ QR ' + list.length + ' ใบ ต้องการดำเนินการต่อหรือไม่?', {title:'พิมพ์ QR จำนวนมาก', okText:'พิมพ์ต่อ'})) return;
+  setLoading(true, 'กำลังสร้างป้าย QR...');
   const cells = [];
   try {
     for (const a of list) {
-      const holder = document.createElement('div');
-      tmp.appendChild(holder);
-      new QRCode(holder, { text: a['รหัสครุภัณฑ์'], width: 160, height: 160, colorDark: '#17324f', colorLight: '#ffffff' });
-      await new Promise(r => setTimeout(r, 20));
-      const cv = holder.querySelector('canvas'), im = holder.querySelector('img');
-      const src = cv ? cv.toDataURL('image/png') : (im ? im.src : '');
+      // สร้างที่ 200px แล้วย่อลงตอนพิมพ์ ให้ขอบคมเมื่อพิมพ์เล็ก
+      const src = await qrDataUrl(a['รหัสครุภัณฑ์'], 200);
       if (!src) continue;
-      cells.push(`<div class="qr-cell"><img src="${src}" style="width:36mm;height:36mm;max-width:none;">
-        <div style="font-size:10pt;font-weight:600;margin-top:2mm;">${escapeHtml(a['ชื่อครุภัณฑ์'])}</div>
-        <div style="font-size:9pt;">${escapeHtml(a['รหัสครุภัณฑ์'])}</div></div>`);
+      cells.push(qrLabelCellHtml(src, qrLabelText(a)));
     }
-  } finally {
-    document.body.removeChild(tmp);
-    setLoading(false);
-  }
+  } finally { setLoading(false); }
+  if (!cells.length) { toast('สร้าง QR ไม่สำเร็จ'); return; }
+
   const pa = document.getElementById('printArea');
   pa.classList.add('report-print-area');
-  pa.innerHTML = `<style>@page{size:A4;margin:10mm;}
-    .qr-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4mm;font-family:'Kanit',sans-serif;}
-    .qr-cell{text-align:center;border:1px dashed #999;padding:3mm;break-inside:avoid;}</style>
-    <div class="qr-grid">${cells.join('')}</div>`;
- triggerPrint(() => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; }, { immediate: true });
+  // @page margin เป็น 0 แล้วใช้ padding ของ .qr-sheet แทน เพื่อให้ความกว้างพื้นที่พิมพ์ตรงกับ A4 จริง
+  pa.innerHTML = `<style>@page{size:A4;margin:0;}${qrLabelCss()}</style>
+    <div class="qr-sheet"><div class="qr-grid">${cells.join('')}</div></div>`;
+  triggerPrint(() => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; }, { immediate: true });
 }
+
 function openQrView(a) {
+  const label = qrLabelText(a);
   showSheet(`
     <div class="sheet-title">QR โค้ดครุภัณฑ์</div>
     <div id="qrHolder"></div>
-    <div class="hint" style="text-align:center;">${escapeHtml(a['ชื่อครุภัณฑ์'])} · ${escapeHtml(a['รหัสครุภัณฑ์'])}</div>
+    <div class="hint" style="text-align:center;">${escapeHtml(a['ชื่อครุภัณฑ์'])} · ${escapeHtml(label)}</div>
+    <div class="hint" style="text-align:center;margin-top:4px;">ป้ายพิมพ์ขนาด ${QR_LABEL.size}×${QR_LABEL.size} มม.</div>
     <div class="btn-row"><button class="btn btn-primary" id="btnPrintQr">พิมพ์ป้าย QR</button></div>
   `);
   if (typeof QRCode === 'undefined') { document.getElementById('qrHolder').textContent = 'ไม่พบไฟล์ qrcode.min.js'; return; }
   new QRCode(document.getElementById('qrHolder'), { text: a['รหัสครุภัณฑ์'], width: 180, height: 180, colorDark: '#17324f', colorLight: '#ffffff' });
-  document.getElementById('btnPrintQr').onclick = () => {
-    const cv = document.querySelector('#qrHolder canvas');
-    const im = document.querySelector('#qrHolder img');
-    const src = cv ? cv.toDataURL('image/png') : (im ? im.src : '');
+
+  document.getElementById('btnPrintQr').onclick = async () => {
+    const src = await qrDataUrl(a['รหัสครุภัณฑ์'], 200);
     if (!src) { toast('ไม่พบรูป QR โค้ดสำหรับพิมพ์'); return; }
     const pa = document.getElementById('printArea');
-    pa.classList.add('qr-print-area');
-    pa.innerHTML = `<img src="${src}" style="width:60mm;height:60mm;max-width:none;">
-      <div style="font-size:14pt;font-weight:600;margin-top:4mm;">${escapeHtml(a['ชื่อครุภัณฑ์'])}</div>
-      <div style="font-size:12pt;">${escapeHtml(a['รหัสครุภัณฑ์'])}</div>`;
-    triggerPrint(() => { pa.classList.remove('qr-print-area'); pa.innerHTML = ''; });
+    pa.classList.add('report-print-area');
+    pa.innerHTML = `<style>@page{size:A4;margin:0;}${qrLabelCss()}</style>
+      <div class="qr-sheet"><div class="qr-grid">${qrLabelCellHtml(src, label)}</div></div>`;
+    triggerPrint(() => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; });
   };
 }
 function componentsSection(assetId) {
