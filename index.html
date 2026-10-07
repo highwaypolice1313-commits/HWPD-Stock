@@ -17,6 +17,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-helpers.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>   
 <style>
 @font-face{ font-family:'TH Sarabun New'; src:url('THSarabunNew.ttf') format('truetype'); font-weight:400; font-style:normal; font-display:block; }
 @font-face{ font-family:'TH Sarabun New'; src:url('THSarabunNew-Bold.ttf') format('truetype'); font-weight:700; font-style:normal; font-display:block; }
@@ -7642,12 +7644,138 @@ function openQuickStatusForm(a) {
     catch (err) { toast(err.message || 'เปลี่ยนสถานะไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(btn, false); }
   };
 }
+
+   /* ========== ส่งออก #printArea เป็น PDF (A4 จริง ไม่มีหัว/ท้ายกระดาษ) ========== */
+function isPdfMode() {
+  try { return localStorage.getItem('hpPrintMode') === 'pdf'; } catch (e) { return false; }
+}
+
+function safeFileName(s, fallback = 'เอกสาร') {
+  const t = String(s == null ? '' : s)
+    .replace(/[\\/:*?"<>|\r\n\t]+/g, ' ')   // ตัดอักขระต้องห้าม
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 80);                            // จำกัดความยาว
+  return t || fallback;
+}
+   
+async function savePrintAreaAsPdf(filename) {
+  const pa = document.getElementById('printArea');
+  if (!pa || !pa.innerHTML.trim()) { toast('ไม่มีเอกสารให้สร้าง PDF'); return; }
+  if (typeof html2canvas === 'undefined' || !window.jspdf) { toast('ไม่พบไลบรารี PDF กรุณาตรวจสอบอินเทอร์เน็ต'); return; }
+
+  const MM = 96 / 25.4;          // px ต่อ 1 มม.
+  const SCALE = 3;               // ความคมชัด (ถ้า iPad เก่าค้าง ลดเป็น 2)
+  let host = null;
+  setLoading(true, 'กำลังสร้างไฟล์ PDF...');
+  try {
+    /* 1) อ่านแนวกระดาษ + ขอบจาก @page ของรายงาน */
+    let landscape = false, margin = [0, 0, 0, 0];
+    const css = Array.from(pa.querySelectorAll('style')).map(s => s.textContent).join('\n');
+    const rule = /@page\s*\{([^}]*)\}/g;
+    let m;
+    while ((m = rule.exec(css))) {
+      if (/size\s*:[^;]*landscape/i.test(m[1])) landscape = true;
+      const mg = /margin\s*:\s*([^;]+)/i.exec(m[1]);
+      if (mg) {
+        const v = mg[1].trim().split(/\s+/).map(parseFloat).map(n => isFinite(n) ? n : 0);
+        margin = v.length === 1 ? [v[0], v[0], v[0], v[0]]
+               : v.length === 2 ? [v[0], v[1], v[0], v[1]]
+               : v.length === 3 ? [v[0], v[1], v[2], v[1]] : v.slice(0, 4);
+      }
+    }
+    const pagesMode = !!pa.querySelector('.qr-page');             // ป้าย QR: แต่ละ .qr-page = 1 หน้า
+    if (pa.querySelector('.pf-doc')) { margin = [22, 20, 20, 25]; landscape = false; }  // บันทึกข้อความ (ตรงกับ CSS พิมพ์)
+    if (pagesMode) margin = [0, 0, 0, 0];
+
+    const W = landscape ? 297 : 210, H = landscape ? 210 : 297;
+    const contentWmm = W - margin[1] - margin[3];
+    const contentW = Math.round(contentWmm * MM);
+    const pageH = Math.floor((H - margin[0] - margin[2]) * MM);
+
+    /* 2) สร้างกล่องจำลองกระดาษ ความกว้างคงที่ ไม่ขึ้นกับจอ */
+    host = document.createElement('div');
+    host.style.cssText = 'position:fixed;left:0;top:0;z-index:1;background:#fff;color:#000;width:' +
+      (pagesMode ? Math.round(W * MM) : contentW) + 'px;';
+    host.innerHTML = pa.innerHTML;
+    document.body.appendChild(host);
+
+    /* 3) รอฟอนต์ + แปลงรูปเป็น data URL (กัน canvas ถูก taint จาก CORS) */
+    if (document.fonts && document.fonts.ready) await document.fonts.ready;
+    await Promise.all(Array.from(host.querySelectorAll('img')).map(async img => {
+      try {
+        if (img.src && !img.src.startsWith('data:')) {
+          const r = await fetch(img.src, { mode: 'cors' });
+          const b = await r.blob();
+          img.src = await new Promise(res => { const f = new FileReader(); f.onload = () => res(f.result); f.readAsDataURL(b); });
+        }
+        if (img.decode) await img.decode().catch(() => {});
+      } catch (e) { /* ใช้ src เดิม */ }
+    }));
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: landscape ? 'l' : 'p', unit: 'mm', format: 'a4', compress: true });
+    const opt = { scale: SCALE, useCORS: true, backgroundColor: '#ffffff', logging: false, scrollX: 0, scrollY: 0 };
+
+    if (pagesMode) {
+      /* ป้าย QR: 1 .qr-page = 1 หน้า */
+      const pages = Array.from(host.children).filter(c => c.classList && c.classList.contains('qr-page'));
+      for (let i = 0; i < pages.length; i++) {
+        if (i) pdf.addPage();
+        const cv = await html2canvas(pages[i], opt);
+        pdf.addImage(cv.toDataURL('image/png'), 'PNG', 0, 0, 210, 297);
+      }
+    } else {
+      /* 4) หาจุดตัดหน้า: ตัดที่ท้ายแถว/บล็อก ไม่ตัดกลางแถวตาราง */
+      const top0 = host.getBoundingClientRect().top;
+      const total = Math.ceil(host.scrollHeight);
+      const stops = Array.from(host.querySelectorAll('tr,.pf-sign,.pf-body,.pf-note,.avoid-break'))
+        .map(e => Math.floor(e.getBoundingClientRect().bottom - top0));
+      const cuts = [];
+      let start = 0;
+      while (start < total - 1) {
+        const limit = start + pageH;
+        let end = limit;
+        if (total <= limit) end = total;
+        else {
+          const c = stops.filter(s => s > start + pageH * 0.3 && s <= limit);
+          if (c.length) end = Math.max.apply(null, c);
+        }
+        if (end <= start) end = Math.min(total, limit);
+        cuts.push([start, end]);
+        start = end;
+      }
+      for (let i = 0; i < cuts.length; i++) {
+        if (i) pdf.addPage();
+        const [y0, y1] = cuts[i];
+        const cv = await html2canvas(host, Object.assign({}, opt, {
+          x: 0, y: y0, width: contentW, height: y1 - y0, windowWidth: contentW, windowHeight: total
+        }));
+        pdf.addImage(cv.toDataURL('image/png'), 'PNG', margin[3], margin[0], contentWmm, (y1 - y0) / MM);
+      }
+    }
+    pdf.save(safeFileName(filename) + '.pdf');
+    toast('สร้างไฟล์ PDF แล้ว');
+  } catch (err) {
+    console.error(err);
+    toast('สร้าง PDF ไม่สำเร็จ: ' + (err.message || ''));
+  } finally {
+    if (host) host.remove();
+    setLoading(false);
+  }
+}
    
 function triggerPrint(cleanupFn, options = {}) {
 
   const pa = document.getElementById('printArea');
   if (!pa) {
     toast('ไม่พบพื้นที่สำหรับพิมพ์');
+    return;
+  }
+
+  if (options.pdf || isPdfMode()) {
+    savePrintAreaAsPdf(options.filename).finally(() => { if (cleanupFn) cleanupFn(); });
     return;
   }
 
@@ -7839,6 +7967,12 @@ function triggerPrint(cleanupFn, options = {}) {
           onAfter
         );
 
+         // ใน doPrint() ก่อน window.print()
+      const oldTitle = document.title;
+      if (options.filename) document.title = options.filename;
+      const restoreTitle = () => { document.title = oldTitle; };
+      window.addEventListener('afterprint', restoreTitle, { once: true });
+         
         window.print();
 
         /*
@@ -8097,7 +8231,7 @@ async function printQrBatch(list) {
   pa.classList.add('report-print-area');
   // @page margin เป็น 0 แล้วใช้ padding ของ .qr-sheet แทน เพื่อให้ความกว้างพื้นที่พิมพ์ตรงกับ A4 จริง
   pa.innerHTML = `<style>${qrLabelCss()}</style>${qrPagesHtml(cells)}`;
-  triggerPrint(() => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; }, { immediate: true });
+  triggerPrint(() => {pa.classList.remove('report-print-area'); pa.innerHTML = ''; }, { immediate: true, filename: 'ป้าย QR ครุภัณฑ์' });
 }
 
 function openQrView(a) {
@@ -8118,7 +8252,7 @@ function openQrView(a) {
     const pa = document.getElementById('printArea');
     pa.classList.add('report-print-area');
     pa.innerHTML = `<style>${qrLabelCss()}</style>${qrPagesHtml([qrLabelCellHtml(src, label, a['ชื่อครุภัณฑ์'])])}`;
-    triggerPrint(() => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; });
+    triggerPrint(() => {pa.classList.remove('report-print-area'); pa.innerHTML = '';}, { filename: 'ป้าย QR ' + label });
   };
 }
 function componentsSection(assetId) {
@@ -8355,7 +8489,7 @@ function borrowRow(b) {
     <div class="status-badge ${statusClass(eff)}">${escapeHtml(eff)}</div>
   </div>`;
 }
-   function printAllBorrow() {
+  function printAllBorrow() {
   const all = state.borrow || [];
   if (!all.length) { toast('ยังไม่มีรายการยืม-คืนให้พิมพ์'); return; }
   const orgName = (state.settings && state.settings.orgName) || ORG_NAME;
@@ -8424,7 +8558,7 @@ function borrowRow(b) {
   const pa = document.getElementById('printArea');
   pa.classList.add('report-print-area');
   pa.innerHTML = html;
-  triggerPrint(() => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; });
+  triggerPrint(() => {pa.classList.remove('report-print-area'); pa.innerHTML = ''; }, { filename: 'รายงานยืม-คืนครุภัณฑ์ ' + isoDate() });
 }
 function borrowedComponentIds(b) { return String(b['รหัสส่วนควบที่ยืม'] || '').split(',').map(s => s.trim()).filter(Boolean); }
 
@@ -9455,8 +9589,12 @@ return `
   const pa = document.getElementById('printArea');
   pa.classList.add('report-print-area');
   pa.innerHTML = html;
-  triggerPrint(() => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; });
-}
+   
+triggerPrint(
+  () => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; },
+  { filename: safeFileName('พัสดุในความครอบครอง-' + fullName) }
+);
+   }
 
    function printAllOfficers() {
   const users = (state.users || []).slice().sort(comparePoliceOfficers);
@@ -9509,8 +9647,12 @@ return `
   const pa = document.getElementById('printArea');
   pa.classList.add('report-print-area');
   pa.innerHTML = html;
-  triggerPrint(() => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; });
+  triggerPrint(
+  () => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; },
+  { immediate: true, filename: 'ป้าย QR ครุภัณฑ์' }
+);
 }
+   
 function userRow(u) {
   const idf = officerId(u) || u['LINEUserId'] || u['ชื่อผู้ใช้'] || u['ชื่อ-สกุล'] || '';
   const memoRole = u['บทบาทเบิก-ยืม'];
@@ -10195,12 +10337,21 @@ desk.addEventListener('focusout', () => {
     if (t !== n.nodeValue) n.nodeValue = t;
   }
 });
-
-  document.getElementById('btnMemoPrint').onclick = () => {
-  commitDocNoOnce();  
+   
+document.getElementById('btnMemoPrint').onclick = () => {
+  commitDocNoOnce();
   const b = getBody();
   if (b) document.getElementById('printArea').innerHTML = thaiifyHtml(b.outerHTML);
-  triggerPrint(() => { document.getElementById('printArea').innerHTML = ''; });
+
+  // อ่านค่าจากเอกสารที่เปิดอยู่ (เรื่อง + เลขที่หนังสือ)
+  const g = (id) => { const e = document.getElementById(id); return e ? e.textContent.trim() : ''; };
+  const subject = g('ed_subject') || 'บันทึกข้อความ';
+  const docNo = g('ed_docno').replace(/\./g, '');   // ตัดจุดไข่ปลาถ้ายังไม่กรอกเลข
+
+  triggerPrint(
+    () => { document.getElementById('printArea').innerHTML = ''; },
+    { filename: safeFileName('บันทึกข้อความ-' + subject + (docNo ? ' ' + docNo : '')) }
+  );
 };
   const saveMemoBtn = document.getElementById('btnMemoSave');
   if (saveMemoBtn) saveMemoBtn.onclick = async () => {
@@ -11157,7 +11308,7 @@ function rpOfficial(body) {
   const pa = document.getElementById('printArea');
   pa.classList.add('report-print-area');
   pa.innerHTML = html;
-  triggerPrint(() => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; });
+  triggerPrint(() => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; } , { filename: 'รายงานตรวจสอบครุภัณฑ์ทั่วไป ' + (state.auditYear + 543) });
 }
  
 /* ---- 2.5 รายงานเครื่องมือสื่อสาร (ฟังก์ชันใหม่) ---- */
@@ -11236,7 +11387,7 @@ function printCommsAuditReport() {
   const pa = document.getElementById('printArea');
   pa.classList.add('report-print-area');
   pa.innerHTML = html;
-  triggerPrint(() => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; });
+  triggerPrint(() => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; }, { filename: 'รายงานตรวจสอบเครื่องมือสื่อสาร ' + (state.auditYear + 543) });
 }
  
    /* ========================= ฟีเจอร์ ๔: ตรวจนับพัสดุประจำปี ========================= */
@@ -11665,8 +11816,7 @@ function openBulkAuditModal(action = 'set') {
   pa.classList.add('report-print-area');
 
   // มือถือส่วนใหญ่ไม่รองรับ @page landscape -> หมุนเนื้อหา 90° ลงกระดาษแนวตั้งแทน
-  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
-                   (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent));
+const isMobile = !isPdfMode() && (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent)));
   if (isMobile) {
     const inner = html.replace(/@page\{[^}]*\}/, ''); // ตัดกฎ landscape เดิมออก ไม่ให้ตีกัน
     pa.innerHTML = `
@@ -11691,11 +11841,9 @@ function openBulkAuditModal(action = 'set') {
       '}'
     );
   }
-  triggerPrint(() => {
-    document.documentElement.classList.remove('bchok3-landscape-print');
+    triggerPrint(() => {document.documentElement.classList.remove('bchok3-landscape-print');
     pa.classList.remove('report-print-area');
-    pa.innerHTML = '';
-  });
+    pa.innerHTML = '';}, { filename: 'รายงานตรวจประจำเดือน ' + TH_MONTHS_FULL[state.mcMonth - 1] + ' ' + (state.mcYear + 543) });
 }
    
 async function clearAuditStatus(assetId) {
@@ -13334,8 +13482,7 @@ function compareMonthlyOfficers(a, b) {
     if (!pa) return;
     pa.className = 'report-print-area';
 
-    const isMobilePrint = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
-      (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent));
+    const isMobilePrint = !isPdfMode() && (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent)));
     if (isMobilePrint) {
       // แบ่งเป็นหน้า A4 จริงทีละหน้า แล้วหมุนเนื้อหา 90° เหมือน บชก.3
       // ไม่ใช้ page-break-before และไม่ใช้ overflow:hidden เพื่อไม่ให้เกิดหน้าว่าง/ข้อมูลหาย
