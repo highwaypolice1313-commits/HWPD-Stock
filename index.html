@@ -7987,11 +7987,12 @@ function triggerPrint(cleanupFn, options = {}) {
 /* ========== ป้าย QR ติดครุภัณฑ์ (แบบมินิ) ========== */
 /* [ปรับตรงนี้] ขนาดป้ายทั้งหมดอยู่ที่นี่ที่เดียว หน่วยเป็น มม. */
 const QR_LABEL = {
-  size: 20,        // กว้าง = สูงของป้าย
-  qr: 14,          // ขนาดตัว QR (ต่ำกว่า 12 เริ่มสแกนยาก)
+  w: 26,           // กว้างของป้าย
+  h: 30,           // สูงของป้าย
+  qr: 17,          // ขนาดตัว QR
   gap: 4,          // ระยะห่างระหว่างป้ายในแผ่น A4
   margin: 10,      // ขอบกระดาษ
-  cut: '0.3mm dashed #777'   // เส้นประตัด
+  cut: '0.3mm dashed #777'
 };
 
 /* ข้อความใต้ QR: หมายเลขเครื่อง -> ทะเบียนรถ -> รหัสครุภัณฑ์ */
@@ -8018,30 +8019,37 @@ async function qrDataUrl(code, px) {
   } finally { document.body.removeChild(tmp); }
 }
 
-/* HTML ของป้าย 1 ใบ */
-function qrLabelCellHtml(src, text) {
+/* HTML ของป้าย 1 ใบ: QR / ชื่อครุภัณฑ์ / หมายเลขเครื่อง */
+function qrLabelCellHtml(src, text, name) {
   const L = QR_LABEL;
-  const len = text.length;
-  const fs = len <= 8 ? 6.5 : (len <= 12 ? 5.5 : 4.5);   // ยิ่งยาวยิ่งย่อตัวอักษร
+  const sn = text.length;
+  const snFs = sn <= 10 ? 6.5 : (sn <= 14 ? 5.5 : 4.5);   // หมายเลขยาว -> ย่อตัวอักษร
+  const nm = String(name || '').trim();
+  const nmFs = nm.length <= 14 ? 6.5 : (nm.length <= 26 ? 5.5 : 4.8);   // ชื่อยาว -> ย่อตัวอักษร
   return `<div class="qr-cell">
     <img src="${src}" style="width:${L.qr}mm;height:${L.qr}mm;max-width:none;display:block;image-rendering:pixelated;">
-    <div class="qr-txt" style="font-size:${fs}pt;">${escapeHtml(text)}</div>
+    <div class="qr-name" style="font-size:${nmFs}pt;">${escapeHtml(nm)}</div>
+    <div class="qr-txt" style="font-size:${snFs}pt;">${escapeHtml(text)}</div>
   </div>`;
 }
 
-/* CSS ของป้าย (ใช้ร่วมกันทั้งพิมพ์ใบเดียวและพิมพ์ทั้งหมด) */
 function qrLabelCss() {
   const L = QR_LABEL;
   return `
     .qr-sheet{ box-sizing:border-box; padding:${L.margin}mm; font-family:'Kanit',sans-serif; color:#000; }
-    .qr-grid{ display:grid; grid-template-columns:repeat(auto-fill, ${L.size}mm); gap:${L.gap}mm; justify-content:start; }
+    .qr-grid{ display:grid; grid-template-columns:repeat(auto-fill, ${L.w}mm); gap:${L.gap}mm; justify-content:start; }
     .qr-cell{
-      width:${L.size}mm; height:${L.size}mm; box-sizing:border-box; padding:1mm 0.5mm 0.5mm;
+      width:${L.w}mm; height:${L.h}mm; box-sizing:border-box; padding:1mm 0.8mm;
       border:${L.cut}; background:#fff;
-      display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.6mm;
+      display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.5mm;
       break-inside:avoid; page-break-inside:avoid; overflow:hidden;
     }
-    .qr-txt{ width:100%; text-align:center; font-weight:600; line-height:1.1; word-break:break-all; letter-spacing:.02em; }
+    .qr-name{
+      width:100%; text-align:center; font-weight:500; line-height:1.25;
+      overflow-wrap:anywhere;
+      display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+    }
+    .qr-txt{ width:100%; text-align:center; font-weight:700; line-height:1.1; word-break:break-all; letter-spacing:.02em; }
   `;
 }
 
@@ -8056,7 +8064,7 @@ async function printQrBatch(list) {
       // สร้างที่ 200px แล้วย่อลงตอนพิมพ์ ให้ขอบคมเมื่อพิมพ์เล็ก
       const src = await qrDataUrl(a['รหัสครุภัณฑ์'], 200);
       if (!src) continue;
-      cells.push(qrLabelCellHtml(src, qrLabelText(a)));
+      cells.push(qrLabelCellHtml(src, qrLabelText(a), a['ชื่อครุภัณฑ์']));
     }
   } finally { setLoading(false); }
   if (!cells.length) { toast('สร้าง QR ไม่สำเร็จ'); return; }
@@ -8075,7 +8083,7 @@ function openQrView(a) {
     <div class="sheet-title">QR โค้ดครุภัณฑ์</div>
     <div id="qrHolder"></div>
     <div class="hint" style="text-align:center;">${escapeHtml(a['ชื่อครุภัณฑ์'])} · ${escapeHtml(label)}</div>
-    <div class="hint" style="text-align:center;margin-top:4px;">ป้ายพิมพ์ขนาด ${QR_LABEL.size}×${QR_LABEL.size} มม.</div>
+    <div class="hint" style="text-align:center;margin-top:4px;">ป้ายพิมพ์ขนาด ${QR_LABEL.w}×${QR_LABEL.h} มม.</div>
     <div class="btn-row"><button class="btn btn-primary" id="btnPrintQr">พิมพ์ป้าย QR</button></div>
   `);
   if (typeof QRCode === 'undefined') { document.getElementById('qrHolder').textContent = 'ไม่พบไฟล์ qrcode.min.js'; return; }
@@ -8087,7 +8095,7 @@ function openQrView(a) {
     const pa = document.getElementById('printArea');
     pa.classList.add('report-print-area');
     pa.innerHTML = `<style>@page{size:A4;margin:0;}${qrLabelCss()}</style>
-      <div class="qr-sheet"><div class="qr-grid">${qrLabelCellHtml(src, label)}</div></div>`;
+      <div class="qr-sheet"><div class="qr-grid">${qrLabelCellHtml(src, label, a['ชื่อครุภัณฑ์'])}</div></div>`;
     triggerPrint(() => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; });
   };
 }
