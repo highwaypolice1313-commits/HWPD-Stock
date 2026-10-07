@@ -428,7 +428,7 @@ input[type="date"]::-webkit-date-and-time-value{ text-align:left; }
   }
 
   /* =========================================
-     กระดาษ A4 จริง
+     กระดาษ A4
      ========================================= */
 
   #printArea{
@@ -1037,132 +1037,6 @@ table.rp-table tfoot td{ font-weight:600; border-bottom:none; background:var(--p
 
   /* ครั้งแรกที่เปิดแอป: วาง pill ทันทีโดยไม่เลื่อนมาจากศูนย์ */
   .tabbar.no-anim, .tabbar.no-anim *{ transition:none !important; }
-}
-
-
-/* ================================================================
-   DESKTOP NAV SAFETY — desktop Chrome at reduced window/zoom
-   Keep bottom-nav for touch devices, but keep the sidebar for a
-   real mouse/trackpad desktop even when CSS viewport < 900px.
-   ================================================================ */
-@media (min-width:700px) and (max-width:899px) and (hover:hover) and (pointer:fine){
-  body{
-    padding-bottom:24px !important;
-  }
-
-  .tabbar{
-    position:fixed !important;
-    left:16px !important;
-    top:16px !important;
-    right:auto !important;
-    bottom:16px !important;
-    width:210px !important;
-    height:calc(100vh - 32px) !important;
-    z-index:70 !important;
-    display:flex !important;
-    flex-direction:column !important;
-    justify-content:flex-start !important;
-    align-items:stretch !important;
-    gap:6px !important;
-    overflow-x:visible !important;
-    overflow-y:auto !important;
-    padding:26px 14px 20px !important;
-    margin:0 !important;
-    max-width:none !important;
-    border-radius:26px !important;
-  }
-
-  .tabbar::before{
-    content:"ระบบพัสดุครุภัณฑ์" !important;
-    display:block !important;
-    color:#fff !important;
-    font-size:18px !important;
-    font-weight:600 !important;
-    padding:4px 12px 2px !important;
-    font-family:var(--font-disp) !important;
-  }
-
-  .tabbar::after{
-    content:"ตำรวจทางหลวง" !important;
-    display:block !important;
-    color:rgba(255,255,255,.62) !important;
-    font-size:12px !important;
-    font-weight:300 !important;
-    padding:0 12px 24px !important;
-    border-bottom:1px solid rgba(255,255,255,.10) !important;
-    margin-bottom:10px !important;
-  }
-
-  .tabbar .tab{
-    flex:0 0 auto !important;
-    width:100% !important;
-    min-width:0 !important;
-    min-height:48px !important;
-    height:auto !important;
-    display:flex !important;
-    flex-direction:row !important;
-    align-items:center !important;
-    justify-content:flex-start !important;
-    gap:12px !important;
-    padding:12px 14px !important;
-    border-radius:14px !important;
-    color:rgba(255,255,255,.68) !important;
-    background:transparent !important;
-    box-shadow:none !important;
-    overflow:visible !important;
-  }
-
-  .tabbar .tab .ico,
-  .tabbar .tab .ico svg{
-    width:20px !important;
-    height:20px !important;
-    flex:none !important;
-  }
-
-  .tabbar .tab .lbl{
-    display:block !important;
-    max-width:none !important;
-    opacity:1 !important;
-    overflow:visible !important;
-    white-space:nowrap !important;
-    font-size:14px !important;
-  }
-
-  .tabbar .tab.active{
-    color:#fff !important;
-    background:linear-gradient(90deg,var(--gold-wash),rgba(255,255,255,.04)) !important;
-    box-shadow:inset 3px 0 0 var(--gold) !important;
-  }
-
-  .tabbar .tab-more{
-    display:none !important;
-  }
-
-  .tabbar .tab-secondary{
-    display:flex !important;
-  }
-
-  .tab-pill{
-    display:none !important;
-  }
-
-  .fab{
-    right:34px !important;
-    bottom:34px !important;
-  }
-
-  .topbar,
-  .page{
-    margin-left:242px !important;
-  }
-
-  .topbar{
-    width:calc(100% - 242px) !important;
-  }
-
-  .page{
-    width:calc(100% - 242px) !important;
-  }
 }
 
 /* ================================================================
@@ -6694,12 +6568,14 @@ function layoutNav() {
   if (!bar || !pill) return;
   const tabs = [...bar.querySelectorAll('.tab')];
 
-  // เดสก์ท็อปใช้ sidebar: ตรวจจาก viewport + pointer เพื่อไม่ให้ Chrome desktop
-  // ที่ถูกย่อ/ซูมจน CSS width ต่ำกว่า 900px หลุดไปใช้ bottom-nav
-  const desktopNav = window.matchMedia('(min-width:900px)').matches ||
-    (window.matchMedia('(hover:hover) and (pointer:fine)').matches && window.innerWidth >= 700);
-  if (desktopNav) {
-    tabs.forEach(t => { t.style.width = ''; t.classList.remove('promoted', 'nav-hide'); });
+  // Desktop navigation: keep the sidebar on real desktop browsers even
+  // when Chrome zoom/window sizing makes the CSS viewport narrower than 900px.
+  const isDesktopNav = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  if (isDesktopNav || window.innerWidth >= 900) {
+    tabs.forEach(t => {
+      t.style.width = '';
+      t.classList.remove('promoted', 'nav-hide');
+    });
     return;
   }
   if (!bar.clientWidth) return;
@@ -6804,9 +6680,7 @@ document.getElementById('tabMore').addEventListener('click', openMoreMenu);
   apply(collapsed);
 
   btn.addEventListener('click', () => {
-    const desktopNav = window.matchMedia('(min-width:900px)').matches ||
-      (window.matchMedia('(hover:hover) and (pointer:fine)').matches && window.innerWidth >= 700);
-    if (!desktopNav) return;
+    if (!(window.matchMedia('(hover: hover) and (pointer: fine)').matches || window.innerWidth >= 900)) return;
     apply(!document.body.classList.contains('nav-collapsed'));
   });
 
@@ -11694,9 +11568,25 @@ function openBulkAuditModal(action = 'set') {
         </div>
       </div>`;
   } else {
-    pa.innerHTML = html;
+    // Desktop เท่านั้น: ขยายพื้นที่พิมพ์ของ บชก.3 ให้เท่ากับ A4 แนวนอนเต็มแผ่น
+    // โดยไม่แตะกฎพิมพ์ของรายงาน/หน้าอื่น และไม่กระทบการพิมพ์บนมือถือ
+    document.documentElement.classList.add('bchok3-landscape-print');
+    pa.innerHTML = html.replace(
+      '<style>@page{ size: A4 landscape; margin: 8mm; }',
+      '<style>@page{ size: A4 landscape; margin: 8mm; }' +
+      '@media print{'+
+      'html.bchok3-landscape-print{width:297mm !important;min-width:297mm !important;max-width:297mm !important;}'+
+      'html.bchok3-landscape-print body{width:297mm !important;min-width:297mm !important;max-width:297mm !important;}'+
+      '#printArea.report-print-area{width:100% !important;min-width:0 !important;max-width:none !important;}'+
+      '#printArea.report-print-area > div{width:100% !important;max-width:none !important;}'+
+      '}'
+    );
   }
-  triggerPrint(() => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; });
+  triggerPrint(() => {
+    document.documentElement.classList.remove('bchok3-landscape-print');
+    pa.classList.remove('report-print-area');
+    pa.innerHTML = '';
+  });
 }
    
 async function clearAuditStatus(assetId) {
@@ -13674,3 +13564,140 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 </script>
 </body>
 </html>
+
+
+<style>
+/* ================================================================
+   NAVIGATION FIX — DESKTOP CHROME WITH NARROW/ZOOMED VIEWPORT
+   ---------------------------------------------------------------
+   This override affects ONLY .tabbar and the desktop content offset.
+   Touch/mobile devices keep the existing bottom navigation.
+   ================================================================ */
+@media (max-width:899px) and (hover:hover) and (pointer:fine){
+  body{
+    padding-bottom:24px !important;
+  }
+
+  .tabbar{
+    position:fixed !important;
+    left:16px !important;
+    top:16px !important;
+    right:auto !important;
+    bottom:16px !important;
+    width:210px !important;
+    max-width:none !important;
+    height:calc(100vh - 32px) !important;
+    max-height:none !important;
+    margin:0 !important;
+    padding:26px 14px 20px !important;
+    display:flex !important;
+    flex-direction:column !important;
+    justify-content:flex-start !important;
+    align-items:stretch !important;
+    gap:6px !important;
+    overflow-x:visible !important;
+    overflow-y:auto !important;
+    border-radius:26px !important;
+    z-index:70 !important;
+    touch-action:auto !important;
+  }
+
+  .tabbar::before{
+    content:"ระบบพัสดุครุภัณฑ์" !important;
+    display:block !important;
+    color:#fff !important;
+    font-size:18px !important;
+    font-weight:600 !important;
+    padding:4px 12px 2px !important;
+    font-family:var(--font-disp) !important;
+  }
+
+  .tabbar::after{
+    content:"ตำรวจทางหลวง" !important;
+    display:block !important;
+    color:rgba(255,255,255,.62) !important;
+    font-size:12px !important;
+    font-weight:300 !important;
+    padding:0 12px 24px !important;
+    border-bottom:1px solid rgba(255,255,255,.10) !important;
+    margin-bottom:10px !important;
+  }
+
+  .tabbar .tab{
+    position:relative !important;
+    z-index:1 !important;
+    flex:0 0 auto !important;
+    width:100% !important;
+    min-width:0 !important;
+    min-height:48px !important;
+    height:auto !important;
+    padding:12px 14px !important;
+    display:flex !important;
+    flex-direction:row !important;
+    align-items:center !important;
+    justify-content:flex-start !important;
+    gap:12px !important;
+    border-radius:14px !important;
+    overflow:visible !important;
+    background:transparent !important;
+    box-shadow:none !important;
+    color:rgba(255,255,255,.68) !important;
+  }
+
+  .tabbar .tab:hover{
+    background:rgba(255,255,255,.08) !important;
+    color:#fff !important;
+    transform:translateX(2px) !important;
+  }
+
+  .tabbar .tab.active{
+    color:#fff !important;
+    background:linear-gradient(90deg,var(--gold-wash),rgba(255,255,255,.04)) !important;
+    box-shadow:inset 3px 0 0 var(--gold) !important;
+  }
+
+  .tabbar .tab .ico,
+  .tabbar .tab .ico svg{
+    width:20px !important;
+    height:20px !important;
+    flex:none !important;
+  }
+
+  .tabbar .tab .lbl{
+    display:block !important;
+    max-width:none !important;
+    opacity:1 !important;
+    overflow:visible !important;
+    white-space:nowrap !important;
+    font-size:14px !important;
+  }
+
+  .tabbar .tab-secondary{
+    display:flex !important;
+  }
+
+  .tabbar .tab-more{
+    display:none !important;
+  }
+
+  .tab-pill{
+    display:none !important;
+  }
+
+  .fab{
+    right:34px !important;
+    bottom:34px !important;
+  }
+
+  .topbar{
+    margin-left:242px !important;
+    width:calc(100% - 242px) !important;
+  }
+
+  .page{
+    margin-left:242px !important;
+    margin-right:0 !important;
+    width:calc(100% - 242px) !important;
+  }
+}
+</style>
