@@ -5295,306 +5295,6 @@ html, body{ overflow-x:clip; height:auto; min-height:100%; }
 }
 </style>
 
-
-<script>
-/* ================================================================
-   DESKTOP NAV DEVICE MODE — FIXED
-   ---------------------------------------------------------------
-   ตรวจว่าเป็น "คอมพิวเตอร์" จาก device/UA ไม่ใช่ความกว้างจอ
-   เพื่อให้ Chrome บนคอมที่ลากหน้าต่างให้แคบยังใช้ sidebar ได้
-   ================================================================ */
-(function initDesktopComputerMode(){
-  const ua = navigator.userAgent || '';
-  const touchMac = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
-  const mobileUA = /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
-  const desktop = !mobileUA && !touchMac;
-
-  document.documentElement.classList.toggle('desktop-computer', desktop);
-  document.documentElement.classList.toggle('touch-device', !desktop);
-
-  window.addEventListener('resize', () => {
-    document.documentElement.classList.toggle('desktop-computer', desktop);
-    document.documentElement.classList.toggle('touch-device', !desktop);
-    requestAnimationFrame(() => {
-      if (typeof layoutNav === 'function') layoutNav();
-    });
-  }, {passive:true});
-})();
-</script>
-
-<style id="desktop-navbar-fixed">
-/* ================================================================
-   DESKTOP NAVBAR — FIX
-   ป้องกัน CSS mobile/iPad (<1025px) แทรกทับ navbar ของ Chrome desktop
-   ================================================================ */
-
-/* Chrome/Edge desktop: >= 1200px = sidebar เต็ม */
-@media (min-width:1200px) and (hover:hover) and (pointer:fine){
-  html.desktop-computer .tabbar{
-    width:236px !important;
-    left:16px !important;
-    right:auto !important;
-    top:16px !important;
-    bottom:16px !important;
-    height:calc(100vh - 32px) !important;
-    position:fixed !important;
-    display:flex !important;
-    flex-direction:column !important;
-    overflow-x:hidden !important;
-    overflow-y:auto !important;
-    padding:26px 14px 20px !important;
-    margin:0 !important;
-    max-width:none !important;
-    border-radius:26px !important;
-    box-sizing:border-box !important;
-  }
-
-  html.desktop-computer .tabbar .tab{
-    display:flex !important;
-    width:100% !important;
-    min-width:0 !important;
-    min-height:48px !important;
-    height:auto !important;
-    flex:0 0 auto !important;
-    flex-direction:row !important;
-    align-items:center !important;
-    justify-content:flex-start !important;
-    gap:12px !important;
-    padding:12px 14px !important;
-  }
-
-  html.desktop-computer .tabbar .tab .lbl{
-    display:block !important;
-    max-width:none !important;
-    opacity:1 !important;
-    overflow:hidden !important;
-    white-space:nowrap !important;
-    text-overflow:ellipsis !important;
-  }
-
-  html.desktop-computer .tab-pill,
-  html.desktop-computer .tab-more{
-    display:none !important;
-  }
-
-  html.desktop-computer .topbar,
-  html.desktop-computer .page{
-    margin-left:268px !important;
-    width:calc(100% - 268px) !important;
-    box-sizing:border-box !important;
-  }
-
-  html.desktop-computer .topbar .brand{
-    visibility:hidden !important;
-    width:1px !important;
-    overflow:hidden !important;
-    flex:0 0 1px !important;
-  }
-}
-
-/* Chrome/Edge desktop: 900–1199px = sidebar 210px */
-@media (min-width:900px) and (max-width:1199px) and (hover:hover) and (pointer:fine){
-  html.desktop-computer .tabbar{
-    width:210px !important;
-    left:16px !important;
-    right:auto !important;
-    top:16px !important;
-    bottom:16px !important;
-    height:calc(100vh - 32px) !important;
-    position:fixed !important;
-    display:flex !important;
-    flex-direction:column !important;
-    align-items:stretch !important;
-    overflow-x:hidden !important;
-    overflow-y:auto !important;
-    padding:26px 14px 20px !important;
-    margin:0 !important;
-    max-width:none !important;
-    border-radius:26px !important;
-    box-sizing:border-box !important;
-    gap:6px !important;
-  }
-
-  /* สำคัญ: บังคับให้เมนูหลักกลับมาแสดง ไม่ให้ mobile rule ซ่อน */
-  html.desktop-computer .tabbar > .tab{
-    display:flex !important;
-    visibility:visible !important;
-    opacity:1 !important;
-    width:100% !important;
-    min-width:0 !important;
-    min-height:48px !important;
-    height:auto !important;
-    flex:0 0 auto !important;
-    flex-direction:row !important;
-    align-items:center !important;
-    justify-content:flex-start !important;
-    gap:12px !important;
-    padding:12px 14px !important;
-    box-sizing:border-box !important;
-  }
-
-  html.desktop-computer .tabbar > .tab .ico,
-  html.desktop-computer .tabbar > .tab .ico svg{
-    display:block !important;
-    width:20px !important;
-    height:20px !important;
-    flex:0 0 20px !important;
-  }
-
-  html.desktop-computer .tabbar > .tab .lbl{
-    display:block !important;
-    visibility:visible !important;
-    opacity:1 !important;
-    max-width:none !important;
-    overflow:hidden !important;
-    white-space:nowrap !important;
-    text-overflow:ellipsis !important;
-    font-size:14px !important;
-  }
-
-  /* ชื่อระบบของ sidebar ต้องเป็น pseudo-header ไม่ใช่ pill */
-  html.desktop-computer .tab-pill,
-  html.desktop-computer .tab-more{
-    display:none !important;
-  }
-
-  html.desktop-computer .topbar,
-  html.desktop-computer .page{
-    margin-left:242px !important;
-    width:calc(100% - 242px) !important;
-    box-sizing:border-box !important;
-  }
-
-  /* กัน final mobile/iPad patch ที่ max-width:1024px มาเปิด brand */
-  html.desktop-computer .topbar .brand{
-    visibility:hidden !important;
-    width:1px !important;
-    overflow:hidden !important;
-    flex:0 0 1px !important;
-  }
-}
-
-/* Chrome/Edge desktop window ที่ถูกลากให้แคบ: 700–899px
-   เปลี่ยนเป็น sidebar ไอคอน เพื่อไม่ให้ navbar ลอย/พังเป็น bottom bar */
-@media (min-width:700px) and (max-width:899px) and (hover:hover) and (pointer:fine){
-  html.desktop-computer .tabbar{
-    width:82px !important;
-    left:16px !important;
-    right:auto !important;
-    top:16px !important;
-    bottom:16px !important;
-    height:calc(100vh - 32px) !important;
-    position:fixed !important;
-    display:flex !important;
-    flex-direction:column !important;
-    align-items:stretch !important;
-    overflow-x:hidden !important;
-    overflow-y:auto !important;
-    padding:62px 10px 16px !important;
-    margin:0 !important;
-    max-width:none !important;
-    border-radius:22px !important;
-    box-sizing:border-box !important;
-    gap:6px !important;
-  }
-
-  html.desktop-computer .tabbar::before,
-  html.desktop-computer .tabbar::after{
-    content:"" !important;
-    height:0 !important;
-    padding:0 !important;
-    margin:0 !important;
-    border:0 !important;
-  }
-
-  html.desktop-computer .tabbar > .tab{
-    display:flex !important;
-    visibility:visible !important;
-    opacity:1 !important;
-    width:62px !important;
-    min-width:62px !important;
-    min-height:48px !important;
-    height:48px !important;
-    flex:0 0 48px !important;
-    align-items:center !important;
-    justify-content:center !important;
-    padding:12px 8px !important;
-    gap:0 !important;
-    border-radius:14px !important;
-  }
-
-  html.desktop-computer .tabbar > .tab .ico,
-  html.desktop-computer .tabbar > .tab .ico svg{
-    display:block !important;
-    width:20px !important;
-    height:20px !important;
-    flex:0 0 20px !important;
-  }
-
-  html.desktop-computer .tabbar > .tab .lbl{
-    display:none !important;
-  }
-
-  html.desktop-computer .tab-pill,
-  html.desktop-computer .tab-more{
-    display:none !important;
-  }
-
-  html.desktop-computer .nav-collapse-btn{
-    display:flex !important;
-    top:16px !important;
-    right:21px !important;
-    left:auto !important;
-    width:40px !important;
-    height:40px !important;
-  }
-
-  html.desktop-computer .topbar,
-  html.desktop-computer .page{
-    margin-left:108px !important;
-    width:calc(100% - 108px) !important;
-    box-sizing:border-box !important;
-  }
-
-  html.desktop-computer .topbar .brand{
-    visibility:hidden !important;
-    width:1px !important;
-    overflow:hidden !important;
-    flex:0 0 1px !important;
-  }
-}
-
-/* Manual collapse remains consistent at every desktop width */
-html.desktop-computer body.nav-collapsed .tabbar{
-  width:82px !important;
-  padding-left:11px !important;
-  padding-right:11px !important;
-}
-
-html.desktop-computer body.nav-collapsed .tabbar > .tab{
-  width:100% !important;
-  min-width:0 !important;
-  justify-content:center !important;
-  padding-left:8px !important;
-  padding-right:8px !important;
-  gap:0 !important;
-}
-
-html.desktop-computer body.nav-collapsed .tabbar > .tab .lbl{
-  display:none !important;
-}
-
-html.desktop-computer body.nav-collapsed .tabbar .tab-pill,
-html.desktop-computer body.nav-collapsed .tabbar .tab-more{
-  display:none !important;
-}
-
-html.desktop-computer body.nav-collapsed .topbar,
-html.desktop-computer body.nav-collapsed .page{
-  margin-left:114px !important;
-  width:calc(100% - 114px) !important;
-}
-</style>
 </head>
 <body>
 
@@ -6868,15 +6568,9 @@ function layoutNav() {
   if (!bar || !pill) return;
   const tabs = [...bar.querySelectorAll('.tab')];
 
-  // Desktop computer always uses the sidebar, regardless of window width.
-  // The mobile bottom-nav breakpoint must never be inferred from viewport width
-  // because a desktop Chrome window can be resized below 900px.
-  const isDesktopComputer = document.documentElement.classList.contains('desktop-computer');
-  if (isDesktopComputer) {
-    tabs.forEach(t => {
-      t.style.width = '';
-      t.classList.remove('promoted', 'nav-hide');
-    });
+  // เดสก์ท็อปใช้ sidebar: ล้างค่าที่ JS เคยตั้ง
+  if (!window.matchMedia('(max-width:899px)').matches) {
+    tabs.forEach(t => { t.style.width = ''; t.classList.remove('promoted', 'nav-hide'); });
     return;
   }
   if (!bar.clientWidth) return;
@@ -6981,17 +6675,16 @@ document.getElementById('tabMore').addEventListener('click', openMoreMenu);
   apply(collapsed);
 
   btn.addEventListener('click', () => {
-    if (!document.documentElement.classList.contains('desktop-computer')) return;
+    if (window.matchMedia('(max-width:899px)').matches) return;
     apply(!document.body.classList.contains('nav-collapsed'));
   });
 
   const syncViewport = () => {
-    if (!document.documentElement.classList.contains('desktop-computer')) {
+    if (window.matchMedia('(max-width:899px)').matches) {
       document.body.classList.remove('nav-collapsed');
     } else {
       apply(document.body.classList.contains('nav-collapsed'));
     }
-    requestAnimationFrame(layoutNav);
   };
   window.addEventListener('resize', syncViewport, {passive:true});
 })();
@@ -11875,12 +11568,12 @@ function openBulkAuditModal(action = 'set') {
     document.documentElement.classList.add('bchok3-landscape-print');
     pa.innerHTML = html.replace(
       '<style>@page{ size: A4 landscape; margin: 8mm; }',
-      '<style>@page{ size: A4 landscape; margin: 8mm; }' +
+      '<style>@page{ size: A4 landscape; margin: 5mm; }' +
       '@media print{'+
-      'html.bchok3-landscape-print{width:297mm !important;min-width:297mm !important;max-width:297mm !important;}'+
-      'html.bchok3-landscape-print body{width:297mm !important;min-width:297mm !important;max-width:297mm !important;}'+
-      '#printArea.report-print-area{width:100% !important;min-width:0 !important;max-width:none !important;}'+
-      '#printArea.report-print-area > div{width:100% !important;max-width:none !important;}'+
+      'html.bchok3-landscape-print,html.bchok3-landscape-print body{width:297mm !important;min-width:297mm !important;max-width:297mm !important;margin:0 !important;padding:0 !important;}'+
+      '#printArea.report-print-area{width:287mm !important;min-width:287mm !important;max-width:287mm !important;margin:0 !important;padding:0 !important;overflow:visible !important;}'+
+      '#printArea.report-print-area > div{width:287mm !important;min-width:287mm !important;max-width:287mm !important;margin:0 !important;padding:0 !important;}'+
+      '#printArea.report-print-area table{width:287mm !important;max-width:287mm !important;}'+
       '}'
     );
   }
@@ -13607,7 +13300,19 @@ function compareMonthlyOfficers(a, b) {
 
 </style>${pages}`;
     } else {
-      pa.innerHTML = html;
+      // Desktop: บังคับพื้นที่พิมพ์ของรายงานตรวจนับประจำเดือนให้เป็น A4 แนวนอนจริง
+      // ใช้พื้นที่พิมพ์ 287mm (A4 297mm - margin ซ้าย/ขวา 5mm) เต็มความกว้าง
+      pa.className = 'report-print-area monthly-landscape-print';
+      pa.innerHTML = html.replace(
+        '<style>',
+        '<style>@page{size:A4 landscape;margin:5mm;}'+
+        '@media print{'+
+        'html,body{width:297mm !important;min-width:297mm !important;max-width:297mm !important;margin:0 !important;padding:0 !important;}'+
+        '#printArea.monthly-landscape-print{width:287mm !important;min-width:287mm !important;max-width:287mm !important;margin:0 !important;padding:0 !important;overflow:visible !important;}'+
+        '#printArea.monthly-landscape-print > .mcr{width:287mm !important;min-width:287mm !important;max-width:287mm !important;margin:0 !important;padding:0 !important;}'+
+        '#printArea.monthly-landscape-print .mcr table{width:287mm !important;max-width:287mm !important;}'+
+        '}'
+      );
     }
     triggerPrint(() => {
       pa.innerHTML = '';
