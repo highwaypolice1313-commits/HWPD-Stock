@@ -11568,12 +11568,12 @@ function openBulkAuditModal(action = 'set') {
     document.documentElement.classList.add('bchok3-landscape-print');
     pa.innerHTML = html.replace(
       '<style>@page{ size: A4 landscape; margin: 8mm; }',
-      '<style>@page{ size: A4 landscape; margin: 8mm; }' +
+      '<style>@page{ size: A4 landscape; margin: 5mm; }' +
       '@media print{'+
-      'html.bchok3-landscape-print{width:297mm !important;min-width:297mm !important;max-width:297mm !important;}'+
-      'html.bchok3-landscape-print body{width:297mm !important;min-width:297mm !important;max-width:297mm !important;}'+
-      '#printArea.report-print-area{width:100% !important;min-width:0 !important;max-width:none !important;}'+
-      '#printArea.report-print-area > div{width:100% !important;max-width:none !important;}'+
+      'html.bchok3-landscape-print,html.bchok3-landscape-print body{width:297mm !important;min-width:297mm !important;max-width:297mm !important;margin:0 !important;padding:0 !important;}'+
+      '#printArea.report-print-area{width:287mm !important;min-width:287mm !important;max-width:287mm !important;margin:0 !important;padding:0 !important;overflow:visible !important;}'+
+      '#printArea.report-print-area > div{width:287mm !important;min-width:287mm !important;max-width:287mm !important;margin:0 !important;padding:0 !important;}'+
+      '#printArea.report-print-area table{width:287mm !important;max-width:287mm !important;}'+
       '}'
     );
   }
@@ -13300,7 +13300,19 @@ function compareMonthlyOfficers(a, b) {
 
 </style>${pages}`;
     } else {
-      pa.innerHTML = html;
+      // Desktop: บังคับพื้นที่พิมพ์ของรายงานตรวจนับประจำเดือนให้เป็น A4 แนวนอนจริง
+      // ใช้พื้นที่พิมพ์ 287mm (A4 297mm - margin ซ้าย/ขวา 5mm) เต็มความกว้าง
+      pa.className = 'report-print-area monthly-landscape-print';
+      pa.innerHTML = html.replace(
+        '<style>',
+        '<style>@page{size:A4 landscape;margin:5mm;}'+
+        '@media print{'+
+        'html,body{width:297mm !important;min-width:297mm !important;max-width:297mm !important;margin:0 !important;padding:0 !important;}'+
+        '#printArea.monthly-landscape-print{width:287mm !important;min-width:287mm !important;max-width:287mm !important;margin:0 !important;padding:0 !important;overflow:visible !important;}'+
+        '#printArea.monthly-landscape-print > .mcr{width:287mm !important;min-width:287mm !important;max-width:287mm !important;margin:0 !important;padding:0 !important;}'+
+        '#printArea.monthly-landscape-print .mcr table{width:287mm !important;max-width:287mm !important;}'+
+        '}'
+      );
     }
     triggerPrint(() => {
       pa.innerHTML = '';
