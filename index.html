@@ -8096,8 +8096,7 @@ async function printQrBatch(list) {
   const pa = document.getElementById('printArea');
   pa.classList.add('report-print-area');
   // @page margin เป็น 0 แล้วใช้ padding ของ .qr-sheet แทน เพื่อให้ความกว้างพื้นที่พิมพ์ตรงกับ A4 จริง
-   pa.innerHTML = `<style>${qrLabelCss()}</style>${qrPagesHtml(cells)}`;
-    <div class="qr-sheet"><div class="qr-grid">${cells.join('')}</div></div>`;
+  pa.innerHTML = `<style>${qrLabelCss()}</style>${qrPagesHtml(cells)}`;
   triggerPrint(() => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; }, { immediate: true });
 }
 
@@ -8119,7 +8118,6 @@ function openQrView(a) {
     const pa = document.getElementById('printArea');
     pa.classList.add('report-print-area');
     pa.innerHTML = `<style>${qrLabelCss()}</style>${qrPagesHtml([qrLabelCellHtml(src, label, a['ชื่อครุภัณฑ์'])])}`;
-      <div class="qr-sheet"><div class="qr-grid">${qrLabelCellHtml(src, label, a['ชื่อครุภัณฑ์'])}</div></div>`;
     triggerPrint(() => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; });
   };
 }
