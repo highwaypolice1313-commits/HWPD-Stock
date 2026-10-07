@@ -8036,8 +8036,8 @@ function qrLabelCellHtml(src, text, name) {
 function qrLabelCss() {
   const L = QR_LABEL;
   return `
-    .qr-sheet{ box-sizing:border-box; padding:${L.margin}mm; font-family:'Kanit',sans-serif; color:#000; }
-    .qr-grid{ display:grid; grid-template-columns:repeat(auto-fill, ${L.w}mm); gap:${L.gap}mm; justify-content:start; }
+.qr-sheet{ box-sizing:border-box; width:${210 - L.margin * 2}mm; padding:0; font-family:'Kanit',sans-serif; color:#000; }
+.qr-grid{ display:grid; grid-template-columns:repeat(auto-fill, ${L.w}mm); gap:${L.gap}mm; justify-content:center; }
     .qr-cell{
       width:${L.w}mm; height:${L.h}mm; box-sizing:border-box; padding:1mm 0.8mm;
       border:${L.cut}; background:#fff;
@@ -8072,7 +8072,7 @@ async function printQrBatch(list) {
   const pa = document.getElementById('printArea');
   pa.classList.add('report-print-area');
   // @page margin เป็น 0 แล้วใช้ padding ของ .qr-sheet แทน เพื่อให้ความกว้างพื้นที่พิมพ์ตรงกับ A4 จริง
-  pa.innerHTML = `<style>@page{size:A4;margin:0;}${qrLabelCss()}</style>
+  pa.innerHTML = `<style>@page{size:A4;margin:${QR_LABEL.margin}mm;}${qrLabelCss()}</style>
     <div class="qr-sheet"><div class="qr-grid">${cells.join('')}</div></div>`;
   triggerPrint(() => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; }, { immediate: true });
 }
