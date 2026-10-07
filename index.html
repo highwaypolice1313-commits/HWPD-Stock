@@ -15,7 +15,6 @@
 <script src="chart.umd.js"></script>
 <script src="qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-helpers.js"></script>
 <style>
@@ -429,7 +428,7 @@ input[type="date"]::-webkit-date-and-time-value{ text-align:left; }
   }
 
   /* =========================================
-     กระดาษ A4 จริง
+     กระดาษ A4
      ========================================= */
 
   #printArea{
@@ -10951,7 +10950,7 @@ function rpOfficial(body) {
       <div class="btn-row">
         <button class="btn btn-primary" id="btnRpGeneral">ครุภัณฑ์ทั่วไป</button>
         ${hasComms ? `<button class="btn btn-ghost" id="btnRpComms">เครื่องมือสื่อสาร</button>` : ''}
-        ${hasVeh ? `<button class="btn btn-ghost" id="btnRpVehicle">ดาวน์โหลด PDF แบบ บชก.3</button>` : ''}
+        ${hasVeh ? `<button class="btn btn-ghost" id="btnRpVehicle">ยานพาหนะ (แบบ บชก.3)</button>` : ''}
       </div>
     </div>
     <div class="glass rp-card"><h4>ส่งออกข้อมูล (CSV)</h4>
@@ -11197,7 +11196,7 @@ function drawAuditView() {
      <button class="btn btn-ghost" id="btnClearAuditSelected">ล้างผลตรวจเฉพาะรายการ</button>
      <button class="btn btn-primary" id="btnPrintOfficialGeneral">พิมพ์รายงานครุภัณฑ์ทั่วไป (แบบราชการ)</button>
      ${state.assets.some(a => a['หมวดหมู่'] === 'สื่อสาร') ? `<button class="btn btn-ghost" id="btnPrintCommsReport">พิมพ์รายงานเครื่องมือสื่อสาร</button>` : ''}
-     ${showVehicleBtn ? `<button class="btn btn-ghost" id="btnPrintVehicleReport">ดาวน์โหลด PDF แบบ บชก.3 (ยานพาหนะ)</button>` : ''}
+     ${showVehicleBtn ? `<button class="btn btn-ghost" id="btnPrintVehicleReport">พิมพ์แบบ บชก.3 (ยานพาหนะ)</button>` : ''}
       </div>
     </div>
 
@@ -11462,14 +11461,14 @@ function openBulkAuditModal(action = 'set') {
   draw();
 }
 
-  async function printVehicleAuditReport() {
+  function printVehicleAuditReport() {
   const orgName = (state.settings && state.settings.orgName) || ORG_NAME;
   const phone = (state.settings && state.settings.orgPhone) || ORG_PHONE;
   const vehicles = state.assets.filter(a => a['หมวดหมู่'] === 'ยานพาหนะ');
   let keep = 0, dispose = 0, transfer = 0;
   const scoreSums = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0, 0: 0 };
   let countA = 0, countD = 0;
-
+ 
   const rows = vehicles.map((a, i) => {
     const rec = auditRecordFor(a['รหัสครุภัณฑ์']) || {};
     const score = rec['คะแนนสภาพ'];
@@ -11495,9 +11494,10 @@ function openBulkAuditModal(action = 'set') {
       <td style="border:1px solid #000; padding:2px 4px;">${rec['ความเห็นคณะกรรมการ'] === 'ให้หน่วยงานอื่น' ? '✓' : ''}</td>
     </tr>`;
   }).join('');
-
+ 
   const html = `
-    <div class="bchok3-pdf-page">
+    <style>@page{ size: A4 landscape; margin: 8mm; } table{ page-break-inside:auto; } tr{ page-break-inside:avoid; }</style>
+    <div style="font-family:'TH Sarabun New','Sarabun','Kanit',sans-serif; font-size:10.5pt; line-height:1.2; color:#000;">
       <div style="text-align:right; border:1px solid #000; width:60px; padding:2px; font-size:9pt; float:right;">แบบ บชก.3</div>
       <div style="text-align:center; font-weight:700; font-size:14pt;">รายงานผลการตรวจสอบครุภัณฑ์เครื่องจักร/ยานพาหนะ ประจำปี ${toThaiNumber(state.auditYear + 543)}</div>
       <div style="text-align:center; margin-bottom:3mm;">หน่วยงาน ${toThaiNumber(escapeHtml(orgName))} ${phone ? 'โทรศัพท์ ' + toThaiNumber(escapeHtml(phone)) : ''}</div>
@@ -11547,78 +11547,41 @@ function openBulkAuditModal(action = 'set') {
         ${committeeSignBlockHtml(true)}
       </div>
     </div>`;
+  const pa = document.getElementById('printArea');
+  pa.classList.add('report-print-area');
 
-  // สร้าง PDF โดยตรง ไม่เรียก window.print() จึงไม่มี URL / ชื่อเว็บไซต์ / วันที่จาก browser ติดหัวท้ายกระดาษ
-  if (typeof html2pdf === 'undefined') {
-    toast('ยังโหลดระบบสร้าง PDF ไม่เสร็จ กรุณาลองอีกครั้ง');
-    return;
+  // มือถือส่วนใหญ่ไม่รองรับ @page landscape -> หมุนเนื้อหา 90° ลงกระดาษแนวตั้งแทน
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+                   (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent));
+  if (isMobile) {
+    const inner = html.replace(/@page\{[^}]*\}/, ''); // ตัดกฎ landscape เดิมออก ไม่ให้ตีกัน
+    pa.innerHTML = `
+      <style>@page{ size:A4 portrait; margin:0; }</style>
+      <div style="position:relative; width:210mm; height:297mm; overflow:hidden;">
+        <div style="position:absolute; top:0; left:210mm; width:297mm; height:210mm; box-sizing:border-box; padding:8mm; transform-origin:0 0; transform:rotate(90deg);">
+          ${inner}
+        </div>
+      </div>`;
+  } else {
+    // Desktop เท่านั้น: ขยายพื้นที่พิมพ์ของ บชก.3 ให้เท่ากับ A4 แนวนอนเต็มแผ่น
+    // โดยไม่แตะกฎพิมพ์ของรายงาน/หน้าอื่น และไม่กระทบการพิมพ์บนมือถือ
+    document.documentElement.classList.add('bchok3-landscape-print');
+    pa.innerHTML = html.replace(
+      '<style>@page{ size: A4 landscape; margin: 8mm; }',
+      '<style>@page{ size: A4 landscape; margin: 8mm; }' +
+      '@media print{'+
+      'html.bchok3-landscape-print{width:297mm !important;min-width:297mm !important;max-width:297mm !important;}'+
+      'html.bchok3-landscape-print body{width:297mm !important;min-width:297mm !important;max-width:297mm !important;}'+
+      '#printArea.report-print-area{width:100% !important;min-width:0 !important;max-width:none !important;}'+
+      '#printArea.report-print-area > div{width:100% !important;max-width:none !important;}'+
+      '}'
+    );
   }
-
-  const host = document.createElement('div');
-  host.style.position = 'fixed';
-  host.style.left = '-100000px';
-  host.style.top = '0';
-  host.style.width = '281mm';
-  host.style.background = '#fff';
-  host.style.zIndex = '-1';
-  host.innerHTML = `<style>
-    .bchok3-pdf-page{
-      width:281mm;
-      box-sizing:border-box;
-      padding:0;
-      margin:0;
-      background:#fff;
-      color:#000;
-      font-family:'TH Sarabun New','Sarabun','Kanit',sans-serif;
-      font-size:10.5pt;
-      line-height:1.2;
-    }
-    .bchok3-pdf-page table{page-break-inside:auto;}
-    .bchok3-pdf-page tr{page-break-inside:avoid;break-inside:avoid;}
-    .bchok3-pdf-page thead{display:table-header-group;}
-    .bchok3-pdf-page tfoot{display:table-footer-group;}
-  </style>${html}`;
-  document.body.appendChild(host);
-
-  try {
-    if (document.fonts && document.fonts.ready) await document.fonts.ready;
-    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-
-    const fileYear = String(state.auditYear + 543);
-    const filename = `แบบ_บชก.3_รายงานผลการตรวจสอบยานพาหนะ_${fileYear}.pdf`;
-    const target = host.querySelector('.bchok3-pdf-page');
-
-    await html2pdf().set({
-      margin: [8, 8, 8, 8],
-      filename,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        logging: false,
-        windowWidth: target.scrollWidth
-      },
-      jsPDF: {
-        unit: 'mm',
-        format: 'a4',
-        orientation: 'landscape',
-        compress: true
-      },
-      pagebreak: {
-        mode: ['css', 'legacy'],
-        avoid: ['tr']
-      }
-    }).from(target).save();
-
-    toast('ดาวน์โหลด PDF แบบ บชก.3 แล้ว');
-  } catch (err) {
-    console.error('สร้าง PDF แบบ บชก.3 ไม่สำเร็จ:', err);
-    toast('สร้าง PDF ไม่สำเร็จ: ' + (err && err.message ? err.message : 'กรุณาลองอีกครั้ง'));
-  } finally {
-    host.remove();
-  }
+  triggerPrint(() => {
+    document.documentElement.classList.remove('bchok3-landscape-print');
+    pa.classList.remove('report-print-area');
+    pa.innerHTML = '';
+  });
 }
    
 async function clearAuditStatus(assetId) {
