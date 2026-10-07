@@ -13606,7 +13606,67 @@ function compareMonthlyOfficers(a, b) {
         .mcr-mobile-page-inner .mcr tr{page-break-inside:avoid;break-inside:avoid;}
       
 
-</style>${pages}`;
+</style>
+
+<style id="final-topbar-full-username-fix">
+/* FINAL MOBILE TOPBAR — แสดงชื่อผู้ใช้เต็ม ไม่ตัดด้วย ... */
+@media (max-width:899px), (hover:none) and (pointer:coarse){
+  .topbar{
+    flex-wrap:nowrap !important;
+    align-items:center !important;
+  }
+  .topbar .brand{
+    flex:1 1 auto !important;
+    min-width:0 !important;
+  }
+  .topbar .profile{
+    flex:0 1 auto !important;
+    min-width:0 !important;
+    max-width:none !important;
+    flex-wrap:nowrap !important;
+    gap:5px !important;
+  }
+  .topbar .profile-name,
+  .topbar #profileName{
+    display:block !important;
+    flex:0 1 auto !important;
+    width:auto !important;
+    min-width:0 !important;
+    max-width:160px !important;
+    height:auto !important;
+    overflow:visible !important;
+    white-space:normal !important;
+    word-break:keep-all !important;
+    overflow-wrap:anywhere !important;
+    text-overflow:clip !important;
+    line-height:1.15 !important;
+    text-align:right !important;
+    font-size:11px !important;
+  }
+  .topbar .role-pill{
+    flex:0 0 auto !important;
+    white-space:nowrap !important;
+  }
+  .topbar #btnLogout{
+    flex:0 0 36px !important;
+  }
+}
+@media (max-width:380px){
+  .topbar .profile-name,
+  .topbar #profileName{
+    max-width:125px !important;
+    font-size:10px !important;
+  }
+  .topbar .role-pill{
+    font-size:9px !important;
+    padding:3px 6px !important;
+  }
+  .topbar #btnLogout{
+    flex-basis:34px !important;
+  }
+}
+</style>
+${pages}`;
     } else {
       // Desktop: บังคับพื้นที่พิมพ์ของรายงานตรวจนับประจำเดือนให้เป็น A4 แนวนอนจริง
       // ใช้พื้นที่พิมพ์ 287mm (A4 297mm - margin ซ้าย/ขวา 5mm) เต็มความกว้าง
