@@ -7645,6 +7645,10 @@ function openQuickStatusForm(a) {
   };
 }
 
+   function setPdfMode(on) {
+  try { localStorage.setItem('hpPrintMode', on ? 'pdf' : 'print'); } catch (e) {}
+}
+
    /* ========== ส่งออก #printArea เป็น PDF (A4 จริง ไม่มีหัว/ท้ายกระดาษ) ========== */
 function isPdfMode() {
   try { return localStorage.getItem('hpPrintMode') === 'pdf'; } catch (e) { return false; }
@@ -12406,6 +12410,15 @@ function renderViewerSettings() {
       <div class="hint" style="margin-top:10px;">เลื่อนในกรอบเพื่อดูธีมเพิ่มเติม · บันทึกไว้เฉพาะเครื่อง/เบราว์เซอร์นี้</div>
     </div>`;
 
+   <div class="section-title" style="margin-top:6px; font-size:14px;">รูปแบบการพิมพ์</div>
+<div class="glass" style="padding:14px; margin-bottom:16px;">
+  <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+    <input type="checkbox" id="st_pdfmode" ${isPdfMode() ? 'checked' : ''} style="width:18px;height:18px;">
+    <span>บันทึกเป็นไฟล์ PDF แทนการเปิดหน้าต่างพิมพ์</span>
+  </label>
+  <div class="hint">เหมาะกับมือถือ/iPad ที่พิมพ์ตรงไม่ได้ หรือต้องการเก็บเป็นไฟล์</div>
+</div>
+
   document.querySelectorAll('#themeFilterRow [data-tf]').forEach(c => {
     c.onclick = () => { state.themeFilter = c.dataset.tf; renderViewerSettings(); };
   });
@@ -12418,6 +12431,11 @@ function renderViewerSettings() {
       if (lbl && t) lbl.textContent = 'ใช้อยู่: ' + t.name;
     };
   });
+
+   // ใส่ท้าย renderSettings() และ renderViewerSettings()
+const pm = document.getElementById('st_pdfmode');
+if (pm) pm.onchange = () => { setPdfMode(pm.checked); toast(pm.checked ? 'เปลี่ยนเป็นบันทึก PDF' : 'เปลี่ยนเป็นพิมพ์ปกติ'); };
+   
 }
    
 /* ---- (ข) แก้ renderSettings() ให้เป็นแบบนี้ทั้งฟังก์ชัน (แทนที่ของเดิมทั้งหมด) ---- */
@@ -12468,6 +12486,15 @@ function renderSettings() {
         <div class="hint" style="margin-top:10px;">เลื่อนในกรอบเพื่อดูธีมเพิ่มเติม · บันทึกไว้เฉพาะเครื่อง/เบราว์เซอร์นี้</div>
       </div>
     </div>
+    
+    <div class="section-title" style="margin-top:6px; font-size:14px;">รูปแบบการพิมพ์</div>
+<div class="glass" style="padding:14px; margin-bottom:16px;">
+  <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+    <input type="checkbox" id="st_pdfmode" ${isPdfMode() ? 'checked' : ''} style="width:18px;height:18px;">
+    <span>บันทึกเป็นไฟล์ PDF แทนการเปิดหน้าต่างพิมพ์</span>
+  </label>
+  <div class="hint">เหมาะกับมือถือ/iPad ที่พิมพ์ตรงไม่ได้ หรือต้องการเก็บเป็นไฟล์</div>
+</div>
 
     <div class="settings-panel" data-panel="committee" style="display:${state.settingsTab==='committee'?'block':'none'};">
       ${auditCommitteeSettingsSectionHtml(s)}
@@ -12764,6 +12791,11 @@ updDocPreview();
 
   wireAuditCommitteeSettingsHandlers();
   if (state.settingsTab === 'activity') loadActivityPanel();   // กรณีรีเฟรชแล้วค้างอยู่แท็บนี้
+
+   // ใส่ท้าย renderSettings() และ renderViewerSettings()
+const pm = document.getElementById('st_pdfmode');
+if (pm) pm.onchange = () => { setPdfMode(pm.checked); toast(pm.checked ? 'เปลี่ยนเป็นบันทึก PDF' : 'เปลี่ยนเป็นพิมพ์ปกติ'); };
+   
 }
 
    /* ===== [แก้ไขพิมพ์เปล่า] ย้าย #printArea ให้เป็นลูกตรงของ <body> =====
