@@ -4158,7 +4158,7 @@ body.modal-open{ overflow:hidden; overscroll-behavior:none; }
 
 .nav-collapse-btn{ display:none; }
 
-@media (max-width:1024px), (hover:none) and (pointer:coarse){
+@media (max-width:899px), (hover:none) and (pointer:coarse){
   /* ลดเฉพาะ animation ที่ไม่เกี่ยวกับการใช้งาน */
   .hero-card::before{ animation:none !important; }
   .list-item,.asset-card,.stat-card,.chart-card,.mc-card{
@@ -4548,7 +4548,7 @@ body.modal-open{ overflow:hidden; overscroll-behavior:none; }
    ทุกธีมใช้พฤติกรรมการเลื่อนแบบเดียวกันกับ Liquid Glass
    ไม่มี nested scroller ที่ไม่จำเป็น
    ========================================================= */
-@media (max-width:1024px), (hover:none) and (pointer:coarse){
+@media (max-width:899px), (hover:none) and (pointer:coarse){
   html, body{
     overflow-x:clip !important;
   }
@@ -4807,7 +4807,7 @@ html, body{ overflow-x:clip; height:auto; min-height:100%; }
 }
 
 /* ---------- B. จอสัมผัส (มือถือ / iPad) ---------- */
-@media (max-width:1024px), (hover:none) and (pointer:coarse){
+@media (max-width:899px), (hover:none) and (pointer:coarse){
 
   body.modal-open{ overflow:hidden !important; overscroll-behavior:none !important; }
 
@@ -4983,6 +4983,7 @@ html, body{ overflow-x:clip; height:auto; min-height:100%; }
   .topbar .profile-name{ max-width:68px !important; font-size:10px !important; }
   .topbar #btnLogout{ width:34px !important; height:34px !important; }
 }
+   }
 </style>
    
 
@@ -4992,7 +4993,7 @@ html, body{ overflow-x:clip; height:auto; min-height:100%; }
    บังคับให้แถบผู้ใช้ด้านบนกลับมาแสดงจริงหลัง CSS ชุดก่อนหน้า
    ไม่แตะ logic / event / desktop computer
    ========================================================= */
-@media (max-width:1024px), (hover:none) and (pointer:coarse){
+@media (max-width:899px), (hover:none) and (pointer:coarse){
   .topbar{
     position:sticky !important;
     top:0 !important;
@@ -5138,7 +5139,7 @@ html, body{ overflow-x:clip; height:auto; min-height:100%; }
 <style id="final-topbar-profile-name-refresh-fix">
 /* FINAL TOPBAR DETAIL FIX — เฉพาะมือถือ + iPad
    ไม่เปลี่ยน desktop และไม่แตะ logic หน้าอื่น */
-@media (max-width:1024px), (hover:none) and (pointer:coarse){
+@media (max-width:899px), (hover:none) and (pointer:coarse){
   .topbar .profile-name,
   .topbar #profileName{
     display:inline-block !important;
@@ -5250,7 +5251,7 @@ html, body{ overflow-x:clip; height:auto; min-height:100%; }
 :root[data-theme="liquid"] .memo-form-sheet textarea.input{
   background:rgba(255,255,255,.72) !important;
 }
-@media (max-width:1024px), (hover:none) and (pointer:coarse){
+@media (max-width:899px), (hover:none) and (pointer:coarse){
   :root[data-theme="liquid"] .memo-form-sheet{
     background:rgba(255,255,255,.74) !important;
   }
@@ -5293,6 +5294,33 @@ html, body{ overflow-x:clip; height:auto; min-height:100%; }
     color:#0a5fd8 !important;
   }
 }
+
+   <style id="desktop-nav-polish">
+@media (min-width:900px){
+  .tabbar::before{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .tabbar .tab{ min-width:0; }
+}
+
+/* จอกลาง: sidebar แคบลง */
+@media (min-width:900px) and (max-width:1199px){
+  .tabbar::before{ font-size:15px !important; padding-right:56px !important; }
+  .tabbar .tab{ padding:11px 12px; gap:10px; }
+  .tabbar .tab .lbl{ font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+}
+
+/* หน้าต่างเตี้ย: บีบระยะให้เมนูครบ ไม่ล้น */
+@media (min-width:900px) and (max-height:820px){
+  .tabbar{ padding-top:18px; padding-bottom:12px; gap:3px; }
+  .tabbar::after{ padding-bottom:12px; margin-bottom:6px; }
+  .tabbar > .tab-pill + .tab{ margin-top:22px !important; }
+  .tabbar .tab{ min-height:40px; padding-top:8px; padding-bottom:8px; }
+  #navUserCard{ min-height:52px !important; }
+}
+@media (min-width:900px) and (max-height:640px){
+  .tabbar::after{ display:none; }
+}
+</style>
+   
 </style>
 
 </head>
@@ -6689,6 +6717,11 @@ document.getElementById('tabMore').addEventListener('click', openMoreMenu);
   window.addEventListener('resize', syncViewport, {passive:true});
 })();
 
+   document.querySelectorAll('.tabbar .tab[data-tab]').forEach(t => {
+  const l = t.querySelector('.lbl');
+  if (l) t.title = l.textContent.trim();
+});
+
 /* ---------- navbar profile: UI sync only ---------- */
 (function syncNavbarProfile(){
   const nameEl = document.getElementById('profileName');
@@ -7951,60 +7984,141 @@ function triggerPrint(cleanupFn, options = {}) {
 
 }
    
-   async function printQrBatch(list) {
-  if (!list.length) { toast('ไม่มีรายการให้พิมพ์ QR'); return; }
-  if (typeof QRCode === 'undefined') { toast('ไม่พบไฟล์ qrcode.min.js'); return; }
-  if (list.length > 60 && !await confirmSheet('จะพิมพ์ QR ' + list.length + ' ใบ ต้องการดำเนินการต่อหรือไม่?', {title:'พิมพ์ QR จำนวนมาก', okText:'พิมพ์ต่อ'})) return;
-  setLoading(true, 'กำลังสร้าง QR โค้ด...');
+/* ========== ป้าย QR ติดครุภัณฑ์ (แบบมินิ) ========== */
+/* [ปรับตรงนี้] ขนาดป้ายทั้งหมดอยู่ที่นี่ที่เดียว หน่วยเป็น มม. */
+const QR_LABEL = {
+  w: 26,           // กว้างของป้าย
+  h: 30,           // สูงของป้าย
+  qr: 17,          // ขนาดตัว QR
+  gap: 4,          // ระยะห่างระหว่างป้ายในแผ่น A4
+  margin: 10,      // ขอบกระดาษ
+  cut: '0.3mm dashed #777'
+};
+
+/* ข้อความใต้ QR: หมายเลขเครื่อง -> ทะเบียนรถ -> รหัสครุภัณฑ์ */
+function qrLabelText(a) {
+  return String(a['หมายเลขเครื่อง'] || '').trim()
+      || String(a['ทะเบียนรถ'] || '').trim()
+      || String(a['รหัสครุภัณฑ์'] || '').trim();
+}
+
+/* สร้างรูป QR (dataURL) — ฝัง "รหัสครุภัณฑ์" ไว้ เพื่อให้ปุ่มสแกนยังหาครุภัณฑ์เจอ */
+async function qrDataUrl(code, px) {
   const tmp = document.createElement('div');
   tmp.style.cssText = 'position:fixed;left:-9999px;top:0;';
   document.body.appendChild(tmp);
+  try {
+    new QRCode(tmp, {
+      text: code, width: px, height: px,
+      colorDark: '#000000', colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+    await new Promise(r => setTimeout(r, 20));
+    const cv = tmp.querySelector('canvas'), im = tmp.querySelector('img');
+    return cv ? cv.toDataURL('image/png') : (im ? im.src : '');
+  } finally { document.body.removeChild(tmp); }
+}
+
+/* HTML ของป้าย 1 ใบ: QR / ชื่อครุภัณฑ์ / หมายเลขเครื่อง */
+function qrLabelCellHtml(src, text, name) {
+  const L = QR_LABEL;
+  const sn = text.length;
+  const snFs = sn <= 10 ? 6.5 : (sn <= 14 ? 5.5 : 4.5);   // หมายเลขยาว -> ย่อตัวอักษร
+  const nm = String(name || '').trim();
+  const nmFs = nm.length <= 14 ? 6.5 : (nm.length <= 26 ? 5.5 : 4.8);   // ชื่อยาว -> ย่อตัวอักษร
+  return `<div class="qr-cell">
+    <img src="${src}" style="width:${L.qr}mm;height:${L.qr}mm;max-width:none;display:block;image-rendering:pixelated;">
+    <div class="qr-name" style="font-size:${nmFs}pt;">${escapeHtml(nm)}</div>
+    <div class="qr-txt" style="font-size:${snFs}pt;">${escapeHtml(text)}</div>
+  </div>`;
+}
+
+function qrLabelCss() {
+  const L = QR_LABEL;
+  return `
+    @page{ size:A4 portrait; margin:0; }
+    .qr-page{
+      box-sizing:border-box; width:210mm; height:296mm; padding:${L.margin}mm;
+      margin:0; overflow:hidden; background:#fff;
+      page-break-after:always; break-after:page;
+      font-family:'Kanit',sans-serif; color:#000;
+    }
+    .qr-page:last-child{ page-break-after:auto; break-after:auto; }
+    .qr-grid{
+      display:grid; grid-template-columns:repeat(var(--qr-cols), ${L.w}mm);
+      grid-auto-rows:${L.h}mm; gap:${L.gap}mm;
+      justify-content:center; align-content:start;
+    }
+    .qr-cell{
+      width:${L.w}mm; height:${L.h}mm; box-sizing:border-box; padding:1mm 0.8mm;
+      border:${L.cut}; background:#fff;
+      display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.5mm;
+      overflow:hidden;
+    }
+    .qr-name{
+      width:100%; text-align:center; font-weight:500; line-height:1.25;
+      overflow-wrap:anywhere;
+      display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+    }
+    .qr-txt{ width:100%; text-align:center; font-weight:700; line-height:1.1; word-break:break-all; letter-spacing:.02em; }
+  `;
+}
+
+/* ตัดป้ายเป็นหน้า A4 ทีละแผ่น (คำนวณจำนวนคอลัมน์/แถวจากขนาดป้ายอัตโนมัติ) */
+function qrPagesHtml(cells) {
+  const L = QR_LABEL;
+  const cols = Math.max(1, Math.floor((210 - 2 * L.margin + L.gap) / (L.w + L.gap)));
+  const rows = Math.max(1, Math.floor((296 - 2 * L.margin + L.gap) / (L.h + L.gap)));
+  const per = cols * rows;
+  let html = '';
+  for (let i = 0; i < cells.length; i += per) {
+    html += `<div class="qr-page"><div class="qr-grid" style="--qr-cols:${cols};">${cells.slice(i, i + per).join('')}</div></div>`;
+  }
+  return html;
+}
+
+async function printQrBatch(list) {
+  if (!list.length) { toast('ไม่มีรายการให้พิมพ์ QR'); return; }
+  if (typeof QRCode === 'undefined') { toast('ไม่พบไฟล์ qrcode.min.js'); return; }
+  if (list.length > 200 && !await confirmSheet('จะพิมพ์ QR ' + list.length + ' ใบ ต้องการดำเนินการต่อหรือไม่?', {title:'พิมพ์ QR จำนวนมาก', okText:'พิมพ์ต่อ'})) return;
+  setLoading(true, 'กำลังสร้างป้าย QR...');
   const cells = [];
   try {
     for (const a of list) {
-      const holder = document.createElement('div');
-      tmp.appendChild(holder);
-      new QRCode(holder, { text: a['รหัสครุภัณฑ์'], width: 160, height: 160, colorDark: '#17324f', colorLight: '#ffffff' });
-      await new Promise(r => setTimeout(r, 20));
-      const cv = holder.querySelector('canvas'), im = holder.querySelector('img');
-      const src = cv ? cv.toDataURL('image/png') : (im ? im.src : '');
+      // สร้างที่ 200px แล้วย่อลงตอนพิมพ์ ให้ขอบคมเมื่อพิมพ์เล็ก
+      const src = await qrDataUrl(a['รหัสครุภัณฑ์'], 200);
       if (!src) continue;
-      cells.push(`<div class="qr-cell"><img src="${src}" style="width:36mm;height:36mm;max-width:none;">
-        <div style="font-size:10pt;font-weight:600;margin-top:2mm;">${escapeHtml(a['ชื่อครุภัณฑ์'])}</div>
-        <div style="font-size:9pt;">${escapeHtml(a['รหัสครุภัณฑ์'])}</div></div>`);
+      cells.push(qrLabelCellHtml(src, qrLabelText(a), a['ชื่อครุภัณฑ์']));
     }
-  } finally {
-    document.body.removeChild(tmp);
-    setLoading(false);
-  }
+  } finally { setLoading(false); }
+  if (!cells.length) { toast('สร้าง QR ไม่สำเร็จ'); return; }
+
   const pa = document.getElementById('printArea');
   pa.classList.add('report-print-area');
-  pa.innerHTML = `<style>@page{size:A4;margin:10mm;}
-    .qr-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4mm;font-family:'Kanit',sans-serif;}
-    .qr-cell{text-align:center;border:1px dashed #999;padding:3mm;break-inside:avoid;}</style>
-    <div class="qr-grid">${cells.join('')}</div>`;
- triggerPrint(() => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; }, { immediate: true });
+  // @page margin เป็น 0 แล้วใช้ padding ของ .qr-sheet แทน เพื่อให้ความกว้างพื้นที่พิมพ์ตรงกับ A4 จริง
+  pa.innerHTML = `<style>${qrLabelCss()}</style>${qrPagesHtml(cells)}`;
+  triggerPrint(() => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; }, { immediate: true });
 }
+
 function openQrView(a) {
+  const label = qrLabelText(a);
   showSheet(`
     <div class="sheet-title">QR โค้ดครุภัณฑ์</div>
     <div id="qrHolder"></div>
-    <div class="hint" style="text-align:center;">${escapeHtml(a['ชื่อครุภัณฑ์'])} · ${escapeHtml(a['รหัสครุภัณฑ์'])}</div>
+    <div class="hint" style="text-align:center;">${escapeHtml(a['ชื่อครุภัณฑ์'])} · ${escapeHtml(label)}</div>
+    <div class="hint" style="text-align:center;margin-top:4px;">ป้ายพิมพ์ขนาด ${QR_LABEL.w}×${QR_LABEL.h} มม.</div>
     <div class="btn-row"><button class="btn btn-primary" id="btnPrintQr">พิมพ์ป้าย QR</button></div>
   `);
   if (typeof QRCode === 'undefined') { document.getElementById('qrHolder').textContent = 'ไม่พบไฟล์ qrcode.min.js'; return; }
   new QRCode(document.getElementById('qrHolder'), { text: a['รหัสครุภัณฑ์'], width: 180, height: 180, colorDark: '#17324f', colorLight: '#ffffff' });
-  document.getElementById('btnPrintQr').onclick = () => {
-    const cv = document.querySelector('#qrHolder canvas');
-    const im = document.querySelector('#qrHolder img');
-    const src = cv ? cv.toDataURL('image/png') : (im ? im.src : '');
+
+  document.getElementById('btnPrintQr').onclick = async () => {
+    const src = await qrDataUrl(a['รหัสครุภัณฑ์'], 200);
     if (!src) { toast('ไม่พบรูป QR โค้ดสำหรับพิมพ์'); return; }
     const pa = document.getElementById('printArea');
-    pa.classList.add('qr-print-area');
-    pa.innerHTML = `<img src="${src}" style="width:60mm;height:60mm;max-width:none;">
-      <div style="font-size:14pt;font-weight:600;margin-top:4mm;">${escapeHtml(a['ชื่อครุภัณฑ์'])}</div>
-      <div style="font-size:12pt;">${escapeHtml(a['รหัสครุภัณฑ์'])}</div>`;
-    triggerPrint(() => { pa.classList.remove('qr-print-area'); pa.innerHTML = ''; });
+    pa.classList.add('report-print-area');
+    pa.innerHTML = `<style>${qrLabelCss()}</style>${qrPagesHtml([qrLabelCellHtml(src, label, a['ชื่อครุภัณฑ์'])])}`;
+    triggerPrint(() => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; });
   };
 }
 function componentsSection(assetId) {
