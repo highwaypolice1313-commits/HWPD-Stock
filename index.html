@@ -5295,6 +5295,306 @@ html, body{ overflow-x:clip; height:auto; min-height:100%; }
 }
 </style>
 
+
+<script>
+/* ================================================================
+   DESKTOP NAV DEVICE MODE — FIXED
+   ---------------------------------------------------------------
+   ตรวจว่าเป็น "คอมพิวเตอร์" จาก device/UA ไม่ใช่ความกว้างจอ
+   เพื่อให้ Chrome บนคอมที่ลากหน้าต่างให้แคบยังใช้ sidebar ได้
+   ================================================================ */
+(function initDesktopComputerMode(){
+  const ua = navigator.userAgent || '';
+  const touchMac = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+  const mobileUA = /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
+  const desktop = !mobileUA && !touchMac;
+
+  document.documentElement.classList.toggle('desktop-computer', desktop);
+  document.documentElement.classList.toggle('touch-device', !desktop);
+
+  window.addEventListener('resize', () => {
+    document.documentElement.classList.toggle('desktop-computer', desktop);
+    document.documentElement.classList.toggle('touch-device', !desktop);
+    requestAnimationFrame(() => {
+      if (typeof layoutNav === 'function') layoutNav();
+    });
+  }, {passive:true});
+})();
+</script>
+
+<style id="desktop-navbar-fixed">
+/* ================================================================
+   DESKTOP NAVBAR — FIX
+   ป้องกัน CSS mobile/iPad (<1025px) แทรกทับ navbar ของ Chrome desktop
+   ================================================================ */
+
+/* Chrome/Edge desktop: >= 1200px = sidebar เต็ม */
+@media (min-width:1200px) and (hover:hover) and (pointer:fine){
+  html.desktop-computer .tabbar{
+    width:236px !important;
+    left:16px !important;
+    right:auto !important;
+    top:16px !important;
+    bottom:16px !important;
+    height:calc(100vh - 32px) !important;
+    position:fixed !important;
+    display:flex !important;
+    flex-direction:column !important;
+    overflow-x:hidden !important;
+    overflow-y:auto !important;
+    padding:26px 14px 20px !important;
+    margin:0 !important;
+    max-width:none !important;
+    border-radius:26px !important;
+    box-sizing:border-box !important;
+  }
+
+  html.desktop-computer .tabbar .tab{
+    display:flex !important;
+    width:100% !important;
+    min-width:0 !important;
+    min-height:48px !important;
+    height:auto !important;
+    flex:0 0 auto !important;
+    flex-direction:row !important;
+    align-items:center !important;
+    justify-content:flex-start !important;
+    gap:12px !important;
+    padding:12px 14px !important;
+  }
+
+  html.desktop-computer .tabbar .tab .lbl{
+    display:block !important;
+    max-width:none !important;
+    opacity:1 !important;
+    overflow:hidden !important;
+    white-space:nowrap !important;
+    text-overflow:ellipsis !important;
+  }
+
+  html.desktop-computer .tab-pill,
+  html.desktop-computer .tab-more{
+    display:none !important;
+  }
+
+  html.desktop-computer .topbar,
+  html.desktop-computer .page{
+    margin-left:268px !important;
+    width:calc(100% - 268px) !important;
+    box-sizing:border-box !important;
+  }
+
+  html.desktop-computer .topbar .brand{
+    visibility:hidden !important;
+    width:1px !important;
+    overflow:hidden !important;
+    flex:0 0 1px !important;
+  }
+}
+
+/* Chrome/Edge desktop: 900–1199px = sidebar 210px */
+@media (min-width:900px) and (max-width:1199px) and (hover:hover) and (pointer:fine){
+  html.desktop-computer .tabbar{
+    width:210px !important;
+    left:16px !important;
+    right:auto !important;
+    top:16px !important;
+    bottom:16px !important;
+    height:calc(100vh - 32px) !important;
+    position:fixed !important;
+    display:flex !important;
+    flex-direction:column !important;
+    align-items:stretch !important;
+    overflow-x:hidden !important;
+    overflow-y:auto !important;
+    padding:26px 14px 20px !important;
+    margin:0 !important;
+    max-width:none !important;
+    border-radius:26px !important;
+    box-sizing:border-box !important;
+    gap:6px !important;
+  }
+
+  /* สำคัญ: บังคับให้เมนูหลักกลับมาแสดง ไม่ให้ mobile rule ซ่อน */
+  html.desktop-computer .tabbar > .tab{
+    display:flex !important;
+    visibility:visible !important;
+    opacity:1 !important;
+    width:100% !important;
+    min-width:0 !important;
+    min-height:48px !important;
+    height:auto !important;
+    flex:0 0 auto !important;
+    flex-direction:row !important;
+    align-items:center !important;
+    justify-content:flex-start !important;
+    gap:12px !important;
+    padding:12px 14px !important;
+    box-sizing:border-box !important;
+  }
+
+  html.desktop-computer .tabbar > .tab .ico,
+  html.desktop-computer .tabbar > .tab .ico svg{
+    display:block !important;
+    width:20px !important;
+    height:20px !important;
+    flex:0 0 20px !important;
+  }
+
+  html.desktop-computer .tabbar > .tab .lbl{
+    display:block !important;
+    visibility:visible !important;
+    opacity:1 !important;
+    max-width:none !important;
+    overflow:hidden !important;
+    white-space:nowrap !important;
+    text-overflow:ellipsis !important;
+    font-size:14px !important;
+  }
+
+  /* ชื่อระบบของ sidebar ต้องเป็น pseudo-header ไม่ใช่ pill */
+  html.desktop-computer .tab-pill,
+  html.desktop-computer .tab-more{
+    display:none !important;
+  }
+
+  html.desktop-computer .topbar,
+  html.desktop-computer .page{
+    margin-left:242px !important;
+    width:calc(100% - 242px) !important;
+    box-sizing:border-box !important;
+  }
+
+  /* กัน final mobile/iPad patch ที่ max-width:1024px มาเปิด brand */
+  html.desktop-computer .topbar .brand{
+    visibility:hidden !important;
+    width:1px !important;
+    overflow:hidden !important;
+    flex:0 0 1px !important;
+  }
+}
+
+/* Chrome/Edge desktop window ที่ถูกลากให้แคบ: 700–899px
+   เปลี่ยนเป็น sidebar ไอคอน เพื่อไม่ให้ navbar ลอย/พังเป็น bottom bar */
+@media (min-width:700px) and (max-width:899px) and (hover:hover) and (pointer:fine){
+  html.desktop-computer .tabbar{
+    width:82px !important;
+    left:16px !important;
+    right:auto !important;
+    top:16px !important;
+    bottom:16px !important;
+    height:calc(100vh - 32px) !important;
+    position:fixed !important;
+    display:flex !important;
+    flex-direction:column !important;
+    align-items:stretch !important;
+    overflow-x:hidden !important;
+    overflow-y:auto !important;
+    padding:62px 10px 16px !important;
+    margin:0 !important;
+    max-width:none !important;
+    border-radius:22px !important;
+    box-sizing:border-box !important;
+    gap:6px !important;
+  }
+
+  html.desktop-computer .tabbar::before,
+  html.desktop-computer .tabbar::after{
+    content:"" !important;
+    height:0 !important;
+    padding:0 !important;
+    margin:0 !important;
+    border:0 !important;
+  }
+
+  html.desktop-computer .tabbar > .tab{
+    display:flex !important;
+    visibility:visible !important;
+    opacity:1 !important;
+    width:62px !important;
+    min-width:62px !important;
+    min-height:48px !important;
+    height:48px !important;
+    flex:0 0 48px !important;
+    align-items:center !important;
+    justify-content:center !important;
+    padding:12px 8px !important;
+    gap:0 !important;
+    border-radius:14px !important;
+  }
+
+  html.desktop-computer .tabbar > .tab .ico,
+  html.desktop-computer .tabbar > .tab .ico svg{
+    display:block !important;
+    width:20px !important;
+    height:20px !important;
+    flex:0 0 20px !important;
+  }
+
+  html.desktop-computer .tabbar > .tab .lbl{
+    display:none !important;
+  }
+
+  html.desktop-computer .tab-pill,
+  html.desktop-computer .tab-more{
+    display:none !important;
+  }
+
+  html.desktop-computer .nav-collapse-btn{
+    display:flex !important;
+    top:16px !important;
+    right:21px !important;
+    left:auto !important;
+    width:40px !important;
+    height:40px !important;
+  }
+
+  html.desktop-computer .topbar,
+  html.desktop-computer .page{
+    margin-left:108px !important;
+    width:calc(100% - 108px) !important;
+    box-sizing:border-box !important;
+  }
+
+  html.desktop-computer .topbar .brand{
+    visibility:hidden !important;
+    width:1px !important;
+    overflow:hidden !important;
+    flex:0 0 1px !important;
+  }
+}
+
+/* Manual collapse remains consistent at every desktop width */
+html.desktop-computer body.nav-collapsed .tabbar{
+  width:82px !important;
+  padding-left:11px !important;
+  padding-right:11px !important;
+}
+
+html.desktop-computer body.nav-collapsed .tabbar > .tab{
+  width:100% !important;
+  min-width:0 !important;
+  justify-content:center !important;
+  padding-left:8px !important;
+  padding-right:8px !important;
+  gap:0 !important;
+}
+
+html.desktop-computer body.nav-collapsed .tabbar > .tab .lbl{
+  display:none !important;
+}
+
+html.desktop-computer body.nav-collapsed .tabbar .tab-pill,
+html.desktop-computer body.nav-collapsed .tabbar .tab-more{
+  display:none !important;
+}
+
+html.desktop-computer body.nav-collapsed .topbar,
+html.desktop-computer body.nav-collapsed .page{
+  margin-left:114px !important;
+  width:calc(100% - 114px) !important;
+}
+</style>
 </head>
 <body>
 
@@ -13566,264 +13866,3 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 </script>
 </body>
 </html>
-
-
-<script>
-/* ================================================================
-   DESKTOP NAV DEVICE MODE
-   IMPORTANT: desktop/mobile is decided by device, NOT viewport width.
-   A desktop Chrome window may be resized to 800/700/600px and must
-   still keep the desktop sidebar.
-   ================================================================ */
-(function initDesktopComputerMode(){
-  const ua = navigator.userAgent || '';
-  const touchMac = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
-  const mobileUA = /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
-  const desktop = !mobileUA && !touchMac;
-  document.documentElement.classList.toggle('desktop-computer', desktop);
-  document.documentElement.classList.toggle('touch-device', !desktop);
-
-  // Re-apply after orientation/device changes without changing the layout
-  // breakpoint. This is only a device-mode sync.
-  window.addEventListener('resize', () => {
-    document.documentElement.classList.toggle('desktop-computer', desktop);
-    document.documentElement.classList.toggle('touch-device', !desktop);
-    requestAnimationFrame(() => {
-      if (typeof layoutNav === 'function') layoutNav();
-    });
-  }, {passive:true});
-})();
-</script>
-
-<style id="desktop-navbar-all-sizes">
-/* ================================================================
-   DESKTOP NAVBAR — ALL WINDOW SIZES
-   ---------------------------------------------------------------
-   Desktop computer:
-     >= 1200px : full sidebar 236px
-     900-1199 : sidebar 210px
-     700-899  : compact sidebar 82px
-     <=699    : compact sidebar 70px
-   Mobile/tablet touch: existing bottom-nav rules remain untouched.
-   ================================================================ */
-
-/* Never let the mobile bottom-nav rules take over on a desktop PC. */
-html.desktop-computer .tabbar{
-  position:fixed !important;
-  top:16px !important;
-  left:16px !important;
-  right:auto !important;
-  bottom:16px !important;
-  z-index:70 !important;
-  display:flex !important;
-  flex-direction:column !important;
-  justify-content:flex-start !important;
-  align-items:stretch !important;
-  margin:0 !important;
-  max-width:none !important;
-  height:calc(100vh - 32px) !important;
-  overflow-x:hidden !important;
-  overflow-y:auto !important;
-  box-sizing:border-box !important;
-  padding:26px 14px 20px !important;
-  border-radius:26px !important;
-  gap:6px !important;
-  touch-action:auto !important;
-}
-
-/* Desktop always shows real sidebar items; no mobile promotion/hiding. */
-html.desktop-computer .tabbar .tab-secondary{
-  display:flex !important;
-}
-html.desktop-computer .tabbar .tab-more{
-  display:none !important;
-}
-html.desktop-computer .tab-pill{
-  display:none !important;
-}
-html.desktop-computer .tabbar .tab{
-  position:relative !important;
-  flex:0 0 auto !important;
-  width:100% !important;
-  min-width:0 !important;
-  min-height:48px !important;
-  height:auto !important;
-  display:flex !important;
-  flex-direction:row !important;
-  align-items:center !important;
-  justify-content:flex-start !important;
-  gap:12px !important;
-  padding:12px 14px !important;
-  box-sizing:border-box !important;
-  border-radius:14px !important;
-  overflow:visible !important;
-  background:transparent !important;
-  box-shadow:none !important;
-  color:rgba(255,255,255,.68) !important;
-}
-html.desktop-computer .tabbar .tab .ico,
-html.desktop-computer .tabbar .tab .ico svg{
-  width:20px !important;
-  height:20px !important;
-  flex:0 0 20px !important;
-}
-html.desktop-computer .tabbar .tab .lbl{
-  display:block !important;
-  max-width:none !important;
-  opacity:1 !important;
-  overflow:hidden !important;
-  white-space:nowrap !important;
-  text-overflow:ellipsis !important;
-  font-size:14px !important;
-}
-html.desktop-computer .tabbar .tab.active{
-  color:#fff !important;
-  background:linear-gradient(90deg,var(--gold-wash),rgba(255,255,255,.04)) !important;
-  box-shadow:inset 3px 0 0 var(--gold) !important;
-}
-
-/* Normal desktop spacing. */
-html.desktop-computer .topbar{
-  margin-left:268px !important;
-  width:calc(100% - 268px) !important;
-}
-html.desktop-computer .page{
-  margin-left:268px !important;
-  margin-right:0 !important;
-  width:calc(100% - 268px) !important;
-  box-sizing:border-box !important;
-}
-
-/* 900-1199px: use the existing 210px desktop sidebar. */
-@media (min-width:900px) and (max-width:1199px){
-  html.desktop-computer .tabbar{ width:210px !important; }
-  html.desktop-computer .topbar,
-  html.desktop-computer .page{
-    margin-left:242px !important;
-    width:calc(100% - 242px) !important;
-  }
-}
-
-/* 700-899px desktop window: compact icon sidebar.
-   This is the important responsive state that prevents the old
-   mobile bottom bar from appearing when a PC window is narrowed. */
-@media (min-width:700px) and (max-width:899px){
-  html.desktop-computer .tabbar{
-    width:82px !important;
-    padding:62px 10px 16px !important;
-  }
-  html.desktop-computer .tabbar::before{
-    content:"" !important;
-    height:0 !important;
-    padding:0 !important;
-    margin:0 !important;
-  }
-  html.desktop-computer .tabbar::after{
-    content:"" !important;
-    height:0 !important;
-    padding:0 !important;
-    margin:0 0 8px !important;
-    border:0 !important;
-  }
-  html.desktop-computer .tabbar .tab{
-    width:62px !important;
-    min-height:48px !important;
-    justify-content:center !important;
-    padding:12px 8px !important;
-    gap:0 !important;
-    border-radius:14px !important;
-  }
-  html.desktop-computer .tabbar .tab .lbl{
-    display:none !important;
-  }
-  html.desktop-computer .tabbar .tab .ico,
-  html.desktop-computer .tabbar .tab .ico svg{
-    width:20px !important;
-    height:20px !important;
-    flex:0 0 20px !important;
-  }
-  html.desktop-computer .nav-collapse-btn{
-    top:16px !important;
-    right:21px !important;
-    left:auto !important;
-    width:40px !important;
-    height:40px !important;
-  }
-  html.desktop-computer .topbar,
-  html.desktop-computer .page{
-    margin-left:108px !important;
-    width:calc(100% - 108px) !important;
-  }
-  html.desktop-computer .fab{
-    right:24px !important;
-    bottom:24px !important;
-  }
-}
-
-/* <=699px desktop window: even narrower compact sidebar.
-   Content always retains a dedicated column; nothing is overlaid. */
-@media (max-width:699px){
-  html.desktop-computer .tabbar{
-    width:68px !important;
-    left:8px !important;
-    top:8px !important;
-    bottom:8px !important;
-    height:calc(100vh - 16px) !important;
-    padding:62px 7px 12px !important;
-    border-radius:20px !important;
-  }
-  html.desktop-computer .tabbar::before,
-  html.desktop-computer .tabbar::after{
-    content:"" !important;
-    height:0 !important;
-    padding:0 !important;
-    margin:0 0 6px !important;
-    border:0 !important;
-  }
-  html.desktop-computer .tabbar .tab{
-    width:54px !important;
-    min-height:46px !important;
-    justify-content:center !important;
-    padding:11px 6px !important;
-    gap:0 !important;
-  }
-  html.desktop-computer .tabbar .tab .lbl{
-    display:none !important;
-  }
-  html.desktop-computer .topbar,
-  html.desktop-computer .page{
-    margin-left:84px !important;
-    width:calc(100% - 84px) !important;
-  }
-  html.desktop-computer .topbar{
-    padding-left:12px !important;
-    padding-right:12px !important;
-  }
-  html.desktop-computer .fab{
-    right:18px !important;
-    bottom:18px !important;
-  }
-}
-
-/* If the user manually collapses the desktop sidebar, preserve that
-   behavior at every desktop width. */
-html.desktop-computer body.nav-collapsed .tabbar{
-  width:82px !important;
-  padding-left:11px !important;
-  padding-right:11px !important;
-}
-html.desktop-computer body.nav-collapsed .tabbar .tab{
-  justify-content:center !important;
-  padding-left:8px !important;
-  padding-right:8px !important;
-  gap:0 !important;
-}
-html.desktop-computer body.nav-collapsed .tabbar .tab .lbl{
-  display:none !important;
-}
-html.desktop-computer body.nav-collapsed .topbar,
-html.desktop-computer body.nav-collapsed .page{
-  margin-left:114px !important;
-  width:calc(100% - 114px) !important;
-}
-</style>
