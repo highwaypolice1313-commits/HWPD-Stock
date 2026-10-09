@@ -5782,26 +5782,94 @@ function auditPeriodLineHtml(compact) {
   const end = s.auditPeriodEnd ? escapeHtml(thaiDateLong(s.auditPeriodEnd)) : '..........................';
   return `<div style="margin-top:${compact ? '1mm' : '4mm'}; font-size:${compact ? '10.5pt' : '14pt'};">คณะกรรมการเริ่มทำการตรวจสอบวันที่ ${start} เสร็จวันที่ ${end}</div>`;
 }
+/* ===== ลายเซ็นคณะกรรมการ (เลือกทุกครั้งก่อนพิมพ์) ===== */
+let auditSignCurrent = [];   // [หัวหน้า, กรรมการ1, กรรมการ2, เลขาฯ] = URL ลายเซ็น หรือ '' ถ้าไม่ใส่
+
+function committeeSignatureUrl(m) {
+  const full = ((m.rank || '') + ' ' + (m.name || '')).trim();
+  if (!full) return '';
+  const idx = findOfficerIndexByName(full);
+  const u = idx !== '' ? state.users[Number(idx)] : null;
+  return (u && u['ลายเซ็น']) ? u['ลายเซ็น'] : '';
+}
+
+/* คืนค่า array ลายเซ็น 4 ช่อง หรือ null ถ้ากดยกเลิก */
+function pickAuditSignatures() {
+  return new Promise(resolve => {
+    const root = document.getElementById('modalRoot');
+    if (!root) return resolve(null);
+    const committee = getAuditCommittee();
+    const sigs = committee.map(committeeSignatureUrl);
+    const rows = committee.map((m, i) => {
+      const full = ((m.rank || '') + ' ' + (m.name || '')).trim();
+      const has = !!sigs[i];
+      return `<label class="glass list-item" style="cursor:${has ? 'pointer' : 'default'}; opacity:${has ? 1 : .6}; margin-bottom:8px;">
+        <input type="checkbox" class="as-chk" data-i="${i}" ${has ? 'checked' : ''} ${has ? '' : 'disabled'} style="width:18px;height:18px;flex:none;">
+        <div class="li-body">
+          <div class="li-title">${escapeHtml(full || '(ยังไม่ได้ระบุชื่อ)')}</div>
+          <div class="li-sub">${escapeHtml(m.role)}${has ? '' : ' · ยังไม่มีลายเซ็นในทำเนียบ'}</div>
+        </div>
+        ${has ? `<img src="${escapeHtml(sigs[i])}" alt="" style="height:30px;max-width:80px;object-fit:contain;background:#fff;border-radius:6px;flex:none;">` : ''}
+      </label>`;
+    }).join('');
+
+    root.innerHTML = `<div class="overlay confirm-overlay" id="asOverlay">
+      <div class="sheet confirm-sheet" role="dialog" aria-modal="true" style="max-width:480px;">
+        <div class="confirm-title">ลายเซ็นคณะกรรมการ</div>
+        <div class="confirm-message" style="margin-bottom:10px;">เลือกคนที่ต้องการให้ใส่ลายเซ็นในรายงานฉบับนี้ (ไม่ติ๊กเลย = พิมพ์เส้นประว่างตามเดิม)</div>
+        <div style="display:flex; gap:14px; margin-bottom:10px;">
+          <span class="link-btn" id="asAll" style="color:var(--gold-deep);">ใส่ทั้งหมด</span>
+          <span class="link-btn" id="asNone" style="color:var(--ink-dim);">ไม่ใส่เลย</span>
+        </div>
+        ${rows}
+        <div class="confirm-actions">
+          <button class="btn btn-ghost" id="asNo">ยกเลิก</button>
+          <button class="btn btn-primary" id="asYes">ตกลง</button>
+        </div>
+      </div></div>`;
+
+    const finish = v => { root.innerHTML = ''; resolve(v); };
+    const chks = () => Array.from(root.querySelectorAll('.as-chk'));
+    root.querySelector('#asAll').onclick = () => chks().forEach(c => { if (!c.disabled) c.checked = true; });
+    root.querySelector('#asNone').onclick = () => chks().forEach(c => { c.checked = false; });
+    root.querySelector('#asNo').onclick = () => finish(null);
+    root.querySelector('#asYes').onclick = () => finish(committee.map((_, i) => {
+      const c = root.querySelector('.as-chk[data-i="' + i + '"]');
+      return (c && c.checked) ? sigs[i] : '';
+    }));
+    root.querySelector('#asOverlay').addEventListener('click', e => { if (e.target.id === 'asOverlay') finish(null); });
+  });
+}
+
+/* ครอบฟังก์ชันพิมพ์รายงาน: ถามเรื่องลายเซ็นก่อน แล้วค่อยพิมพ์ */
+async function printWithSign(printFn) {
+  const signs = await pickAuditSignatures();
+  if (!signs) return;
+  auditSignCurrent = signs;
+  try { printFn(); } finally { auditSignCurrent = []; }
+}
+
 function committeeSignBlockHtml(compact) {
   const [head, m1, m2, sec] = getAuditCommittee();
+  const signs = auditSignCurrent || [];
 
-  /* ===== ปรับขนาดที่เว้นไว้ตรงนี้ =====
-     headSig/memSig = ความกว้างเส้นเซ็นชื่อ (หัวหน้า+เลขาฯ / กรรมการ 2 คนที่อยู่คู่กัน)
-     sigH           = ความสูงที่เว้นให้เซ็นชื่อ (เหนือเส้นประ) */
-   const S = compact
+  const S = compact
     ? { headSig:'38mm', memSig:'28mm', sigH:'6mm', headFs:'10.5pt', memFs:'9.5pt', topMt:'2mm', gridMt:'2mm', cellPad:'0.5mm 1mm' }
     : { headSig:'50mm', memSig:'30mm', sigH:'9mm', headFs:'14pt',   memFs:'12pt',  topMt:'4mm', gridMt:'5mm', cellPad:'2mm 1mm' };
-   
-   const block = (m, sigW, fs) => {
+
+  const block = (m, sigW, fs, sigUrl) => {
     const rank = toThaiNumber(escapeHtml(m.rank)) || '........';
     const name = toThaiNumber(escapeHtml(m.name)) || '..........................';
     const position = toThaiNumber(escapeHtml(m.position)) || '&nbsp;';
     const role = toThaiNumber(escapeHtml(m.role));
+    const sigCell = sigUrl
+      ? `<img src="${escapeHtml(sigUrl)}" alt="" style="display:block; width:${sigW}; height:${S.sigH}; object-fit:contain; margin:0 auto;">`
+      : '&nbsp;';
     return `
       <table style="border-collapse:collapse; margin:0 auto; font-size:${fs}; color:#000; break-inside:avoid; page-break-inside:avoid;">
         <tr>
           <td style="white-space:nowrap; text-align:right; vertical-align:bottom; padding:0 1.5mm 0 0;">ลงชื่อ ${rank}</td>
-          <td style="width:${sigW}; height:${S.sigH}; border-bottom:1px dotted #000; padding:0;">&nbsp;</td>
+          <td style="width:${sigW}; height:${S.sigH}; border-bottom:1px dotted #000; padding:0; text-align:center; vertical-align:bottom;">${sigCell}</td>
           <td style="white-space:nowrap; text-align:left; vertical-align:bottom; padding:0 0 0 1.5mm;">เป็น${role}</td>
         </tr>
         <tr>
@@ -5818,14 +5886,14 @@ function committeeSignBlockHtml(compact) {
   };
 
   return `
-    <div style="margin-top:${S.topMt};">${block(head, S.headSig, S.headFs)}</div>
+    <div style="margin-top:${S.topMt};">${block(head, S.headSig, S.headFs, signs[0])}</div>
     <table style="width:100%; border-collapse:collapse; margin-top:${S.gridMt}; table-layout:fixed;">
       <tr style="break-inside:avoid; page-break-inside:avoid;">
-        <td style="padding:${S.cellPad}; width:50%; vertical-align:top;">${block(m1, S.memSig, S.memFs)}</td>
-        <td style="padding:${S.cellPad}; width:50%; vertical-align:top;">${block(m2, S.memSig, S.memFs)}</td>
+        <td style="padding:${S.cellPad}; width:50%; vertical-align:top;">${block(m1, S.memSig, S.memFs, signs[1])}</td>
+        <td style="padding:${S.cellPad}; width:50%; vertical-align:top;">${block(m2, S.memSig, S.memFs, signs[2])}</td>
       </tr>
     </table>
-    <div style="margin-top:${S.gridMt};">${block(sec, S.headSig, S.headFs)}</div>
+    <div style="margin-top:${S.gridMt};">${block(sec, S.headSig, S.headFs, signs[3])}</div>
   `;
 }
  
@@ -11229,9 +11297,9 @@ function rpOfficial(body) {
         <button class="btn btn-ghost" id="btnRpExM">ซ่อมบำรุงทั้งหมด</button>
       </div>
     </div>`;
-  document.getElementById('btnRpGeneral').onclick = printOfficialGeneralReport;
-  const c = document.getElementById('btnRpComms'); if (c) c.onclick = printCommsAuditReport;
-  const v = document.getElementById('btnRpVehicle'); if (v) v.onclick = printVehicleAuditReport;
+  document.getElementById('btnRpGeneral').onclick = () => printWithSign(printOfficialGeneralReport);
+  const c = document.getElementById('btnRpComms'); if (c) c.onclick = () => printWithSign(printCommsAuditReport);
+  const v = document.getElementById('btnRpVehicle'); if (v) v.onclick = () => printWithSign(printVehicleAuditReport);
   document.getElementById('btnRpExA').onclick = () => exportCsv('ครุภัณฑ์.csv', ['รหัสครุภัณฑ์', 'ชื่อครุภัณฑ์', 'หมวดหมู่', 'ยี่ห้อ/รุ่น', 'หมายเลขเครื่อง', 'วันที่รับเข้า', 'มูลค่า(บาท)', 'สถานะ', 'ผู้ครอบครอง/หน่วยงาน', 'หน่วยงาน', 'วันครบกำหนดตรวจสภาพ/ต่อทะเบียน', 'หมายเหตุ'], state.assets);
   document.getElementById('btnRpExB').onclick = () => exportCsv('ยืมคืน.csv', ['รหัสรายการ', 'รหัสครุภัณฑ์', 'ชื่อครุภัณฑ์', 'ผู้ยืม', 'วันที่ยืม', 'กำหนดคืน', 'วันที่คืนจริง', 'สถานะ', 'ผู้อนุมัติ', 'หมายเหตุ'], state.borrow);
   document.getElementById('btnRpExM').onclick = () => exportCsv('ซ่อมบำรุง.csv', ['รหัสรายการ', 'รหัสครุภัณฑ์', 'ชื่อครุภัณฑ์', 'วันที่แจ้ง', 'อาการ/ปัญหา', 'ผู้แจ้ง', 'สถานะ', 'วันที่ซ่อมเสร็จ', 'ค่าใช้จ่าย(บาท)', 'ผู้รับผิดชอบ', 'หมายเหตุ'], state.maint);
@@ -11431,13 +11499,11 @@ function drawAuditView() {
   const checked = state.assets.filter(auditIsChecked).length;
   const pct = total ? Math.round((checked / total) * 100) : 0;
 
-  // สถิติแยกตามหมวด (แสดงเฉพาะหมวดที่มีครุภัณฑ์)
   const catStats = getCategories().map(c => {
     const list = state.assets.filter(a => a['หมวดหมู่'] === c);
     return { name: c, total: list.length, done: list.filter(auditIsChecked).length };
   }).filter(s => s.total > 0);
 
-  // รายการที่จะแสดงตามตัวกรอง
   let list = state.assets.filter(a => state.auditCat === 'all' || a['หมวดหมู่'] === state.auditCat);
   const catTotal = list.length;
   const catDone = list.filter(auditIsChecked).length;
@@ -11445,12 +11511,13 @@ function drawAuditView() {
   if (state.auditPending) list = list.filter(a => !auditIsChecked(a));
 
   const showVehicleBtn = state.auditCat === 'all' || state.auditCat === 'ยานพาหนะ';
+  const hasComms = state.assets.some(a => a['หมวดหมู่'] === 'สื่อสาร');
   const emptyMsg = state.auditPending
     ? 'ตรวจครบทุกรายการในหมวดนี้แล้ว 🎉'
     : 'ยังไม่มีครุภัณฑ์ในหมวดนี้';
 
   el.innerHTML = `
-     <div class="section-title">ตรวจนับพัสดุประจำปี
+    <div class="section-title">ตรวจนับพัสดุประจำปี
       <span class="section-actions"><select class="input sort-select" id="auditYearSelect" style="min-width:130px;">${auditYearOptions()}</select></span>
     </div>
 
@@ -11459,13 +11526,31 @@ function drawAuditView() {
         <span>ความคืบหน้ารวมทั้งระบบ</span><span>${checked} / ${total} รายการ (${pct}%)</span>
       </div>
       <div class="audit-progress-track"><div class="audit-progress-fill" style="width:${pct}%;"></div></div>
-     <div class="btn-row">
-     <button class="btn btn-ok" id="btnBulkAudit">ตรวจนับหลายรายการพร้อมกัน</button>
-     <button class="btn btn-danger" id="btnClearAuditAll">ล้างผลตรวจทั้งหมด</button>
-     <button class="btn btn-ghost" id="btnClearAuditSelected">ล้างผลตรวจเฉพาะรายการ</button>
-     <button class="btn btn-primary" id="btnPrintOfficialGeneral">พิมพ์รายงานครุภัณฑ์ทั่วไป (แบบราชการ)</button>
-     ${state.assets.some(a => a['หมวดหมู่'] === 'สื่อสาร') ? `<button class="btn btn-ghost" id="btnPrintCommsReport">พิมพ์รายงานเครื่องมือสื่อสาร</button>` : ''}
-     ${showVehicleBtn ? `<button class="btn btn-ghost" id="btnPrintVehicleReport">พิมพ์แบบ บชก.3 (ยานพาหนะ)</button>` : ''}
+    </div>
+
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:14px; margin-bottom:16px;">
+      <!-- กล่องที่ 1: ตรวจนับ -->
+      <div class="glass" style="padding:16px;">
+        <div class="mf-section-title"><span class="mf-step">1</span> ตรวจนับ</div>
+        <div class="hint" style="margin-top:0;">บันทึกหรือล้างผลตรวจนับของปี พ.ศ. ${state.auditYear + 543}</div>
+        <div class="btn-row">
+          <button class="btn btn-ok" id="btnBulkAudit">ตรวจนับหลายรายการพร้อมกัน</button>
+        </div>
+        <div class="btn-row" style="margin-top:10px;">
+          <button class="btn btn-ghost" id="btnClearAuditSelected">ล้างผลตรวจเฉพาะรายการ</button>
+          <button class="btn btn-danger" id="btnClearAuditAll">ล้างผลตรวจทั้งหมด</button>
+        </div>
+      </div>
+
+      <!-- กล่องที่ 2: พิมพ์รายงาน -->
+      <div class="glass" style="padding:16px;">
+        <div class="mf-section-title"><span class="mf-step">2</span> พิมพ์รายงาน</div>
+        <div class="hint" style="margin-top:0;">ก่อนพิมพ์ ระบบจะให้เลือกว่าจะใส่ลายเซ็นคณะกรรมการหรือไม่</div>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="btnPrintOfficialGeneral">ครุภัณฑ์ทั่วไป</button>
+          ${hasComms ? `<button class="btn btn-ghost" id="btnPrintCommsReport">เครื่องมือสื่อสาร</button>` : ''}
+          ${showVehicleBtn ? `<button class="btn btn-ghost" id="btnPrintVehicleReport">ยานพาหนะ (บชก.3)</button>` : ''}
+        </div>
       </div>
     </div>
 
@@ -11500,14 +11585,19 @@ function drawAuditView() {
     e.stopPropagation();
     setAuditStatus(b.dataset.id, b.dataset.status);
   });
-  document.getElementById('btnPrintOfficialGeneral').onclick = printOfficialGeneralReport;
-     document.getElementById('btnBulkAudit').onclick = openBulkAuditModal;
-     document.getElementById('btnClearAuditAll').onclick = clearAllAuditResults;
-     document.getElementById('btnClearAuditSelected').onclick = () => openBulkAuditModal('clear');
-     const commsBtn = document.getElementById('btnPrintCommsReport');
-     if (commsBtn) commsBtn.onclick = printCommsAuditReport;
-     const vBtn = document.getElementById('btnPrintVehicleReport');
-     if (vBtn) vBtn.onclick = printVehicleAuditReport;
+
+  // ตรวจนับ
+  document.getElementById('btnBulkAudit').onclick = () => openBulkAuditModal();
+  document.getElementById('btnClearAuditAll').onclick = clearAllAuditResults;
+  document.getElementById('btnClearAuditSelected').onclick = () => openBulkAuditModal('clear');
+
+  // พิมพ์รายงาน (ถามเรื่องลายเซ็นก่อนทุกครั้ง)
+  document.getElementById('btnPrintOfficialGeneral').onclick = () => printWithSign(printOfficialGeneralReport);
+  const commsBtn = document.getElementById('btnPrintCommsReport');
+  if (commsBtn) commsBtn.onclick = () => printWithSign(printCommsAuditReport);
+  const vBtn = document.getElementById('btnPrintVehicleReport');
+  if (vBtn) vBtn.onclick = () => printWithSign(printVehicleAuditReport);
+
   document.querySelectorAll('[data-vehicle-audit]').forEach(x => x.onclick = () => openVehicleAuditForm(x.dataset.vehicleAudit));
   document.getElementById('auditYearSelect').onchange = (e) => { state.auditYear = Number(e.target.value); renderAudit(); };
 }
