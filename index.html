@@ -5325,6 +5325,77 @@ html, body{ overflow-x:clip; height:auto; min-height:100%; }
    
 </style>
 
+   <style id="motion-pack">
+:root{ --ease-out:cubic-bezier(.22,.8,.2,1); --ease-spring:cubic-bezier(.3,1.3,.5,1); }
+@keyframes fadeIn{ from{opacity:0} }
+@keyframes fadeUp{ from{opacity:0; transform:translateY(16px)} }
+
+/* 1) เปลี่ยนหน้าจากเมนู: เลื่อนขึ้น + จางเข้า */
+.page{ animation:fadeUp .38s var(--ease-out) backwards; }
+
+/* 2) popup: พื้นหลังจาง + หน้าต่างเลื่อน/เด้งเข้า
+   (ใช้เฉพาะ #modalRoot เพราะหน้าต่างเลือกครุภัณฑ์/ตรวจหลายรายการวาดใหม่ทุกครั้งที่พิมพ์ ถ้าใส่จะกะพริบ) */
+#modalRoot > .overlay{ animation:fadeIn .22s ease backwards; }
+#modalRoot > .overlay > .sheet{ animation:sheetUp .34s var(--ease-out) backwards; }
+@keyframes sheetUp{ from{opacity:0; transform:translateY(40px) scale(.98)} }
+@media (min-width:900px){
+  #modalRoot > .overlay > .sheet{ animation-name:sheetPop; }
+  @keyframes sheetPop{ from{opacity:0; transform:scale(.94) translateY(10px)} }
+}
+#modalRoot > .confirm-overlay > .confirm-sheet{ animation:confirmPop .3s var(--ease-spring) backwards; }
+@keyframes confirmPop{ from{opacity:0; transform:scale(.88)} }
+
+/* 3) แก้ของเดิม: เดิมใช้ fill "both" ทำให้การ์ด 10 ใบแรก hover ยกตัวไม่ได้ */
+.premium-stagger-item{ animation-fill-mode:backwards !important; }
+
+/* 4) ปุ่ม/ชิป: เปลี่ยนสีนุ่ม + ยกตัวเมื่อ hover (เฉพาะเมาส์) */
+.btn,.chip,.ax-pill,.icon-btn,.refresh-btn,.mc-tool-btn{
+  transition:transform .18s var(--ease-out), box-shadow .18s, background .18s, border-color .18s, color .18s;
+}
+@media (hover:hover){
+  .btn:hover,.icon-btn:hover,.chip:hover,.ax-pill:hover{ transform:translateY(-1px); }
+}
+.btn{ position:relative; overflow:hidden; }
+.fab{ overflow:hidden; }
+.fab{ animation:fabIn .5s var(--ease-spring) backwards; }
+.fab svg{ transition:transform .3s var(--ease-out); }
+.fab:hover svg{ transform:rotate(90deg); }
+@keyframes fabIn{ from{opacity:0; transform:scale(.4) rotate(-90deg)} }
+
+/* 5) ripple (ใช้คู่กับ JS ข้อ 3) */
+.ripple{ position:absolute; border-radius:50%; background:currentColor; opacity:.22;
+  transform:scale(0); animation:ripple .55s ease-out forwards; pointer-events:none; }
+@keyframes ripple{ to{ transform:scale(1); opacity:0 } }
+
+/* 6) เมนูล่าง/ข้าง: ไอคอนที่เลือกเด้งเบา ๆ */
+.tab.active .ico{ animation:tabPop .45s var(--ease-spring); }
+@keyframes tabPop{ 0%{transform:scale(.7)} 60%{transform:scale(1.18)} 100%{transform:scale(1)} }
+
+/* 7) แถบความคืบหน้าในรายงาน: ยืดจากซ้ายไปขวา */
+.rp-fill,.gs-bar i{ transform-origin:left center; animation:growX .9s var(--ease-out) backwards; }
+@keyframes growX{ from{ transform:scaleX(0) } }
+
+/* 8) แจ้งเตือน: แบนเนอร์เลื่อนเข้า, ป้ายเกินกำหนดและจุดแดงเต้นเบา ๆ */
+.alert-banner{ animation:fadeUp .45s var(--ease-out) backwards; }
+.status-overdue,.tab-dot{ animation:ping 2s ease-out infinite; }
+@keyframes ping{
+  0%{ box-shadow:0 0 0 0 rgba(193,73,90,.4) }
+  70%,100%{ box-shadow:0 0 0 8px rgba(193,73,90,0) }
+}
+
+/* 9) ตรวจประจำเดือน: การ์ดใบใหม่ "แจก" เข้ามาเหมือน Tinder */
+#view-monthly .mc-swipe-card{ animation:cardDeal .38s var(--ease-spring) backwards; }
+@keyframes cardDeal{ from{ opacity:0; transform:translateY(24px) scale(.95) } }
+
+/* 10) หน้าล็อกอิน: การ์ดเลือกระดับผู้ใช้ทยอยขึ้น */
+.role-select-card{ animation:fadeUp .5s var(--ease-out) backwards; }
+.role-select-card:nth-child(1){ animation-delay:.1s }
+.role-select-card:nth-child(2){ animation-delay:.2s }
+
+/* ตอนพิมพ์/สร้าง PDF ห้ามมีอนิเมชัน */
+@media print{ *{ animation:none !important; transition:none !important; } }
+</style>
+   
 </head>
 <body>
 
@@ -6536,12 +6607,15 @@ function animateCountUps(root=document) {
     requestAnimationFrame(tick);
   });
 }
+   
 function applyPremiumMotion(root=document) {
   animateCountUps(root);
-  const items = root.querySelectorAll('.list-item,.asset-card');
+  const items = root.querySelectorAll(
+    '.list-item,.asset-card,.memo-card,.mc-card,.stat-card,.rp-kpi,.rp-card,.chart-card'
+  );
   let i = 0;
   items.forEach(el => {
-    if (i >= 10) return;
+    if (i >= 14) return;                      // [ปรับตรงนี้] จำนวนใบแรกที่ทยอยขึ้น
     el.classList.remove('premium-stagger-item');
     el.style.setProperty('--stagger-index', i++);
     void el.offsetWidth;
@@ -14005,6 +14079,17 @@ const lock = () => {
   sync();
 })();
 
+/* ripple เวลากดปุ่ม .btn */
+document.addEventListener('pointerdown', e => {
+  const b = e.target.closest('.btn');
+  if (!b || b.disabled) return;
+  const r = b.getBoundingClientRect(), s = Math.max(r.width, r.height) * 2;
+  const d = document.createElement('span');
+  d.className = 'ripple';
+  d.style.cssText = `width:${s}px;height:${s}px;left:${e.clientX - r.left - s/2}px;top:${e.clientY - r.top - s/2}px`;
+  b.appendChild(d);
+  setTimeout(() => d.remove(), 600);
+}, { passive: true });   
 
 init();   // <-- ของเดิม คงไว้ตามเดิม
 /* ===== จดจำตำแหน่งเลื่อนของหน้า ===== */
