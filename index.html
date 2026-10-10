@@ -5396,6 +5396,193 @@ html, body{ overflow-x:clip; height:auto; min-height:100%; }
 @media print{ *{ animation:none !important; transition:none !important; } }
 </style>
    
+<style id="mc-layout-v2">
+/* ตรวจประจำเดือน: แบบใหม่ (เว็บ/iPad = สองคอลัมน์, มือถือคงเดิม) */
+#view-monthly .mc-layout,#view-monthly .mc-side,#view-monthly .mc-main{display:contents;}
+@media (min-width:700px){
+  #view-monthly .mc-layout{display:grid;grid-template-columns:250px minmax(0,1fr);gap:16px;align-items:start;}
+  #view-monthly .mc-side{display:flex;flex-direction:column;gap:12px;padding:20px;border-radius:24px;background:linear-gradient(160deg,#17324f 0%,#23466b 100%);box-shadow:0 12px 28px rgba(23,50,79,.18);color:#fff;position:sticky;top:12px;}
+  #view-monthly .mc-main{display:flex;flex-direction:column;gap:12px;min-width:0;}
+  #view-monthly .mc-side .mc-summary{grid-template-columns:1fr 1fr;gap:8px;margin:0;}
+  #view-monthly .mc-side .mc-summary-card{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);box-shadow:none;}
+  #view-monthly .mc-side .mc-summary-card .num{color:#fff;}
+  #view-monthly .mc-side .mc-summary-card.ok .num{color:#9fe0c2;}
+  #view-monthly .mc-side .mc-summary-card.bad .num{color:#f7aab4;}
+  #view-monthly .mc-side .mc-summary-card.pending .num{color:#f7d9a3;}
+  #view-monthly .mc-side .mc-summary-card .lbl{color:rgba(255,255,255,.75);}
+  #view-monthly .mc-side .mc-progress-card{background:transparent;border:none;box-shadow:none;padding:0;color:#fff;}
+  #view-monthly .mc-side .mc-progress-card *{color:#fff;}
+  #view-monthly .mc-side .audit-progress-track{background:rgba(255,255,255,.18);}
+  #view-monthly .mc-side .mc-progress-top{flex-direction:column;align-items:flex-start;gap:4px;}
+}
+/* ภาพรวม: iPad (700-1099px) ใช้สองคอลัมน์เหมือนเว็บ แผงซ้ายเป็นสรุปสีกรมท่า */
+@media (min-width:700px) and (max-width:1099px){
+  #view-dashboard{display:grid !important;grid-template-columns:260px minmax(0,1fr) !important;gap:16px;align-items:start;}
+  #view-dashboard > .section-title,#view-dashboard > .alert-banner{grid-column:1 / -1;margin:0 0 2px;}
+  #view-dashboard .dashboard-left{grid-column:1;display:flex;flex-direction:column;gap:12px;background:linear-gradient(160deg,#17324f 0%,#23466b 100%);border-radius:24px;padding:20px;color:#fff;box-shadow:0 12px 28px rgba(23,50,79,.18);position:sticky;top:12px;}
+  #view-dashboard .dashboard-left .section-title{display:none;}
+  #view-dashboard .dashboard-left .hero-card{background:transparent;border:none;box-shadow:none;padding:0;min-height:0;color:#fff;}
+  #view-dashboard .dashboard-left .hero-row{display:flex !important;flex-direction:column !important;align-items:stretch !important;gap:14px !important;grid-template-columns:none !important;}
+  #view-dashboard .dashboard-left .hero-row > div{width:100%;min-width:0;}
+  #view-dashboard .dashboard-left .hero-card::before,#view-dashboard .dashboard-left .hero-card::after{display:none !important;}
+  #view-dashboard .dashboard-left .hero-divider{display:none;}
+  #view-dashboard .dashboard-left .hero-label,#view-dashboard .dashboard-left .hero-unit{color:rgba(255,255,255,.75);}
+  #view-dashboard .dashboard-left .hero-num{color:#fff;}
+  #view-dashboard .dashboard-left .trend-card{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);box-shadow:none;}
+  #view-dashboard .dashboard-left .section-title[style]{color:#fff !important;}
+  #view-dashboard .dashboard-right{grid-column:2;display:flex;flex-direction:column;gap:14px;min-width:0;}
+  #view-dashboard .dashboard-right .stat-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}
+}
+/* ทะเบียนครุภัณฑ์: เว็บ/iPad (>=700px) หมวดหมู่เป็นแผงซ้ายสีกรมท่า รายการอยู่ขวา */
+@media (min-width:700px){
+  #view-assets{display:grid !important;grid-template-columns:250px minmax(0,1fr);gap:16px;align-items:start;}
+  #view-assets > .section-title{grid-column:1 / -1;grid-row:1;}
+  #view-assets > .ax-pills{grid-column:1;grid-row:2 / span 6;flex-direction:column;flex-wrap:nowrap;gap:8px;padding:18px;border-radius:24px;background:linear-gradient(160deg,#17324f 0%,#23466b 100%);box-shadow:0 12px 28px rgba(23,50,79,.18);position:sticky;top:12px;}
+  #view-assets > .ax-pills .ax-pill{width:100%;justify-content:space-between;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:#fff;box-sizing:border-box;}
+  #view-assets > .ax-pills .ax-pill.active{background:#fff;color:#17324f;}
+  #view-assets > .ax-pills .ax-pill{justify-content:flex-start;gap:10px;}
+  #view-assets > .ax-pills .ax-pill b{margin-left:auto;color:inherit;}
+  #view-assets > .ax-pills .ax-pill.active b{color:#17324f;}
+  #view-assets > .ax-top{grid-column:2;grid-row:2;}
+  #view-assets > .ax-count{grid-column:2;grid-row:3;}
+  #view-assets > #assetList{grid-column:2;grid-row:4;min-width:0;}
+  #view-assets > #assetMoreWrap{grid-column:2;grid-row:5;}
+}
+/* ยืม-คืน: เว็บ/iPad (>=700px) สถิติเป็นแผงซ้ายสีกรมท่า รายการอยู่ขวา */
+@media (min-width:700px){
+  #view-borrow{display:grid !important;grid-template-columns:250px minmax(0,1fr);gap:16px;align-items:start;}
+  #view-borrow > .section-title{grid-column:1 / -1;grid-row:1;}
+  #view-borrow > .stat-grid{grid-column:1;grid-row:2 / span 3;display:flex !important;flex-direction:column;gap:10px;margin:0 !important;padding:18px;border-radius:24px;background:linear-gradient(160deg,#17324f 0%,#23466b 100%);box-shadow:0 12px 28px rgba(23,50,79,.18);position:sticky;top:12px;}
+  #view-borrow > .stat-grid .stat-card{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);box-shadow:none;color:#fff;}
+  #view-borrow > .stat-grid .stat-num{color:#fff !important;}
+  #view-borrow > .stat-grid .stat-label{color:rgba(255,255,255,.75);}
+  #view-borrow > .stat-grid .stat-card > div:last-child{color:rgba(255,255,255,.85) !important;}
+  #view-borrow > .search-row{grid-column:2;grid-row:2;}
+  #view-borrow > .chip-row{grid-column:2;grid-row:3;}
+  #view-borrow > #borrowList{grid-column:2;grid-row:4;min-width:0;}
+}
+
+/* ตรวจนับประจำปี: แผงซ้ายสรุป + ปุ่ม, ขวาเป็นตัวกรองและรายการ (iPad/เว็บ) */
+@media (min-width:700px){
+  #view-audit{display:grid !important;grid-template-columns:250px minmax(0,1fr);gap:16px;align-items:start;}
+  #view-audit > .section-title{grid-column:1 / -1;grid-row:1;}
+  #view-audit > .glass[style*="padding:18px"]{grid-column:1;grid-row:2;margin:0 !important;background:linear-gradient(160deg,#17324f 0%,#23466b 100%) !important;color:#fff;border:none;box-shadow:0 12px 28px rgba(23,50,79,.18);position:sticky;top:12px;}
+  #view-audit > .glass[style*="padding:18px"] *{color:#fff !important;}
+  #view-audit > .glass[style*="padding:18px"] .audit-progress-track{background:rgba(255,255,255,.18);}
+  #view-audit > div[style*="auto-fit"]{grid-column:1;grid-row:3 / span 4;display:flex !important;flex-direction:column;gap:12px !important;margin:0 !important;}
+  #view-audit > .chip-row{grid-column:2;grid-row:2;}
+  #view-audit > div[style*="flex-wrap:wrap"]{grid-column:2;grid-row:3;margin:0 !important;}
+  #view-audit > .audit-progress-track{grid-column:2;grid-row:4;margin:0 !important;}
+  #view-audit > #auditList{grid-column:2;grid-row:5;min-width:0;}
+}
+/* ตั้งค่า: แถบเมนูย่อยอยู่ซ้าย เนื้อหาอยู่ขวา (iPad/เว็บ) */
+@media (min-width:700px){
+  #view-settings{display:grid !important;grid-template-columns:230px minmax(0,1fr);gap:16px;align-items:start;}
+  #view-settings > .section-title{grid-column:1 / -1;grid-row:1;}
+  #view-settings > #settingsTabRow{grid-column:1;grid-row:2;display:flex !important;flex-direction:column !important;flex-wrap:nowrap !important;align-items:stretch;gap:6px;padding:14px;border-radius:24px;background:linear-gradient(160deg,#17324f 0%,#23466b 100%);box-shadow:0 12px 28px rgba(23,50,79,.18);position:sticky;top:12px;overflow:visible;}
+  #view-settings > #settingsTabRow .chip{width:100%;justify-content:flex-start;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:#fff;white-space:normal;}
+  #view-settings > #settingsTabRow .chip.active{background:#fff;color:#17324f;}
+  #view-settings > .settings-panel{grid-column:2;grid-row:2;min-width:0;}
+}
+/* จนท.ในสังกัด: รายการเป็นสองคอลัมน์บน iPad/เว็บ */
+@media (min-width:700px){
+  #view-users > #userList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
+}
+/* เอกสารใบเบิก: รายการเป็นสองคอลัมน์บน iPad/เว็บ */
+@media (min-width:700px){
+  #view-memos > #memoGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
+}
+/* รายงาน: ใช้สองคอลัมน์บน iPad/เว็บ */
+@media (min-width:700px){
+  #view-reports .rp-grid2{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
+  #view-reports .rp-kpis{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
+}
+
+
+/* ซ่อมบำรุง: เหมือนยืม-คืน */
+@media (min-width:700px){
+  #view-maint{display:grid !important;grid-template-columns:250px minmax(0,1fr);gap:16px;align-items:start;}
+  #view-maint > .section-title{grid-column:1 / -1;grid-row:1;}
+  #view-maint > .stat-grid{grid-column:1;grid-row:2 / span 3;display:flex !important;flex-direction:column;gap:10px;margin:0 !important;padding:18px;border-radius:24px;background:linear-gradient(160deg,#17324f 0%,#23466b 100%);box-shadow:0 12px 28px rgba(23,50,79,.18);position:sticky;top:12px;}
+  #view-maint > .stat-grid .stat-card{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);box-shadow:none;color:#fff;}
+  #view-maint > .stat-grid .stat-num{color:#fff !important;}
+  #view-maint > .stat-grid .stat-label{color:rgba(255,255,255,.75);}
+  #view-maint > .stat-grid .stat-card > div:last-child{color:rgba(255,255,255,.85) !important;}
+  #view-maint > .search-row{grid-column:2;grid-row:2;}
+  #view-maint > .chip-row{grid-column:2;grid-row:3;}
+  #view-maint > #maintList{grid-column:2;grid-row:4;min-width:0;}
+}
+/* ===== มือถือ (<=699px): สไตล์การ์ดให้ตรงกับแบบมือถือ ===== */
+@media (max-width:699px){
+  .section-title{font-size:22px;font-weight:600;margin:6px 0 14px;}
+  .section-title small{display:block;font-size:12px;color:var(--ink-dim);font-weight:400;margin-top:2px;}
+  .stat-grid{gap:10px;}
+  .stat-card{padding:14px;border-radius:20px;box-shadow:var(--shadow-sm);}
+  .chip-row{gap:8px;}
+  .chip{min-height:36px;border-radius:99px;}
+  .search-row .input,.search-row input{border-radius:14px;min-height:44px;}
+  #view-dashboard .hero-card{background:linear-gradient(135deg,#17324f 0%,#23466b 100%);color:#fff;border-radius:24px;padding:20px;box-shadow:0 12px 28px rgba(23,50,79,.18);}
+  #view-dashboard .hero-card .hero-label,#view-dashboard .hero-card .hero-unit{color:rgba(255,255,255,.75);}
+  #view-dashboard .hero-card .hero-num{color:#fff;}
+  #view-dashboard .hero-card .hero-divider{background:rgba(255,255,255,.2);}
+  #view-dashboard .trend-card,#view-dashboard .chart-card{border-radius:20px;}
+  .li-row,.list-item{border-radius:18px;padding:14px 16px;}
+  .li-icon{width:42px;height:42px;border-radius:14px;}
+  .li-title{font-size:15px;font-weight:600;}
+  .li-sub{font-size:12.5px;color:var(--ink-dim);}
+  #view-monthly .mc-summary-card{border-radius:18px;}
+  #view-monthly .mc-progress-card{border-radius:20px;}
+  #view-monthly .mc-card-list{border-radius:20px;}
+  #view-audit .glass,#view-borrow .glass,#view-maint .glass,#view-settings .glass{border-radius:20px;}
+  #view-settings .settings-panel .glass{border-radius:20px;}
+  #view-users .li-row,#view-memos .li-row{border-radius:18px;}
+  #view-monthly .mc-grid.mc-swipe-mode .mc-card-list{border-radius:22px;padding:18px;}
+  .more-group-title{font-size:13px;font-weight:600;color:var(--ink-dim);margin:14px 2px 8px;}
+  #view-monthly .mc-grid.mc-swipe-mode .mc-actions .mc-btn{min-height:64px;font-size:15px;font-weight:600;border-radius:18px;}
+}
+</style>
+<style id="mobile-final">
+/* ===== มือถือ (≤699px): ชุดสุดท้าย แทนที่ซ้อนทับเดิม ===== */
+@media (max-width:699px){
+  /* topbar: เหลือแบรนด์ + รีเฟรช + ออกจากระบบ */
+  .topbar{ height:68px !important; padding:0 12px !important; gap:8px !important; }
+  .topbar .brand-title{ font-size:15px !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; }
+  .topbar .connection-dot, .topbar #commandBtn, .topbar .profile-name, .topbar .role-pill, .topbar .profile{ display:none !important; }
+  .topbar .desktop-tools{ display:flex !important; gap:8px !important; align-items:center !important; }
+  .topbar .icon-btn, .topbar .refresh-btn{ width:40px !important; height:40px !important; border-radius:14px !important; }
+
+  /* tabbar: แถบล่างลอย 4 ปุ่ม ไอคอนอย่างเดียว ยกเว้นปุ่มที่กด */
+  .tabbar{
+    position:fixed !important; left:12px !important; right:12px !important; bottom:calc(12px + env(safe-area-inset-bottom)) !important;
+    width:auto !important; max-width:none !important; height:64px !important; margin:0 !important;
+    padding:8px !important; box-sizing:border-box !important; display:flex !important; align-items:center !important;
+    justify-content:space-between !important; gap:6px !important; overflow:visible !important;
+    border-radius:24px !important; background:rgba(255,255,255,.96) !important; border:1px solid #eae3d6 !important;
+    box-shadow:0 10px 26px rgba(23,50,79,.14) !important; z-index:50 !important;
+  }
+  .tabbar::before, .tabbar::after, .tabbar .nav-collapse-btn, .tabbar .tab-pill, .tabbar .nav-user-card{ display:none !important; }
+  .tabbar .tab{
+    flex:0 0 auto !important; height:48px !important; min-width:48px !important; padding:0 14px !important;
+    display:flex !important; align-items:center !important; justify-content:center !important; gap:0 !important;
+    border:none !important; border-radius:16px !important; background:transparent !important;
+    color:#5b6a72 !important; box-shadow:none !important; transform:none !important;
+    transition:background .2s ease, color .2s ease !important;
+  }
+  .tabbar .tab .ico{ width:20px !important; height:20px !important; display:flex !important; align-items:center !important; justify-content:center !important; }
+  .tabbar .tab .ico svg{ width:20px !important; height:20px !important; }
+  .tabbar .tab .lbl{ display:none !important; }
+  .tabbar .tab.active{
+    background:#17324f !important; color:#fff !important; padding:0 14px 0 12px !important; gap:8px !important;
+    justify-content:flex-start !important;
+  }
+  .tabbar .tab.active .lbl{ display:inline !important; max-width:none !important; opacity:1 !important; font-size:13px !important; font-weight:600 !important; color:#fff !important; white-space:nowrap !important; }
+  .tabbar .tab.active .ico svg{ color:#fff !important; }
+  .tabbar .tab-dot{ background:#bb8a3f !important; }
+  .tabbar .tab-more.active{ background:#17324f !important; }
+  /* ซ่อนปุ่มรอง: ใช้ selector ที่เฉพาะเจาะจงกว่า เพื่อชนะ display:flex ด้านบน */
+  .tabbar .tab.tab-secondary, .tabbar .tab.promoted, .tabbar #usersTabBtn, .tabbar #auditTabBtn, .tabbar #monthlyTabBtn, .tabbar #settingsTabBtn{ display:none !important; }
+}
+</style>
 </head>
 <body>
 
@@ -6811,13 +6998,22 @@ function openMoreMenu() {
   const userRole = state.user?.role || document.getElementById('navUserRole')?.textContent || '';
   showSheet(`
     <div class="sheet-title">เมนูทั้งหมด</div>
-    <div class="more-grid">
-      ${items.map(b => `
-        <button class="more-item ${state.tab === b.dataset.tab ? 'active' : ''}" data-go="${b.dataset.tab}">
-          <span class="more-ico">${b.querySelector('.ico svg').outerHTML}</span>
-          <span>${escapeHtml(b.querySelector('.lbl').textContent)}</span>
-        </button>`).join('')}
-    </div>
+    ${[
+      ['งานหลัก', ['assets','borrow','maint','memos']],
+      ['ตรวจสอบและรายงาน', ['reports','audit','monthly']],
+      ['ผู้ดูแลระบบ', ['users','settings']]
+    ].map(([title, keys]) => {
+      const group = keys.map(k => items.find(b => b.dataset.tab === k)).filter(Boolean);
+      if (!group.length) return '';
+      return `<div class="more-group-title">${title}</div>
+      <div class="more-grid">
+        ${group.map(b => `
+          <button class="more-item ${state.tab === b.dataset.tab ? 'active' : ''}" data-go="${b.dataset.tab}">
+            <span class="more-ico">${b.querySelector('.ico svg').outerHTML}</span>
+            <span>${escapeHtml(b.querySelector('.lbl').textContent)}</span>
+          </button>`).join('')}
+      </div>`;
+    }).join('')}
 </div>`, 'nav-more-sheet');
   document.querySelectorAll('.more-item').forEach(x => x.onclick = () => { closeSheet(); renderTab(x.dataset.go); });
   document.getElementById('mobileMoreLogout')?.addEventListener('click', () => {
@@ -13875,6 +14071,12 @@ ${pages}`;
           </span>
         </div>
 
+        <div class="mc-layout">
+        <div class="mc-side">
+          <div class="mc-summary" id="mcSummary"></div>
+          <div class="mc-progress-card" id="mcProgress"></div>
+        </div>
+        <div class="mc-main">
         <div class="mc-toolbar">
           <div class="mc-toolbar-left">
             <div class="mc-period">
@@ -13894,8 +14096,6 @@ ${pages}`;
           </div>
         </div>
 
-        <div class="mc-summary" id="mcSummary"></div>
-        <div class="mc-progress-card" id="mcProgress"></div>
 
         <div class="search-row" style="margin-bottom:10px;">
           <div class="mc-search-wrap">
@@ -13907,6 +14107,8 @@ ${pages}`;
         <div class="hint" id="mcHiddenHint" style="margin:0 0 10px;"></div>
         <div id="mcSwipeNavWrap"></div>
         <div class="mc-grid mc-grid-${mcViewMode()==='list'?'list':'cards'}" id="mcGrid"></div>
+        </div>
+        </div>
       `;
 
       const reload = async()=>{
