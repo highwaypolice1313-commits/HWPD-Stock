@@ -5521,59 +5521,62 @@ html, body{ overflow-x:clip; height:auto; min-height:100%; }
 <body>
 
 <div id="loginScreen" class="login-wrap">
-   <div class="login-hero">
-  <div class="lh-brand">
-    <div class="lh-badge"><svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2l8 4v6c0 5-3.5 9-8 10-4.5-1-8-5-8-10V6l8-4z"/></svg></div>
-    <div>ระบบพัสดุครุภัณฑ์<span>ตำรวจทางหลวง</span></div>
-  </div>
-  <div class="lh-copy">
-    <h1>ดูแลครุภัณฑ์<br>ให้พร้อมใช้งานทุกภารกิจ</h1>
-    <p>ตรวจนับ ยืม-คืน และซ่อมบำรุงครุภัณฑ์ทั้งหมดของหน่วยงาน ในที่เดียว</p>
-  </div>
-  <div class="lh-foot">ใช้งานเฉพาะเจ้าหน้าที่ที่ได้รับอนุญาต</div>
-</div>
-  <div class="login-badge">
-    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l8 4v6c0 5-3.5 9-8 10-4.5-1-8-5-8-10V6l8-4z"/></svg>
-  </div>
-  <div class="login-title">ระบบพัสดุครุภัณฑ์</div>
-  <div class="login-sub" id="loginSubText">ตำรวจทางหลวง<br>กรุณาเลือกระดับผู้ใช้งานเพื่อเข้าสู่ระบบ</div>
-  <div class="spinner" id="loginSpinner" style="display:none;"></div>
-  <div id="sessionRetryBox" style="display:none; margin-top:6px;">
-    <button class="btn btn-primary" id="btnRetrySession" style="width:auto;padding:11px 26px;">ลองเชื่อมต่อใหม่</button>
-  </div>
-   
-  <div class="role-select-box" id="roleSelectBox">
-    <div class="role-select-card" data-role="admin">
-      <div class="rsc-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M10 2.5l6.5 3v5c0 4.2-2.8 7.4-6.5 8-3.7-.6-6.5-3.8-6.5-8v-5l6.5-3z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M7.3 10l1.9 1.9 3.5-3.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-      <div class="rsc-body">
-        <div class="rsc-title">แอดมิน</div>
-        <div class="rsc-sub">จัดการข้อมูล เพิ่ม/แก้ไข/อนุมัติได้เต็มรูปแบบ</div>
-      </div>
+  <div class="login-hero">
+    <div class="lh-brand">
+      <div class="lh-badge"><svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2l8 4v6c0 5-3.5 9-8 10-4.5-1-8-5-8-10V6l8-4z"/></svg></div>
+      <div>ระบบพัสดุครุภัณฑ์<span>ตำรวจทางหลวง</span></div>
     </div>
-    <div class="role-select-card" data-role="viewer">
-      <div class="rsc-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M2 10s3-5.5 8-5.5S18 10 18 10s-3 5.5-8 5.5S2 10 2 10z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.3" stroke="currentColor" stroke-width="1.4"/></svg></div>
-      <div class="rsc-body">
-        <div class="rsc-title">ดูอย่างเดียว</div>
-        <div class="rsc-sub">เข้าดูได้ทันที ไม่ต้องใช้รหัสผ่าน</div>
-      </div>
+    <div class="lh-copy">
+      <h1>ดูแลครุภัณฑ์<br>ให้พร้อมใช้งานทุกภารกิจ</h1>
+      <p>ตรวจนับ ยืม-คืน และซ่อมบำรุงครุภัณฑ์ทั้งหมดของหน่วยงาน ในที่เดียว</p>
     </div>
+    <div class="lh-foot">ใช้งานเฉพาะเจ้าหน้าที่ที่ได้รับอนุญาต</div>
   </div>
 
-  <div class="role-login-form" id="roleLoginForm" style="display:none;">
-    <div class="field">
-      <label>ระดับผู้ใช้งาน</label>
-      <div class="input" id="rl_roleDisplay" style="background:rgba(255,255,255,.95);color:#20303f;font-weight:600;display:flex;align-items:center;justify-content:center;">
-        <span id="rl_roleLabel"></span>
+  <div class="login-panel">
+    <div class="login-badge">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l8 4v6c0 5-3.5 9-8 10-4.5-1-8-5-8-10V6l8-4z"/></svg>
+    </div>
+    <div class="login-title">ระบบพัสดุครุภัณฑ์</div>
+    <div class="login-sub" id="loginSubText">ตำรวจทางหลวง<br>กรุณาเลือกระดับผู้ใช้งานเพื่อเข้าสู่ระบบ</div>
+    <div class="spinner" id="loginSpinner" style="display:none;"></div>
+    <div id="sessionRetryBox" style="display:none; margin-top:6px;">
+      <button class="btn btn-primary" id="btnRetrySession" style="width:auto;padding:11px 26px;">ลองเชื่อมต่อใหม่</button>
+    </div>
+
+    <div class="role-select-box" id="roleSelectBox">
+      <div class="role-select-card" data-role="admin">
+        <div class="rsc-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M10 2.5l6.5 3v5c0 4.2-2.8 7.4-6.5 8-3.7-.6-6.5-3.8-6.5-8v-5l6.5-3z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M7.3 10l1.9 1.9 3.5-3.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="rsc-body">
+          <div class="rsc-title">แอดมิน</div>
+          <div class="rsc-sub">จัดการข้อมูล เพิ่ม/แก้ไข/อนุมัติได้เต็มรูปแบบ</div>
+        </div>
+      </div>
+      <div class="role-select-card" data-role="viewer">
+        <div class="rsc-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M2 10s3-5.5 8-5.5S18 10 18 10s-3 5.5-8 5.5S2 10 2 10z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.3" stroke="currentColor" stroke-width="1.4"/></svg></div>
+        <div class="rsc-body">
+          <div class="rsc-title">ดูอย่างเดียว</div>
+          <div class="rsc-sub">เข้าดูได้ทันที ไม่ต้องใช้รหัสผ่าน</div>
+        </div>
       </div>
     </div>
-    <div class="field">
-      <label>รหัสผ่าน</label>
-      <input class="input" id="rl_password" type="password" inputmode="text" autocomplete="current-password" placeholder="กรอกรหัสผ่าน">
-    </div>
-    <button class="btn btn-primary" style="width:100%;" id="btnRoleLogin">เข้าสู่ระบบ</button>
-    <div class="hint" id="roleLoginError" style="color:#ffb4bd;"></div>
-    <div style="margin-top:14px; text-align:center;">
-      <span class="link-btn" id="btnBackToRoles">เปลี่ยนระดับผู้ใช้งาน</span>
+
+    <div class="role-login-form" id="roleLoginForm" style="display:none;">
+      <div class="field">
+        <label>ระดับผู้ใช้งาน</label>
+        <div class="input" id="rl_roleDisplay" style="background:rgba(255,255,255,.95);color:#20303f;font-weight:600;display:flex;align-items:center;justify-content:center;">
+          <span id="rl_roleLabel"></span>
+        </div>
+      </div>
+      <div class="field">
+        <label>รหัสผ่าน</label>
+        <input class="input" id="rl_password" type="password" inputmode="text" autocomplete="current-password" placeholder="กรอกรหัสผ่าน">
+      </div>
+      <button class="btn btn-primary" style="width:100%;" id="btnRoleLogin">เข้าสู่ระบบ</button>
+      <div class="hint" id="roleLoginError" style="color:#ffb4bd;"></div>
+      <div style="margin-top:14px; text-align:center;">
+        <span class="link-btn" id="btnBackToRoles">เปลี่ยนระดับผู้ใช้งาน</span>
+      </div>
     </div>
   </div>
 </div>
