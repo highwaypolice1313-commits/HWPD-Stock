@@ -6111,6 +6111,42 @@ body:has(#view-monthly .pc-wrap){
 }
 #view-monthly .ml-btn.bad.on{background:var(--bad);color:#fff;border-color:transparent}
 </style>
+
+   <style id="meta-clear-pill">
+/* แถวผู้ตรวจและปุ่มล้างผลแบบเม็ดยา ใช้ทั้งมุมมองการ์ดและรายการ */
+#view-monthly .pc-meta,
+#view-monthly .ml-meta{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  margin:10px 16px 0;
+  font-size:11px;
+  color:var(--ink-dim);
+}
+#view-monthly .pc-clear,
+#view-monthly .ml-meta .mc-clear{
+  flex:none;
+  height:26px;
+  padding:0 12px;
+  border-radius:99px;
+  border:1px solid var(--panel-line);
+  background:var(--panel-soft);
+  color:var(--ink-dim);
+  font:inherit;
+  font-size:11.5px;
+  font-weight:600;
+  text-decoration:none;
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+}
+#view-monthly .pc-clear:active,
+#view-monthly .ml-meta .mc-clear:active{transform:scale(.97)}
+
+/* แถวนี้ไม่ต้องมีเส้นกั้นด้านบนซ้ำกับการ์ด */
+#view-monthly .pc-clear-row{display:none}
+</style>
    
 </head>
 <body>
@@ -15038,7 +15074,10 @@ window.pcHeaderHtml = function(curY, curM, years, view, sub){
             <button type="button" class="pc-btn bad" data-act="bad">มีปัญหา</button>
             <button type="button" class="pc-btn ok" data-act="ok">ครบ</button>
           </div>
-          ${cur.rec ? `<div class="pc-clear-row"><button type="button" class="pc-clear" data-clear>ล้างผลตรวจ</button></div>` : ''}
+            ${cur.rec ? `<div class="pc-meta">
+            <span>ตรวจโดย ${esc(cur.rec['ผู้ตรวจ'] || '-')} · ${systemDateTime(cur.rec['วันที่ตรวจ'])}</span>
+            <button type="button" class="pc-clear" data-clear>ล้างผล</button>
+          </div>` : ''}
           <div class="pc-hint"><span class="l">← ปัดซ้าย มีปัญหา</span><span class="r">ปัดขวา ครบ →</span></div>
         </div>
       </div>
