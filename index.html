@@ -5551,6 +5551,43 @@ html, body{ overflow-x:clip; height:auto; min-height:100%; }
 .pc-pill{transition:background .4s ease,color .4s ease}
 .pc-stamp{transition:opacity .15s ease}
 </style>
+
+   <style id="pc-fit-css">
+/* เอฟเฟกต์เข้า: จางเข้านุ่มๆ ไม่หมุน ไม่เด้ง */
+@keyframes pcIn{0%{opacity:0;transform:translate3d(0,6px,0)}100%{opacity:1;transform:none}}
+@keyframes pcRow{0%{opacity:0;transform:translate3d(0,4px,0)}100%{opacity:1;transform:none}}
+
+/* ปรับความสูงส่วนที่ใช้ได้ของหน้า (ค่าอยู่ที่นี่ที่เดียว ถ้าขอบด้านบน/ล่างไม่พอดีแก้ค่านี้) */
+:root{--pc-off-m:200px;--pc-off-d:112px}
+
+body:has(.pc-wrap){overflow:hidden !important}
+#view-monthly:has(.pc-wrap){display:flex !important;flex-direction:column}
+.pc-wrap{height:calc(100dvh - var(--pc-off-m));height:calc(100vh - var(--pc-off-m));min-height:420px;max-width:440px;flex:none;gap:10px}
+@media (min-width:900px){
+  .pc-wrap{height:calc(100dvh - var(--pc-off-d));height:calc(100vh - var(--pc-off-d));max-width:460px;min-height:520px}
+}
+
+.pc-bar{flex:none}
+.pc-stack{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;margin:0 10px;padding-bottom:14px}
+.pc-b1,.pc-b2{bottom:0;height:auto}
+.pc-b1{top:12px}
+.pc-b2{top:22px}
+.pc-card{flex:1 1 auto;min-height:0;height:calc(100% - 14px)}
+.pc-face{height:100%;min-height:0;padding:16px 16px 14px}
+
+.pc-head{flex:none}
+.pc-sec{flex:none}
+.pc-items{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:var(--panel-line) transparent}
+.pc-items::-webkit-scrollbar{width:4px}
+.pc-items::-webkit-scrollbar-thumb{background:var(--panel-line);border-radius:4px}
+.pc-note,.pc-act,.pc-hint{flex:none}
+.pc-more{display:none}
+
+.pc-nav{flex:none}
+
+/* ป้องกันการลากหน้าบนมือถือเวลาอยู่ในหน้านี้ */
+#view-monthly:has(.pc-wrap) .page{overflow:hidden}
+</style>
    
 </head>
 <body>
@@ -14474,7 +14511,7 @@ ${pages}`;
   function cardHtml(cur, dir){
     const st = stOf(cur.rec);
     const hold = cur.sum.hold;
-    const rows = hold.slice(0, 3).map(b => {
+    const rows = hold.map(b => {
       const a = assetOf(b);
       return `<div class="pc-row">
         <div class="pc-ib">${catIcon(a['หมวดหมู่'])}</div>
@@ -14483,7 +14520,7 @@ ${pages}`;
         </div>
       </div>`;
     }).join('');
-    const more = hold.length > 3 ? `<div class="pc-more">และอีก ${hold.length - 3} รายการ</div>` : '';
+    const more = '';
     const empty = hold.length ? '' : `<div class="pc-empty">ไม่มีพัสดุในความครอบครองขณะนี้</div>`;
     const note = (cur.rec && cur.rec['ผล'] === 'มีปัญหา' && cur.rec['หมายเหตุ'])
       ? `<div class="pc-note">${esc(cur.rec['หมายเหตุ'])}</div>` : '';
