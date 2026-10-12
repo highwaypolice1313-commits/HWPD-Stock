@@ -5727,6 +5727,96 @@ body:has(#view-monthly .pc-wrap){
 #view-monthly .chip{margin:0}
 #view-monthly .pc-period{gap:12px !important}
 </style>
+
+   <style id="pc-checked-tint">
+#view-monthly .pc-card.s-ok .pc-face{
+  background:var(--ok-wash);
+  border-color:color-mix(in srgb,var(--ok) 40%,var(--panel-line));
+}
+#view-monthly .pc-card.s-bad .pc-face{
+  background:var(--bad-wash);
+  border-color:color-mix(in srgb,var(--bad) 40%,var(--panel-line));
+}
+</style>
+
+   <style id="ml-list-card">
+#view-monthly .ml-card{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  padding:14px;
+  border-radius:18px;
+  border:1px solid var(--panel-line);
+  background:var(--panel);
+  box-shadow:var(--shadow-sm);
+}
+#view-monthly .ml-card.s-ok{
+  background:var(--ok-wash);
+  border-color:color-mix(in srgb,var(--ok) 40%,var(--panel-line));
+}
+#view-monthly .ml-card.s-bad{
+  background:var(--bad-wash);
+  border-color:color-mix(in srgb,var(--bad) 40%,var(--panel-line));
+}
+#view-monthly .ml-head{display:flex;align-items:center;gap:12px}
+#view-monthly .ml-head .mc-avatar,
+#view-monthly .ml-head .mc-avatar-ph{
+  width:44px;height:44px;border-radius:14px;flex:none;object-fit:cover;
+}
+#view-monthly .ml-id{flex:1;min-width:0}
+#view-monthly .ml-count{
+  align-self:flex-start;
+  font-size:11.5px;
+  font-weight:600;
+  color:var(--navy);
+  background:var(--navy-wash);
+  padding:3px 10px;
+  border-radius:99px;
+}
+#view-monthly .ml-items{display:flex;flex-direction:column;gap:6px}
+#view-monthly .ml-item{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  padding:8px 10px;
+  border-radius:12px;
+  background:var(--panel-soft);
+  font-size:13px;
+}
+#view-monthly .ml-item-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#view-monthly .ml-empty{font-size:12.5px;color:var(--ink-faint)}
+#view-monthly .ml-note{
+  font-size:12px;
+  color:var(--bad);
+  background:var(--bad-wash);
+  padding:8px 10px;
+  border-radius:12px;
+}
+#view-monthly .ml-meta{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  flex-wrap:wrap;
+  font-size:11px;
+  color:var(--ink-dim);
+}
+#view-monthly .ml-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#view-monthly .ml-btn{
+  height:42px;
+  border-radius:14px;
+  border:1px solid var(--panel-line);
+  background:var(--panel);
+  font:inherit;
+  font-size:13.5px;
+  font-weight:600;
+  cursor:pointer;
+}
+#view-monthly .ml-btn.ok{color:var(--ok)}
+#view-monthly .ml-btn.bad{color:var(--bad)}
+#view-monthly .ml-btn.ok.on{background:var(--ok);color:#fff;border-color:transparent}
+#view-monthly .ml-btn.bad.on{background:var(--bad);color:#fff;border-color:transparent}
+</style>
    
 </head>
 <body>
@@ -13912,58 +14002,39 @@ function compareMonthlyOfficers(a, b) {
 
   function mcCardHtmlEnhanced({u,sum,rec}){
     const r = rec ? rec['ผล'] : '';
+    const st = r === 'ครบ' ? 'ok' : (r === 'มีปัญหา' ? 'bad' : 'todo');
     const photo = u['รูปถ่าย']
       ? `<img class="mc-avatar" src="${u['รูปถ่าย']}" alt="">`
       : `<div class="mc-avatar-ph">${ICONS.user}</div>`;
-    const serials = mcSerialsFor(u);
-    const holdCount = sum.hold.length;
-
-    const serialHtml = serials.length
-      ? `<div class="mc-serial-list">${serials.map(x => mcSerialHtmlFromBorrow(
-          sum.hold.find(b => (b['ชื่อครุภัณฑ์'] || '-') === x.name) || {}
-        )).join('')}</div>`
-      : `<span class="mc-serial-pill none">ไม่มีพัสดุในความครอบครอง</span>`;
-
+    const hold = sum.hold;
+    const items = hold.length
+      ? `<div class="ml-items">${hold.map(b => `<div class="ml-item"><span class="ml-item-name">${escapeHtml(b['ชื่อครุภัณฑ์'] || '-')}</span>${mcSerialHtmlFromBorrow(b)}</div>`).join('')}</div>`
+      : `<div class="ml-empty">ไม่มีพัสดุในความครอบครอง</div>`;
     const note = r === 'มีปัญหา' && rec['หมายเหตุ']
-      ? `<div class="mc-note">${escapeHtml(rec['หมายเหตุ'])}</div>` : '';
-    const meta = rec ? `<div class="mc-meta">
+      ? `<div class="ml-note">${escapeHtml(rec['หมายเหตุ'])}</div>` : '';
+    const meta = rec ? `<div class="ml-meta">
       <span>ตรวจโดย ${escapeHtml(rec['ผู้ตรวจ'] || '-')} · ${systemDateTime(rec['วันที่ตรวจ'])}</span>
       <span class="link-btn mc-clear">ล้างผล</span>
     </div>` : '';
-    const actions = `<div class="mc-actions">
-      <button type="button" class="mc-btn ok mc-ok ${r === 'ครบ' ? 'on' : ''}">
-        ✓ ครบ <span class="mc-btn-sub">ตรวจครบทุกชิ้น</span>
-      </button>
-      <button type="button" class="mc-btn bad mc-bad ${r === 'มีปัญหา' ? 'on' : ''}">
-        ⚠ มีปัญหา <span class="mc-btn-sub">มีรายการไม่ครบ/ผิดปกติ</span>
-      </button>
-    </div>`;
-
-    return `<div class="glass mc-card mc-card-grid ${r === 'ครบ' ? 'done-ok' : (r === 'มีปัญหา' ? 'done-bad' : '')}"
-      data-key="${escapeHtml(mcKey(u))}">
-      <div class="mc-grid-person">
-        <div class="mc-grid-avatar">${photo}</div>
-        <div style="min-width:0;flex:1;">
+    return `<div class="glass mc-card ml-card s-${st}" data-key="${escapeHtml(mcKey(u))}">
+      <div class="ml-head">
+        ${photo}
+        <div class="ml-id">
           <div class="mc-name">${escapeHtml(officerFullName(u))}</div>
           <div class="mc-pos">${escapeHtml(u['ตำแหน่ง'] || 'ไม่ระบุตำแหน่ง')}</div>
         </div>
         ${mcStatusHtml(rec)}
       </div>
-      <div class="mc-grid-divider"></div>
-      <div class="mc-hold mc-grid-hold">
-        <div class="mc-hold-title">
-          <svg viewBox="0 0 20 20" fill="none"><path d="M4 5.5h12M5.5 5.5v9h9v-9M7.5 3.5h5l1 2H6.5l1-2zM8 8.5h4M8 11h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          รายการครุภัณฑ์ · ${holdCount} รายการ
-        </div>
-        <div class="mc-grid-hold-summary">${escapeHtml(mcHoldingsTextEnhanced(u) || 'ไม่มีพัสดุในความครอบครองขณะนี้')}</div>
-        ${serialHtml}
-        <small>หมายเลขเครื่อง / Serial</small>
+      <div class="ml-count">${hold.length} รายการ</div>
+      ${items}
+      ${note}
+      ${meta}
+      <div class="ml-actions">
+        <button type="button" class="ml-btn ok mc-btn mc-ok ${r === 'ครบ' ? 'on' : ''}">✓ ครบ</button>
+        <button type="button" class="ml-btn bad mc-btn mc-bad ${r === 'มีปัญหา' ? 'on' : ''}">⚠ มีปัญหา</button>
       </div>
-      ${actions}
-      ${note}${meta}
     </div>`;
   }
-
   function mcChecklistSheetEnhanced(u){
     const items = [];
     mcHoldingsOf(u).forEach(b => {
@@ -14564,7 +14635,10 @@ window.pcHeaderHtml = function(curY, curM, years, view, sub){
 (function installPersonCardView(){
   const esc = escapeHtml;
   const STATUS_TXT = { todo:'ยังไม่ตรวจ', ok:'ครบ', bad:'มีปัญหา' };
-  let key = null;
+  const LAST_KEY = 'hpMonthlyLastKeyV1';
+  function readLastKey(){ try { return localStorage.getItem(LAST_KEY); } catch(e){ return null; } }
+  function saveLastKey(k){ try { localStorage.setItem(LAST_KEY, k); } catch(e){} }
+  let key = readLastKey();
   let animDir = 0;
   let ringPrev = null;
 
@@ -14763,6 +14837,7 @@ window.pcHeaderHtml = function(curY, curM, years, view, sub){
       idx = firstTodo >= 0 ? firstTodo : 0;
     }
     key = list[idx].key;
+    saveLastKey(key);
     const cur = list[idx];
     const nextKey = list[(idx + 1) % n].key;
 
