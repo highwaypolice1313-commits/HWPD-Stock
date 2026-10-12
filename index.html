@@ -5558,7 +5558,7 @@ html, body{ overflow-x:clip; height:auto; min-height:100%; }
 @keyframes pcRow{0%{opacity:0;transform:translate3d(0,4px,0)}100%{opacity:1;transform:none}}
 
 /* ปรับความสูงส่วนที่ใช้ได้ของหน้า (ค่าอยู่ที่นี่ที่เดียว ถ้าขอบด้านบน/ล่างไม่พอดีแก้ค่านี้) */
-:root{--pc-off-m:200px;--pc-off-d:112px}
+:root{--pc-off-m:330px;--pc-off-d:230px}
 
 body:has(.pc-wrap){overflow:hidden !important}
 #view-monthly:has(.pc-wrap){display:flex !important;flex-direction:column}
@@ -5642,91 +5642,17 @@ html:has(#view-monthly[style*="display: block"] .pc-wrap){
   }
 }
 </style>
-<style id="pc-header-match">
-@media (max-width:899px){
-  /* หัวข้อกับปุ่มเรียงแบบเดียวกันทั้งสองมุมมอง */
-  #view-monthly:not(:has(.pc-wrap)){
-    display:grid !important;
-    grid-template-columns:minmax(0,1fr) auto;
-    align-items:center;
-    row-gap:10px;
-    column-gap:10px;
-  }
-  #view-monthly:not(:has(.pc-wrap)) > *{grid-column:1 / -1}
-  #view-monthly:not(:has(.pc-wrap)) > .section-title{
-    grid-column:1;
-    grid-row:1;
-    display:block !important;
-    margin:0 !important;
-    min-width:0;
-    font-family:var(--font-th) !important;
-    font-size:15px !important;
-    font-weight:600 !important;
-    line-height:1.3 !important;
-    color:var(--ink) !important;
-  }
-  #view-monthly:not(:has(.pc-wrap)) > .section-title small{
-    display:block;
-    margin-top:2px;
-    font-size:11px;
-    font-weight:400;
-    color:var(--ink-dim);
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-    min-width:0;
-  }
-  #view-monthly:not(:has(.pc-wrap)) > .mc-toolbar{display:contents !important}
-  #view-monthly:not(:has(.pc-wrap)) .mc-toolbar-right{
-    grid-column:2;
-    grid-row:1;
-    order:0;
-    width:auto !important;
-    margin:0 !important;
-    display:flex !important;
-    justify-content:flex-end;
-  }
-  #view-monthly:not(:has(.pc-wrap)) .mc-toolbar-left{
-    grid-column:1 / -1;
-    grid-row:2;
-    width:100%;
-    min-width:0;
-  }
-  #view-monthly:not(:has(.pc-wrap)) .mc-tool-group{
-    display:inline-flex !important;
-    align-items:center;
-    gap:8px !important;
-    background:none !important;
-    border:0 !important;
-    padding:0 !important;
-    border-radius:0 !important;
-  }
-  #view-monthly:not(:has(.pc-wrap)) .mc-view-toggle{
-    border:1px solid var(--panel-line) !important;
-    border-radius:13px !important;
-    box-shadow:none !important;
-    background:var(--panel) !important;
-    overflow:hidden;
-  }
-  #view-monthly:not(:has(.pc-wrap)) .mc-view-toggle button{
-    width:40px !important;
-    height:38px !important;
-    border-radius:0 !important;
-  }
-  #view-monthly:not(:has(.pc-wrap)) .mc-view-toggle button.active{
-    background:var(--navy) !important;
-    color:#fff !important;
-  }
-  #view-monthly:not(:has(.pc-wrap)) .mc-print-icon{
-    width:40px !important;
-    height:38px !important;
-    min-width:40px !important;
-    flex:0 0 40px !important;
-    border-radius:13px !important;
-    box-shadow:none !important;
-  }
-}
-</style>
+
+<style id="pc-unified-header">
+.pc-hd{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 4px}
+.pc-hd-txt{flex:1;min-width:0}
+.pc-hd-ttl{font-size:15px;font-weight:600;line-height:1.3;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc-hd-sub{font-size:11.5px;color:var(--ink-dim);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc-hd-tools{display:flex;gap:8px;align-items:center;flex:none}
+.pc-hd-tools .mc-view-toggle{border-radius:13px}
+.pc-hd-tools .mc-view-toggle button{width:40px;height:38px}
+.pc-hd-tools .mc-print-icon{width:40px;height:38px;min-width:40px;border-radius:13px}
+</style>   
    
 </head>
 <body>
@@ -14384,90 +14310,74 @@ ${pages}`;
   function renderMonthlyEnhanced(){
     if (!isAdmin()) return;
     const el = document.getElementById('view-monthly');
+    if (!el) return;
     const now = new Date();
     if (!state.mcYear) state.mcYear = now.getFullYear();
-    if (!state.mcMonth) state.mcMonth = now.getMonth()+1;
+    if (!state.mcMonth) state.mcMonth = now.getMonth() + 1;
     if (state.mcPending === undefined) state.mcPending = false;
     if (state.mcSearch === undefined) state.mcSearch = '';
 
-    el.innerHTML = emptyState('กำลังโหลดผลตรวจประจำเดือน...');
-    mcLoad().finally(() => {
-      const years = [];
-      for(let y=now.getFullYear(); y>=now.getFullYear()-3; y--) years.push(y);
-      if(!years.includes(state.mcYear)) years.push(state.mcYear);
+    const years = () => {
+      const ys = [];
+      for (let y = now.getFullYear(); y >= now.getFullYear() - 3; y--) ys.push(y);
+      if (!ys.includes(state.mcYear)) ys.push(state.mcYear);
+      return ys;
+    };
 
-      el.innerHTML = `
-        <div class="section-title">
-          <span>
-            ตรวจประจำเดือน
-            <small>ติดตามผลการตรวจรายบุคคล พร้อมหมายเลขเครื่อง / Serial</small>
-          </span>
-        </div>
+    const progressText = () => {
+      const visible = (state.users || [])
+        .map(u => ({ sum: mcSummary(u), rec: mcRecordFor(u) }))
+        .filter(x => x.sum.hold.length > 0 || x.rec);
+      const done = visible.filter(x => x.rec).length;
+      return `ตรวจแล้ว ${done} จาก ${visible.length} คน`;
+    };
 
-        <div class="mc-toolbar">
-          <div class="mc-toolbar-left">
-            <div class="mc-period">
-              <select class="input" id="mcMonth">
-                ${TH_MONTHS_FULL.map((m,i)=>`<option value="${i+1}" ${state.mcMonth===i+1?'selected':''}>${m}</option>`).join('')}
-              </select>
-              <select class="input" id="mcYear">
-                ${years.map(y=>`<option value="${y}" ${state.mcYear===y?'selected':''}>พ.ศ. ${y+543}</option>`).join('')}
-              </select>
-            </div>
-          </div>
-          <div class="mc-toolbar-right">
-            <div class="mc-tool-group" aria-label="เครื่องมือมุมมองและพิมพ์รายงาน">
-              ${mcViewToggleEnhanced()}
-              ${mcPrintButtonHtml()}
-            </div>
-          </div>
-        </div>
+    const reload = async () => {
+      setLoading(true, 'กำลังโหลดผลตรวจ...');
+      try { await mcLoad(); } finally { setLoading(false); }
+      paint();
+    };
 
-        <div class="mc-summary" id="mcSummary"></div>
-        <div class="mc-progress-card" id="mcProgress"></div>
-
-        <div class="search-row" style="margin-bottom:10px;">
-          <div class="mc-search-wrap">
-            <svg viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.8" stroke="currentColor" stroke-width="1.6"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-            <input class="input" id="mcSearch" placeholder="ค้นหาชื่อ / ตำแหน่ง / หมายเลขเครื่อง" value="${escapeHtml(state.mcSearch)}" autocomplete="off">
-          </div>
-          <div class="chip ${state.mcPending?'active':''}" id="mcPendingChip">เฉพาะที่ยังไม่ตรวจ</div>
-        </div>
-        <div class="hint" id="mcHiddenHint" style="margin:0 0 10px;"></div>
-        <div id="mcSwipeNavWrap"></div>
-        <div class="mc-grid mc-grid-${mcViewMode()==='list'?'list':'cards'}" id="mcGrid"></div>
-      `;
-
-      const reload = async()=>{
-        setLoading(true,'กำลังโหลดผลตรวจ...');
-        try{ await mcLoad(); } finally{ setLoading(false); }
-        drawMonthlyBodyEnhanced();
-      };
-
-      document.getElementById('mcMonth').onchange=e=>{state.mcMonth=Number(e.target.value);reload();};
-      document.getElementById('mcYear').onchange=e=>{state.mcYear=Number(e.target.value);reload();};
-      document.getElementById('mcPendingChip').onclick=e=>{
-        state.mcPending=!state.mcPending;
-        e.currentTarget.classList.toggle('active',state.mcPending);
-        drawMonthlyBodyEnhanced();
-      };
-      document.getElementById('mcSearch').oninput=e=>{
-        state.mcSearch=e.target.value;
-        drawMonthlyBodyEnhanced();
-      };
-      document.querySelectorAll('[data-mcv]').forEach(btn=>{
-        btn.onclick=()=>{
-          const mode = btn.dataset.mcv === 'list' ? 'list' : 'grid';
-          setMcViewMode(mode);
-          document.querySelectorAll('[data-mcv]').forEach(b => b.classList.toggle('active', b.dataset.mcv === mode));
-          drawMonthlyBodyEnhanced();
-        };
+    const wire = () => {
+      el.querySelector('[data-pm]').onchange = e => { state.mcMonth = Number(e.target.value); reload(); };
+      el.querySelector('[data-py]').onchange = e => { state.mcYear = Number(e.target.value); reload(); };
+      el.querySelectorAll('[data-pv]').forEach(b => b.onclick = () => {
+        setMcViewMode(b.dataset.pv === 'card' ? 'grid' : 'list');
+        paint();
       });
-      const printBtn = document.getElementById('mcPrintReport');
-      if (printBtn) printBtn.onclick=mcRenderPrintReport;
+      el.querySelector('[data-pp]').onclick = () => mcRenderPrintReport();
+      const search = document.getElementById('mcSearch');
+      if (search) search.oninput = e => { state.mcSearch = e.target.value; drawMonthlyBodyEnhanced(); };
+      const pending = document.getElementById('mcPendingChip');
+      if (pending) pending.onclick = () => { state.mcPending = !state.mcPending; paint(); };
+    };
 
+    const paint = () => {
+      const isCard = mcViewMode() === 'grid';
+      el.innerHTML = `
+        ${window.pcHeaderHtml(state.mcYear, state.mcMonth, years(), isCard ? 'card' : 'list', progressText())}
+        ${isCard ? `
+          <div class="mc-grid mc-grid-cards" id="mcGrid"></div>
+        ` : `
+          <div class="mc-summary" id="mcSummary"></div>
+          <div class="mc-progress-card" id="mcProgress"></div>
+          <div class="search-row" style="margin-bottom:10px;">
+            <div class="mc-search-wrap">
+              <svg viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.8" stroke="currentColor" stroke-width="1.6"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+              <input class="input" id="mcSearch" placeholder="ค้นหาชื่อ / ตำแหน่ง / หมายเลขเครื่อง" value="${escapeHtml(state.mcSearch)}" autocomplete="off">
+            </div>
+            <div class="chip ${state.mcPending ? 'active' : ''}" id="mcPendingChip">เฉพาะที่ยังไม่ตรวจ</div>
+          </div>
+          <div class="hint" id="mcHiddenHint" style="margin:0 0 10px;"></div>
+          <div id="mcSwipeNavWrap"></div>
+          <div class="mc-grid mc-grid-list" id="mcGrid"></div>
+        `}`;
+      wire();
       drawMonthlyBodyEnhanced();
-    });
+    };
+
+    el.innerHTML = emptyState('กำลังโหลดผลตรวจประจำเดือน...');
+    mcLoad().finally(paint);
   }
 
   function drawMonthlyBodyEnhanced(){
@@ -14481,7 +14391,8 @@ ${pages}`;
     const done=visible.filter(x=>x.rec).length;
     const bad=visible.filter(x=>x.rec&&x.rec['ผล']==='มีปัญหา').length;
     const pending=total-done;
-    const pct=total?Math.round(done/total*100):0;
+    const subEl=document.querySelector('[data-sub]');
+    if(subEl) subEl.textContent=`ตรวจแล้ว ${done} จาก ${total} คน`;
 
     const sumEl=document.getElementById('mcSummary');
     if(sumEl){
@@ -14549,6 +14460,32 @@ ${pages}`;
    window.mcChecklistSheetEnhanced = mcChecklistSheetEnhanced;
 })();
 
+window.pcHeaderHtml = function(curY, curM, years, view, sub){
+  const yrs = years || [];
+  return `
+    <div class="pc-hd">
+      <div class="pc-hd-txt">
+        <div class="pc-hd-ttl">ตรวจประจำเดือน</div>
+        <div class="pc-hd-sub" data-sub>${escapeHtml(sub || '')}</div>
+      </div>
+      <div class="pc-hd-tools">
+        <div class="mc-view-toggle" role="group" aria-label="มุมมอง">
+          <button type="button" data-pv="list" class="${view === 'list' ? 'active' : ''}" title="มุมมองรายการ" aria-label="มุมมองรายการ">${ICONS.listView}</button>
+          <button type="button" data-pv="card" class="${view === 'card' ? 'active' : ''}" title="มุมมองการ์ด" aria-label="มุมมองการ์ด">${ICONS.gridView}</button>
+        </div>
+        <button type="button" class="mc-tool-btn primary mc-print-icon" data-pp title="พิมพ์รายงาน" aria-label="พิมพ์รายงาน">${ICONS.print}</button>
+      </div>
+    </div>
+    <div class="pc-period" style="margin-top:10px">
+      <select data-pm aria-label="เดือน">
+        ${TH_MONTHS_FULL.map((m, i) => `<option value="${i + 1}" ${curM === i + 1 ? 'selected' : ''}>${m}</option>`).join('')}
+      </select>
+      <select data-py aria-label="ปี">
+        ${yrs.map(y => `<option value="${y}" ${curY === y ? 'selected' : ''}>พ.ศ. ${y + 543}</option>`).join('')}
+      </select>
+    </div>`;
+};
+
 (function installPersonCardView(){
   const esc = escapeHtml;
   const STATUS_TXT = { todo:'ยังไม่ตรวจ', ok:'ครบ', bad:'มีปัญหา' };
@@ -14607,44 +14544,17 @@ ${pages}`;
   }
 
   function headerHtml(n, done, ok, bad, curY, curM){
-    const now = new Date();
-    const years = [];
-    for (let y = now.getFullYear(); y >= now.getFullYear() - 3; y--) years.push(y);
-    if (!years.includes(curY)) years.push(curY);
     const pct = n ? Math.round(done / n * 100) : 0;
     return `
-      <div class="pc-bar">
-        <div class="pc-row1">
-          <div>
-            <div class="pc-ttl">ตรวจประจำเดือน</div>
-            <div class="pc-subt">ตรวจแล้ว ${done} จาก ${n} คน</div>
-          </div>
-          <div class="pc-tools">
-            <div class="pc-vseg" role="group" aria-label="มุมมอง">
-              <button type="button" data-pv="list" title="มุมมองรายการ" aria-label="มุมมองรายการ">${ICONS.listView}</button>
-              <button type="button" class="on" data-pv="card" title="มุมมองการ์ด" aria-label="มุมมองการ์ด">${ICONS.gridView}</button>
-            </div>
-            <button type="button" class="mc-tool-btn primary mc-print-icon" data-pp title="พิมพ์รายงาน" aria-label="พิมพ์รายงาน">${ICONS.print}</button>
-          </div>
-        </div>
-        <div class="pc-period">
-          <select data-pm aria-label="เดือน">
-            ${TH_MONTHS_FULL.map((m, i) => `<option value="${i + 1}" ${curM === i + 1 ? 'selected' : ''}>${m}</option>`).join('')}
-          </select>
-          <select data-py aria-label="ปี">
-            ${years.map(y => `<option value="${y}" ${curY === y ? 'selected' : ''}>พ.ศ. ${y + 543}</option>`).join('')}
-          </select>
-        </div>
-        <div class="pc-prog">
-          <div class="pc-ring"><i>${pct}%</i></div>
-          <div class="pc-seg" data-segs></div>
-        </div>
-        <button type="button" class="pc-pick" data-pick>
-          <svg viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.8" stroke="currentColor" stroke-width="1.6"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-          <span data-pickname></span>
-          <small>เลือกคน</small>
-        </button>
-      </div>`;
+      <div class="pc-prog">
+        <div class="pc-ring"><i>${pct}%</i></div>
+        <div class="pc-seg" data-segs></div>
+      </div>
+      <button type="button" class="pc-pick" data-pick>
+        <svg viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.8" stroke="currentColor" stroke-width="1.6"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <span data-pickname></span>
+        <small>เลือกคน</small>
+      </button>`;
   }
 
   function cardHtml(cur, dir){
