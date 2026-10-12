@@ -5634,6 +5634,27 @@ body:has(#view-monthly[style*="display: block"] .pc-wrap) .pc-bar{
   }
 }
 </style>
+
+   <style id="pc-print-fix">
+@media print{
+  html,body,
+  body:has(#view-monthly[style*="display: block"] .pc-wrap){
+    position:static !important;
+    inset:auto !important;
+    width:auto !important;
+    height:auto !important;
+    min-height:0 !important;
+    overflow:visible !important;
+    overscroll-behavior:auto !important;
+    touch-action:auto !important;
+    padding-bottom:0 !important;
+  }
+  html:has(#view-monthly[style*="display: block"] .pc-wrap){
+    height:auto !important;
+    overflow:visible !important;
+  }
+}
+</style>
    
 </head>
 <body>
