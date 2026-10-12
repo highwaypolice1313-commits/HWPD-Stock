@@ -5648,6 +5648,27 @@ html, body{ overflow-x:clip; height:auto; min-height:100%; }
 #view-monthly .ml-note{margin:8px 16px 0;font-size:12px;color:var(--bad);background:var(--bad-wash);padding:8px 10px;border-radius:12px}
 #view-monthly .ml-actions{margin:12px 16px 16px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
 </style>
+
+   <style id="ml-full-width">
+/* ทำให้ทุกส่วนของการ์ดรายการยืดเต็มความกว้าง และจัดชิดซ้าย */
+#view-monthly .mc-grid-list .ml-card,
+#view-monthly .ml-card{
+  align-items:stretch;
+  justify-content:flex-start;
+  text-align:left;
+}
+#view-monthly .ml-head,
+#view-monthly .ml-items,
+#view-monthly .ml-actions,
+#view-monthly .ml-meta,
+#view-monthly .ml-note,
+#view-monthly .ml-empty{
+  align-self:stretch;
+  width:auto;
+}
+#view-monthly .ml-count{align-self:flex-start}
+#view-monthly .ml-card > .ml-meta{margin-right:16px;margin-left:16px}
+</style>
    
 </head>
 <body>
