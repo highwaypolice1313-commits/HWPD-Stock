@@ -6147,6 +6147,52 @@ body:has(#view-monthly .pc-wrap){
 /* แถวนี้ไม่ต้องมีเส้นกั้นด้านบนซ้ำกับการ์ด */
 #view-monthly .pc-clear-row{display:none}
 </style>
+
+   <style id="ml-fit-width">
+/* กันการ์ดรายการล้นออกทั้งสองด้านเมื่อจอแคบ */
+#view-monthly .mc-grid-list{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+  justify-content:stretch;
+  justify-items:stretch;
+  align-items:start;
+  width:100%;
+  min-width:0;
+}
+#view-monthly .ml-card{
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  justify-self:stretch;
+  align-self:start;
+  box-sizing:border-box;
+}
+#view-monthly .ml-card > *:not(.ml-head){
+  box-sizing:border-box;
+  width:auto;
+  max-width:calc(100% - 32px);
+}
+#view-monthly .ml-items,
+#view-monthly .ml-item{
+  width:100%;
+  box-sizing:border-box;
+  min-width:0;
+}
+#view-monthly .ml-item{
+  flex-wrap:wrap;
+  row-gap:6px;
+}
+#view-monthly .ml-item-name{
+  flex:1 1 140px;
+  min-width:0;
+}
+#view-monthly .ml-item .mc-serial-pill{
+  max-width:100%;
+}
+#view-monthly .ml-meta{
+  max-width:calc(100% - 32px);
+}
+</style>
    
 </head>
 <body>
