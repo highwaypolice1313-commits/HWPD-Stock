@@ -5635,6 +5635,26 @@ body:has(#view-monthly[style*="display: block"] .pc-wrap) .pc-bar{
 }
 </style>
    
+   <style id="pc-print-css">
+#view-monthly .pc-print,
+#view-monthly .pc-print:hover,
+#view-monthly .pc-print:focus,
+#view-monthly .pc-print:focus-visible,
+#view-monthly .pc-print:active{
+  background:linear-gradient(150deg,var(--gold),var(--gold-deep)) !important;
+  color:#fff !important;
+  border:0 !important;
+  box-shadow:none !important;
+  transform:none !important;
+  filter:none !important;
+  outline:none !important;
+  opacity:1 !important;
+}
+@media (hover:hover){
+  #view-monthly .pc-print:hover{filter:brightness(1.06) !important}
+}
+</style>
+   
 </head>
 <body>
 
@@ -14754,7 +14774,10 @@ ${pages}`;
     const pl = grid.querySelector('[data-pv="list"]');
     if (pl) pl.onclick = () => { const b = document.querySelector('[data-mcv="list"]'); if (b) b.click(); };
     const pp = grid.querySelector('[data-pp]');
-    if (pp) pp.onclick = () => { const b = document.getElementById('mcPrintReport'); if (b) b.click(); };
+    if (pp) pp.onclick = () => {
+      pp.blur();
+      const b = document.getElementById('mcPrintReport'); if (b) b.click();
+    };
   }
 
   window.mxRenderCardView = function(list, grid){ render(grid); };
