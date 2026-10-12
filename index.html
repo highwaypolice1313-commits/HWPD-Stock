@@ -5669,6 +5669,27 @@ html, body{ overflow-x:clip; height:auto; min-height:100%; }
 #view-monthly .ml-count{align-self:flex-start}
 #view-monthly .ml-card > .ml-meta{margin-right:16px;margin-left:16px}
 </style>
+
+   <style id="card-fullscreen-toast">
+/* มุมมองการ์ด: การ์ดขยายเต็มจอ */
+#view-monthly > .pc-wrap{max-width:none;width:100%}
+#view-monthly .pc-stack{margin:0}
+#view-monthly .pc-b1{left:12px;right:12px}
+#view-monthly .pc-b2{left:24px;right:24px}
+#view-monthly .pc-face{border-radius:28px}
+
+/* มุมมองการ์ด: ข้อความบันทึกสำเร็จแสดงกลางจอ */
+body:has(#view-monthly .pc-wrap) #toast,
+body:has(#view-monthly .pc-wrap) .toast{
+  top:50% !important;
+  bottom:auto !important;
+  transform:translate(-50%,-50%) scale(.96) !important;
+}
+body:has(#view-monthly .pc-wrap) #toast.show,
+body:has(#view-monthly .pc-wrap) .toast.show{
+  transform:translate(-50%,-50%) scale(1) !important;
+}
+</style>
    
 </head>
 <body>
