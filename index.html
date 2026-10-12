@@ -5653,6 +5653,25 @@ html:has(#view-monthly[style*="display: block"] .pc-wrap){
 .pc-hd-tools .mc-view-toggle button{width:40px;height:38px}
 .pc-hd-tools .mc-print-icon{width:40px;height:38px;min-width:40px;border-radius:13px}
 </style>   
+
+   <style id="pc-spacing">
+/* เว้นขอบซ้ายขวาและระยะระหว่างแถวของส่วนหัว ให้เหมือนกันทั้งสองมุมมอง */
+#view-monthly .pc-hd{padding:0 10px}
+#view-monthly .pc-hd-tools{gap:10px}
+#view-monthly .pc-period{
+  padding:0 10px;
+  margin-top:14px !important;
+  gap:10px;
+}
+#view-monthly .pc-period select{height:44px}
+#view-monthly .pc-prog{
+  padding:0 10px;
+  margin-top:14px;
+  gap:12px;
+}
+#view-monthly .pc-pick{margin:0 10px;width:calc(100% - 20px)}
+#view-monthly .pc-seg{gap:4px}
+</style>
    
 </head>
 <body>
