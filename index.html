@@ -5938,6 +5938,60 @@ body:has(#view-monthly .pc-wrap){
 #view-monthly .ml-btn.ok.on,
 #view-monthly .ml-btn.bad.on{border-color:transparent}
 </style>
+
+   <style id="pc-card-band">
+/* การ์ดหัวสี: หัวการ์ดเป็นแถบสีตามสถานะ เนื้อการ์ดขาว */
+#view-monthly .pc-face{
+  padding:0;
+  background:var(--panel);
+  border-color:var(--panel-line);
+}
+#view-monthly .pc-card.s-ok .pc-face,
+#view-monthly .pc-card.s-bad .pc-face{
+  background:var(--panel);
+  border-color:var(--panel-line);
+}
+#view-monthly .pc-face::before{display:none}
+
+/* แถบหัวการ์ด */
+#view-monthly .pc-head{
+  margin:0;
+  padding:16px 16px 14px;
+  background:var(--panel-soft);
+  border-bottom:1px solid color-mix(in srgb,var(--ink) 6%,transparent);
+}
+#view-monthly .pc-card.s-ok .pc-head{
+  background:linear-gradient(160deg,color-mix(in srgb,var(--ok) 22%,var(--panel)) 0%,color-mix(in srgb,var(--ok) 8%,var(--panel)) 100%);
+}
+#view-monthly .pc-card.s-bad .pc-head{
+  background:linear-gradient(160deg,color-mix(in srgb,var(--bad) 20%,var(--panel)) 0%,color-mix(in srgb,var(--bad) 7%,var(--panel)) 100%);
+}
+#view-monthly .pc-av{
+  border:2px solid var(--panel);
+  box-shadow:0 2px 8px rgba(0,0,0,.1);
+}
+
+/* เนื้อการ์ดเว้นขอบซ้ายขวาให้เท่ากับหัว */
+#view-monthly .pc-face > *:not(.pc-head):not(.pc-stamp){
+  margin-left:16px;
+  margin-right:16px;
+}
+#view-monthly .pc-face > .pc-items{margin-top:4px}
+#view-monthly .pc-face > .pc-act{padding-top:12px}
+#view-monthly .pc-face > .pc-hint{margin-bottom:12px}
+
+/* ปุ่ม: ครบเป็นสีทึบ มีปัญหาเป็นตัวอักษรสี */
+#view-monthly .pc-btn{height:44px;border-radius:14px;font-weight:700}
+#view-monthly .pc-btn.ok{background:var(--ok);color:#fff;border-color:transparent}
+#view-monthly .pc-btn.bad{background:transparent;color:var(--bad);border:1px solid color-mix(in srgb,var(--bad) 30%,var(--panel-line))}
+
+/* การ์ดซ้อนด้านหลังให้ดูเป็นกองกระดาษ ไม่เป็นเส้นซ้อน */
+#view-monthly .pc-b1,
+#view-monthly .pc-b2{
+  border:0;
+  background:color-mix(in srgb,var(--panel-line) 55%,var(--panel));
+}
+</style>
    
 </head>
 <body>
