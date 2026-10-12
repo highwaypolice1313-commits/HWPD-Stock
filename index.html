@@ -5766,6 +5766,17 @@ body:has(#view-monthly .pc-wrap) .toast.show{
 }
 </style>
    
+<style id="list-spacing-final">
+/* มุมมองรายการ: ระยะห่างแนวตั้งทุกส่วนเท่ากัน 16px */
+#view-monthly:not(:has(.pc-wrap)){gap:0 !important}
+#view-monthly:not(:has(.pc-wrap)) > *{margin:0 !important}
+#view-monthly:not(:has(.pc-wrap)) > * + *{margin-top:16px !important}
+
+/* ระยะภายในแถวของส่วนหัวและสรุป */
+#view-monthly:not(:has(.pc-wrap)) .pc-period{gap:16px !important}
+#view-monthly:not(:has(.pc-wrap)) .mc-summary{gap:16px !important}
+</style>   
+   
 </head>
 <body>
 
