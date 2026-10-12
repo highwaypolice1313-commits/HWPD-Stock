@@ -5766,6 +5766,24 @@ body:has(#view-monthly .pc-wrap) .toast.show{
 }
 </style>
    
+<style id="list-spacing-final">
+/* มุมมองรายการ: ระยะห่างแนวตั้งทุกส่วนเท่ากัน 16px */
+#view-monthly:not(:has(.pc-wrap)){gap:0 !important}
+#view-monthly:not(:has(.pc-wrap)) > *{margin:0 !important}
+#view-monthly:not(:has(.pc-wrap)) > * + *{margin-top:16px !important}
+
+/* ระยะภายในแถวของส่วนหัวและสรุป */
+#view-monthly:not(:has(.pc-wrap)) .pc-period{gap:16px !important}
+#view-monthly:not(:has(.pc-wrap)) .mc-summary{gap:16px !important}
+</style>   
+
+<style id="card-spacing-final">
+/* มุมมองการ์ด: ระยะห่างส่วนหัวและการ์ดเท่ากับมุมมองรายการ 16px */
+#view-monthly:has(.pc-wrap){gap:16px}
+#view-monthly:has(.pc-wrap) > .pc-period{margin:0 !important;gap:16px !important}
+#view-monthly > .pc-wrap{gap:16px}
+</style>
+
 <style id="monthly-spacing">
 /* หน้าตรวจประจำเดือน: ระยะ 22px ระหว่างบล็อกหลัก, 16px ภายในกลุ่ม (ไม่แตะ display) */
 :root{--mc-gap:22px;--mc-card-gap:16px}
@@ -5783,8 +5801,13 @@ body:has(#view-monthly .pc-wrap) .toast.show{
 #view-monthly #mcSwipeNavWrap:empty{display:none}
 </style>
 
+<style id="header-gap-final">
+/* ระยะหัวเรื่องถึงตัวเลือกเดือน/ปี ≈ 37px เท่ากันทั้งสองมุมมอง */
+#view-monthly .pc-hd{padding-bottom:15px}
+</style>
 
-<style id="monthly-spacing-final">
+
+   <style id="monthly-spacing-final">
 /* หน้าตรวจประจำเดือน: ระยะเดียวกันทั้งสองมุมมอง */
 :root{--mc-gap:22px;--mc-card-gap:16px}
 
