@@ -5776,6 +5776,13 @@ body:has(#view-monthly .pc-wrap) .toast.show{
 #view-monthly:not(:has(.pc-wrap)) .pc-period{gap:16px !important}
 #view-monthly:not(:has(.pc-wrap)) .mc-summary{gap:16px !important}
 </style>   
+
+<style id="card-spacing-final">
+/* มุมมองการ์ด: ระยะห่างส่วนหัวและการ์ดเท่ากับมุมมองรายการ 16px */
+#view-monthly:has(.pc-wrap){gap:16px}
+#view-monthly:has(.pc-wrap) > .pc-period{margin:0 !important;gap:16px !important}
+#view-monthly > .pc-wrap{gap:16px}
+</style>
    
 </head>
 <body>
@@ -14738,7 +14745,7 @@ window.pcHeaderHtml = function(curY, curM, years, view, sub){
     };
 
     face.addEventListener('pointerdown', e => {
-      if (e.target.closest('button')) return;
+      if (e.target.closest('button,[data-clear]')) return;
       id = e.pointerId; x0 = e.clientX; y0 = e.clientY; dx = 0; mode = null; moved = false;
     });
     face.addEventListener('pointermove', e => {
@@ -14776,7 +14783,7 @@ window.pcHeaderHtml = function(curY, curM, years, view, sub){
     face.addEventListener('pointerup', end);
     face.addEventListener('pointercancel', e => { dx = 0; end(e); });
     face.addEventListener('click', e => {
-      if (moved || e.target.closest('button')) { moved = false; return; }
+      if (moved || e.target.closest('button,[data-clear]')) { moved = false; return; }
       (window.mcChecklistSheetEnhanced || mcChecklistSheet)(cur.u);
     });
   }
