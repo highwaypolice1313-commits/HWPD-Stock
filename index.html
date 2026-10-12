@@ -5678,6 +5678,61 @@ body:has(#view-monthly[style*="display: block"] .pc-wrap) .pc-bar{
   }
 }
 </style>
+
+   <style id="pc-list-header-match">
+@media (max-width:899px){
+  /* ซ่อนคำอธิบายรองที่ยาว ให้หัวข้ออยู่บรรทัดเดียวกับปุ่มเหมือนมุมมองการ์ด */
+  #view-monthly:not(:has(.pc-wrap)) .section-title small{display:none !important}
+  #view-monthly:not(:has(.pc-wrap)) .section-title{
+    align-items:center !important;
+    flex-wrap:nowrap !important;
+    gap:10px !important;
+  }
+  #view-monthly:not(:has(.pc-wrap)) .section-title > span:first-child{
+    min-width:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+
+  /* เอากรอบพื้นหลังของกลุ่มปุ่มออก ให้เหมือนมุมมองการ์ด */
+  #view-monthly:not(:has(.pc-wrap)) .mc-tool-group{
+    background:none !important;
+    border:0 !important;
+    padding:0 !important;
+    gap:8px !important;
+    border-radius:0 !important;
+  }
+
+  /* ปุ่มสลับมุมมอง: กรอบและขนาดเท่ากับมุมมองการ์ด */
+  #view-monthly:not(:has(.pc-wrap)) .mc-view-toggle{
+    border:1px solid var(--panel-line) !important;
+    border-radius:13px !important;
+    box-shadow:none !important;
+    background:var(--panel) !important;
+    overflow:hidden;
+  }
+  #view-monthly:not(:has(.pc-wrap)) .mc-view-toggle button{
+    width:40px !important;
+    height:38px !important;
+    border-radius:0 !important;
+  }
+  #view-monthly:not(:has(.pc-wrap)) .mc-view-toggle button.active{
+    background:var(--navy) !important;
+    color:#fff !important;
+  }
+
+  /* ปุ่มพิมพ์: ขนาดและมุมเท่ากับมุมมองการ์ด */
+  #view-monthly:not(:has(.pc-wrap)) .mc-print-icon{
+    width:40px !important;
+    height:38px !important;
+    min-width:40px !important;
+    flex:0 0 40px !important;
+    border-radius:13px !important;
+    box-shadow:none !important;
+  }
+}
+</style>
    
 </head>
 <body>
