@@ -5526,6 +5526,31 @@ html, body{ overflow-x:clip; height:auto; min-height:100%; }
 
 .pc-face{height:clamp(340px,calc(100dvh - 440px),500px)}
 </style>  
+
+   <style id="pc-anim-css">
+@property --okp{syntax:'<percentage>';inherits:false;initial-value:0%}
+@property --donep{syntax:'<percentage>';inherits:false;initial-value:0%}
+
+.pc-ring{background:conic-gradient(var(--ok) 0 var(--okp), var(--bad) var(--okp) var(--donep), var(--panel-line) var(--donep) 100%);transition:--okp .8s cubic-bezier(.22,.8,.2,1),--donep .8s cubic-bezier(.22,.8,.2,1)}
+.pc-ring i{animation:pcPop .5s cubic-bezier(.3,1.4,.5,1)}
+@keyframes pcPop{0%{transform:scale(.7);opacity:.4}100%{transform:none;opacity:1}}
+
+@keyframes pcIn{0%{opacity:0;transform:translate3d(var(--ix,0),22px,0) rotate(var(--rot,0deg)) scale(.94)}65%{opacity:1}100%{opacity:1;transform:none}}
+.pc-stack.enter>.pc-card{animation:pcIn .5s cubic-bezier(.22,.9,.3,1.06) both}
+@keyframes pcBack{0%{opacity:0;transform:scale(.9) translateY(10px)}100%{opacity:1;transform:none}}
+.pc-stack.enter .pc-b1{animation:pcBack .55s .08s both}
+.pc-stack.enter .pc-b2{animation:pcBack .55s .16s both}
+@keyframes pcRow{0%{opacity:0;transform:translateX(12px)}100%{opacity:1;transform:none}}
+.pc-stack.enter .pc-row{animation:pcRow .4s both}
+.pc-stack.enter .pc-row:nth-child(1){animation-delay:.2s}
+.pc-stack.enter .pc-row:nth-child(2){animation-delay:.26s}
+.pc-stack.enter .pc-row:nth-child(3){animation-delay:.32s}
+
+.pc-seg i{transition:background .4s ease,transform .35s cubic-bezier(.3,1.4,.5,1)}
+.pc-seg i.cur{transform:scaleY(1.7)}
+.pc-pill{transition:background .4s ease,color .4s ease}
+.pc-stamp{transition:opacity .15s ease}
+</style>
    
 </head>
 <body>
@@ -14352,6 +14377,8 @@ ${pages}`;
   const esc = escapeHtml;
   const STATUS_TXT = { todo:'ยังไม่ตรวจ', ok:'ครบ', bad:'มีปัญหา' };
   let key = null;
+  let animDir = 0;
+  let ringPrev = null;
 
   const stOf = rec => !rec ? 'todo' : (rec['ผล'] === 'มีปัญหา' ? 'bad' : 'ok');
   const assetOf = b => (state.assets || []).find(x => x['รหัสครุภัณฑ์'] === b['รหัสครุภัณฑ์']) || {};
@@ -14373,14 +14400,42 @@ ${pages}`;
       .sort((a, b) => compareMonthlyOfficers(a, b));
   }
 
-  function headerHtml(n, done, ok, bad, idx, curY, curM){
+  function flyOut(face, dir){
+    if (!face || face.dataset.fly) return;
+    face.dataset.fly = '1';
+    face.style.transition = 'transform .24s cubic-bezier(.5,0,.8,.4), opacity .24s ease';
+    face.style.transform = `translate3d(${dir * window.innerWidth}px,0,0) rotate(${dir * 14}deg)`;
+    face.style.opacity = '0';
+  }
+
+  function stampPop(el, rot){
+    if (!el) return;
+    el.style.opacity = '1';
+    el.animate([
+      { transform:`translate(-50%,-50%) rotate(${rot}deg) scale(1.6)`, opacity:0 },
+      { transform:`translate(-50%,-50%) rotate(${rot}deg) scale(1)`, opacity:1 }
+    ], { duration:280, easing:'cubic-bezier(.3,1.4,.5,1)', fill:'none' });
+    setTimeout(() => { el.style.opacity = '0'; }, 900);
+  }
+
+  function animateRing(ring, okP, doneP){
+    if (!ring) return;
+    const from = ringPrev || { ok: okP, done: doneP };
+    ring.style.setProperty('--okp', from.ok + '%');
+    ring.style.setProperty('--donep', from.done + '%');
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      ring.style.setProperty('--okp', okP + '%');
+      ring.style.setProperty('--donep', doneP + '%');
+    }));
+    ringPrev = { ok: okP, done: doneP };
+  }
+
+  function headerHtml(n, done, ok, bad, curY, curM){
     const now = new Date();
     const years = [];
     for (let y = now.getFullYear(); y >= now.getFullYear() - 3; y--) years.push(y);
     if (!years.includes(curY)) years.push(curY);
     const pct = n ? Math.round(done / n * 100) : 0;
-    const okEnd = n ? (ok / n * 100).toFixed(2) : 0;
-    const badEnd = n ? (done / n * 100) : 0;
     return `
       <div class="pc-bar">
         <div class="pc-row1">
@@ -14405,7 +14460,7 @@ ${pages}`;
           </select>
         </div>
         <div class="pc-prog">
-          <div class="pc-ring" style="background:conic-gradient(var(--ok) 0 ${okEnd}%, var(--bad) ${okEnd}% ${badEnd}%, var(--panel-line) ${badEnd}% 100%)"><i>${pct}%</i></div>
+          <div class="pc-ring"><i>${pct}%</i></div>
           <div class="pc-seg" data-segs></div>
         </div>
         <button type="button" class="pc-pick" data-pick>
@@ -14416,7 +14471,7 @@ ${pages}`;
       </div>`;
   }
 
-  function cardHtml(cur){
+  function cardHtml(cur, dir){
     const st = stOf(cur.rec);
     const hold = cur.sum.hold;
     const rows = hold.slice(0, 3).map(b => {
@@ -14432,7 +14487,7 @@ ${pages}`;
     const empty = hold.length ? '' : `<div class="pc-empty">ไม่มีพัสดุในความครอบครองขณะนี้</div>`;
     const note = (cur.rec && cur.rec['ผล'] === 'มีปัญหา' && cur.rec['หมายเหตุ'])
       ? `<div class="pc-note">${esc(cur.rec['หมายเหตุ'])}</div>` : '';
-    return `<div class="pc-stack">
+    return `<div class="pc-stack${dir ? ' enter' : ''}" style="--ix:${dir * 40}px;--rot:${dir * 1.5}deg">
       <div class="pc-b2"></div>
       <div class="pc-b1"></div>
       <div class="pc-card s-${st}">
@@ -14502,12 +14557,7 @@ ${pages}`;
       mode = null;
       if (!wasH) return;
       const hit = Math.abs(dx) >= TH, dir = Math.sign(dx);
-      if (hit && dir > 0) {
-        face.style.transition = 'transform .2s ease-in';
-        face.style.transform = `translateX(${window.innerWidth}px) rotate(12deg)`;
-        setTimeout(onRight, 180);
-        return;
-      }
+      if (hit && dir > 0) { onRight(); return; }
       face.style.transition = 'transform .25s ease';
       face.style.transform = '';
       stR.style.opacity = 0; stL.style.opacity = 0;
@@ -14523,6 +14573,8 @@ ${pages}`;
   }
 
   function render(grid){
+    const dir = animDir;
+    animDir = 0;
     const list = fullList();
     const n = list.length;
     const now = new Date();
@@ -14532,11 +14584,14 @@ ${pages}`;
     const ok = list.filter(x => stOf(x.rec) === 'ok').length;
     const bad = list.filter(x => stOf(x.rec) === 'bad').length;
     const done = ok + bad;
+    const okP = n ? ok / n * 100 : 0;
+    const doneP = n ? done / n * 100 : 0;
 
     grid.className = 'pc-wrap';
 
     if (!n) {
-      grid.innerHTML = headerHtml(0, 0, 0, 0, 0, curY, curM) + emptyState('ไม่มีเจ้าหน้าที่ที่ถือพัสดุอยู่');
+      grid.innerHTML = headerHtml(0, 0, 0, 0, curY, curM) + emptyState('ไม่มีเจ้าหน้าที่ที่ถือพัสดุอยู่');
+      animateRing(grid.querySelector('.pc-ring'), 0, 0);
       bindHeader(grid);
       return;
     }
@@ -14548,40 +14603,60 @@ ${pages}`;
     }
     key = list[idx].key;
     const cur = list[idx];
-    const go = to => { key = list[(to + n) % n].key; render(grid); };
     const nextKey = list[(idx + 1) % n].key;
-    const saveOk = () => { key = nextKey; mcSave(cur.u, 'ครบ', ''); };
 
-    grid.innerHTML = headerHtml(n, done, ok, bad, idx, curY, curM) + `
-      ${cardHtml(cur)}
+    const go = (to, d) => { key = list[(to + n) % n].key; animDir = d; render(grid); };
+
+    const saveOk = async (fromSwipe) => {
+      const face = grid.querySelector('.pc-face');
+      if (!fromSwipe) stampPop(face && face.querySelector('.pc-stamp.r'), -12);
+      flyOut(face, 1);
+      await new Promise(r => setTimeout(r, 180));
+      key = nextKey;
+      animDir = 1;
+      await mcSave(cur.u, 'ครบ', '');
+      if (face && face.isConnected) { key = cur.key; animDir = 0; render(grid); }
+    };
+
+    grid.innerHTML = headerHtml(n, done, ok, bad, curY, curM) + `
+      ${cardHtml(cur, dir)}
       <div class="pc-nav">
         <button type="button" class="pc-nb" data-go="-1" aria-label="คนก่อนหน้า">‹</button>
         <span class="pc-navlbl">${idx + 1} / ${n}</span>
         <button type="button" class="pc-nb" data-go="1" aria-label="คนถัดไป">›</button>
       </div>`;
 
+    animateRing(grid.querySelector('.pc-ring'), okP, doneP);
+
     grid.querySelector('[data-pickname]').textContent = officerFullName(cur.u);
     const segs = grid.querySelector('[data-segs]');
     segs.innerHTML = list.map((x, i) =>
       `<i data-i="${i}" class="${stOf(x.rec)}${i === idx ? ' cur' : ''}"></i>`).join('');
-    segs.querySelectorAll('i').forEach(el => el.onclick = () => go(Number(el.dataset.i)));
+    segs.querySelectorAll('i').forEach(el => el.onclick = () => {
+      const to = Number(el.dataset.i);
+      go(to, to > idx ? 1 : -1);
+    });
 
     grid.querySelector('[data-pick]').onclick = () => {
       openOfficerPickerSheet(officerFullName(cur.u), (name, u) => {
         if (!u) { toast('ชื่อนี้ไม่มีในรายการตรวจเดือนนี้'); return; }
         if (!list.some(x => x.key === mcKey(u))) { toast('คนนี้ไม่มีพัสดุและยังไม่มีผลตรวจ'); return; }
         key = mcKey(u);
+        animDir = 1;
         render(grid);
       });
     };
-    grid.querySelectorAll('[data-go]').forEach(b => b.onclick = () => go(idx + Number(b.dataset.go)));
-    grid.querySelector('[data-act="ok"]').onclick = saveOk;
+    grid.querySelectorAll('[data-go]').forEach(b => b.onclick = () => {
+      const d = Number(b.dataset.go);
+      go(idx + d, d);
+    });
+    grid.querySelector('[data-act="ok"]').onclick = () => saveOk(false);
     grid.querySelector('[data-act="bad"]').onclick = () => mcProblemSheet(cur.u);
-    bindSwipe(grid.querySelector('.pc-card'), cur, saveOk);
+    bindSwipe(grid.querySelector('.pc-card'), cur, () => saveOk(true));
     bindHeader(grid);
   }
 
-  /* ปุ่มในส่วนหัวใช้ปุ่มเดิมของหน้า (ที่ซ่อนอยู่) ทำงานต่อ จึงไม่ต้องเขียนตรรกะโหลดข้อมูลซ้ำ */
+  /* ปุ่มส่วนหัวใช้ปุ่มเดิมของหน้า (ที่ซ่อนอยู่) ทำงานต่อ จึงไม่ต้องเขียนตรรกะโหลดข้อมูลซ้ำ */
   function bindHeader(grid){
     const proxyChange = (id, v) => {
       const o = document.getElementById(id);
