@@ -5424,41 +5424,75 @@ html, body{ overflow-x:clip; height:auto; min-height:100%; }
 </style>
 
 <style id="pc-card-css">
-#view-monthly:has(.pc-stage) #mcSummary,
-#view-monthly:has(.pc-stage) #mcProgress,
-#view-monthly:has(.pc-stage) #mcHiddenHint,
-#view-monthly:has(.pc-stage) .search-row,
-#view-monthly:has(.pc-stage) .section-title small{display:none !important}
-.pc-stage{display:flex;flex-direction:column;gap:10px;max-width:440px;margin:0 auto;width:100%}
-.pc-nav{display:flex;gap:8px;align-items:center}
-.pc-nb{width:40px;height:40px;flex:none;border-radius:12px;border:1px solid var(--panel-line);background:var(--panel);color:var(--ink);font-size:20px;line-height:1;cursor:pointer}
-.pc-sel{flex:1;min-width:0;height:40px;border-radius:12px;border:1px solid var(--panel-line);background:var(--panel);color:var(--ink);padding:0 10px;font:inherit;font-size:13px}
-.pc-card{position:relative}
-.pc-face{position:relative;background:var(--panel);border:1px solid var(--panel-line);border-radius:18px;padding:14px;box-shadow:var(--shadow-sm);touch-action:pan-y;user-select:none;-webkit-user-select:none;cursor:pointer}
+#view-monthly:has(.pc-wrap) #mcSummary,
+#view-monthly:has(.pc-wrap) #mcProgress,
+#view-monthly:has(.pc-wrap) #mcHiddenHint,
+#view-monthly:has(.pc-wrap) .search-row,
+#view-monthly:has(.pc-wrap) .section-title small{display:none !important}
+
+.pc-wrap{max-width:420px;margin:0 auto;width:100%;display:flex;flex-direction:column;gap:14px}
+.pc-top{display:flex;align-items:center;justify-content:space-between;padding:0 4px}
+.pc-ttl{font-size:14px;font-weight:600;color:var(--ink)}
+.pc-subt{font-size:11.5px;color:var(--ink-dim);margin-top:2px}
+.pc-ring{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;flex:none}
+.pc-ring i{width:37px;height:37px;border-radius:50%;background:var(--panel);display:grid;place-items:center;font-style:normal;font-size:11px;font-weight:600;color:var(--ink);font-family:var(--font-num)}
+
+.pc-seg{display:flex;gap:3px;height:6px;padding:0 4px}
+.pc-seg i{flex:1 1 0;min-width:3px;border-radius:3px;background:var(--panel-line);cursor:pointer}
+.pc-seg i.ok{background:var(--ok)}
+.pc-seg i.bad{background:var(--bad)}
+.pc-seg i.cur{background:var(--navy)}
+
+.pc-stack{position:relative;margin:0 10px;padding-bottom:14px}
+.pc-b1,.pc-b2{position:absolute;left:0;right:0;bottom:0;border-radius:24px;background:var(--panel);border:1px solid var(--panel-line);opacity:.9}
+.pc-b1{top:12px;left:10px;right:10px;opacity:.8}
+.pc-b2{top:22px;left:20px;right:20px;opacity:.5}
+.pc-card{position:relative;z-index:1}
+
+.pc-face{position:relative;background:var(--panel);border:1px solid var(--panel-line);border-radius:24px;padding:20px 18px 16px;overflow:hidden;box-shadow:var(--shadow-md);touch-action:pan-y;user-select:none;-webkit-user-select:none;cursor:pointer}
+.pc-face::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:var(--panel-line)}
+.pc-card.s-ok .pc-face::before{background:var(--ok)}
+.pc-card.s-bad .pc-face::before{background:var(--bad)}
 .pc-face.drag{transition:none;cursor:grabbing}
-.pc-card.s-ok .pc-face{border-color:color-mix(in srgb,var(--ok) 45%,var(--panel-line))}
-.pc-card.s-bad .pc-face{border-color:color-mix(in srgb,var(--bad) 45%,var(--panel-line))}
-.pc-cue{position:absolute;top:12px;font-size:12px;font-weight:700;padding:4px 9px;border-radius:99px;opacity:0;pointer-events:none}
-.pc-cue.r{right:12px;background:var(--ok-wash);color:var(--ok)}
-.pc-cue.l{left:12px;background:var(--bad-wash);color:var(--bad)}
-.pc-head{display:flex;align-items:center;gap:11px}
-.pc-av{width:44px;height:44px;border-radius:50%;flex:none;overflow:hidden;display:grid;place-items:center;background:var(--navy-wash);color:var(--navy);font-weight:600;font-size:16px}
+
+.pc-head{display:flex;gap:13px;align-items:center}
+.pc-av{width:56px;height:56px;border-radius:18px;flex:none;overflow:hidden;display:grid;place-items:center;background:var(--navy-wash);color:var(--navy);font-size:18px;font-weight:600}
 .pc-av img{width:100%;height:100%;object-fit:cover}
 .pc-id{flex:1;min-width:0}
-.pc-name{font-size:15px;font-weight:600;color:var(--ink);line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pc-pos{font-size:11.5px;color:var(--ink-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pc-pill{flex:none;font-size:11px;font-weight:600;padding:4px 10px;border-radius:99px;background:var(--warn-wash);color:var(--warn);white-space:nowrap}
-.pc-pill.s-ok{background:var(--ok-wash);color:var(--ok)}
-.pc-pill.s-bad{background:var(--bad-wash);color:var(--bad)}
-.pc-items{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:5px}
-.pc-items li{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:7px 10px;border-radius:10px;background:var(--panel-soft);font-size:12.5px;color:var(--ink)}
-.pc-it{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
-.pc-sn{font-family:var(--font-num);font-size:11px;color:var(--navy);font-weight:600;white-space:nowrap;flex:none}
-.pc-more{justify-content:center!important;color:var(--ink-dim)!important;background:none!important;padding:2px!important;font-size:11.5px!important}
-.pc-empty{font-size:12.5px;color:var(--ink-faint);margin-top:12px}
-.pc-note{margin:10px 0 0;font-size:12px;color:var(--bad);background:var(--bad-wash);padding:7px 10px;border-radius:10px}
-.pc-hint{font-size:11px;color:var(--ink-dim);text-align:center}
-</style>  
+.pc-name{font-size:16px;font-weight:600;line-height:1.35;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pc-pos{font-size:12px;color:var(--ink-dim);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pc-pill{align-self:flex-start;font-size:11px;font-weight:600;padding:4px 10px;border-radius:99px;white-space:nowrap;background:var(--off-wash);color:var(--off)}
+.pc-card.s-ok .pc-pill{background:var(--ok-wash);color:var(--ok)}
+.pc-card.s-bad .pc-pill{background:var(--bad-wash);color:var(--bad)}
+
+.pc-sec{display:flex;justify-content:space-between;align-items:center;margin:18px 0 4px;font-size:11.5px;color:var(--ink-dim)}
+.pc-sec b{font-weight:600;color:var(--ink)}
+.pc-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--panel-line)}
+.pc-ib{width:36px;height:36px;border-radius:12px;flex:none;display:grid;place-items:center;background:var(--navy-wash);color:var(--navy)}
+.pc-ib svg{width:18px;height:18px}
+.pc-tx{flex:1;min-width:0;font-size:13.5px;line-height:1.35;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pc-sn{font-family:var(--font-num);font-size:11px;color:var(--ink-dim);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pc-more{font-size:12px;color:var(--ink-dim);padding:10px 0 0 48px}
+.pc-empty{font-size:12.5px;color:var(--ink-faint);padding:12px 0}
+.pc-note{margin-top:10px;font-size:12px;color:var(--bad);background:var(--bad-wash);padding:8px 11px;border-radius:12px}
+
+.pc-act{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px}
+.pc-btn{height:46px;border-radius:15px;border:1px solid var(--panel-line);background:var(--panel-soft);font:inherit;font-size:13.5px;font-weight:600;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.pc-btn.ok{background:var(--ok-wash);color:var(--ok);border-color:transparent}
+.pc-btn.bad{background:var(--bad-wash);color:var(--bad);border-color:transparent}
+.pc-btn:active{transform:scale(.97)}
+.pc-hint{display:flex;justify-content:space-between;margin-top:12px;padding-top:11px;border-top:1px solid var(--panel-line);font-size:11.5px;color:var(--ink-dim)}
+.pc-hint .l{color:var(--bad)}
+.pc-hint .r{color:var(--ok)}
+
+.pc-cue{position:absolute;top:18px;font-size:12px;font-weight:700;padding:5px 11px;border-radius:99px;opacity:0;pointer-events:none;z-index:2}
+.pc-cue.r{right:14px;background:var(--ok-wash);color:var(--ok)}
+.pc-cue.l{left:14px;background:var(--bad-wash);color:var(--bad)}
+
+.pc-nav{display:flex;align-items:center;justify-content:space-between;padding:0 4px}
+.pc-nb{width:42px;height:42px;border-radius:50%;border:1px solid var(--panel-line);background:var(--panel);color:var(--ink);font-size:18px;cursor:pointer;display:grid;place-items:center}
+.pc-navlbl{font-size:12px;color:var(--ink-dim);font-family:var(--font-num)}
+</style>
    
 </head>
 <body>
@@ -14282,12 +14316,14 @@ ${pages}`;
 })();
 
 (function installPersonCardView(){
-  let key = null;
   const esc = escapeHtml;
-  const STATUS = { todo:'ยังไม่ตรวจ', ok:'ครบ', bad:'มีปัญหา' };
+  const STATUS_TXT = { todo:'ยังไม่ตรวจ', ok:'ครบ', bad:'มีปัญหา' };
+  let key = null;
+
   const stOf = rec => !rec ? 'todo' : (rec['ผล'] === 'มีปัญหา' ? 'bad' : 'ok');
+  const assetOf = b => (state.assets || []).find(x => x['รหัสครุภัณฑ์'] === b['รหัสครุภัณฑ์']) || {};
   const snOf = b => {
-    const a = (state.assets || []).find(x => x['รหัสครุภัณฑ์'] === b['รหัสครุภัณฑ์']) || {};
+    const a = assetOf(b);
     const s = String(a['หมายเลขเครื่อง'] || '').trim();
     if (s) return 'S/N ' + s;
     const p = String(a['ทะเบียนรถ'] || '').trim();
@@ -14296,35 +14332,59 @@ ${pages}`;
   const avatar = u => u['รูปถ่าย']
     ? `<img src="${u['รูปถ่าย']}" alt="">`
     : esc(String(u['ชื่อ-สกุล'] || '?').charAt(0));
-  const openChecklist = u => (window.mcChecklistSheetEnhanced || mcChecklistSheet)(u);
 
-  function cardHtml(x){
-    const st = stOf(x.rec), hold = x.sum.hold;
-    const rows = hold.slice(0, 3).map(b =>
-      `<li><span class="pc-it">${esc(b['ชื่อครุภัณฑ์'] || '-')}</span><span class="pc-sn">${esc(snOf(b) || '-')}</span></li>`).join('');
-    const more = hold.length > 3 ? `<li class="pc-more">อีก ${hold.length - 3} รายการ</li>` : '';
-    const body = hold.length
-      ? `<ul class="pc-items">${rows}${more}</ul>`
-      : `<div class="pc-empty">ไม่มีพัสดุในความครอบครองขณะนี้</div>`;
-    const note = (x.rec && x.rec['ผล'] === 'มีปัญหา' && x.rec['หมายเหตุ'])
-      ? `<div class="pc-note">${esc(x.rec['หมายเหตุ'])}</div>` : '';
-    return `<div class="pc-card s-${st}">
-      <div class="pc-face">
-        <span class="pc-cue r">✓ ครบ</span><span class="pc-cue l">⚠ มีปัญหา</span>
-        <div class="pc-head">
-          <span class="pc-av">${avatar(x.u)}</span>
-          <div class="pc-id">
-            <div class="pc-name">${esc(officerFullName(x.u))}</div>
-            <div class="pc-pos">${esc(x.u['ตำแหน่ง'] || 'ไม่ระบุตำแหน่ง')}</div>
-          </div>
-          <span class="pc-pill s-${st}">${STATUS[st]}</span>
+  // รายชื่อเต็ม (ไม่ผ่านตัวกรองค้นหา) เรียงตามยศ/ตำแหน่ง
+  function fullList(){
+    return (state.users || [])
+      .map(u => ({ u, key: mcKey(u), sum: mcSummary(u), rec: mcRecordFor(u) }))
+      .filter(x => x.sum.hold.length > 0 || x.rec)
+      .sort((a, b) => compareMonthlyOfficers(a, b));
+  }
+
+  function cardHtml(cur, idx, n){
+    const st = stOf(cur.rec);
+    const hold = cur.sum.hold;
+    const rows = hold.slice(0, 3).map(b => {
+      const a = assetOf(b);
+      return `<div class="pc-row">
+        <div class="pc-ib">${catIcon(a['หมวดหมู่'])}</div>
+        <div class="pc-tx">${esc(b['ชื่อครุภัณฑ์'] || '-')}
+          <div class="pc-sn">${esc(snOf(b) || 'ไม่ระบุหมายเลข')}</div>
         </div>
-        ${body}${note}
+      </div>`;
+    }).join('');
+    const more = hold.length > 3 ? `<div class="pc-more">และอีก ${hold.length - 3} รายการ</div>` : '';
+    const empty = hold.length ? '' : `<div class="pc-empty">ไม่มีพัสดุในความครอบครองขณะนี้</div>`;
+    const note = (cur.rec && cur.rec['ผล'] === 'มีปัญหา' && cur.rec['หมายเหตุ'])
+      ? `<div class="pc-note">${esc(cur.rec['หมายเหตุ'])}</div>` : '';
+    const hideBack = n < 2 ? 'style="display:none"' : '';
+    return `<div class="pc-stack">
+      <div class="pc-b2" ${hideBack}></div>
+      <div class="pc-b1" ${hideBack}></div>
+      <div class="pc-card s-${st}">
+        <div class="pc-face">
+          <span class="pc-cue r">ครบ</span><span class="pc-cue l">มีปัญหา</span>
+          <div class="pc-head">
+            <span class="pc-av">${avatar(cur.u)}</span>
+            <div class="pc-id">
+              <div class="pc-name">${esc(officerFullName(cur.u))}</div>
+              <div class="pc-pos">${esc(cur.u['ตำแหน่ง'] || 'ไม่ระบุตำแหน่ง')}</div>
+            </div>
+            <span class="pc-pill">${STATUS_TXT[st]}</span>
+          </div>
+          <div class="pc-sec"><span><b>${hold.length}</b> รายการในความครอบครอง</span></div>
+          ${rows}${more}${empty}${note}
+          <div class="pc-act">
+            <button type="button" class="pc-btn bad" data-act="bad">มีปัญหา</button>
+            <button type="button" class="pc-btn ok" data-act="ok">ครบ</button>
+          </div>
+          <div class="pc-hint"><span class="l">← ปัดซ้าย มีปัญหา</span><span class="r">ปัดขวา ครบ →</span></div>
+        </div>
       </div>
     </div>`;
   }
 
-  function bindCard(card, cur, nxt, redraw){
+  function bindSwipe(card, cur, onRight){
     const face = card.querySelector('.pc-face');
     const cueR = face.querySelector('.pc-cue.r');
     const cueL = face.querySelector('.pc-cue.l');
@@ -14332,6 +14392,7 @@ ${pages}`;
     let id = null, x0 = 0, y0 = 0, dx = 0, mode = null, moved = false;
 
     face.addEventListener('pointerdown', e => {
+      if (e.target.closest('button')) return;
       id = e.pointerId; x0 = e.clientX; y0 = e.clientY; dx = 0; mode = null; moved = false;
     });
     face.addEventListener('pointermove', e => {
@@ -14339,9 +14400,12 @@ ${pages}`;
       const mx = e.clientX - x0, my = e.clientY - y0;
       if (!mode) {
         if (Math.abs(mx) < 8 && Math.abs(my) < 8) return;
-        moved = true;
         mode = Math.abs(mx) > Math.abs(my) ? 'h' : 'v';
-        if (mode === 'h') { try { face.setPointerCapture(id); } catch(_){} face.classList.add('drag'); }
+        if (mode === 'h') {
+          moved = true;
+          try { face.setPointerCapture(id); } catch (_) {}
+          face.classList.add('drag');
+        }
       }
       if (mode !== 'h') return;
       dx = mx;
@@ -14361,11 +14425,7 @@ ${pages}`;
       if (hit && dir > 0) {
         face.style.transition = 'transform .2s ease-in';
         face.style.transform = `translateX(${window.innerWidth}px) rotate(12deg)`;
-        setTimeout(() => {
-          key = mcKey(nxt.u);
-          redraw();
-          mcSave(cur.u, 'ครบ', '');
-        }, 180);
+        setTimeout(onRight, 180);
         return;
       }
       face.style.transition = 'transform .25s ease';
@@ -14375,46 +14435,71 @@ ${pages}`;
     };
     face.addEventListener('pointerup', end);
     face.addEventListener('pointercancel', e => { dx = 0; end(e); });
-    face.addEventListener('click', () => {
-      if (moved) { moved = false; return; }
-      openChecklist(cur.u);
+    face.addEventListener('click', e => {
+      if (moved || e.target.closest('button')) { moved = false; return; }
+      (window.mcChecklistSheetEnhanced || mcChecklistSheet)(cur.u);
     });
   }
 
-  window.mxRenderCardView = function(list, grid, redraw){
-    if (!list.length) {
+  function render(grid, redraw){
+    const list = fullList();
+    const n = list.length;
+    if (!n) {
       grid.className = '';
-      grid.innerHTML = emptyState('ไม่มีผู้ที่ตรงกับเงื่อนไข');
+      grid.innerHTML = emptyState('ไม่มีเจ้าหน้าที่ที่ถือพัสดุอยู่');
       return;
     }
-    const n = list.length;
-    let idx = list.findIndex(x => mcKey(x.u) === key);
-    if (idx < 0) idx = 0;
-    key = mcKey(list[idx].u);
-    const cur = list[idx], nxt = list[(idx + 1) % n];
-    const go = d => {
-      key = mcKey(list[(idx + d + n) % n].u);
-      window.mxRenderCardView(list, grid, redraw);
+    let idx = list.findIndex(x => x.key === key);
+    if (idx < 0) {
+      const firstTodo = list.findIndex(x => !x.rec);
+      idx = firstTodo >= 0 ? firstTodo : 0;
+    }
+    key = list[idx].key;
+    const cur = list[idx];
+
+    const ok = list.filter(x => stOf(x.rec) === 'ok').length;
+    const bad = list.filter(x => stOf(x.rec) === 'bad').length;
+    const done = ok + bad;
+    const pct = Math.round(done / n * 100);
+    const okEnd = (ok / n * 100).toFixed(2);
+    const badEnd = (done / n * 100).toFixed(2);
+    const go = to => { key = list[(to + n) % n].key; render(grid, redraw); };
+    const nextKey = list[(idx + 1) % n].key;
+    const saveOk = () => {
+      key = nextKey;
+      mcSave(cur.u, 'ครบ', '');   // mcSave เรียก drawMonthlyBody แล้ววาดการ์ดคนถัดไป
     };
 
-    grid.className = 'pc-stage';
+    grid.className = 'pc-wrap';
     grid.innerHTML = `
+      <div class="pc-top">
+        <div>
+          <div class="pc-ttl">ตรวจประจำเดือน</div>
+          <div class="pc-subt">ตรวจแล้ว ${done} จาก ${n} คน</div>
+        </div>
+        <div class="pc-ring" style="background:conic-gradient(var(--ok) 0 ${okEnd}%, var(--bad) ${okEnd}% ${badEnd}%, var(--panel-line) ${badEnd}% 100%)">
+          <i>${pct}%</i>
+        </div>
+      </div>
+      <div class="pc-seg">
+        ${list.map((x, i) => `<i data-i="${i}" class="${stOf(x.rec)}${i === idx ? ' cur' : ''}"></i>`).join('')}
+      </div>
+      ${cardHtml(cur, idx, n)}
       <div class="pc-nav">
         <button type="button" class="pc-nb" data-go="-1" aria-label="คนก่อนหน้า">‹</button>
-        <select class="pc-sel" aria-label="เลือกผู้ตรวจ">
-          ${list.map((x, i) => `<option value="${esc(mcKey(x.u))}" ${i === idx ? 'selected' : ''}>${esc(officerFullName(x.u))}</option>`).join('')}
-        </select>
+        <span class="pc-navlbl">${idx + 1} / ${n}</span>
         <button type="button" class="pc-nb" data-go="1" aria-label="คนถัดไป">›</button>
-      </div>
-      ${cardHtml(cur)}
-      <div class="pc-hint">${idx + 1} / ${n} · ปัดขวา = ครบ · ปัดซ้าย = มีปัญหา</div>`;
+      </div>`;
 
-    grid.querySelector('.pc-sel').onchange = e => {
-      key = e.target.value;
-      window.mxRenderCardView(list, grid, redraw);
-    };
-    grid.querySelectorAll('[data-go]').forEach(b => b.onclick = () => go(Number(b.dataset.go)));
-    bindCard(grid.querySelector('.pc-card'), cur, nxt, redraw);
+    grid.querySelectorAll('.pc-seg i').forEach(el => el.onclick = () => go(Number(el.dataset.i)));
+    grid.querySelectorAll('[data-go]').forEach(b => b.onclick = () => go(idx + Number(b.dataset.go)));
+    grid.querySelector('[data-act="ok"]').onclick = saveOk;
+    grid.querySelector('[data-act="bad"]').onclick = () => mcProblemSheet(cur.u);
+    bindSwipe(grid.querySelector('.pc-card'), cur, saveOk);
+  }
+
+  window.mxRenderCardView = function(list, grid, redraw){
+    render(grid, redraw);
   };
 })();
    
