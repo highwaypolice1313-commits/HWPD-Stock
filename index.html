@@ -5417,6 +5417,10 @@ html, body{ overflow-x:clip; height:auto; min-height:100%; }
     line-height:1.35;
   }
 }
+
+.sw-btn.tone-danger{ background:linear-gradient(150deg,var(--bad),color-mix(in srgb,var(--bad) 72%,#000)); }
+:root[data-theme="brutal"] .sw-btn.tone-danger{ background:var(--bad); }
+      
 </style>
    
 </head>
@@ -7168,10 +7172,34 @@ function swBtn(tone, icon, label, act) {
   return `<button type="button" class="sw-btn tone-${tone}" data-act="${act}">${icon}<span>${label}</span></button>`;
 }
 function wireSwipeRows(listEl) {
-  Array.from(listEl.querySelectorAll('.list-item.asset-item')).forEach(row => {
+const ASSET_SWIPE = {
+  selector: '.list-item.asset-item',
+  find: id => state.assets.find(a => a['รหัสครุภัณฑ์'] === id),
+  buttons: () => swBtn('ok', ICONS.swap, 'ยืม', 'borrow')
+    + (isAdmin() ? swBtn('bad', ICONS.wrench, 'แจ้งซ่อม', 'maint') : '')
+    + swBtn('navy', ICONS.scan, 'QR', 'qr'),
+  run: (act, asset, id) => {
+    if (act === 'borrow') {
+      if (asset['สถานะ'] !== 'พร้อมใช้งาน') { toast('ครุภัณฑ์นี้ไม่พร้อมให้ยืม (' + asset['สถานะ'] + ')'); return; }
+      openBorrowForm(id);
+    }
+    else if (act === 'maint') openMaintForm(id);
+    else if (act === 'qr') openQrView(asset);
+  }
+};
+const MAINT_SWIPE = {
+  selector: '.list-item.maint-item',
+  find: id => state.maint.find(m => m['รหัสรายการ'] === id),
+  buttons: () => swBtn('ok', ICONS.edit, 'แก้ไข', 'edit') + swBtn('danger', ICONS.trash, 'ลบ', 'del'),
+  run: (act, m) => { if (act === 'edit') openMaintEditForm(m); else deleteMaintItem(m); }
+};
+
+function wireSwipeRows(listEl, cfg) {
+  const C = cfg || ASSET_SWIPE;
+  Array.from(listEl.querySelectorAll(C.selector)).forEach(row => {
     const id = row.dataset.id;
-    const asset = state.assets.find(a => a['รหัสครุภัณฑ์'] === id);
-    if (!asset) return;
+    const rec = C.find(id);
+    if (!rec) return;
 
     const wrap = document.createElement('div');
     wrap.className = 'sw-wrap';
@@ -7180,26 +7208,13 @@ function wireSwipeRows(listEl) {
 
     const panel = document.createElement('div');
     panel.className = 'sw-actions';
-    panel.innerHTML =
-        swBtn('ok', ICONS.swap, 'ยืม', 'borrow')
-      + (isAdmin() ? swBtn('bad', ICONS.wrench, 'แจ้งซ่อม', 'maint') : '')
-      + swBtn('navy', ICONS.scan, 'QR', 'qr');
+    panel.innerHTML = C.buttons(rec);
     wrap.appendChild(panel);
 
-    const runAct = (act) => {
-      swClose(wrap);
-      if (act === 'borrow') {
-        if (asset['สถานะ'] !== 'พร้อมใช้งาน') { toast('ครุภัณฑ์นี้ไม่พร้อมให้ยืม (' + asset['สถานะ'] + ')'); return; }
-        openBorrowForm(id);
-      }
-      else if (act === 'maint') openMaintForm(id);
-      else if (act === 'qr') openQrView(asset);
-    };
     panel.querySelectorAll('.sw-btn').forEach(b => {
-      b.onclick = (e) => { e.stopPropagation(); runAct(b.dataset.act); };
+      b.onclick = (e) => { e.stopPropagation(); swClose(wrap); C.run(b.dataset.act, rec, id); };
     });
 
-    // แตะแถวตอนที่เปิดอยู่ หรือเพิ่งลากเสร็จ = ไม่เปิดรายละเอียด
     row.addEventListener('click', (e) => {
       if (wrap.dataset.open || row._swMoved) {
         e.stopImmediatePropagation(); e.preventDefault();
@@ -7232,7 +7247,7 @@ function wireSwipeRows(listEl) {
       }
       if (!dragging) return;
       row._swMoved = true;
-      dx = Math.max(-w, Math.min(0, startX + mx));   // ปัดได้เฉพาะทางซ้าย
+      dx = Math.max(-w, Math.min(0, startX + mx));
       row.style.left = dx + 'px';
     });
     const end = (e) => {
@@ -7253,6 +7268,7 @@ function wireSwipeRows(listEl) {
     row.addEventListener('pointerup', end);
     row.addEventListener('pointercancel', end);
   });
+}
 }
 // แตะที่อื่นแล้วปิดแถวที่เปิดค้างอยู่
 document.addEventListener('pointerdown', (e) => {
@@ -9454,6 +9470,7 @@ function renderMaint() {
   };
   document.getElementById('maintSortSelect').onchange = (e) => { state.maintSort = e.target.value; renderMaint(); };
     wireViewToggle(renderMaint, '#view-maint', 'maintView');
+   if (isAdmin() && !isGrid) wireSwipeRows(document.getElementById('maintList'), MAINT_SWIPE);
   requestAnimationFrame(() => applyPremiumMotion(el));
 }
 function maintRow(m) {
@@ -9482,6 +9499,7 @@ function maintCard(m) {
 function openMaintDetail(id) {
   const m = state.maint.find(x => x['รหัสรายการ'] === id);
   if (!m) return;
+  const canUpdate = isAdmin() && m['สถานะ'] !== 'ซ่อมเสร็จ';
   showSheet(`
     <div class="sheet-title">${escapeHtml(m['ชื่อครุภัณฑ์'])}</div>
     <div class="detail-row"><span>วันที่แจ้ง</span><span>${systemDate(m['วันที่แจ้ง'])}</span></div>
@@ -9491,7 +9509,7 @@ function openMaintDetail(id) {
     <div class="detail-row"><span>ค่าใช้จ่าย</span><span>${m['ค่าใช้จ่าย(บาท)'] ? Number(m['ค่าใช้จ่าย(บาท)']).toLocaleString() + ' บาท' : '-'}</span></div>
     <div class="detail-row"><span>ผู้รับผิดชอบ</span><span>${escapeHtml(m['ผู้รับผิดชอบ']) || '-'}</span></div>
     ${m['รูปถ่ายปัญหา'] ? `<div class="hint" style="margin-top:12px; font-weight:500; color:var(--ink);">รูปถ่ายอาการ/ความเสียหาย</div><img class="condition-photo-thumb" src="${m['รูปถ่ายปัญหา']}">` : ''}
-    ${isAdmin() && m['สถานะ'] !== 'ซ่อมเสร็จ' ? `
+    ${canUpdate ? `
     <div class="field" style="margin-top:14px;"><label>อัปเดตสถานะ</label>
       <select class="input" id="f_mstatus">
         <option ${m['สถานะ']==='รอซ่อม'?'selected':''}>รอซ่อม</option>
@@ -9503,17 +9521,101 @@ function openMaintDetail(id) {
     <div class="field"><label>ค่าใช้จ่าย (บาท)</label><input class="input" type="number" id="f_mcost" value="${escapeHtml(m['ค่าใช้จ่าย(บาท)'])}"></div>
     <div class="btn-row"><button class="btn btn-primary" id="btnUpdateMaint">บันทึก</button></div>
     ` : ''}
+    ${isAdmin() ? `<div class="btn-row">
+      <button class="btn btn-ghost" id="btnEditMaint">แก้ไขรายการ</button>
+      <button class="btn btn-danger" id="btnDeleteMaint">ลบรายการ</button>
+    </div>` : ''}
   `);
-  if (isAdmin() && m['สถานะ'] !== 'ซ่อมเสร็จ') {
+
+  if (isAdmin()) {
+    document.getElementById('btnEditMaint').onclick = () => openMaintEditForm(m);
+    document.getElementById('btnDeleteMaint').onclick = () => deleteMaintItem(m);
+  }
+
+  if (canUpdate) {
     document.getElementById('btnUpdateMaint').onclick = async () => {
       const status = val('f_mstatus');
-      const saveBtn = document.getElementById('btnUpdateMaint'); if (saveBtn.disabled) return; setButtonBusy(saveBtn, true); setLoading(true, 'กำลังอัปเดตงานซ่อม...');
+      const saveBtn = document.getElementById('btnUpdateMaint');
+      if (saveBtn.disabled) return;
+      setButtonBusy(saveBtn, true); setLoading(true, 'กำลังอัปเดตงานซ่อม...');
       try {
         await apiPost('updateMaint', { id, status, responsible: val('f_mresp'), cost: val('f_mcost'), finishDate: status === 'ซ่อมเสร็จ' ? isoDate() : '' });
         closeSheet(); toast('อัปเดตสถานะแล้ว'); await reloadThen(renderMaint);
-      } catch (err) { toast(err.message || 'อัปเดตไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(saveBtn, false); }
+      } catch (err) { toast(err.message || 'อัปเดตไม่สำเร็จ'); }
+      finally { setLoading(false); setButtonBusy(saveBtn, false); }
     };
   }
+}
+
+   async function deleteMaintItem(m) {
+  const stillOpen = m['สถานะ'] !== 'ซ่อมเสร็จ';
+  const msg = 'ยืนยันลบรายการซ่อม "' + (m['ชื่อครุภัณฑ์'] || '') + '"?' +
+    (stillOpen ? '\nหากไม่มีงานซ่อมค้างอื่น สถานะครุภัณฑ์จะกลับเป็น "พร้อมใช้งาน"' : '');
+  if (!await confirmSheet(msg, { title: 'ลบรายการซ่อม', okText: 'ลบรายการ', tone: 'bad' })) return;
+  setLoading(true, 'กำลังลบรายการซ่อม...');
+  try {
+    await apiPost('deleteMaint', { id: m['รหัสรายการ'] });
+    closeAllSheets(); toast('ลบรายการซ่อมแล้ว'); await reloadThen(renderMaint);
+  } catch (err) { toast(err.message || 'ลบไม่สำเร็จ'); }
+  finally { setLoading(false); }
+}
+
+function openMaintEditForm(m) {
+  const asset = state.assets.find(a => a['รหัสครุภัณฑ์'] === m['รหัสครุภัณฑ์']);
+  const isVeh = !!asset && asset['หมวดหมู่'] === 'ยานพาหนะ';
+  const STATUSES = ['รอซ่อม', 'กำลังซ่อม', 'ซ่อมเสร็จ'];
+  showSheet(`
+    <div class="sheet-title">แก้ไขรายการซ่อม</div>
+    <div class="field"><label>ครุภัณฑ์</label><div class="input" style="background:var(--panel-soft); color:var(--ink-dim);">${escapeHtml(m['ชื่อครุภัณฑ์'])}</div></div>
+    <div class="field"><label>อาการ/ปัญหา</label>
+      <input class="input" id="me_issue" list="meIssueList" value="${escapeHtml(m['อาการ/ปัญหา'] || '')}">
+      ${isVeh ? `<datalist id="meIssueList">${VEHICLE_MAINT_TYPES.map(t => `<option value="${t}"></option>`).join('')}</datalist>` : ''}
+    </div>
+    ${isVeh ? `<div class="field"><label>ขนาดยาง (อัปเดตลงทะเบียนครุภัณฑ์)</label><input class="input" id="me_tire" placeholder="เช่น 265/65R17" value="${escapeHtml(asset['ขนาดยาง'] || '')}"></div>` : ''}
+    <div class="field">
+      <label>ผู้แจ้ง</label>
+      <div class="glass list-item" id="me_reporterTrigger" style="cursor:pointer;">
+        <div class="li-icon">${ICONS.user}</div>
+        <div class="li-body"><div class="li-title" id="me_reporterName">${escapeHtml(m['ผู้แจ้ง'] || 'แตะเพื่อเลือกผู้แจ้ง')}</div><div class="li-sub">แตะเพื่อเปลี่ยนผู้แจ้ง</div></div>
+        <span class="status-badge status-ready" style="flex:none;">เปลี่ยน</span>
+      </div>
+      <input type="hidden" id="me_reporter" value="${escapeHtml(m['ผู้แจ้ง'] || '')}">
+    </div>
+    <div class="memo-two-col">
+      <div class="field"><label>วันที่แจ้ง</label><input class="input" type="date" id="me_date" value="${m['วันที่แจ้ง'] ? isoDate(m['วันที่แจ้ง']) : ''}"></div>
+      <div class="field"><label>ค่าใช้จ่าย (บาท)</label><input class="input" type="number" min="0" step="any" id="me_cost" value="${m['ค่าใช้จ่าย(บาท)'] !== '' && m['ค่าใช้จ่าย(บาท)'] != null ? escapeHtml(m['ค่าใช้จ่าย(บาท)']) : ''}"></div>
+    </div>
+    <div class="memo-two-col">
+      <div class="field"><label>สถานะ</label><select class="input" id="me_status">${STATUSES.map(s => `<option ${m['สถานะ'] === s ? 'selected' : ''}>${s}</option>`).join('')}</select></div>
+      <div class="field"><label>ผู้รับผิดชอบ/ร้านซ่อม</label><input class="input" id="me_resp" value="${escapeHtml(m['ผู้รับผิดชอบ'] || '')}"></div>
+    </div>
+    <div class="field"><label>หมายเหตุ</label><input class="input" id="me_note" value="${escapeHtml(m['หมายเหตุ'] || '')}"></div>
+    <div class="btn-row"><button class="btn btn-ghost" id="meCancel">ยกเลิก</button><button class="btn btn-primary" id="meSave">บันทึกการแก้ไข</button></div>
+  `);
+  document.getElementById('me_reporterTrigger').onclick = () =>
+    openOfficerPickerSheet(val('me_reporter'), (name) => {
+      document.getElementById('me_reporter').value = name;
+      document.getElementById('me_reporterName').textContent = name;
+    });
+  document.getElementById('meCancel').onclick = closeSheet;
+  document.getElementById('meSave').onclick = async () => {
+    if (!val('me_issue').trim()) { toast('กรุณากรอกอาการ/ปัญหา'); return; }
+    if (!val('me_reporter').trim()) { toast('กรุณาเลือกผู้แจ้ง'); return; }
+    const status = val('me_status');
+    const btn = document.getElementById('meSave'); if (btn.disabled) return;
+    setButtonBusy(btn, true); setLoading(true, 'กำลังบันทึกการแก้ไข...');
+    try {
+      await apiPost('updateMaint', {
+        id: m['รหัสรายการ'], issue: val('me_issue').trim(), reporter: val('me_reporter'),
+        reportDate: val('me_date'), cost: val('me_cost'), status,
+        responsible: val('me_resp'), note: val('me_note'),
+        finishDate: status === 'ซ่อมเสร็จ' ? (m['วันที่ซ่อมเสร็จ'] ? isoDate(m['วันที่ซ่อมเสร็จ']) : isoDate()) : '',
+        tireSize: isVeh ? val('me_tire').trim() : undefined
+      });
+      closeAllSheets(); toast('แก้ไขรายการซ่อมแล้ว'); await reloadThen(renderMaint);
+    } catch (err) { toast(err.message || 'แก้ไขไม่สำเร็จ'); }
+    finally { setLoading(false); setButtonBusy(btn, false); }
+  };
 }
    
 const VEHICLE_CAT = 'ยานพาหนะ';
