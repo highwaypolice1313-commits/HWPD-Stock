@@ -5589,40 +5589,27 @@ body:has(.pc-wrap){overflow:hidden !important}
 #view-monthly:has(.pc-wrap) .page{overflow:hidden}
 </style>
 
-   <style id="pc-lock-css">
-/* ล็อกหน้า: ทำงานเฉพาะตอนที่แท็บตรวจประจำเดือนเปิดอยู่ */
-body:has(#view-monthly[style*="display: block"] .pc-wrap){
-  position:fixed !important;
-  inset:0 !important;
-  width:100% !important;
-  height:100% !important;
-  min-height:0 !important;
-  padding-bottom:0 !important;
-  overflow:hidden !important;
-  overscroll-behavior:none !important;
-  touch-action:none !important;
-}
+<style id="pc-touch-css">
+/* ปลดการล็อกหน้าทั้งหมด: หน้าเลื่อนได้ตามปกติ */
+body:has(#view-monthly[style*="display: block"] .pc-wrap),
 html:has(#view-monthly[style*="display: block"] .pc-wrap){
-  height:100% !important;
-  overflow:hidden !important;
-  overscroll-behavior:none !important;
+  position:static !important;
+  inset:auto !important;
+  width:auto !important;
+  height:auto !important;
+  min-height:0 !important;
+  overflow:visible !important;
+  overscroll-behavior:auto !important;
+  touch-action:auto !important;
 }
-#view-monthly[style*="display: block"]:has(.pc-wrap){
-  height:100%;
-  overflow:hidden;
-}
-/* ให้เฉพาะรายการพัสดุเลื่อนได้ */
-body:has(#view-monthly[style*="display: block"] .pc-wrap) .pc-wrap,
-body:has(#view-monthly[style*="display: block"] .pc-wrap) .pc-face{
-  touch-action:pan-y;
-}
-body:has(#view-monthly[style*="display: block"] .pc-wrap) .pc-items{
-  touch-action:pan-y;
-  overscroll-behavior:contain;
-}
-body:has(#view-monthly[style*="display: block"] .pc-wrap) .pc-nav,
-body:has(#view-monthly[style*="display: block"] .pc-wrap) .pc-bar{
-  touch-action:none;
+#view-monthly:has(.pc-wrap) .page{overflow:visible !important}
+
+/* ล็อกเฉพาะตอนสัมผัสที่การ์ด: ปัดซ้ายขวาได้ แต่ลากขึ้นลงไม่เลื่อนหน้า */
+#view-monthly:has(.pc-wrap) .pc-face{touch-action:none !important}
+/* รายการพัสดุในการ์ดยังเลื่อนขึ้นลงดูได้ */
+#view-monthly:has(.pc-wrap) .pc-items{
+  touch-action:pan-y !important;
+  overscroll-behavior:contain !important;
 }
 </style>
 
@@ -5655,56 +5642,65 @@ body:has(#view-monthly[style*="display: block"] .pc-wrap) .pc-bar{
   }
 }
 </style>
-
-   <style id="pc-list-toolorder">
+<style id="pc-header-match">
 @media (max-width:899px){
-  #view-monthly .mc-toolbar{
-    flex-direction:column !important;
-    align-items:stretch !important;
-    gap:10px !important;
+  /* หัวข้อกับปุ่มเรียงแบบเดียวกันทั้งสองมุมมอง */
+  #view-monthly:not(:has(.pc-wrap)){
+    display:grid !important;
+    grid-template-columns:minmax(0,1fr) auto;
+    align-items:center;
+    row-gap:10px;
+    column-gap:10px;
   }
-  #view-monthly .mc-toolbar-right{
-    order:-1;
-    display:flex !important;
-    justify-content:flex-end !important;
-    margin-left:0 !important;
-    width:100%;
-  }
-  #view-monthly .mc-toolbar-left{
-    width:100%;
-  }
-  #view-monthly .mc-period{
-    width:100%;
-  }
-}
-</style>
-
-   <style id="pc-list-header-match">
-@media (max-width:899px){
-  /* ซ่อนคำอธิบายรองที่ยาว ให้หัวข้ออยู่บรรทัดเดียวกับปุ่มเหมือนมุมมองการ์ด */
-  #view-monthly:not(:has(.pc-wrap)) .section-title small{display:none !important}
-  #view-monthly:not(:has(.pc-wrap)) .section-title{
-    align-items:center !important;
-    flex-wrap:nowrap !important;
-    gap:10px !important;
-  }
-  #view-monthly:not(:has(.pc-wrap)) .section-title > span:first-child{
+  #view-monthly:not(:has(.pc-wrap)) > *{grid-column:1 / -1}
+  #view-monthly:not(:has(.pc-wrap)) > .section-title{
+    grid-column:1;
+    grid-row:1;
+    display:block !important;
+    margin:0 !important;
     min-width:0;
+    font-family:var(--font-th) !important;
+    font-size:15px !important;
+    font-weight:600 !important;
+    line-height:1.3 !important;
+    color:var(--ink) !important;
+  }
+  #view-monthly:not(:has(.pc-wrap)) > .section-title small{
+    display:block;
+    margin-top:2px;
+    font-size:11px;
+    font-weight:400;
+    color:var(--ink-dim);
+    white-space:nowrap;
     overflow:hidden;
     text-overflow:ellipsis;
-    white-space:nowrap;
+    min-width:0;
   }
-
-  /* เอากรอบพื้นหลังของกลุ่มปุ่มออก ให้เหมือนมุมมองการ์ด */
+  #view-monthly:not(:has(.pc-wrap)) > .mc-toolbar{display:contents !important}
+  #view-monthly:not(:has(.pc-wrap)) .mc-toolbar-right{
+    grid-column:2;
+    grid-row:1;
+    order:0;
+    width:auto !important;
+    margin:0 !important;
+    display:flex !important;
+    justify-content:flex-end;
+  }
+  #view-monthly:not(:has(.pc-wrap)) .mc-toolbar-left{
+    grid-column:1 / -1;
+    grid-row:2;
+    width:100%;
+    min-width:0;
+  }
   #view-monthly:not(:has(.pc-wrap)) .mc-tool-group{
+    display:inline-flex !important;
+    align-items:center;
+    gap:8px !important;
     background:none !important;
     border:0 !important;
     padding:0 !important;
-    gap:8px !important;
     border-radius:0 !important;
   }
-
-  /* ปุ่มสลับมุมมอง: กรอบและขนาดเท่ากับมุมมองการ์ด */
   #view-monthly:not(:has(.pc-wrap)) .mc-view-toggle{
     border:1px solid var(--panel-line) !important;
     border-radius:13px !important;
@@ -5721,8 +5717,6 @@ body:has(#view-monthly[style*="display: block"] .pc-wrap) .pc-bar{
     background:var(--navy) !important;
     color:#fff !important;
   }
-
-  /* ปุ่มพิมพ์: ขนาดและมุมเท่ากับมุมมองการ์ด */
   #view-monthly:not(:has(.pc-wrap)) .mc-print-icon{
     width:40px !important;
     height:38px !important;
@@ -14627,8 +14621,8 @@ ${pages}`;
           </div>
           <div class="pc-tools">
             <div class="pc-vseg" role="group" aria-label="มุมมอง">
-              <button type="button" data-pv="list" aria-label="มุมมองรายการ">${ICONS.listView}</button>
-              <button type="button" class="on" data-pv="card" aria-label="มุมมองการ์ด">${ICONS.gridView}</button>
+              <button type="button" data-pv="list" title="มุมมองรายการ" aria-label="มุมมองรายการ">${ICONS.listView}</button>
+              <button type="button" class="on" data-pv="card" title="มุมมองการ์ด" aria-label="มุมมองการ์ด">${ICONS.gridView}</button>
             </div>
             <button type="button" class="mc-tool-btn primary mc-print-icon" data-pp title="พิมพ์รายงาน" aria-label="พิมพ์รายงาน">${ICONS.print}</button>
           </div>
