@@ -5784,12 +5784,17 @@ body:has(#view-monthly .pc-wrap) .toast.show{
 #view-monthly > .pc-wrap{gap:16px}
 </style>
 
-   <style id="header-no-squeeze">
-/* ไม่ให้ส่วนหัวถูกบีบเตี้ยลงบนมือถือ ระยะห่าง 16px จึงคงที่ */
-#view-monthly:has(.pc-wrap) > *:not(.pc-wrap){flex:none}
-#view-monthly:not(:has(.pc-wrap)) > *{flex:none}
-#view-monthly > .pc-wrap{flex:none}
+   <style id="header-spacing-universal">
+/* ระยะ 16px เท่ากันทั้งสองมุมมอง ไม่ใช้ :has() */
+#view-monthly{gap:16px !important}
+#view-monthly > *:not(.pc-wrap){margin:0 !important}
+#view-monthly > .pc-wrap{margin-top:0 !important}
+#view-monthly .pc-period{gap:16px !important}
+#view-monthly .mc-summary{gap:16px !important}
+#view-monthly #mcHiddenHint:empty,
+#view-monthly #mcSwipeNavWrap:empty{display:none}
 </style>
+
    
 </head>
 <body>
