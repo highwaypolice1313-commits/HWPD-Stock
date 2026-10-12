@@ -5694,6 +5694,19 @@ body:has(#view-monthly .pc-wrap){
   overflow-x:clip;
 }
 </style>
+
+   <style id="pc-taller-card">
+/* ขยายการ์ดบนมือถือ: ค่ายิ่งน้อยการ์ดยิ่งสูง */
+@media (max-width:899px){
+  :root{--pc-off-m:250px}
+  #view-monthly .pc-wrap{
+    height:calc(100dvh - var(--pc-off-m));
+    height:calc(100vh - var(--pc-off-m));
+    min-height:460px;
+  }
+  #view-monthly .pc-stack{padding-bottom:8px}
+}
+</style>
    
 </head>
 <body>
