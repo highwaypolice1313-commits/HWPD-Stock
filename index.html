@@ -5784,23 +5784,17 @@ body:has(#view-monthly .pc-wrap) .toast.show{
 #view-monthly > .pc-wrap{gap:16px}
 </style>
 
-   <style id="monthly-spacing">
-/* หน้าตรวจประจำเดือน: ระยะเดียวกันทั้งสองมุมมอง */
+<style id="monthly-spacing">
+/* หน้าตรวจประจำเดือน: ระยะ 22px ระหว่างบล็อกหลัก, 16px ภายในกลุ่ม (ไม่แตะ display) */
 :root{--mc-gap:22px;--mc-card-gap:16px}
 
-/* โครงหน้า: ระยะระหว่างส่วนหัวและบล็อกหลัก 22px */
-#view-monthly{flex-direction:column;gap:var(--mc-gap) !important}
+#view-monthly{gap:0 !important}
 #view-monthly > *{margin:0 !important;min-width:0;flex:none}
-#view-monthly > .pc-wrap{margin:0 auto !important}
+#view-monthly > * + *{margin-top:var(--mc-gap) !important}
+#view-monthly > .pc-wrap{margin-left:auto !important;margin-right:auto !important;gap:var(--mc-card-gap)}
 
-/* ระยะภายในส่วนหัวและสรุป 16px */
 #view-monthly .pc-period{gap:var(--mc-card-gap) !important}
 #view-monthly .mc-summary{gap:var(--mc-card-gap) !important}
-
-/* มุมมองการ์ด: ระยะภายในหน้าการ์ด 16px */
-#view-monthly > .pc-wrap{gap:var(--mc-card-gap)}
-
-/* มุมมองรายการ: ระยะระหว่างการ์ด 16px */
 #view-monthly .mc-grid.mc-grid-list{gap:var(--mc-card-gap) !important}
 
 #view-monthly #mcHiddenHint:empty,
