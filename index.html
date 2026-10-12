@@ -5707,6 +5707,26 @@ body:has(#view-monthly .pc-wrap){
   #view-monthly .pc-stack{padding-bottom:8px}
 }
 </style>
+
+   <style id="pc-rhythm">
+/* ระยะห่างเท่ากันทุกส่วนในหน้าตรวจประจำเดือน ทั้งสองมุมมอง */
+#view-monthly{
+  display:flex !important;
+  flex-direction:column;
+  gap:12px !important;
+}
+#view-monthly > *{margin:0 !important}
+#view-monthly #mcHiddenHint:empty,
+#view-monthly #mcSwipeNavWrap:empty{display:none !important}
+#view-monthly .search-row{
+  margin:0 !important;
+  gap:10px !important;
+}
+#view-monthly .mc-summary{gap:12px !important}
+#view-monthly .mc-search-wrap,
+#view-monthly .chip{margin:0}
+#view-monthly .pc-period{gap:12px !important}
+</style>
    
 </head>
 <body>
