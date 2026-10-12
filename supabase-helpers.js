@@ -507,17 +507,36 @@ async function sUpdateMaint(p, actor) {
   const upd = {};
   if (p.status !== undefined) upd.status = p.status;
   if (p.finishDate !== undefined) upd.finish_date = p.finishDate || null;
-  if (p.cost !== undefined) upd.cost = p.cost === '' ? null : Number(p.cost);
+  if (p.cost !== undefined) upd.cost = (p.cost === '' || p.cost === null) ? null : Number(p.cost);
   if (p.responsible !== undefined) upd.responsible = p.responsible;
   if (p.note !== undefined) upd.note = p.note;
+  if (p.issue !== undefined) upd.issue = p.issue;
+  if (p.reporter !== undefined) upd.reporter = p.reporter;
+  if (p.reportDate !== undefined) upd.report_date = p.reportDate || null;
   const { data: m, error: e1 } = await sb.from('maint').select('asset_id').eq('id', p.id).single();
   if (e1 || !m) throw new Error('ไม่พบรายการซ่อมรหัส ' + p.id);
   const { error } = await sb.from('maint').update(upd).eq('id', p.id);
   if (error) throw new Error(error.message);
+  if (p.tireSize) await sb.from('assets').update({ tire_size: p.tireSize }).eq('id', m.asset_id);
   if (p.status === 'ซ่อมเสร็จ') await sb.from('assets').update({ status: 'พร้อมใช้งาน' }).eq('id', m.asset_id);
+  else if (p.status === 'รอซ่อม' || p.status === 'กำลังซ่อม') await sb.from('assets').update({ status: 'ซ่อมบำรุง' }).eq('id', m.asset_id);
   await logActivitySb(actor, 'อัปเดตงานซ่อม', p.id);
   return { updated: true };
 }
+async function sDeleteMaint(p, actor) {
+  const { data: m } = await sb.from('maint').select('asset_id,photo').eq('id', p.id).maybeSingle();
+  if (!m) throw new Error('ไม่พบรายการซ่อมรหัส ' + p.id);
+  const { error } = await sb.from('maint').delete().eq('id', p.id);
+  if (error) throw new Error('ลบรายการซ่อมไม่สำเร็จ: ' + error.message);
+  const { data: others } = await sb.from('maint').select('id').eq('asset_id', m.asset_id).neq('status', 'ซ่อมเสร็จ');
+  if (!others || !others.length) {
+    await sb.from('assets').update({ status: 'พร้อมใช้งาน' }).eq('id', m.asset_id).eq('status', 'ซ่อมบำรุง');
+  }
+  await gasDeleteImage(m.photo);
+  await logActivitySb(actor, 'ลบงานซ่อม', p.id);
+  return { deleted: true };
+}
+
 async function sAddComponent(p, actor) {
   const id = genId('CMP');
   const qty = Math.max(1, parseInt(p.qty, 10) || 1);
@@ -806,7 +825,7 @@ const ADMIN_ACTIONS = ['addAsset', 'updateAsset', 'deleteAsset', 'borrowAsset', 
   'approveBorrowRequest', 'rejectBorrowRequest', 'addMaint', 'updateMaint', 'addUser', 'updateUserRole',
   'deleteUser', 'addComponent', 'updateComponent', 'deleteComponent', 'deleteMemo', 'updateSystemSettings',
   'saveAuditRecord', 'migrateImagesToDrive', 'changeRolePassword','saveMonthlyCheck', 'clearMonthlyCheck' , 'scanOrphanImages', 'trashOrphanImages'];
-const AUTH_ACTIONS = ['requestBorrow', 'addMemo', 'updateMemo', 'uploadImage'];
+const AUTH_ACTIONS = ['requestBorrow', 'addMemo', 'updateMemo', 'uploadImage','deleteMaint'];
 
 async function supaApiPost(action, payload, role, actorName) {
   role = role || 'guest';
@@ -847,6 +866,7 @@ async function supaApiPost(action, payload, role, actorName) {
     case 'clearMonthlyCheck': return await sClearMonthlyCheck(payload, actorName);
     case 'scanOrphanImages': return await sScanOrphanImages();
     case 'trashOrphanImages': return await sTrashOrphanImages(payload, actorName);
+    case 'deleteMaint': return await sDeleteMaint(payload, actorName);
     default: throw new Error('ไม่รู้จัก action: ' + action);
   }
 }
