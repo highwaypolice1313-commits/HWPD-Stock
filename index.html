@@ -14391,6 +14391,7 @@ ${pages}`;
     const done=visible.filter(x=>x.rec).length;
     const bad=visible.filter(x=>x.rec&&x.rec['ผล']==='มีปัญหา').length;
     const pending=total-done;
+    const pct=total?Math.round(done/total*100):0;
     const subEl=document.querySelector('[data-sub]');
     if(subEl) subEl.textContent=`ตรวจแล้ว ${done} จาก ${total} คน`;
 
