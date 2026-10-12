@@ -5625,6 +5625,15 @@ body:has(#view-monthly[style*="display: block"] .pc-wrap) .pc-bar{
   touch-action:none;
 }
 </style>
+
+   <style id="pc-tabbar-css">
+/* เว้นที่ให้แถบเมนูล่าง (มือถือและ iPad แนวตั้ง) ไม่ให้ทับปุ่มนำทาง */
+@media (max-width:899px){
+  body:has(#view-monthly[style*="display: block"] .pc-wrap) .pc-wrap{
+    padding-bottom:calc(86px + env(safe-area-inset-bottom));
+  }
+}
+</style>
    
 </head>
 <body>
