@@ -5646,6 +5646,64 @@ html, body{ overflow-x:clip; height:auto; min-height:100%; }
   .tab-fab{ background:linear-gradient(150deg,var(--gold),var(--gold-deep)) !important; border:6px solid var(--bg-1) !important; box-shadow:0 12px 24px var(--gold-wash) !important; }
 }
 </style>
+<style id="web-ipad-final-clean">
+/* ===== iPad (700–899px): แถบเมนูล่าง = แบบเดียวกับมือถือ, แสดงครบทุกเมนู + ปุ่มสแกนตรงกลาง ===== */
+@media (min-width:700px) and (max-width:899px){
+  .topbar{ padding-left:20px !important; padding-right:20px !important; }
+  .page{ max-width:none !important; padding-left:20px !important; padding-right:20px !important; }
+  .tabbar{
+    position:fixed !important; top:auto !important; bottom:18px !important; left:50% !important; right:auto !important;
+    transform:translateX(-50%) !important; width:auto !important; max-width:calc(100vw - 32px) !important; margin:0 !important;
+    display:flex !important; align-items:center !important; justify-content:center !important; gap:4px !important;
+    padding:8px 10px !important; border-radius:999px !important; overflow:visible !important;
+    background:color-mix(in srgb, var(--panel) 96%, transparent) !important;
+    border:1px solid var(--panel-line) !important; box-shadow:0 14px 34px rgba(23,50,79,.14) !important;
+  }
+  .tabbar::before,.tabbar::after,.nav-collapse-btn,.tab-pill,.tabbar .tab-more,#tabMore,.tabbar .tab-dot{ display:none !important; }
+  .tabbar .tab{
+    width:48px !important; min-width:48px !important; max-width:48px !important; height:46px !important;
+    flex:0 0 48px !important; padding:0 !important; margin:0 !important;
+    display:flex !important; align-items:center !important; justify-content:center !important;
+    border-radius:16px !important; background:transparent !important; border:none !important;
+    color:var(--ink-dim) !important; box-shadow:none !important; transition:background .2s, color .2s;
+  }
+  .tabbar .tab:not([style*="none"]).tab-secondary{ display:flex !important; }
+  .tabbar .tab .lbl{ display:none !important; }
+  .tabbar .tab .ico{ display:flex !important; }
+  .tabbar .tab .ico svg{ width:22px !important; height:22px !important; color:inherit !important; }
+  .tabbar .tab.active{ background:var(--navy) !important; color:#fff !important; box-shadow:0 8px 18px rgba(23,50,79,.25) !important; }
+  .tabbar .tab.active .ico svg{ color:#fff !important; }
+  .tabbar .tab[data-tab="dashboard"]{ order:1 !important; }
+  .tabbar .tab[data-tab="assets"]{ order:2 !important; }
+  .tabbar .tab[data-tab="borrow"]{ order:3 !important; }
+  .tabbar .tab[data-tab="users"]{ order:4 !important; }
+  .tabbar .tab[data-tab="maint"]{ order:5 !important; }
+  .tabbar .tab-fab{ order:6 !important; }
+  .tabbar .tab[data-tab="memos"]{ order:7 !important; }
+  .tabbar .tab[data-tab="reports"]{ order:8 !important; }
+  .tabbar .tab[data-tab="audit"]{ order:9 !important; }
+  .tabbar .tab[data-tab="monthly"]{ order:10 !important; }
+  .tabbar .tab[data-tab="settings"]{ order:11 !important; }
+  .tabbar .tab-fab{
+    display:flex !important; position:relative !important; top:auto !important; left:auto !important; transform:none !important;
+    width:58px !important; height:58px !important; min-width:58px !important; flex:0 0 58px !important;
+    margin:-18px 4px 0 !important; border-radius:50% !important; align-items:center !important; justify-content:center !important;
+    background:linear-gradient(150deg,var(--gold),var(--gold-deep)) !important;
+    border:6px solid var(--bg-1) !important; box-shadow:0 12px 24px var(--gold-wash) !important; color:#fff !important;
+  }
+  .tabbar .tab-fab svg{ width:24px !important; height:24px !important; color:#fff !important; }
+}
+
+/* ===== เว็บ (>=900px): ช่องว่างและหน้าว่างให้เต็มคอลัมน์ ===== */
+@media (min-width:700px){
+  .empty-state{ width:100% !important; box-sizing:border-box !important; }
+  #view-assets > .ax-pills .ax-pill{ justify-content:space-between !important; }
+  #view-assets > .ax-pills .ax-pill svg{ width:16px !important; height:16px !important; flex:none; }
+  #view-assets > .ax-pills .ax-pill[data-cat="all"] svg{ display:none !important; }
+  #view-assets > .ax-pills .ax-pill svg [stroke]{ stroke:currentColor !important; }
+  #assetList .empty-state{ grid-column:1 / -1 !important; }
+}
+</style>
 </head>
 <body>
 
