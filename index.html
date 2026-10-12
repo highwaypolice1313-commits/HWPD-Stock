@@ -5636,13 +5636,14 @@ html, body{ overflow-x:clip; height:auto; min-height:100%; }
 }
 </style>
 <style id="menubar-theme">
-/* แถบเมนูมือถือ: ใช้สีธีมเดียวกับแบบ canvas (กรมท่า + ทอง) */
+/* แถบเมนูมือถือ + สีปุ่มทั้งหมดบนมือถือ: ผูกกับตัวแปรธีม (--navy / --gold) เปลี่ยนตามธีมทันที */
 @media (max-width:699px){
-  .tabbar{ background:rgba(255,255,255,.96) !important; border:1px solid #eae3d6 !important; box-shadow:0 14px 34px rgba(23,50,79,.14) !important; }
-  .tabbar .tab{ color:#5b6a72 !important; }
-  .tabbar .tab.active{ background:#17324f !important; color:#fff !important; box-shadow:0 8px 18px rgba(23,50,79,.25) !important; }
+  :root{ --m-blue:var(--navy); --m-blue-wash:var(--navy-wash); }
+  .tabbar{ background:color-mix(in srgb, var(--panel) 96%, transparent) !important; border:1px solid var(--panel-line) !important; box-shadow:0 14px 34px rgba(23,50,79,.14) !important; }
+  .tabbar .tab, .tabbar .tab-more{ width:52px !important; min-width:52px !important; max-width:52px !important; height:48px !important; padding:0 !important; flex:0 0 52px !important; color:var(--ink-dim) !important; }
+  .tabbar .tab.active{ background:var(--navy) !important; color:#fff !important; box-shadow:0 8px 18px rgba(23,50,79,.25) !important; }
   .tabbar .tab.active .ico svg{ color:#fff !important; }
-  .tab-fab{ background:linear-gradient(150deg,#bb8a3f,#8a641f) !important; border:6px solid #f6f1ea !important; box-shadow:0 12px 24px rgba(138,100,31,.38) !important; }
+  .tab-fab{ background:linear-gradient(150deg,var(--gold),var(--gold-deep)) !important; border:6px solid var(--bg-1) !important; box-shadow:0 12px 24px var(--gold-wash) !important; }
 }
 </style>
 </head>
