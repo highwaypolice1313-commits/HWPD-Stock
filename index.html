@@ -5296,7 +5296,7 @@ html, body{ overflow-x:clip; height:auto; min-height:100%; }
     color:#0a5fd8 !important;
   }
 }
-
+</style>
    <style id="desktop-nav-polish">
 @media (min-width:900px){
   .tabbar::before{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -5543,103 +5543,7 @@ html, body{ overflow-x:clip; height:auto; min-height:100%; }
 
 /* ผู้ตรวจและปุ่มล้างผล */
 #view-monthly .pc-meta,
-#view-monthly .ml-meta{
-  flex:none;display:flex;justify-content:space-between;align-items:center;gap:8px;
-  margin:10px 16px 0;font-size:11px;color:var(--ink-dim);
-}
 
-/* ปุ่มครบ/มีปัญหา */
-#view-monthly .pc-act{flex:none;display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 16px 0;margin-top:auto}
-#view-monthly .pc-btn,
-#view-monthly .ml-btn{
-  height:44px;border-radius:14px;font:inherit;font-size:13.5px;font-weight:700;cursor:pointer;
-  border:1px solid var(--panel-line);background:var(--panel);transition:transform .1s ease;
-}
-#view-monthly .pc-btn:active,
-#view-monthly .ml-btn:active{transform:scale(.97)}
-#view-monthly .pc-btn.ok,
-#view-monthly .ml-btn.ok{background:var(--ok);color:#fff;border-color:transparent}
-#view-monthly .pc-btn.bad,
-#view-monthly .ml-btn.bad{background:transparent;color:var(--bad);border:1px solid color-mix(in srgb,var(--bad) 30%,var(--panel-line))}
-#view-monthly .ml-btn.bad.on{background:var(--bad);color:#fff;border-color:transparent}
-
-#view-monthly .pc-hint{flex:none;display:flex;justify-content:space-between;gap:8px;padding:10px 16px 12px;font-size:11px;color:var(--ink-dim)}
-#view-monthly .pc-hint .l{color:var(--bad)}
-#view-monthly .pc-hint .r{color:var(--ok)}
-
-/* ป้ายตราประทับตอนปัด */
-#view-monthly .pc-stamp{
-  position:absolute;top:44%;left:50%;transform:translate(-50%,-50%) rotate(-12deg);
-  font-size:26px;font-weight:700;letter-spacing:.02em;padding:6px 16px;border-radius:12px;
-  border:3px solid currentColor;background:var(--panel);opacity:0;pointer-events:none;z-index:3;white-space:nowrap;
-  transition:opacity .15s ease;
-}
-#view-monthly .pc-stamp.r{color:var(--ok)}
-#view-monthly .pc-stamp.l{color:var(--bad);transform:translate(-50%,-50%) rotate(10deg)}
-
-/* ปุ่มนำทาง */
-#view-monthly .pc-nav{flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 4px}
-#view-monthly .pc-nb{width:42px;height:42px;border-radius:50%;border:1px solid var(--panel-line);background:var(--panel);color:var(--ink);font-size:18px;cursor:pointer;display:grid;place-items:center}
-#view-monthly .pc-navlbl{font-size:12px;color:var(--ink-dim);font-family:var(--font-num)}
-
-/* เอฟเฟกต์เข้าแบบจางๆ */
-@keyframes pcIn{0%{opacity:0;transform:translate3d(0,6px,0)}100%{opacity:1;transform:none}}
-@keyframes pcRow{0%{opacity:0;transform:translate3d(0,4px,0)}100%{opacity:1;transform:none}}
-@keyframes pcBack{0%{opacity:0}100%{opacity:1}}
-#view-monthly .pc-stack.enter .pc-card{animation:pcIn .5s cubic-bezier(.22,.9,.3,1) both}
-#view-monthly .pc-stack.enter .pc-b1{animation:pcBack .55s .08s both}
-#view-monthly .pc-stack.enter .pc-b2{animation:pcBack .55s .16s both}
-#view-monthly .pc-stack.enter .pc-row{animation:pcRow .4s both}
-#view-monthly .pc-stack.enter .pc-row:nth-child(1){animation-delay:.2s}
-#view-monthly .pc-stack.enter .pc-row:nth-child(2){animation-delay:.26s}
-#view-monthly .pc-stack.enter .pc-row:nth-child(3){animation-delay:.32s}
-
-/* ===== มุมมองรายการ: การ์ดหน้าตาเดียวกับมุมมองการ์ด ===== */
-#view-monthly .mc-grid-list{
-  display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
-  gap:14px;width:100%;min-width:0;align-items:start;justify-items:stretch;
-}
-#view-monthly .ml-card{
-  display:flex;flex-direction:column;min-width:0;width:100%;overflow:hidden;
-  border-radius:22px;border:1px solid var(--panel-line);background:var(--panel);
-  box-shadow:var(--shadow-sm);backdrop-filter:none;
-}
-#view-monthly .ml-head{
-  display:flex;align-items:center;gap:12px;min-width:0;padding:16px 16px 14px;
-  background:var(--panel-soft);border-bottom:1px solid color-mix(in srgb,var(--ink) 6%,transparent);
-}
-#view-monthly .ml-card.s-ok .ml-head{background:linear-gradient(160deg,color-mix(in srgb,var(--ok) 22%,var(--panel)) 0%,color-mix(in srgb,var(--ok) 8%,var(--panel)) 100%)}
-#view-monthly .ml-card.s-bad .ml-head{background:linear-gradient(160deg,color-mix(in srgb,var(--bad) 20%,var(--panel)) 0%,color-mix(in srgb,var(--bad) 7%,var(--panel)) 100%)}
-#view-monthly .ml-head .mc-avatar,
-#view-monthly .ml-head .mc-avatar-ph{
-  width:46px;height:46px;border-radius:50%;flex:none;object-fit:cover;display:grid;place-items:center;
-  border:2px solid var(--panel);box-shadow:0 2px 8px rgba(0,0,0,.1);
-}
-#view-monthly .ml-id{flex:1;min-width:0}
-#view-monthly .ml-id .mc-name{font-size:15px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#view-monthly .ml-id .mc-pos{font-size:11.5px;color:var(--ink-dim);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#view-monthly .ml-head .mc-status{flex:none;font-size:11px;font-weight:700;padding:5px 11px;border-radius:99px;white-space:nowrap;background:var(--panel);color:var(--ink-dim)}
-#view-monthly .ml-head .mc-status.ok{background:var(--ok);color:#fff}
-#view-monthly .ml-head .mc-status.bad{background:var(--bad);color:#fff}
-#view-monthly .ml-count{
-  align-self:flex-start;margin:12px 16px 0;font-size:11px;font-weight:700;color:var(--ink);
-  background:var(--panel-soft);border:1px solid var(--panel-line);padding:4px 11px;border-radius:99px;
-}
-#view-monthly .ml-items{display:flex;flex-direction:column;gap:6px;margin:8px 16px 0;min-width:0}
-#view-monthly .ml-item{
-  display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px 10px;
-  min-width:0;width:100%;box-sizing:border-box;padding:8px 12px;border-radius:14px;
-  background:var(--panel-soft);font-size:13px;
-}
-#view-monthly .ml-item-name{flex:1 1 140px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#view-monthly .mc-serial-pill{
-  flex:none;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-  font-family:var(--font-num);font-size:10.5px;padding:3px 8px;border-radius:8px;
-  background:var(--panel);color:var(--ink-dim);border:1px solid var(--panel-line);
-}
-#view-monthly .ml-empty{margin:8px 16px 0;font-size:12.5px;color:var(--ink-faint)}
-#view-monthly .ml-note{margin:8px 16px 0;font-size:12px;color:var(--bad);background:var(--bad-wash);padding:8px 10px;border-radius:12px}
-#view-monthly .ml-actions{margin:12px 16px 16px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
 </style>
 
    <style id="ml-full-width">
@@ -5686,7 +5590,6 @@ body:has(#view-monthly .pc-wrap) .toast.show{
 
    <style id="clear-btn-shared">
 /* ปุ่มล้างผล: ใช้คลาสเดียวกันทั้งสองมุมมอง ไม่กำหนดสีเอง เพื่อให้สถานะเมื่อกดหรือชี้ของระบบทำงาน */
-#view-monthly .pc-meta .mc-clear,
 #view-monthly .ml-meta .mc-clear{
   flex:none;
   display:inline-flex;
