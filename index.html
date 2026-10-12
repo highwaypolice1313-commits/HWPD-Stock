@@ -5701,6 +5701,22 @@ body:has(#view-monthly .pc-wrap) .toast.show{
   cursor:pointer;
 }
 </style>
+
+   <style id="list-same-as-card">
+/* มุมมองรายการ: โครงการ์ดเดียวกับมุมมองการ์ด ระยะห่าง 16px */
+#view-monthly:not(:has(.pc-wrap)){gap:16px}
+#view-monthly .mc-grid-list{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+  gap:16px;
+  width:100%;
+  min-width:0;
+  align-items:start;
+}
+#view-monthly .ml-card{display:flex;flex-direction:column;min-width:0;width:100%;height:auto}
+#view-monthly .ml-face{flex:none;height:auto;min-height:0;touch-action:manipulation}
+#view-monthly .ml-face .pc-items{flex:none;overflow:visible;touch-action:auto}
+</style>
    
 </head>
 <body>
@@ -13883,39 +13899,50 @@ function compareMonthlyOfficers(a, b) {
       if (window.__mcJustSwiped) { e.stopPropagation(); e.preventDefault(); }
     }, true);
   }
-
   function mcCardHtmlEnhanced({u,sum,rec}){
     const r = rec ? rec['ผล'] : '';
     const st = r === 'ครบ' ? 'ok' : (r === 'มีปัญหา' ? 'bad' : 'todo');
+    const label = st === 'ok' ? 'ครบ' : (st === 'bad' ? 'มีปัญหา' : 'ยังไม่ตรวจ');
     const photo = u['รูปถ่าย']
-      ? `<img class="mc-avatar" src="${u['รูปถ่าย']}" alt="">`
-      : `<div class="mc-avatar-ph">${ICONS.user}</div>`;
+      ? `<img src="${u['รูปถ่าย']}" alt="">`
+      : escapeHtml(String(u['ชื่อ-สกุล'] || '?').charAt(0));
     const hold = sum.hold;
-    const items = hold.length
-      ? `<div class="ml-items">${hold.map(b => `<div class="ml-item"><span class="ml-item-name">${escapeHtml(b['ชื่อครุภัณฑ์'] || '-')}</span>${mcSerialHtmlFromBorrow(b)}</div>`).join('')}</div>`
-      : `<div class="ml-empty">ไม่มีพัสดุในความครอบครอง</div>`;
-    const note = r === 'มีปัญหา' && rec['หมายเหตุ']
-      ? `<div class="ml-note">${escapeHtml(rec['หมายเหตุ'])}</div>` : '';
-    const meta = rec ? `<div class="ml-meta">
-      <span>ตรวจโดย ${escapeHtml(rec['ผู้ตรวจ'] || '-')} · ${systemDateTime(rec['วันที่ตรวจ'])}</span>
-      <span class="link-btn mc-clear">ล้างผล</span>
-    </div>` : '';
-    return `<div class="glass mc-card ml-card s-${st}" data-key="${escapeHtml(mcKey(u))}">
-      <div class="ml-head">
-        ${photo}
-        <div class="ml-id">
-          <div class="mc-name">${escapeHtml(officerFullName(u))}</div>
-          <div class="mc-pos">${escapeHtml(u['ตำแหน่ง'] || 'ไม่ระบุตำแหน่ง')}</div>
+    const rows = hold.map(b => {
+      const a = mcAssetByBorrow(b) || {};
+      const sn = mcSerialTextFromBorrow(b);
+      const snText = (sn.startsWith('ไม่ระบุ') || sn.startsWith('ทะเบียน')) ? sn : 'S/N ' + sn;
+      return `<div class="pc-row">
+        <div class="pc-ib">${catIcon(a['หมวดหมู่'])}</div>
+        <div class="pc-tx">${escapeHtml(b['ชื่อครุภัณฑ์'] || '-')}
+          <div class="pc-sn">${escapeHtml(snText)}</div>
         </div>
-        ${mcStatusHtml(rec)}
-      </div>
-      <div class="ml-count">${hold.length} รายการ</div>
-      ${items}
-      ${note}
-      ${meta}
-      <div class="ml-actions">
-        <button type="button" class="ml-btn ok mc-btn mc-ok ${r === 'ครบ' ? 'on' : ''}">✓ ครบ</button>
-        <button type="button" class="ml-btn bad mc-btn mc-bad ${r === 'มีปัญหา' ? 'on' : ''}">⚠ มีปัญหา</button>
+      </div>`;
+    }).join('');
+    const empty = hold.length ? '' : `<div class="pc-empty">ไม่มีพัสดุในความครอบครองขณะนี้</div>`;
+    const note = r === 'มีปัญหา' && rec && rec['หมายเหตุ']
+      ? `<div class="pc-note">${escapeHtml(rec['หมายเหตุ'])}</div>` : '';
+    const meta = rec ? `<div class="pc-meta">
+      <span>ตรวจโดย ${escapeHtml(rec['ผู้ตรวจ'] || '-')} · ${systemDateTime(rec['วันที่ตรวจ'])}</span>
+      <span class="link-btn mc-clear" role="button">ล้างผล</span>
+    </div>` : '';
+    return `<div class="mc-card pc-card s-${st}" data-key="${escapeHtml(mcKey(u))}">
+      <div class="pc-face ml-face">
+        <div class="pc-head">
+          <span class="pc-av">${photo}</span>
+          <div class="pc-id">
+            <div class="pc-name">${escapeHtml(officerFullName(u))}</div>
+            <div class="pc-pos">${escapeHtml(u['ตำแหน่ง'] || 'ไม่ระบุตำแหน่ง')}</div>
+          </div>
+          <span class="pc-pill">${label}</span>
+        </div>
+        <div class="pc-sec"><b>${hold.length}</b> รายการในความครอบครอง</div>
+        <div class="pc-items">${rows}${empty}</div>
+        ${note}
+        ${meta}
+        <div class="pc-act">
+          <button type="button" class="pc-btn bad mc-btn mc-bad">มีปัญหา</button>
+          <button type="button" class="pc-btn ok mc-btn mc-ok">ครบ</button>
+        </div>
       </div>
     </div>`;
   }
