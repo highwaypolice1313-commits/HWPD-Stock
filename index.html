@@ -6012,6 +6012,105 @@ body:has(#view-monthly .pc-wrap){
   cursor:pointer;
 }
 </style>
+
+   <style id="ml-same-as-card">
+/* การ์ดรายการ: หน้าตาเดียวกับมุมมองการ์ด */
+#view-monthly .mc-grid-list{gap:14px}
+#view-monthly .ml-card,
+#view-monthly .ml-card.s-ok,
+#view-monthly .ml-card.s-bad{
+  display:flex;
+  flex-direction:column;
+  min-width:0;
+  padding:0;
+  gap:0;
+  overflow:hidden;
+  border-radius:22px;
+  border:1px solid var(--panel-line);
+  background:var(--panel) !important;
+  backdrop-filter:none;
+  box-shadow:0 6px 18px -10px rgba(0,0,0,.2);
+}
+
+/* แถบหัวการ์ดตามสถานะ */
+#view-monthly .ml-head{
+  margin:0;
+  padding:16px 16px 14px;
+  min-width:0;
+  background:var(--panel-soft);
+  border-bottom:1px solid color-mix(in srgb,var(--ink) 6%,transparent);
+}
+#view-monthly .ml-card.s-ok .ml-head{
+  background:linear-gradient(160deg,color-mix(in srgb,var(--ok) 22%,var(--panel)) 0%,color-mix(in srgb,var(--ok) 8%,var(--panel)) 100%);
+}
+#view-monthly .ml-card.s-bad .ml-head{
+  background:linear-gradient(160deg,color-mix(in srgb,var(--bad) 20%,var(--panel)) 0%,color-mix(in srgb,var(--bad) 7%,var(--panel)) 100%);
+}
+#view-monthly .ml-head .mc-avatar,
+#view-monthly .ml-head .mc-avatar-ph{
+  width:44px;height:44px;border-radius:50%;flex:none;object-fit:cover;
+  border:2px solid var(--panel);
+  box-shadow:0 2px 8px rgba(0,0,0,.1);
+}
+#view-monthly .ml-id{flex:1;min-width:0}
+#view-monthly .ml-id .mc-name,
+#view-monthly .ml-id .mc-pos{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* เนื้อการ์ดเว้นขอบให้ตรงกับหัว */
+#view-monthly .ml-card > *:not(.ml-head){
+  margin-left:16px;
+  margin-right:16px;
+  min-width:0;
+}
+#view-monthly .ml-count{margin-top:12px}
+#view-monthly .ml-items{margin-top:8px}
+#view-monthly .ml-item{min-width:0}
+#view-monthly .ml-item-name{
+  flex:1;
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+#view-monthly .ml-item .mc-serial-pill{
+  flex:none;
+  max-width:50%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+#view-monthly .ml-note{margin-top:10px}
+#view-monthly .ml-meta{
+  margin-top:10px;
+  align-items:center;
+  font-size:11px;
+}
+#view-monthly .ml-meta .mc-clear{
+  text-decoration:underline;
+  text-underline-offset:3px;
+  font-size:11px;
+  cursor:pointer;
+}
+
+/* ปุ่ม: ครบเป็นสีทึบ มีปัญหาเป็นตัวอักษรสี */
+#view-monthly .ml-actions{
+  margin-top:12px;
+  margin-bottom:16px;
+  gap:10px;
+}
+#view-monthly .ml-btn{
+  height:44px;
+  border-radius:14px;
+  font-weight:700;
+}
+#view-monthly .ml-btn.ok{background:var(--ok);color:#fff;border-color:transparent}
+#view-monthly .ml-btn.bad{
+  background:transparent;
+  color:var(--bad);
+  border:1px solid color-mix(in srgb,var(--bad) 30%,var(--panel-line));
+}
+#view-monthly .ml-btn.bad.on{background:var(--bad);color:#fff;border-color:transparent}
+</style>
    
 </head>
 <body>
