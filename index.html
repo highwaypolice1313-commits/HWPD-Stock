@@ -5430,12 +5430,16 @@ html, body{ overflow-x:clip; height:auto; min-height:100%; }
 #view-monthly:has(.pc-wrap) .search-row,
 #view-monthly:has(.pc-wrap) .section-title small{display:none !important}
 
-.pc-wrap{max-width:420px;margin:0 auto;width:100%;display:flex;flex-direction:column;gap:14px}
+.pc-wrap{max-width:420px;margin:0 auto;width:100%;display:flex;flex-direction:column;gap:12px}
 .pc-top{display:flex;align-items:center;justify-content:space-between;padding:0 4px}
 .pc-ttl{font-size:14px;font-weight:600;color:var(--ink)}
 .pc-subt{font-size:11.5px;color:var(--ink-dim);margin-top:2px}
 .pc-ring{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;flex:none}
 .pc-ring i{width:37px;height:37px;border-radius:50%;background:var(--panel);display:grid;place-items:center;font-style:normal;font-size:11px;font-weight:600;color:var(--ink);font-family:var(--font-num)}
+
+.pc-pick{display:flex;align-items:center;gap:10px;height:44px;padding:0 14px;border-radius:14px;border:1px solid var(--panel-line);background:var(--panel);color:var(--ink-dim);font:inherit;font-size:13px;cursor:pointer;width:100%;text-align:left}
+.pc-pick span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)}
+.pc-pick svg{width:17px;height:17px;flex:none}
 
 .pc-seg{display:flex;gap:3px;height:6px;padding:0 4px}
 .pc-seg i{flex:1 1 0;min-width:3px;border-radius:3px;background:var(--panel-line);cursor:pointer}
@@ -5444,18 +5448,18 @@ html, body{ overflow-x:clip; height:auto; min-height:100%; }
 .pc-seg i.cur{background:var(--navy)}
 
 .pc-stack{position:relative;margin:0 10px;padding-bottom:14px}
-.pc-b1,.pc-b2{position:absolute;left:0;right:0;bottom:0;border-radius:24px;background:var(--panel);border:1px solid var(--panel-line);opacity:.9}
+.pc-b1,.pc-b2{position:absolute;left:0;right:0;bottom:0;height:calc(100% - 4px);border-radius:24px;background:var(--panel);border:1px solid var(--panel-line)}
 .pc-b1{top:12px;left:10px;right:10px;opacity:.8}
 .pc-b2{top:22px;left:20px;right:20px;opacity:.5}
 .pc-card{position:relative;z-index:1}
 
-.pc-face{position:relative;background:var(--panel);border:1px solid var(--panel-line);border-radius:24px;padding:20px 18px 16px;overflow:hidden;box-shadow:var(--shadow-md);touch-action:pan-y;user-select:none;-webkit-user-select:none;cursor:pointer}
+.pc-face{position:relative;height:clamp(380px,calc(100dvh - 370px),500px);display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--panel-line);border-radius:24px;padding:20px 18px 16px;overflow:hidden;box-shadow:var(--shadow-md);touch-action:pan-y;user-select:none;-webkit-user-select:none;cursor:pointer}
 .pc-face::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:var(--panel-line)}
 .pc-card.s-ok .pc-face::before{background:var(--ok)}
 .pc-card.s-bad .pc-face::before{background:var(--bad)}
 .pc-face.drag{transition:none;cursor:grabbing}
 
-.pc-head{display:flex;gap:13px;align-items:center}
+.pc-head{display:flex;gap:13px;align-items:center;flex:none}
 .pc-av{width:56px;height:56px;border-radius:18px;flex:none;overflow:hidden;display:grid;place-items:center;background:var(--navy-wash);color:var(--navy);font-size:18px;font-weight:600}
 .pc-av img{width:100%;height:100%;object-fit:cover}
 .pc-id{flex:1;min-width:0}
@@ -5465,34 +5469,63 @@ html, body{ overflow-x:clip; height:auto; min-height:100%; }
 .pc-card.s-ok .pc-pill{background:var(--ok-wash);color:var(--ok)}
 .pc-card.s-bad .pc-pill{background:var(--bad-wash);color:var(--bad)}
 
-.pc-sec{display:flex;justify-content:space-between;align-items:center;margin:18px 0 4px;font-size:11.5px;color:var(--ink-dim)}
+.pc-sec{flex:none;margin:16px 0 4px;font-size:11.5px;color:var(--ink-dim)}
 .pc-sec b{font-weight:600;color:var(--ink)}
-.pc-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--panel-line)}
+.pc-items{flex:1;min-height:0;overflow:hidden}
+.pc-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--panel-line)}
 .pc-ib{width:36px;height:36px;border-radius:12px;flex:none;display:grid;place-items:center;background:var(--navy-wash);color:var(--navy)}
 .pc-ib svg{width:18px;height:18px}
 .pc-tx{flex:1;min-width:0;font-size:13.5px;line-height:1.35;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pc-sn{font-family:var(--font-num);font-size:11px;color:var(--ink-dim);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pc-more{font-size:12px;color:var(--ink-dim);padding:10px 0 0 48px}
+.pc-more{font-size:12px;color:var(--ink-dim);padding:8px 0 0 48px}
 .pc-empty{font-size:12.5px;color:var(--ink-faint);padding:12px 0}
-.pc-note{margin-top:10px;font-size:12px;color:var(--bad);background:var(--bad-wash);padding:8px 11px;border-radius:12px}
+.pc-note{flex:none;margin-top:8px;font-size:12px;color:var(--bad);background:var(--bad-wash);padding:8px 11px;border-radius:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-.pc-act{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px}
-.pc-btn{height:46px;border-radius:15px;border:1px solid var(--panel-line);background:var(--panel-soft);font:inherit;font-size:13.5px;font-weight:600;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.pc-act{flex:none;display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:auto;padding-top:12px}
+.pc-btn{height:46px;border-radius:15px;border:1px solid var(--panel-line);background:var(--panel-soft);font:inherit;font-size:13.5px;font-weight:600;color:var(--ink);cursor:pointer}
 .pc-btn.ok{background:var(--ok-wash);color:var(--ok);border-color:transparent}
 .pc-btn.bad{background:var(--bad-wash);color:var(--bad);border-color:transparent}
 .pc-btn:active{transform:scale(.97)}
-.pc-hint{display:flex;justify-content:space-between;margin-top:12px;padding-top:11px;border-top:1px solid var(--panel-line);font-size:11.5px;color:var(--ink-dim)}
+.pc-hint{flex:none;display:flex;justify-content:space-between;margin-top:10px;padding-top:9px;border-top:1px solid var(--panel-line);font-size:11.5px;color:var(--ink-dim)}
 .pc-hint .l{color:var(--bad)}
 .pc-hint .r{color:var(--ok)}
 
-.pc-cue{position:absolute;top:18px;font-size:12px;font-weight:700;padding:5px 11px;border-radius:99px;opacity:0;pointer-events:none;z-index:2}
-.pc-cue.r{right:14px;background:var(--ok-wash);color:var(--ok)}
-.pc-cue.l{left:14px;background:var(--bad-wash);color:var(--bad)}
+.pc-stamp{position:absolute;top:44%;left:50%;transform:translate(-50%,-50%) rotate(-12deg);font-size:26px;font-weight:700;letter-spacing:.02em;padding:6px 16px;border-radius:12px;border:3px solid currentColor;opacity:0;pointer-events:none;z-index:3;white-space:nowrap}
+.pc-stamp.r{color:var(--ok);background:var(--panel)}
+.pc-stamp.l{color:var(--bad);background:var(--panel);transform:translate(-50%,-50%) rotate(10deg)}
 
 .pc-nav{display:flex;align-items:center;justify-content:space-between;padding:0 4px}
 .pc-nb{width:42px;height:42px;border-radius:50%;border:1px solid var(--panel-line);background:var(--panel);color:var(--ink);font-size:18px;cursor:pointer;display:grid;place-items:center}
 .pc-navlbl{font-size:12px;color:var(--ink-dim);font-family:var(--font-num)}
 </style>
+
+ <style id="pc-header-css">
+#view-monthly:has(.pc-wrap) .section-title,
+#view-monthly:has(.pc-wrap) .mc-toolbar,
+#view-monthly:has(.pc-wrap) #mcSwipeNavWrap{display:none !important}
+
+.pc-bar{display:flex;flex-direction:column;gap:10px}
+.pc-row1{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 4px}
+.pc-row1 .pc-ttl{font-size:15px}
+.pc-tools{display:flex;gap:8px;align-items:center;flex:none}
+.pc-vseg{display:inline-flex;border:1px solid var(--panel-line);border-radius:13px;overflow:hidden;background:var(--panel)}
+.pc-vseg button{width:40px;height:38px;border:0;background:transparent;color:var(--ink-dim);display:grid;place-items:center;cursor:pointer}
+.pc-vseg button.on{background:var(--navy);color:#fff}
+.pc-vseg svg{width:17px;height:17px}
+.pc-print{width:40px;height:38px;border-radius:13px;border:0;background:linear-gradient(150deg,var(--gold),var(--gold-deep));color:#fff;display:grid;place-items:center;cursor:pointer}
+.pc-print svg{width:18px;height:18px}
+
+.pc-period{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pc-period select{height:40px;min-width:0;border-radius:13px;border:1px solid var(--panel-line);background:var(--panel);color:var(--ink);padding:0 10px;font:inherit;font-size:13px}
+
+.pc-prog{display:flex;align-items:center;gap:10px;padding:0 4px}
+.pc-prog .pc-seg{flex:1;min-width:0}
+.pc-prog .pc-ring{width:38px;height:38px}
+.pc-prog .pc-ring i{width:29px;height:29px;font-size:9.5px}
+.pc-prog small{font-size:11px;color:var(--ink-dim);white-space:nowrap;font-family:var(--font-num)}
+
+.pc-face{height:clamp(340px,calc(100dvh - 440px),500px)}
+</style>  
    
 </head>
 <body>
@@ -14333,7 +14366,6 @@ ${pages}`;
     ? `<img src="${u['รูปถ่าย']}" alt="">`
     : esc(String(u['ชื่อ-สกุล'] || '?').charAt(0));
 
-  // รายชื่อเต็ม (ไม่ผ่านตัวกรองค้นหา) เรียงตามยศ/ตำแหน่ง
   function fullList(){
     return (state.users || [])
       .map(u => ({ u, key: mcKey(u), sum: mcSummary(u), rec: mcRecordFor(u) }))
@@ -14341,7 +14373,50 @@ ${pages}`;
       .sort((a, b) => compareMonthlyOfficers(a, b));
   }
 
-  function cardHtml(cur, idx, n){
+  function headerHtml(n, done, ok, bad, idx, curY, curM){
+    const now = new Date();
+    const years = [];
+    for (let y = now.getFullYear(); y >= now.getFullYear() - 3; y--) years.push(y);
+    if (!years.includes(curY)) years.push(curY);
+    const pct = n ? Math.round(done / n * 100) : 0;
+    const okEnd = n ? (ok / n * 100).toFixed(2) : 0;
+    const badEnd = n ? (done / n * 100) : 0;
+    return `
+      <div class="pc-bar">
+        <div class="pc-row1">
+          <div>
+            <div class="pc-ttl">ตรวจประจำเดือน</div>
+            <div class="pc-subt">ตรวจแล้ว ${done} จาก ${n} คน</div>
+          </div>
+          <div class="pc-tools">
+            <div class="pc-vseg" role="group" aria-label="มุมมอง">
+              <button type="button" data-pv="list" aria-label="มุมมองรายการ">${ICONS.listView}</button>
+              <button type="button" class="on" data-pv="card" aria-label="มุมมองการ์ด">${ICONS.gridView}</button>
+            </div>
+            <button type="button" class="pc-print" data-pp title="พิมพ์รายงาน" aria-label="พิมพ์รายงาน">${ICONS.print}</button>
+          </div>
+        </div>
+        <div class="pc-period">
+          <select data-pm aria-label="เดือน">
+            ${TH_MONTHS_FULL.map((m, i) => `<option value="${i + 1}" ${curM === i + 1 ? 'selected' : ''}>${m}</option>`).join('')}
+          </select>
+          <select data-py aria-label="ปี">
+            ${years.map(y => `<option value="${y}" ${curY === y ? 'selected' : ''}>พ.ศ. ${y + 543}</option>`).join('')}
+          </select>
+        </div>
+        <div class="pc-prog">
+          <div class="pc-ring" style="background:conic-gradient(var(--ok) 0 ${okEnd}%, var(--bad) ${okEnd}% ${badEnd}%, var(--panel-line) ${badEnd}% 100%)"><i>${pct}%</i></div>
+          <div class="pc-seg" data-segs></div>
+        </div>
+        <button type="button" class="pc-pick" data-pick>
+          <svg viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.8" stroke="currentColor" stroke-width="1.6"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          <span data-pickname></span>
+          <small>เลือกคน</small>
+        </button>
+      </div>`;
+  }
+
+  function cardHtml(cur){
     const st = stOf(cur.rec);
     const hold = cur.sum.hold;
     const rows = hold.slice(0, 3).map(b => {
@@ -14357,13 +14432,13 @@ ${pages}`;
     const empty = hold.length ? '' : `<div class="pc-empty">ไม่มีพัสดุในความครอบครองขณะนี้</div>`;
     const note = (cur.rec && cur.rec['ผล'] === 'มีปัญหา' && cur.rec['หมายเหตุ'])
       ? `<div class="pc-note">${esc(cur.rec['หมายเหตุ'])}</div>` : '';
-    const hideBack = n < 2 ? 'style="display:none"' : '';
     return `<div class="pc-stack">
-      <div class="pc-b2" ${hideBack}></div>
-      <div class="pc-b1" ${hideBack}></div>
+      <div class="pc-b2"></div>
+      <div class="pc-b1"></div>
       <div class="pc-card s-${st}">
         <div class="pc-face">
-          <span class="pc-cue r">ครบ</span><span class="pc-cue l">มีปัญหา</span>
+          <span class="pc-stamp r">ครบ</span>
+          <span class="pc-stamp l">มีปัญหา</span>
           <div class="pc-head">
             <span class="pc-av">${avatar(cur.u)}</span>
             <div class="pc-id">
@@ -14372,8 +14447,9 @@ ${pages}`;
             </div>
             <span class="pc-pill">${STATUS_TXT[st]}</span>
           </div>
-          <div class="pc-sec"><span><b>${hold.length}</b> รายการในความครอบครอง</span></div>
-          ${rows}${more}${empty}${note}
+          <div class="pc-sec"><b>${hold.length}</b> รายการในความครอบครอง</div>
+          <div class="pc-items">${rows}${more}${empty}</div>
+          ${note}
           <div class="pc-act">
             <button type="button" class="pc-btn bad" data-act="bad">มีปัญหา</button>
             <button type="button" class="pc-btn ok" data-act="ok">ครบ</button>
@@ -14386,10 +14462,16 @@ ${pages}`;
 
   function bindSwipe(card, cur, onRight){
     const face = card.querySelector('.pc-face');
-    const cueR = face.querySelector('.pc-cue.r');
-    const cueL = face.querySelector('.pc-cue.l');
+    const stR = face.querySelector('.pc-stamp.r');
+    const stL = face.querySelector('.pc-stamp.l');
     const TH = 80;
     let id = null, x0 = 0, y0 = 0, dx = 0, mode = null, moved = false;
+
+    const showStamp = d => {
+      const p = Math.min(1, Math.abs(d) / TH);
+      stR.style.opacity = d > 0 ? p : 0;
+      stL.style.opacity = d < 0 ? p : 0;
+    };
 
     face.addEventListener('pointerdown', e => {
       if (e.target.closest('button')) return;
@@ -14410,8 +14492,7 @@ ${pages}`;
       if (mode !== 'h') return;
       dx = mx;
       face.style.transform = `translateX(${dx}px) rotate(${dx / 40}deg)`;
-      cueR.style.opacity = dx > 0 ? Math.min(1, dx / TH) : 0;
-      cueL.style.opacity = dx < 0 ? Math.min(1, -dx / TH) : 0;
+      showStamp(dx);
     });
     const end = e => {
       if (e.pointerId !== id) return;
@@ -14420,7 +14501,6 @@ ${pages}`;
       const wasH = mode === 'h';
       mode = null;
       if (!wasH) return;
-      cueR.style.opacity = 0; cueL.style.opacity = 0;
       const hit = Math.abs(dx) >= TH, dir = Math.sign(dx);
       if (hit && dir > 0) {
         face.style.transition = 'transform .2s ease-in';
@@ -14430,6 +14510,7 @@ ${pages}`;
       }
       face.style.transition = 'transform .25s ease';
       face.style.transform = '';
+      stR.style.opacity = 0; stL.style.opacity = 0;
       setTimeout(() => { face.style.transition = ''; }, 260);
       if (hit) mcProblemSheet(cur.u);
     };
@@ -14441,14 +14522,25 @@ ${pages}`;
     });
   }
 
-  function render(grid, redraw){
+  function render(grid){
     const list = fullList();
     const n = list.length;
+    const now = new Date();
+    const curY = state.mcYear || now.getFullYear();
+    const curM = state.mcMonth || (now.getMonth() + 1);
+
+    const ok = list.filter(x => stOf(x.rec) === 'ok').length;
+    const bad = list.filter(x => stOf(x.rec) === 'bad').length;
+    const done = ok + bad;
+
+    grid.className = 'pc-wrap';
+
     if (!n) {
-      grid.className = '';
-      grid.innerHTML = emptyState('ไม่มีเจ้าหน้าที่ที่ถือพัสดุอยู่');
+      grid.innerHTML = headerHtml(0, 0, 0, 0, 0, curY, curM) + emptyState('ไม่มีเจ้าหน้าที่ที่ถือพัสดุอยู่');
+      bindHeader(grid);
       return;
     }
+
     let idx = list.findIndex(x => x.key === key);
     if (idx < 0) {
       const firstTodo = list.findIndex(x => !x.rec);
@@ -14456,51 +14548,58 @@ ${pages}`;
     }
     key = list[idx].key;
     const cur = list[idx];
-
-    const ok = list.filter(x => stOf(x.rec) === 'ok').length;
-    const bad = list.filter(x => stOf(x.rec) === 'bad').length;
-    const done = ok + bad;
-    const pct = Math.round(done / n * 100);
-    const okEnd = (ok / n * 100).toFixed(2);
-    const badEnd = (done / n * 100).toFixed(2);
-    const go = to => { key = list[(to + n) % n].key; render(grid, redraw); };
+    const go = to => { key = list[(to + n) % n].key; render(grid); };
     const nextKey = list[(idx + 1) % n].key;
-    const saveOk = () => {
-      key = nextKey;
-      mcSave(cur.u, 'ครบ', '');   // mcSave เรียก drawMonthlyBody แล้ววาดการ์ดคนถัดไป
-    };
+    const saveOk = () => { key = nextKey; mcSave(cur.u, 'ครบ', ''); };
 
-    grid.className = 'pc-wrap';
-    grid.innerHTML = `
-      <div class="pc-top">
-        <div>
-          <div class="pc-ttl">ตรวจประจำเดือน</div>
-          <div class="pc-subt">ตรวจแล้ว ${done} จาก ${n} คน</div>
-        </div>
-        <div class="pc-ring" style="background:conic-gradient(var(--ok) 0 ${okEnd}%, var(--bad) ${okEnd}% ${badEnd}%, var(--panel-line) ${badEnd}% 100%)">
-          <i>${pct}%</i>
-        </div>
-      </div>
-      <div class="pc-seg">
-        ${list.map((x, i) => `<i data-i="${i}" class="${stOf(x.rec)}${i === idx ? ' cur' : ''}"></i>`).join('')}
-      </div>
-      ${cardHtml(cur, idx, n)}
+    grid.innerHTML = headerHtml(n, done, ok, bad, idx, curY, curM) + `
+      ${cardHtml(cur)}
       <div class="pc-nav">
         <button type="button" class="pc-nb" data-go="-1" aria-label="คนก่อนหน้า">‹</button>
         <span class="pc-navlbl">${idx + 1} / ${n}</span>
         <button type="button" class="pc-nb" data-go="1" aria-label="คนถัดไป">›</button>
       </div>`;
 
-    grid.querySelectorAll('.pc-seg i').forEach(el => el.onclick = () => go(Number(el.dataset.i)));
+    grid.querySelector('[data-pickname]').textContent = officerFullName(cur.u);
+    const segs = grid.querySelector('[data-segs]');
+    segs.innerHTML = list.map((x, i) =>
+      `<i data-i="${i}" class="${stOf(x.rec)}${i === idx ? ' cur' : ''}"></i>`).join('');
+    segs.querySelectorAll('i').forEach(el => el.onclick = () => go(Number(el.dataset.i)));
+
+    grid.querySelector('[data-pick]').onclick = () => {
+      openOfficerPickerSheet(officerFullName(cur.u), (name, u) => {
+        if (!u) { toast('ชื่อนี้ไม่มีในรายการตรวจเดือนนี้'); return; }
+        if (!list.some(x => x.key === mcKey(u))) { toast('คนนี้ไม่มีพัสดุและยังไม่มีผลตรวจ'); return; }
+        key = mcKey(u);
+        render(grid);
+      });
+    };
     grid.querySelectorAll('[data-go]').forEach(b => b.onclick = () => go(idx + Number(b.dataset.go)));
     grid.querySelector('[data-act="ok"]').onclick = saveOk;
     grid.querySelector('[data-act="bad"]').onclick = () => mcProblemSheet(cur.u);
     bindSwipe(grid.querySelector('.pc-card'), cur, saveOk);
+    bindHeader(grid);
   }
 
-  window.mxRenderCardView = function(list, grid, redraw){
-    render(grid, redraw);
-  };
+  /* ปุ่มในส่วนหัวใช้ปุ่มเดิมของหน้า (ที่ซ่อนอยู่) ทำงานต่อ จึงไม่ต้องเขียนตรรกะโหลดข้อมูลซ้ำ */
+  function bindHeader(grid){
+    const proxyChange = (id, v) => {
+      const o = document.getElementById(id);
+      if (!o) return;
+      o.value = v;
+      o.dispatchEvent(new Event('change'));
+    };
+    const pm = grid.querySelector('[data-pm]');
+    const py = grid.querySelector('[data-py]');
+    if (pm) pm.onchange = e => proxyChange('mcMonth', e.target.value);
+    if (py) py.onchange = e => proxyChange('mcYear', e.target.value);
+    const pl = grid.querySelector('[data-pv="list"]');
+    if (pl) pl.onclick = () => { const b = document.querySelector('[data-mcv="list"]'); if (b) b.click(); };
+    const pp = grid.querySelector('[data-pp]');
+    if (pp) pp.onclick = () => { const b = document.getElementById('mcPrintReport'); if (b) b.click(); };
+  }
+
+  window.mxRenderCardView = function(list, grid){ render(grid); };
 })();
    
 /* สลับคลาส modal-open เมื่อมี popup (ดูเฉพาะลูกตรงของ #modalRoot ไม่ใช่ทั้ง subtree) */
