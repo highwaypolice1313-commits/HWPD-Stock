@@ -5675,6 +5675,43 @@ html:has(#view-monthly[style*="display: block"] .pc-wrap){
 #view-monthly .mc-summary,
 #view-monthly .mc-progress-card{margin:0}
 </style>
+
+   <style id="pc-stable-height">
+/* ความสูงการ์ดคงที่ตามพื้นที่หน้าจอ ไม่ขึ้นกับจำนวนรายการหรือหมายเหตุ */
+#view-monthly .pc-stack{
+  flex:1 1 0;
+  min-height:0;
+  height:auto;
+  display:flex;
+  flex-direction:column;
+  padding-bottom:14px;
+}
+#view-monthly .pc-card{
+  flex:1 1 0;
+  min-height:0;
+  height:auto;
+  display:flex;
+  flex-direction:column;
+}
+#view-monthly .pc-face{
+  flex:1 1 0;
+  min-height:0;
+  height:auto;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+#view-monthly .pc-items{
+  flex:1 1 0;
+  min-height:0;
+  overflow-y:auto;
+}
+#view-monthly .pc-note,
+#view-monthly .pc-act,
+#view-monthly .pc-hint,
+#view-monthly .pc-head,
+#view-monthly .pc-sec{flex:none}
+</style>
    
 </head>
 <body>
