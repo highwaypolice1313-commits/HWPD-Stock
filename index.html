@@ -5547,13 +5547,6 @@ html, body{ overflow-x:clip; height:auto; min-height:100%; }
   flex:none;display:flex;justify-content:space-between;align-items:center;gap:8px;
   margin:10px 16px 0;font-size:11px;color:var(--ink-dim);
 }
-#view-monthly .pc-clear,
-#view-monthly .ml-meta .mc-clear{
-  flex:none;height:26px;padding:0 12px;border-radius:99px;
-  border:1px solid var(--panel-line);background:var(--panel-soft);color:var(--ink-dim);
-  font:inherit;font-size:11.5px;font-weight:600;text-decoration:none;cursor:pointer;
-  display:inline-flex;align-items:center;
-}
 
 /* ปุ่มครบ/มีปัญหา */
 #view-monthly .pc-act{flex:none;display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 16px 0;margin-top:auto}
@@ -5688,6 +5681,24 @@ body:has(#view-monthly .pc-wrap) .toast{
 body:has(#view-monthly .pc-wrap) #toast.show,
 body:has(#view-monthly .pc-wrap) .toast.show{
   transform:translate(-50%,-50%) scale(1) !important;
+}
+</style>
+
+   <style id="clear-btn-shared">
+/* ปุ่มล้างผล: ใช้คลาสเดียวกันทั้งสองมุมมอง ไม่กำหนดสีเอง เพื่อให้สถานะเมื่อกดหรือชี้ของระบบทำงาน */
+#view-monthly .pc-meta .mc-clear,
+#view-monthly .ml-meta .mc-clear{
+  flex:none;
+  display:inline-flex;
+  align-items:center;
+  height:26px;
+  padding:0 12px;
+  border-radius:99px;
+  border:1px solid var(--panel-line);
+  font-size:11.5px;
+  font-weight:600;
+  text-decoration:none;
+  cursor:pointer;
 }
 </style>
    
@@ -14619,7 +14630,7 @@ window.pcHeaderHtml = function(curY, curM, years, view, sub){
           </div>
             ${cur.rec ? `<div class="pc-meta">
             <span>ตรวจโดย ${esc(cur.rec['ผู้ตรวจ'] || '-')} · ${systemDateTime(cur.rec['วันที่ตรวจ'])}</span>
-            <button type="button" class="pc-clear" data-clear>ล้างผล</button>
+            <span class="link-btn mc-clear" data-clear role="button">ล้างผล</span>
           </div>` : ''}
           <div class="pc-hint"><span class="l">← ปัดซ้าย มีปัญหา</span><span class="r">ปัดขวา ครบ →</span></div>
         </div>
