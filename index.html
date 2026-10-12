@@ -5655,6 +5655,29 @@ body:has(#view-monthly[style*="display: block"] .pc-wrap) .pc-bar{
   }
 }
 </style>
+
+   <style id="pc-list-toolorder">
+@media (max-width:899px){
+  #view-monthly .mc-toolbar{
+    flex-direction:column !important;
+    align-items:stretch !important;
+    gap:10px !important;
+  }
+  #view-monthly .mc-toolbar-right{
+    order:-1;
+    display:flex !important;
+    justify-content:flex-end !important;
+    margin-left:0 !important;
+    width:100%;
+  }
+  #view-monthly .mc-toolbar-left{
+    width:100%;
+  }
+  #view-monthly .mc-period{
+    width:100%;
+  }
+}
+</style>
    
 </head>
 <body>
