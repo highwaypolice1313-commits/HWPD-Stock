@@ -7702,6 +7702,7 @@ function openAssetDetail(id) {
     <div class="detail-row"><span>หมวดหมู่</span><span>${escapeHtml(a['หมวดหมู่'])}</span></div>
     <div class="detail-row"><span>ยี่ห้อ/รุ่น</span><span>${escapeHtml(a['ยี่ห้อ/รุ่น']) || '-'}</span></div>
     <div class="detail-row"><span>หมายเลขเครื่อง</span><span>${escapeHtml(a['หมายเลขเครื่อง']) || '-'}</span></div>
+    ${a['หมวดหมู่'] === 'ยานพาหนะ' ? `<div class="detail-row"><span>ขนาดยาง</span><span>${escapeHtml(a['ขนาดยาง']) || '-'}</span></div>` : ''}
     <div class="detail-row"><span>วันที่รับเข้า</span><span>${systemDate(a['วันที่รับเข้า'])}</span></div>
     <div class="detail-row"><span>มูลค่า</span><span>${a['มูลค่า(บาท)'] ? Number(a['มูลค่า(บาท)']).toLocaleString() + ' บาท' : '-'}</span></div>
     <div class="detail-row"><span>สถานะ</span><span class="status-badge ${statusClass(a['สถานะ'])}">${escapeHtml(a['สถานะ'])}</span></div>
@@ -8426,9 +8427,13 @@ function openAssetForm(a) {
     <div class="field"><label>หมวดหมู่</label><select class="input" id="f_cat">${getCategories().map(c => `<option ${a && a['หมวดหมู่']===c?'selected':''}>${escapeHtml(c)}</option>`).join('')}</select></div>
     <div class="field"><label>ยี่ห้อ/รุ่น</label><input class="input" id="f_brand" value="${a ? escapeHtml(a['ยี่ห้อ/รุ่น'])||'' : ''}"></div>
     <div class="field"><label>หมายเลขเครื่อง/serial</label><input class="input" id="f_serial" value="${a ? escapeHtml(a['หมายเลขเครื่อง'])||'' : ''}"></div>
-    <div class="field" id="f_vehicleWrap" style="display:none;"><div class="memo-two-col">
-    <div class="field"><label>ทะเบียนรถ</label><input class="input" id="f_licensePlate" value="${a ? escapeHtml(a['ทะเบียนรถ'])||'' : ''}"></div>
-    <div class="field"><label>หมายเลขตัวถัง/แชสซี่</label><input class="input" id="f_chassisNo" value="${a ? escapeHtml(a['หมายเลขตัวถัง'])||'' : ''}"></div></div></div>
+    
+<div id="f_vehicleWrap" style="display:none;">
+  <div class="field"><label>ขนาดยาง</label><input class="input" id="f_tireSize" placeholder="เช่น 265/65R17" value="${a ? escapeHtml(a['ขนาดยาง'])||'' : ''}"></div>
+  <div class="field"><label>ทะเบียนรถ</label><input class="input" id="f_licensePlate" value="${a ? escapeHtml(a['ทะเบียนรถ'])||'' : ''}"></div>
+  <div class="field"><label>หมายเลขตัวถัง/แชสซี่</label><input class="input" id="f_chassisNo" value="${a ? escapeHtml(a['หมายเลขตัวถัง'])||'' : ''}"></div>
+</div>
+
     <div class="field"><label>วันที่รับเข้า</label><input class="input" type="date" id="f_date" value="${a && a['วันที่รับเข้า'] ? isoDate(a['วันที่รับเข้า']) : isoDate()}"></div>
     <div class="field"><label>มูลค่า (บาท)</label><input class="input" type="number" id="f_value" value="${a ? escapeHtml(a['มูลค่า(บาท)']) : ''}"></div>
     <div class="field"><label>สถานะ</label><select class="input" id="f_status">${ASSET_STATUSES.map(s => `<option ${a && a['สถานะ']===s?'selected':''}>${s}</option>`).join('')}</select></div>
@@ -8450,7 +8455,7 @@ toggleVehicleFields();
   name: val('f_name'), category: val('f_cat'), brand: val('f_brand'), serial: val('f_serial'),
   receivedDate: val('f_date'), value: val('f_value'), status: val('f_status'), holder: val('f_holder'), unit: val('f_unit'),
   renewalDue: val('f_renewal'), note: val('f_note'),
-  licensePlate: val('f_licensePlate'), chassisNo: val('f_chassisNo')   // เพิ่มบรรทัดนี้
+  licensePlate: val('f_licensePlate'), chassisNo: val('f_chassisNo'), tireSize: val('f_tireSize')
 };
     if (!payload.name) { toast('กรุณากรอกชื่อครุภัณฑ์'); return; }
     const saveBtn = document.getElementById('btnSave'); if (saveBtn.disabled) return; setButtonBusy(saveBtn, true); setLoading(true, 'กำลังบันทึกข้อมูล...');
@@ -9488,6 +9493,9 @@ function openMaintDetail(id) {
   }
 }
    
+const VEHICLE_CAT = 'ยานพาหนะ';
+const VEHICLE_MAINT_TYPES = ['เปลี่ยนยาง', 'เปลี่ยนแบตเตอรี่', 'ซ่อมรถ'];
+
 function openMaintForm(presetId) {
   showSheet(`
     <div class="sheet-title">แจ้งซ่อมบำรุง</div>
@@ -9507,11 +9515,44 @@ function openMaintForm(presetId) {
 
     <div class="mf-section">
       <div class="mf-section-title"><span class="mf-step">2</span> รายละเอียดปัญหา</div>
-      <div class="field"><label>อาการ/ปัญหา</label><input class="input" id="f_issue"></div>
-      <div class="memo-two-col">
-        <div class="field"><label>ผู้แจ้ง</label><input class="input" id="f_reporter" value="${escapeHtml(state.user.name || '')}"></div>
-        <div class="field"><label>วันที่แจ้ง</label><input class="input" type="date" id="f_rdate" value="${isoDate()}"></div>
+
+      <!-- ครุภัณฑ์ทั่วไป: พิมพ์เอง -->
+      <div class="field" id="f_issueTextWrap"><label>อาการ/ปัญหา</label><input class="input" id="f_issue"></div>
+
+      <!-- ยานพาหนะ: เลือกประเภท -->
+      <div id="f_issueVehWrap" style="display:none;">
+        <div class="field">
+          <label>ประเภทงานซ่อม</label>
+          <div class="chip-row" id="f_vtypeRow" style="flex-wrap:wrap; overflow:visible;">
+            ${VEHICLE_MAINT_TYPES.map(t => `<div class="chip" data-vtype="${t}">${t}</div>`).join('')}
+          </div>
+          <input type="hidden" id="f_vtype" value="">
+        </div>
+        <div class="field" id="f_tireWrap" style="display:none;">
+          <label>ขนาดยาง</label>
+          <input class="input" id="f_tire" placeholder="เช่น 265/65R17">
+        </div>
+        <div class="field"><label>รายละเอียดเพิ่มเติม (ไม่บังคับ)</label><input class="input" id="f_vdetail" placeholder="เช่น เปลี่ยนยางหน้าซ้าย 2 เส้น"></div>
       </div>
+
+      <div class="field">
+        <label>ผู้แจ้ง</label>
+        <div class="glass list-item" id="f_reporterTrigger" style="cursor:pointer;">
+          <div class="li-icon" id="f_reporterIcon">${ICONS.user}</div>
+          <div class="li-body">
+            <div class="li-title" id="f_reporterName">${escapeHtml((state.user && state.user.name) || 'แตะเพื่อเลือกผู้แจ้ง')}</div>
+            <div class="li-sub" id="f_reporterSub">เลือกจากทำเนียบ หรือพิมพ์ค้นหา</div>
+          </div>
+          <span class="status-badge status-ready" style="flex:none;">เลือก</span>
+        </div>
+        <input type="hidden" id="f_reporter" value="${escapeHtml((state.user && state.user.name) || '')}">
+      </div>
+
+      <div class="memo-two-col">
+        <div class="field"><label>วันที่แจ้ง</label><input class="input" type="date" id="f_rdate" value="${isoDate()}"></div>
+        <div class="field"><label>ค่าใช้จ่าย (บาท) — ไม่บังคับ</label><input class="input" type="number" min="0" step="any" id="f_cost" placeholder="0"></div>
+      </div>
+
       <div class="field">
         <label>รูปถ่ายอาการ/ความเสียหาย — ไม่บังคับ</label>
         <input type="file" id="f_maintPhoto" accept="image/png,image/jpeg,image/webp" class="input" style="padding:8px;">
@@ -9523,22 +9564,56 @@ function openMaintForm(presetId) {
     <div class="btn-row"><button class="btn btn-ghost" id="btnCancel">ยกเลิก</button><button class="btn btn-primary" id="btnSave">บันทึก</button></div>
   `);
 
-  // เลือกครุภัณฑ์ผ่านการ์ดค้นหา+หมวดหมู่แบบเดียวกับหน้ายืม แต่เปิดให้เลือกได้ทุกสถานะ (onlyAvailable=false)
-function selectAsset(id) {
-  const asset = state.assets.find(a => a['รหัสครุภัณฑ์'] === id);
-  if (!asset) return;
-  document.getElementById('f_asset').value = id;
-  document.getElementById('f_assetIcon').innerHTML = catIcon(asset['หมวดหมู่']);
-  document.getElementById('f_assetName').textContent = asset['ชื่อครุภัณฑ์'];
-  document.getElementById('f_assetSub').textContent =
-    [asset['หมายเลขเครื่อง'] ? 'S/N ' + asset['หมายเลขเครื่อง'] : '', asset['รหัสครุภัณฑ์'], asset['สถานะ']]
-      .filter(Boolean).join(' · ');
-}
+  const currentAsset = () => state.assets.find(a => a['รหัสครุภัณฑ์'] === val('f_asset'));
+  const isVehicle = () => { const a = currentAsset(); return !!a && a['หมวดหมู่'] === VEHICLE_CAT; };
+
+  // สลับโหมดช่องอาการ: รถ = เลือกประเภท / อื่นๆ = พิมพ์เอง
+  function refreshIssueMode() {
+    const veh = isVehicle();
+    document.getElementById('f_issueTextWrap').style.display = veh ? 'none' : '';
+    document.getElementById('f_issueVehWrap').style.display = veh ? '' : 'none';
+    if (veh) {
+      const a = currentAsset();
+      const tireEl = document.getElementById('f_tire');
+      if (tireEl && !tireEl.value) tireEl.value = (a && a['ขนาดยาง']) || '';   // ดึงขนาดยางจากทะเบียนครุภัณฑ์
+    }
+  }
+
+  function selectAsset(id) {
+    const asset = state.assets.find(a => a['รหัสครุภัณฑ์'] === id);
+    if (!asset) return;
+    document.getElementById('f_asset').value = id;
+    document.getElementById('f_assetIcon').innerHTML = catIcon(asset['หมวดหมู่']);
+    document.getElementById('f_assetName').textContent = asset['ชื่อครุภัณฑ์'];
+    document.getElementById('f_assetSub').textContent =
+      [asset['หมายเลขเครื่อง'] ? 'S/N ' + asset['หมายเลขเครื่อง'] : '', asset['ทะเบียนรถ'] ? 'ทะเบียน ' + asset['ทะเบียนรถ'] : '', asset['รหัสครุภัณฑ์'], asset['สถานะ']]
+        .filter(Boolean).join(' · ');
+    document.getElementById('f_tire').value = '';   // เปลี่ยนคัน = ล้างขนาดยางเดิม
+    refreshIssueMode();
+  }
   document.getElementById('f_assetTrigger').onclick = () => openAssetPickerSheet(val('f_asset'), selectAsset, false);
-    // [แก้ไข] ถ้ามี presetId ให้เลือกครุภัณฑ์ชิ้นนั้นก่อน
+
   const presetM = presetId && state.assets.find(a => a['รหัสครุภัณฑ์'] === presetId);
   if (presetM) selectAsset(presetM['รหัสครุภัณฑ์']);
   else if (state.assets.length) selectAsset(state.assets[0]['รหัสครุภัณฑ์']);
+
+  // เลือกประเภทงานซ่อมรถ
+  document.querySelectorAll('[data-vtype]').forEach(chip => chip.onclick = () => {
+    document.getElementById('f_vtype').value = chip.dataset.vtype;
+    document.querySelectorAll('[data-vtype]').forEach(c => c.classList.toggle('active', c === chip));
+    document.getElementById('f_tireWrap').style.display = chip.dataset.vtype === 'เปลี่ยนยาง' ? '' : 'none';
+  });
+
+  // เลือกผู้แจ้งจากทำเนียบ (เหมือนหน้าอื่น)
+  document.getElementById('f_reporterTrigger').onclick = () =>
+    openOfficerPickerSheet(val('f_reporter'), (name, u) => {
+      document.getElementById('f_reporter').value = name;
+      document.getElementById('f_reporterName').textContent = name;
+      document.getElementById('f_reporterSub').textContent = u ? (u['ตำแหน่ง'] || 'ไม่ระบุตำแหน่ง') : 'พิมพ์ชื่อเอง';
+      document.getElementById('f_reporterIcon').innerHTML = (u && u['รูปถ่าย'])
+        ? `<img src="${u['รูปถ่าย']}" style="width:100%;height:100%;object-fit:cover;border-radius:13px;">`
+        : ICONS.user;
+    });
 
   document.getElementById('f_maintPhoto').onchange = (e) => {
     const file = e.target.files && e.target.files[0];
@@ -9549,19 +9624,43 @@ function selectAsset(id) {
       img.src = data; img.style.display = 'block';
     }).catch(err => toast(err.message || 'เตรียมรูปไม่สำเร็จ'));
   };
+
   document.getElementById('btnCancel').onclick = closeSheet;
   document.getElementById('btnSave').onclick = async () => {
     const assetId = val('f_asset');
-    const asset = state.assets.find(a => a['รหัสครุภัณฑ์'] === assetId);
+    const asset = currentAsset();
     if (!assetId) { toast('กรุณาเลือกครุภัณฑ์'); return; }
-    if (!val('f_issue')) { toast('กรุณากรอกอาการ/ปัญหา'); return; }
-    const saveBtn = document.getElementById('btnSave'); if (saveBtn.disabled) return; setButtonBusy(saveBtn, true); setLoading(true, 'กำลังบันทึกงานซ่อม...');
+
+    let issue = '', tireSize = '';
+    if (isVehicle()) {
+      const t = val('f_vtype');
+      if (!t) { toast('กรุณาเลือกประเภทงานซ่อม'); return; }
+      issue = t;
+      if (t === 'เปลี่ยนยาง') {
+        tireSize = val('f_tire').trim();
+        if (tireSize) issue += ' (ขนาดยาง ' + tireSize + ')';
+      }
+      const d = val('f_vdetail').trim();
+      if (d) issue += ' — ' + d;
+    } else {
+      issue = val('f_issue').trim();
+      if (!issue) { toast('กรุณากรอกอาการ/ปัญหา'); return; }
+    }
+    if (!val('f_reporter').trim()) { toast('กรุณาเลือกผู้แจ้ง'); return; }
+
+    const saveBtn = document.getElementById('btnSave'); if (saveBtn.disabled) return;
+    setButtonBusy(saveBtn, true); setLoading(true, 'กำลังบันทึกงานซ่อม...');
     try {
-       let maintPhoto = val('f_maintPhotoVal');
-       if (isInlineImage(maintPhoto)) maintPhoto = await uploadImageToDrive(maintPhoto, 'maint-' + assetId);
-       await apiPost('addMaint', { assetId, assetName: asset ? asset['ชื่อครุภัณฑ์'] : '', issue: val('f_issue'), reporter: val('f_reporter'), reportDate: val('f_rdate'), photo: maintPhoto });
-       closeSheet(); toast('แจ้งซ่อมแล้ว'); await reloadThen(renderMaint); }
-    catch (err) { toast(err.message || 'แจ้งซ่อมไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(saveBtn, false); }
+      let maintPhoto = val('f_maintPhotoVal');
+      if (isInlineImage(maintPhoto)) maintPhoto = await uploadImageToDrive(maintPhoto, 'maint-' + assetId);
+      await apiPost('addMaint', {
+        assetId, assetName: asset ? asset['ชื่อครุภัณฑ์'] : '',
+        issue, reporter: val('f_reporter'), reportDate: val('f_rdate'),
+        cost: val('f_cost'), tireSize, photo: maintPhoto
+      });
+      closeSheet(); toast('แจ้งซ่อมแล้ว'); await reloadThen(renderMaint);
+    } catch (err) { toast(err.message || 'แจ้งซ่อมไม่สำเร็จ'); }
+    finally { setLoading(false); setButtonBusy(saveBtn, false); }
   };
 }
 
