@@ -5635,26 +5635,6 @@ body:has(#view-monthly[style*="display: block"] .pc-wrap) .pc-bar{
 }
 </style>
    
-   <style id="pc-print-css">
-#view-monthly .pc-print,
-#view-monthly .pc-print:hover,
-#view-monthly .pc-print:focus,
-#view-monthly .pc-print:focus-visible,
-#view-monthly .pc-print:active{
-  background:linear-gradient(150deg,var(--navy),var(--navy-deep)) !important;
-  color:#fff !important;
-  border:0 !important;
-  box-shadow:none !important;
-  transform:none !important;
-  filter:none !important;
-  outline:none !important;
-  opacity:1 !important;
-}
-@media (hover:hover){
-  #view-monthly .pc-print:hover{filter:brightness(1.06) !important}
-}
-</style>
-   
 </head>
 <body>
 
@@ -14551,7 +14531,7 @@ ${pages}`;
               <button type="button" data-pv="list" aria-label="มุมมองรายการ">${ICONS.listView}</button>
               <button type="button" class="on" data-pv="card" aria-label="มุมมองการ์ด">${ICONS.gridView}</button>
             </div>
-            <button type="button" class="pc-print" data-pp title="พิมพ์รายงาน" aria-label="พิมพ์รายงาน">${ICONS.print}</button>
+            <button type="button" class="mc-tool-btn primary mc-print-icon" data-pp title="พิมพ์รายงาน" aria-label="พิมพ์รายงาน">${ICONS.print}</button>
           </div>
         </div>
         <div class="pc-period">
