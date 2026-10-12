@@ -5702,20 +5702,68 @@ body:has(#view-monthly .pc-wrap) .toast.show{
 }
 </style>
 
-   <style id="list-same-as-card">
-/* มุมมองรายการ: โครงการ์ดเดียวกับมุมมองการ์ด ระยะห่าง 16px */
+<style id="list-grid-final">
+/* ===== มุมมองรายการ: ระยะห่างเท่ากันทุกส่วน ===== */
 #view-monthly:not(:has(.pc-wrap)){gap:16px}
-#view-monthly .mc-grid-list{
+#view-monthly:not(:has(.pc-wrap)) > *{margin:0 !important;min-width:0}
+#view-monthly:not(:has(.pc-wrap)) .mc-summary{gap:16px}
+
+/* ===== กริดการ์ด: ทุกช่องกว้างเท่ากัน สูงเท่ากัน ===== */
+#view-monthly .mc-grid.mc-grid-list{
   display:grid;
   grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
   gap:16px;
   width:100%;
   min-width:0;
-  align-items:start;
+  margin:0;
+  padding:0;
+  align-items:stretch;
+  justify-items:stretch;
 }
-#view-monthly .ml-card{display:flex;flex-direction:column;min-width:0;width:100%;height:auto}
-#view-monthly .ml-face{flex:none;height:auto;min-height:0;touch-action:manipulation}
-#view-monthly .ml-face .pc-items{flex:none;overflow:visible;touch-action:auto}
+
+/* ตัวห่อการ์ด: ล้างกฎ .mc-card รุ่นเก่า (padding, hover, กรอบ) */
+#view-monthly .mc-grid.mc-grid-list > .mc-card{
+  display:flex;
+  flex-direction:column;
+  width:auto;
+  height:380px;
+  min-width:0;
+  min-height:0;
+  padding:0;
+  margin:0;
+  gap:0;
+  background:none;
+  border:0;
+  box-shadow:none;
+  border-radius:0;
+  transform:none;
+  contain:inline-size;
+}
+#view-monthly .mc-grid.mc-grid-list > .mc-card::before{display:none}
+#view-monthly .mc-grid.mc-grid-list > .mc-card:hover{transform:none;box-shadow:none}
+
+/* การ์ดจริง ใช้หน้าตาเดียวกับมุมมองการ์ด */
+#view-monthly .mc-grid.mc-grid-list > .mc-card > .pc-face{
+  flex:1 1 0;
+  min-height:0;
+  width:100%;
+  touch-action:manipulation;
+  cursor:pointer;
+}
+#view-monthly .mc-grid.mc-grid-list .pc-items{
+  flex:1 1 0;
+  min-height:0;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  touch-action:pan-y;
+  padding:4px 16px 0;
+}
+#view-monthly .mc-grid.mc-grid-list .pc-act{margin-top:0;padding:12px 16px 16px}
+
+@media (hover:hover){
+  #view-monthly .mc-grid.mc-grid-list > .mc-card > .pc-face{transition:transform .2s ease,box-shadow .2s ease}
+  #view-monthly .mc-grid.mc-grid-list > .mc-card:hover > .pc-face{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+}
 </style>
    
 </head>
