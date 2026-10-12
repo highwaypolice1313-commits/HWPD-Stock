@@ -5783,6 +5783,13 @@ body:has(#view-monthly .pc-wrap) .toast.show{
 #view-monthly:has(.pc-wrap) > .pc-period{margin:0 !important;gap:16px !important}
 #view-monthly > .pc-wrap{gap:16px}
 </style>
+
+   <style id="header-no-squeeze">
+/* ไม่ให้ส่วนหัวถูกบีบเตี้ยลงบนมือถือ ระยะห่าง 16px จึงคงที่ */
+#view-monthly:has(.pc-wrap) > *:not(.pc-wrap){flex:none}
+#view-monthly:not(:has(.pc-wrap)) > *{flex:none}
+#view-monthly > .pc-wrap{flex:none}
+</style>
    
 </head>
 <body>
