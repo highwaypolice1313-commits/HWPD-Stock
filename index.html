@@ -7171,7 +7171,7 @@ function swClose(wrap) {
 function swBtn(tone, icon, label, act) {
   return `<button type="button" class="sw-btn tone-${tone}" data-act="${act}">${icon}<span>${label}</span></button>`;
 }
-function wireSwipeRows(listEl) {
+
 const ASSET_SWIPE = {
   selector: '.list-item.asset-item',
   find: id => state.assets.find(a => a['รหัสครุภัณฑ์'] === id),
@@ -7269,7 +7269,7 @@ function wireSwipeRows(listEl, cfg) {
     row.addEventListener('pointercancel', end);
   });
 }
-}
+   
 // แตะที่อื่นแล้วปิดแถวที่เปิดค้างอยู่
 document.addEventListener('pointerdown', (e) => {
   if (swOpenWrap && !swOpenWrap.contains(e.target)) swClose(swOpenWrap);
