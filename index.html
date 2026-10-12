@@ -5817,6 +5817,101 @@ body:has(#view-monthly .pc-wrap){
 #view-monthly .ml-btn.ok.on{background:var(--ok);color:#fff;border-color:transparent}
 #view-monthly .ml-btn.bad.on{background:var(--bad);color:#fff;border-color:transparent}
 </style>
+
+   <style id="ml-list-card-v2">
+#view-monthly .ml-card{
+  gap:12px;
+  padding:16px;
+  border-radius:20px;
+  border:1px solid var(--panel-line);
+  background:var(--panel);
+  box-shadow:0 1px 2px rgba(0,0,0,.04),0 8px 22px -12px rgba(0,0,0,.18);
+  transition:transform .2s ease,box-shadow .2s ease;
+}
+#view-monthly .ml-card:active{transform:scale(.99)}
+
+/* พื้นสีเต็มการ์ด ไล่เฉดจากสีอ่อนด้านบนสู่พื้นขาว */
+#view-monthly .ml-card.s-ok{
+  background:linear-gradient(165deg,color-mix(in srgb,var(--ok) 20%,var(--panel)) 0%,var(--panel) 72%);
+  border-color:color-mix(in srgb,var(--ok) 35%,var(--panel-line));
+}
+#view-monthly .ml-card.s-bad{
+  background:linear-gradient(165deg,color-mix(in srgb,var(--bad) 18%,var(--panel)) 0%,var(--panel) 72%);
+  border-color:color-mix(in srgb,var(--bad) 35%,var(--panel-line));
+}
+
+/* หัวการ์ด */
+#view-monthly .ml-head{gap:12px}
+#view-monthly .ml-head .mc-avatar,
+#view-monthly .ml-head .mc-avatar-ph{
+  width:46px;height:46px;border-radius:50%;flex:none;object-fit:cover;
+  border:2px solid var(--panel);
+  box-shadow:0 2px 8px rgba(0,0,0,.12);
+}
+#view-monthly .ml-id .mc-name{font-size:15px;font-weight:700}
+#view-monthly .ml-id .mc-pos{font-size:11.5px;opacity:.75}
+#view-monthly .ml-card .mc-status{
+  font-size:11px;
+  font-weight:700;
+  padding:5px 11px;
+  border-radius:99px;
+  white-space:nowrap;
+  flex:none;
+  background:var(--panel-soft);
+  color:var(--ink-dim);
+}
+#view-monthly .ml-card .mc-status.ok{background:var(--ok);color:#fff}
+#view-monthly .ml-card .mc-status.bad{background:var(--bad);color:#fff}
+
+/* จำนวนและรายการ */
+#view-monthly .ml-count{
+  align-self:flex-start;
+  font-size:11px;
+  font-weight:700;
+  color:var(--ink);
+  background:color-mix(in srgb,var(--panel) 75%,transparent);
+  border:1px solid var(--panel-line);
+  padding:4px 11px;
+  border-radius:99px;
+}
+#view-monthly .ml-items{gap:6px}
+#view-monthly .ml-item{
+  padding:9px 12px;
+  border-radius:14px;
+  background:color-mix(in srgb,var(--panel) 72%,transparent);
+  border:1px solid color-mix(in srgb,var(--panel-line) 70%,transparent);
+  font-size:13px;
+}
+#view-monthly .ml-empty{
+  font-size:12.5px;
+  color:var(--ink-dim);
+  padding:4px 2px;
+}
+#view-monthly .ml-note{
+  border-radius:14px;
+  background:color-mix(in srgb,var(--panel) 70%,transparent);
+  color:var(--bad);
+  font-weight:600;
+}
+#view-monthly .ml-meta{font-size:11px;opacity:.8}
+
+/* ปุ่ม */
+#view-monthly .ml-actions{gap:10px}
+#view-monthly .ml-btn{
+  height:44px;
+  border-radius:14px;
+  border:1px solid color-mix(in srgb,var(--panel-line) 80%,transparent);
+  background:color-mix(in srgb,var(--panel) 85%,transparent);
+  font-size:13.5px;
+  font-weight:700;
+  transition:background .2s ease,color .2s ease,transform .1s ease;
+}
+#view-monthly .ml-btn:active{transform:scale(.97)}
+#view-monthly .ml-btn.ok{color:var(--ok)}
+#view-monthly .ml-btn.bad{color:var(--bad)}
+#view-monthly .ml-btn.ok.on{background:var(--ok);color:#fff;border-color:transparent}
+#view-monthly .ml-btn.bad.on{background:var(--bad);color:#fff;border-color:transparent}
+</style>
    
 </head>
 <body>
