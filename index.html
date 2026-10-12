@@ -5588,6 +5588,43 @@ body:has(.pc-wrap){overflow:hidden !important}
 /* ป้องกันการลากหน้าบนมือถือเวลาอยู่ในหน้านี้ */
 #view-monthly:has(.pc-wrap) .page{overflow:hidden}
 </style>
+
+   <style id="pc-lock-css">
+/* ล็อกหน้า: ทำงานเฉพาะตอนที่แท็บตรวจประจำเดือนเปิดอยู่ */
+body:has(#view-monthly[style*="display: block"] .pc-wrap){
+  position:fixed !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100% !important;
+  min-height:0 !important;
+  padding-bottom:0 !important;
+  overflow:hidden !important;
+  overscroll-behavior:none !important;
+  touch-action:none !important;
+}
+html:has(#view-monthly[style*="display: block"] .pc-wrap){
+  height:100% !important;
+  overflow:hidden !important;
+  overscroll-behavior:none !important;
+}
+#view-monthly[style*="display: block"]:has(.pc-wrap){
+  height:100%;
+  overflow:hidden;
+}
+/* ให้เฉพาะรายการพัสดุเลื่อนได้ */
+body:has(#view-monthly[style*="display: block"] .pc-wrap) .pc-wrap,
+body:has(#view-monthly[style*="display: block"] .pc-wrap) .pc-face{
+  touch-action:pan-y;
+}
+body:has(#view-monthly[style*="display: block"] .pc-wrap) .pc-items{
+  touch-action:pan-y;
+  overscroll-behavior:contain;
+}
+body:has(#view-monthly[style*="display: block"] .pc-wrap) .pc-nav,
+body:has(#view-monthly[style*="display: block"] .pc-wrap) .pc-bar{
+  touch-action:none;
+}
+</style>
    
 </head>
 <body>
