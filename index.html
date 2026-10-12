@@ -5992,6 +5992,26 @@ body:has(#view-monthly .pc-wrap){
   background:color-mix(in srgb,var(--panel-line) 55%,var(--panel));
 }
 </style>
+
+   <style id="pc-clear-css">
+#view-monthly .pc-clear-row{
+  display:flex;
+  justify-content:center;
+  margin:8px 16px 0;
+}
+#view-monthly .pc-clear{
+  background:none;
+  border:0;
+  font:inherit;
+  font-size:12px;
+  font-weight:600;
+  color:var(--ink-dim);
+  text-decoration:underline;
+  text-underline-offset:3px;
+  padding:4px 8px;
+  cursor:pointer;
+}
+</style>
    
 </head>
 <body>
@@ -14919,6 +14939,7 @@ window.pcHeaderHtml = function(curY, curM, years, view, sub){
             <button type="button" class="pc-btn bad" data-act="bad">มีปัญหา</button>
             <button type="button" class="pc-btn ok" data-act="ok">ครบ</button>
           </div>
+          ${cur.rec ? `<div class="pc-clear-row"><button type="button" class="pc-clear" data-clear>ล้างผลตรวจ</button></div>` : ''}
           <div class="pc-hint"><span class="l">← ปัดซ้าย มีปัญหา</span><span class="r">ปัดขวา ครบ →</span></div>
         </div>
       </div>
@@ -15063,6 +15084,8 @@ window.pcHeaderHtml = function(curY, curM, years, view, sub){
     });
     grid.querySelector('[data-act="ok"]').onclick = () => saveOk(false);
     grid.querySelector('[data-act="bad"]').onclick = () => mcProblemSheet(cur.u);
+    const clearBtn = grid.querySelector('[data-clear]');
+    if (clearBtn) clearBtn.onclick = () => mcClear(cur.u);
     bindSwipe(grid.querySelector('.pc-card'), cur, () => saveOk(true));
     bindHeader(grid);
   }
