@@ -5394,6 +5394,29 @@ html, body{ overflow-x:clip; height:auto; min-height:100%; }
 
 /* ตอนพิมพ์/สร้าง PDF ห้ามมีอนิเมชัน */
 @media print{ *{ animation:none !important; transition:none !important; } }
+
+      /* แก้การ์ดสถิติหน้ายืม-คืน / ซ่อมบำรุง ไม่ให้ตัวเลขทับป้าย */
+@media (min-width:900px){
+  #view-borrow .stat-card,
+  #view-maint .stat-card{
+    flex-direction:column;
+    align-items:flex-start;
+    justify-content:center;
+    gap:4px;
+    padding:16px 18px;
+  }
+  #view-borrow .stat-num,
+  #view-maint .stat-num{
+    font-size:clamp(20px, 2.4vw, 28px);
+    line-height:1.1;
+    overflow-wrap:anywhere;
+  }
+  #view-borrow .stat-label,
+  #view-maint .stat-label{
+    font-size:12.5px;
+    line-height:1.35;
+  }
+}
 </style>
    
 </head>
