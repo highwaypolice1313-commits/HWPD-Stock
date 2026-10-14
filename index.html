@@ -9875,7 +9875,7 @@ function renderBorrow() {
     </div>
     <div class="search-row">
     <div class="ax-pills">
-      ${catPills.map(p => `<div class="ax-pill ${state.borrowCat === p.v ? 'active' : ''}" data-bcat="${escapeHtml(p.v)}">${escapeHtml(p.label)} <b>${p.n}</b></div>`).join('')}
+            ${catPills.map(p => `<div class="ax-pill ${state.borrowCat === p.v ? 'active' : ''}" data-bcat="${escapeHtml(p.v)}">${p.icon}${escapeHtml(p.label)} <b>${p.n}</b></div>`).join('')}
     </div> 
       <input class="input" id="borrowSearchInput" placeholder="ค้นหาชื่อผู้ยืมหรือครุภัณฑ์..." value="${escapeHtml(state.borrowSearch)}">
       <select class="input sort-select" id="borrowSortSelect">
