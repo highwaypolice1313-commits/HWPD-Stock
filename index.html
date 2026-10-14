@@ -13313,15 +13313,23 @@ async function clearAllAuditResults() {
 
 async function setAuditStatus(assetId, status) {
   const asset = state.assets.find(a => a['รหัสครุภัณฑ์'] === assetId);
+  const isVehicle = asset && asset['หมวดหมู่'] === 'ยานพาหนะ';
+  const old = auditRecordFor(assetId) || {};
   try {
-    await apiPost('saveAuditRecord', { assetId, assetName: asset ? asset['ชื่อครุภัณฑ์'] : '', year: state.auditYear, status });
-    const idx = state.auditRecords.findIndex(r => r['รหัสครุภัณฑ์'] === assetId);
-    const rec = { 'รหัสครุภัณฑ์': assetId, 'ผล': status, 'ปีที่ตรวจ': state.auditYear, 'ผู้ตรวจ': state.user.name, 'วันที่ตรวจ': new Date() };
-    if (idx === -1) state.auditRecords.push(rec); else state.auditRecords[idx] = rec;
+    await apiPost('saveAuditRecord', {
+      assetId, assetName: asset ? asset['ชื่อครุภัณฑ์'] : '', year: state.auditYear, status,
+      foundStatus: isVehicle ? (old['ผลตรวจ(A/D)'] || (status === 'สูญหาย' ? 'D' : 'A')) : '',
+      conditionScore: isVehicle ? (old['คะแนนสภาพ'] ?? '') : '',
+      lastUsedDate: isVehicle ? (old['วันที่ใช้งานครั้งสุดท้าย'] ? isoDate(old['วันที่ใช้งานครั้งสุดท้าย']) : '') : '',
+      committeeDecision: isVehicle ? (old['ความเห็นคณะกรรมการ'] || '') : '',
+      note: isVehicle ? (old['หมายเหตุ'] || '') : ''
+    });
+    state.auditRecords = (await apiGet('getAuditRecords', { year: state.auditYear, token: state.sessionToken })) || [];
     drawAuditView();
     toast('บันทึกผลตรวจนับแล้ว');
   } catch (err) { toast(err.message || 'บันทึกผลตรวจนับไม่สำเร็จ'); }
 }
+   
 function printAuditReport() {
   const orgName = (state.settings && state.settings.orgName) || ORG_NAME;
   const rows = state.assets.map((a, i) => {
