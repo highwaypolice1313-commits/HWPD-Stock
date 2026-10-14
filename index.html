@@ -12199,7 +12199,7 @@ function drawMemos() {
     <div class="memo-toolbar">
       <div class="memo-search">
         ${searchSvg}
-        <input class="input" id="memoSearchInput" placeholder="ค้นหาเรื่อง / ผู้ขอเบิก / เลขที่หนังสือ..." value="${escapeHtml(state.memoSearch)}" autocomplete="off">
+        <input class="input" id="memoSearchInput" type="search" inputmode="search" enterkeyhint="search" placeholder="ค้นหาเรื่อง / ผู้ขอเบิก / เลขที่หนังสือ..." value="${escapeHtml(state.memoSearch)}" autocomplete="off">
       </div>
       <button type="button" class="memo-sort-chip" id="memoSortBtn" aria-label="เรียงลำดับ: ${sortLabel}">
   <span class="memo-sort-k">เรียง</span>${sortLabel}<span class="memo-sort-caret">▾</span>
@@ -12232,12 +12232,14 @@ function drawMemos() {
 
   // ค้นหา (debounce + คงโฟกัส)
   const searchEl = document.getElementById('memoSearchInput');
-  const applySearch = debounce(() => {
-    state.memoSearch = searchEl.value;
-    drawMemos();
+const applySearch = debounce(() => {
+  state.memoSearch = searchEl.value;
+  drawMemos();
+  if (document.activeElement === searchEl || !window.matchMedia('(pointer:coarse)').matches) {
     const again = document.getElementById('memoSearchInput');
     if (again) { again.focus(); try { again.setSelectionRange(again.value.length, again.value.length); } catch (e) {} }
-  }, 220);
+  }
+}, 220);
   searchEl.oninput = applySearch;
 
   // เรียงลำดับ 
