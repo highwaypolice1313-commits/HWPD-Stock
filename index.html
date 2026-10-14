@@ -6086,6 +6086,20 @@ body:has(#view-monthly .pc-wrap) .toast.show{
 .ac-seg button svg{width:17px;height:17px}
 .ac-seg button.active{background:var(--navy);color:#fff}
 </style>   
+
+   <style id="audit-card-focus">
+.ac-face{min-height:320px;justify-content:center;gap:0}
+.ac-main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:28px 22px;text-align:center}
+.ac-main .ac-ico{width:64px;height:64px;border-radius:20px}
+.ac-main .ac-ico svg{width:30px;height:30px}
+.ac-main .ac-name{font-size:19px;font-weight:700;line-height:1.35}
+.ac-main .ac-sub{font-size:12.5px;white-space:normal}
+.ac-main .ac-pill{font-size:12px;padding:6px 14px}
+.ac-pill.s-ok{color:var(--ok)}
+.ac-pill.s-warn{color:var(--warn)}
+.ac-pill.s-bad{color:var(--bad)}
+.ac-act{padding:0 16px 16px;margin-top:0}
+</style>
    
 </head>
 <body>
@@ -12856,7 +12870,10 @@ let auditCardAnimDir = 0;
 
 function auditCardRender(host, list) {
   if (!host) return;
-  if (!list.length) { host.innerHTML = emptyState(state.auditView === 'pending' ? 'ตรวจครบทุกรายการในหมวดนี้แล้ว 🎉' : 'ไม่มีรายการในมุมมองนี้'); return; }
+  if (!list.length) {
+    host.innerHTML = emptyState(state.auditView === 'pending' ? 'ตรวจครบทุกรายการในหมวดนี้แล้ว 🎉' : 'ไม่มีรายการในมุมมองนี้');
+    return;
+  }
 
   if (auditCardIdx >= list.length) auditCardIdx = 0;
   const a = list[auditCardIdx];
@@ -12864,8 +12881,11 @@ function auditCardRender(host, list) {
   const rec = auditRecordFor(id) || {};
   const res = rec['ผล'] || 'ยังไม่ตรวจ';
   const isVeh = a['หมวดหมู่'] === 'ยานพาหนะ';
-  const headCls = res === 'พบปกติ' ? 's-ok' : (res === 'ชำรุด' ? 's-warn' : (res === 'สูญหาย' ? 's-bad' : ''));
-  const pillTxt = auditIsChecked(a) ? (rec['ผลตรวจ(A/D)'] === 'D' ? 'สูญหาย (D)' : (res === 'ยังไม่ตรวจ' ? 'ตรวจแล้ว' : res)) : 'ยังไม่ตรวจ';
+  const checked = auditIsChecked(a);
+  const pillCls = res === 'พบปกติ' ? 's-ok' : (res === 'ชำรุด' ? 's-warn' : (res === 'สูญหาย' || rec['ผลตรวจ(A/D)'] === 'D' ? 's-bad' : ''));
+  const pillTxt = !checked ? 'ยังไม่ตรวจ'
+    : (rec['ผลตรวจ(A/D)'] === 'D' ? 'สูญหาย (D)' : res);
+  const sn = isVeh ? (a['ทะเบียนรถ'] || assetSerialText(a)) : assetSerialText(a);
   const n = list.length;
   const dirClass = auditCardAnimDir ? 'enter' : '';
   auditCardAnimDir = 0;
@@ -12875,30 +12895,19 @@ function auditCardRender(host, list) {
       <div class="ac-stack ${dirClass}">
         <div class="ac-b2"></div>
         <div class="ac-b1"></div>
-        <div class="ac-card" style="position:relative;z-index:1;">
-          <div class="ac-face" id="acFace">
-            <span class="ac-stamp r">พบปกติ</span>
-            <span class="ac-stamp l">ชำรุด</span>
-            <div class="ac-head ${headCls}">
-              <span class="ac-ico">${catIcon(a['หมวดหมู่'])}</span>
-              <div class="ac-id">
-                <div class="ac-name">${escapeHtml(a['ชื่อครุภัณฑ์'])}</div>
-                <div class="ac-sub">${escapeHtml(a['รหัสครุภัณฑ์'])}${assetSerialText(a) ? ' · ' + escapeHtml(assetSerialText(a)) : ''}</div>
-              </div>
-              <span class="ac-pill">${pillTxt}</span>
-            </div>
-            <div class="ac-body">
-              <div><b>${escapeHtml(a['หมวดหมู่'] || '-')}</b></div>
-              <div>ผู้ครอบครอง: ${escapeHtml(a['ผู้ครอบครอง/หน่วยงาน'] || 'คลังพัสดุ')}</div>
-              ${isVeh ? `<div>ทะเบียน: ${escapeHtml(a['ทะเบียนรถ'] || '-')}</div>` : ''}
-              ${rec['หมายเหตุ'] ? `<div>หมายเหตุ: ${escapeHtml(rec['หมายเหตุ'])}</div>` : ''}
-              <div style="font-size:11.5px;">ปัดขวา = พบปกติ · ปัดซ้าย = ชำรุด · แตะการ์ดเพื่อดูรายละเอียด</div>
-            </div>
-            <div class="ac-act">
-              <button type="button" class="ok" data-act="ok">พบปกติ</button>
-              <button type="button" class="warn" data-act="warn">ชำรุด</button>
-              <button type="button" class="bad" data-act="bad">สูญหาย</button>
-            </div>
+        <div class="ac-face" id="acFace">
+          <span class="ac-stamp r">พบปกติ</span>
+          <span class="ac-stamp l">ชำรุด</span>
+          <div class="ac-main">
+            <span class="ac-ico">${catIcon(a['หมวดหมู่'])}</span>
+            <div class="ac-name">${escapeHtml(a['ชื่อครุภัณฑ์'])}</div>
+            ${sn ? `<div class="ac-sub">${escapeHtml(sn)}</div>` : ''}
+            <span class="ac-pill ${pillCls}">${escapeHtml(pillTxt)}</span>
+          </div>
+          <div class="ac-act">
+            <button type="button" class="ok" data-act="ok">พบปกติ</button>
+            <button type="button" class="warn" data-act="warn">ชำรุด</button>
+            <button type="button" class="bad" data-act="bad">สูญหาย</button>
           </div>
         </div>
       </div>
@@ -12921,23 +12930,23 @@ function auditCardRender(host, list) {
         assetId: cur['รหัสครุภัณฑ์'], assetName: cur['ชื่อครุภัณฑ์'], year: state.auditYear, status
       });
       await refreshAuditRecords();
-      state.auditMsg = 'บันทึก "' + cur['ชื่อครุภัณฑ์'] + '" เป็น ' + status + ' แล้ว';
-      // รายการถัดไป: ถ้าอยู่มุมมองยังไม่ตรวจ รายการนี้จะหายไปเอง ให้คงตำแหน่งไว้
+      toast('บันทึก ' + status + ' แล้ว');
       drawAuditView();
     } catch (err) { toast(err.message || 'บันทึกไม่สำเร็จ'); }
   };
 
   const face = host.querySelector('#acFace');
+  const stampR = face.querySelector('.ac-stamp.r');
+  const stampL = face.querySelector('.ac-stamp.l');
+
   host.querySelectorAll('[data-act]').forEach(b => b.onclick = e => {
     e.stopPropagation();
     const st = b.dataset.act === 'ok' ? 'พบปกติ' : (b.dataset.act === 'warn' ? 'ชำรุด' : 'สูญหาย');
     save(st);
   });
 
-  // ปัดขวา = พบปกติ / ปัดซ้าย = ชำรุด / แตะ = รายละเอียด (รถ = ฟอร์มรถ)
   let id0 = null, x0 = 0, dx = 0, moved = false;
   const TH = 90;
-  const stampR = face.querySelector('.ac-stamp.r'), stampL = face.querySelector('.ac-stamp.l');
   face.addEventListener('pointerdown', e => {
     if (e.target.closest('button')) return;
     id0 = e.pointerId; x0 = e.clientX; dx = 0; moved = false;
@@ -12969,15 +12978,19 @@ function auditCardRender(host, list) {
     }
     face.style.transition = 'transform .25s ease';
     face.style.transform = '';
-    stampR.style.opacity = 0; stampL.style.opacity = 0;
+    stampR.style.opacity = 0;
+    stampL.style.opacity = 0;
     if (!moved) {
       if (isVeh) openVehicleAuditForm(id);
       else openAssetDetail(id);
     }
   });
   face.addEventListener('pointercancel', () => {
-    id0 = null; face.classList.remove('drag');
-    face.style.transform = ''; stampR.style.opacity = 0; stampL.style.opacity = 0;
+    id0 = null;
+    face.classList.remove('drag');
+    face.style.transform = '';
+    stampR.style.opacity = 0;
+    stampL.style.opacity = 0;
   });
 }
    
@@ -12990,6 +13003,7 @@ function drawAuditView() {
 
   const isVeh = a => a['หมวดหมู่'] === 'ยานพาหนะ';
   const isComm = a => a['หมวดหมู่'] === 'สื่อสาร';
+  const isCard = state.auditMode === 'grid';
   const all = state.assets;
   const total = all.length;
   const checked = all.filter(auditIsChecked).length;
@@ -13017,6 +13031,27 @@ function drawAuditView() {
     return { key: k.key, label: k.label, run: k.run, total: k.pool.length, done, missing: k.pool.length - done };
   }).filter(k => k.total > 0);
 
+  const yearSel = `<select class="input sort-select" id="auditYearSelect" style="min-width:130px;">${auditYearOptions()}</select>`;
+
+  // ---------- มุมมองการ์ด: เหลือเฉพาะการ์ด ----------
+  if (isCard) {
+    el.innerHTML = `
+      <div class="section-title">ตรวจนับประจำปี
+        <span class="section-actions">${viewToggleHtml('audit', 'grid')}${yearSel}</span>
+      </div>
+      <div id="auditCardHost"></div>
+    `;
+    wireViewToggle(drawAuditView, '#view-audit', 'auditMode');
+    document.getElementById('auditYearSelect').onchange = e => {
+      state.auditYear = Number(e.target.value);
+      state.auditMsg = '';
+      renderAudit();
+    };
+    auditCardRender(document.getElementById('auditCardHost'), list);
+    return;
+  }
+
+  // ---------- มุมมองรายการ: ครบทุกส่วน ----------
   const printHtml = kinds.map(k => `
     <button type="button" class="audit-print-btn" data-print="${k.key}" ${k.done ? '' : 'disabled'}>
       <b>${k.label}</b>
@@ -13031,17 +13066,10 @@ function drawAuditView() {
 
   const msgHtml = state.auditMsg ? `<div class="audit-msg">✓ ${escapeHtml(state.auditMsg)}</div>` : '';
   const emptyMsg = state.auditView === 'pending' ? 'ตรวจครบทุกรายการในหมวดนี้แล้ว 🎉' : 'ยังไม่มีรายการในมุมมองนี้';
-  const isCard = state.auditMode === 'grid';
 
   el.innerHTML = `
     <div class="section-title">ตรวจนับประจำปี
-      <span class="section-actions">
-        <div class="ac-seg">
-          <button type="button" data-amode="list" class="${!isCard ? 'active' : ''}" title="มุมมองรายการ">${ICONS.listView}</button>
-          <button type="button" data-amode="grid" class="${isCard ? 'active' : ''}" title="มุมมองการ์ด">${ICONS.gridView}</button>
-        </div>
-        <select class="input sort-select" id="auditYearSelect" style="min-width:130px;">${auditYearOptions()}</select>
-      </span>
+      <span class="section-actions">${viewToggleHtml('audit', 'list')}${yearSel}</span>
     </div>
 
     <div class="glass audit-hero">
@@ -13082,15 +13110,12 @@ function drawAuditView() {
     </div>
 
     <div id="auditList" style="margin-top:12px;">
-      ${isCard ? '<div id="auditCardHost"></div>' : (list.length ? list.map(auditRow).join('') : emptyState(emptyMsg))}
+      ${list.length ? list.map(auditRow).join('') : emptyState(emptyMsg)}
     </div>
   `;
 
-  el.querySelectorAll('[data-amode]').forEach(b => b.onclick = () => {
-    state.auditMode = b.dataset.amode;
-    setViewMode('audit', state.auditMode);
-    drawAuditView();
-  });
+  wireViewToggle(drawAuditView, '#view-audit', 'auditMode');
+
   el.querySelectorAll('[data-aview]').forEach(b => b.onclick = () => {
     state.auditView = b.dataset.aview;
     drawAuditView();
@@ -13115,11 +13140,6 @@ function drawAuditView() {
   document.getElementById('btnBulkAudit').onclick = () => openBulkAuditModal();
   document.getElementById('btnClearAuditSelected').onclick = () => openBulkAuditModal('clear');
   document.getElementById('btnClearAuditAll').onclick = clearAllAuditResults;
-
-  if (isCard) {
-    auditCardRender(document.getElementById('auditCardHost'), list);
-    return;
-  }
 
   document.getElementById('auditList').onclick = e => {
     const btn = e.target.closest('.audit-btn');
