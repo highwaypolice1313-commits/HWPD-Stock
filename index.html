@@ -6368,8 +6368,15 @@ html, body{
 .memo-group-head .ap-count{margin-left:auto;font-size:11px;font-weight:500;padding:3px 10px;border-radius:var(--r-tag);background:var(--gold-wash);color:var(--gold-deep)}
 .memo-group .ap-caret{width:16px;height:16px;transition:transform .15s ease}
 .memo-group.open .ap-caret{transform:rotate(90deg)}
-.memo-group-body{display:none}
-.memo-group.open .memo-group-body{display:block}
+.memo-group:not(.open) .memo-group-body{ display:none; }
+.memo-group-body.memo-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(190px,1fr));
+  gap:14px;
+}
+@media (max-width:520px){
+  .memo-group-body.memo-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+}
 #memoGrid mark{background:var(--gold-wash);color:var(--gold-deep);border-radius:3px;padding:0 2px}
       
 </style>
@@ -11713,7 +11720,8 @@ function fitPaper(container) {
   const page = container.querySelector('.a4-page');
   if (!sizer || !scaleEl || !page) return;
   const pad = container.classList.contains('paper-desk') ? 32 : 0;
-  const w = Math.max(80, container.clientWidth - pad);
+  const w = container.clientWidth - pad;
+  if (w < 40) return;              // ยังไม่ได้ layout ให้รอรอบถัดไป ไม่ใช้ค่าเดาแทน
   const scale = w / A4_W;
   scaleEl.style.transform = 'scale(' + scale + ')';
   const pageH = page.offsetHeight || A4_H;
@@ -11968,8 +11976,11 @@ function drawMemos() {
   const groups = memoGroupsOf(list);
   if (state.memoOpenGroups === undefined) state.memoOpenGroups = new Set();
 
+  // ปิด observer เดิมก่อนวาดใหม่ กันค้างและรั่วหน่วยความจำ
+  if (drawMemos._io) { drawMemos._io.disconnect(); drawMemos._io = null; }
+  if (drawMemos._ro) { drawMemos._ro.disconnect(); drawMemos._ro = null; }
+
   el.innerHTML = `
-    ${memoKpiHtml(all)}
     <div class="section-title">
       เอกสารใบเบิก-ยืม <small id="memoCountLabel">${list.length} / ${all.length} ฉบับ</small>
       <span class="section-actions">${viewToggleHtml('memos', state.memosView)}</span>
@@ -11989,6 +12000,8 @@ function drawMemos() {
       </select>
     </div>
 
+    ${memoKpiHtml(all)}
+
     <div id="memoGrid">
       ${list.length ? groups.map(([key, items]) => {
         const open = state.memoOpenGroups.has(key) || state.memoMonth !== 'all' || !!q || groups.length === 1;
@@ -12006,7 +12019,7 @@ function drawMemos() {
     </div>
   `;
 
-  // ---- ค้นหาแบบ debounce: อัปเดตเฉพาะกลุ่มผลลัพธ์ ไม่วาดหน้าทั้งหน้า ----
+  // ---- ค้นหาแบบ debounce: วาดใหม่เฉพาะส่วนผลลัพธ์ ----
   const searchEl = document.getElementById('memoSearchInput');
   const applySearch = debounce(() => {
     state.memoSearch = searchEl.value;
@@ -12032,17 +12045,24 @@ function drawMemos() {
   const openMemo = (m) => { if (m) openMemoEditor({ id: m['รหัสใบเบิก'], docHtml: m['เนื้อหาเอกสาร(HTML)'], borrowId: m['รหัสรายการยืม'], readOnly: !isAdmin() }); };
   const findMemo = id => all.find(x => x['รหัสใบเบิก'] === id);
 
-  if (drawMemos._io) { drawMemos._io.disconnect(); drawMemos._io = null; }
-
   if (isGrid) {
+    // ResizeObserver: ปรับขนาดกระดาษ thumbnail ใหม่ทุกครั้งที่การ์ดเปลี่ยนขนาด
+    const thumbRO = ('ResizeObserver' in window)
+      ? new ResizeObserver(entries => entries.forEach(en => fitPaper(en.target)))
+      : null;
+    drawMemos._ro = thumbRO;
+
     const mountThumb = (card) => {
       const m = findMemo(card.dataset.id);
       const thumb = card.querySelector('[data-thumb]');
       if (m && thumb && !thumb.dataset.mounted) {
         thumb.dataset.mounted = '1';
         mountPaper(thumb, wrapPfDoc(m['เนื้อหาเอกสาร(HTML)'], false));
+        if (thumbRO) thumbRO.observe(thumb);
       }
     };
+
+    // IntersectionObserver: วาด thumbnail เฉพาะการ์ดที่ใกล้จะเห็น
     let io = null;
     if ('IntersectionObserver' in window) {
       io = new IntersectionObserver(entries => entries.forEach(en => {
@@ -12052,6 +12072,7 @@ function drawMemos() {
       }), { rootMargin: '400px' });
       drawMemos._io = io;
     }
+
     el.querySelectorAll('.memo-card').forEach(card => {
       if (io) io.observe(card); else mountThumb(card);
       card.onclick = e => {
