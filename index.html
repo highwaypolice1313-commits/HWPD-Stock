@@ -7,7 +7,7 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <meta name="theme-color" content="#17324f">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>ระบบพัสดุครุภัณฑ์ - ตำรวจทางหลวง</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Sarabun:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
@@ -6274,6 +6274,57 @@ body:has(#view-monthly .pc-wrap) .toast.show{
 .audit-search-trigger svg{flex:none;color:var(--navy,#17324f)}
 .audit-search-trigger:hover{border-color:var(--gold-line,#c9a86a)}
 </style>
+
+   <style id="ios-standalone-safe-area-fix">
+/* ===== iPhone standalone (เพิ่มไปที่หน้าจอโฮม): เว้นพื้นที่ Dynamic Island / notch ด้านบน ===== */
+:root{
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+}
+
+/* 1) แถบบนสุด: เลื่อนลงเท่าความสูง safe area ให้ปุ่มทั้งหมดอยู่ใต้ Dynamic Island */
+.topbar{
+  padding-top: calc(var(--sat) + 8px) !important;
+  top: 0 !important;
+}
+
+/* 2) หน้าหลักเริ่มหลังแถบบน ไม่ให้เนื้อหาซ่อนใต้แถบ */
+body{
+  padding-top: 0;
+}
+
+/* 3) แถบล่าง (tabbar) เว้นระยะจากขอบล่าง iPhone (Home indicator) */
+@media (max-width:899px){
+  .tabbar{
+    bottom: calc(10px + var(--sab)) !important;
+  }
+}
+
+/* 4) ปุ่ม FAB และ toast ไม่ทับ safe area */
+.fab{
+  bottom: calc(88px + var(--sab)) !important;
+}
+.toast{
+  bottom: calc(92px + var(--sab)) !important;
+}
+
+/* 5) กัน html/body เลื่อนผิดตำแหน่งใน standalone */
+html, body{
+  height: auto !important;
+  min-height: 100% !important;
+}
+@media (display-mode: standalone){
+  html, body{
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  /* ปุ่มกดได้ทันที ไม่ต้องรอ 300ms */
+  button, a, .list-item, .chip, .tab{
+    touch-action: manipulation;
+  }
+}
+</style>
+   
 </head>
    
 <body>
