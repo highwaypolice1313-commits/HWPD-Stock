@@ -5882,6 +5882,17 @@ body:has(#view-monthly .pc-wrap) .toast.show{
 }
 .cu-icon-pick svg{ width:17px; height:17px; }
 .cu-icon-pick.on{ background:var(--navy); border-color:var(--navy); color:#fff; box-shadow:0 0 0 3px var(--gold-wash); }
+
+/* [เพิ่มใหม่] กล่องเลือกไอคอน: จำกัดความสูง เลื่อนดูได้ (มือถือเห็นประมาณ 3 แถว) */
+.cu-icons{
+  max-height:118px; overflow-y:auto; padding:6px; margin:0 -2px;
+  border:1px solid var(--panel-line); border-radius:12px; background:var(--panel-soft);
+  -webkit-overflow-scrolling:touch; overscroll-behavior:contain; touch-action:pan-y;
+}
+.cu-icons::-webkit-scrollbar{ width:4px; }
+.cu-icons::-webkit-scrollbar-thumb{ background:var(--panel-line); border-radius:99px; }
+@media (min-width:900px){ .cu-icons{ max-height:150px; } } /* [ปรับตรงนี้] ความสูงบนจอ PC */
+      
 </style>
    
 </head>
@@ -6192,6 +6203,74 @@ ICONS.print = '<svg viewBox="0 0 20 20" fill="none"><path d="M5 7V3.5a1 1 0 011-
 ICONS.search = '<svg viewBox="0 0 20 20" fill="none"><circle cx="8.7" cy="8.7" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M12.5 12.5l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
 ICONS.edit = '<svg viewBox="0 0 20 20" fill="none"><path d="M4 16l.8-3.4L13.4 4a1.5 1.5 0 012.1 0l.5.5a1.5 1.5 0 010 2.1L7.4 15.2 4 16z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>';
 ICONS.trash = '<svg viewBox="0 0 20 20" fill="none"><path d="M4.5 6h11M8 6V4.2h4V6M6 6l.6 9.3a1 1 0 001 .9h4.8a1 1 0 001-.9L14 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+   /* ===== [เพิ่มใหม่] ไอคอนหมวดหมู่ชุดใหญ่ (วางก่อน Object.keys(ICONS).forEach) ===== */
+// ตัวช่วยสร้าง SVG แบบเส้น ขนาด 20x20 สีตาม currentColor (ตามธีม)
+const _ic = p => '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">' + p + '</svg>';
+
+Object.assign(ICONS, {
+  // --- อุปกรณ์ปฏิบัติการ / เครื่องแต่งกาย ---
+  shield:   _ic('<path d="M10 2.5l6 2.5v4.5c0 4-2.6 6.8-6 8-3.4-1.2-6-4-6-8V5l6-2.5z"/>'),
+  helmet:   _ic('<path d="M3.5 13a6.5 6.5 0 0113 0v2h-13v-2z"/><path d="M10 6.5V13"/>'),
+  vest:     _ic('<path d="M6.5 3L10 6l3.5-3L16 5.5V17H4V5.5L6.5 3z"/><path d="M10 6v11"/>'),
+  boot:     _ic('<path d="M6 3h5v6l5 2.5V16H5V3h1z"/>'),
+  backpack: _ic('<rect x="5" y="6" width="10" height="11" rx="2"/><path d="M7.5 6V4.5a2.5 2.5 0 015 0V6M8 11h4"/>'),
+  glasses:  _ic('<circle cx="5.5" cy="11.5" r="3"/><circle cx="14.5" cy="11.5" r="3"/><path d="M8.5 11h3M2.5 11l1-4M17.5 11l-1-4"/>'),
+  umbrella: _ic('<path d="M2.5 10a7.5 7.5 0 0115 0h-15z"/><path d="M10 10v6a1.5 1.5 0 003 0"/>'),
+  flashlight: _ic('<path d="M7 2.5h6v3l-1 1.5v10a1 1 0 01-1 1H9a1 1 0 01-1-1V7L7 5.5v-3z"/><path d="M10 10v2"/>'),
+  binoculars: _ic('<circle cx="6" cy="13" r="3.2"/><circle cx="14" cy="13" r="3.2"/><path d="M3.3 12.5L5 4.5h2.5l1 6.5M16.7 12.5L15 4.5h-2.5l-1 6.5M8.7 11.5h2.6"/>'),
+  whistle:  _ic('<circle cx="7.5" cy="12.5" r="4"/><path d="M11 10h6.5V7H8"/>'),
+
+  // --- จราจร / ความปลอดภัย ---
+  cone:     _ic('<path d="M10 3l4 12H6l4-12z"/><path d="M3.5 17h13M8 9h4"/>'),
+  barrier:  _ic('<path d="M2.5 6h15v4h-15z"/><path d="M5 10v7M15 10v7"/>'),
+  siren:    _ic('<path d="M5.5 15v-4a4.5 4.5 0 019 0v4"/><path d="M4 15.5h12v2H4zM10 2.5V4M3.5 5l1 1M16.5 5l-1 1"/>'),
+  extinguisher: _ic('<path d="M7.5 7h5a1 1 0 011 1v8.5a1 1 0 01-1 1h-5a1 1 0 01-1-1V8a1 1 0 011-1z"/><path d="M9 7V4.5h3.5M12.5 4.5l3-1.5M10 10.5v3"/>'),
+  firstaid: _ic('<rect x="2.5" y="5.5" width="15" height="11" rx="1.5"/><path d="M10 8.5v5M7.5 11h5M7.5 5.5V4h5v1.5"/>'),
+  megaphone:_ic('<path d="M3 8.5v3l9 4V4.5l-9 4z"/><path d="M12 8a2.5 2.5 0 010 4M5 12l1 4h2l-1-3.5"/>'),
+  flag:     _ic('<path d="M5 17.5V3M5 4h9l-2 3 2 3H5"/>'),
+  lock:     _ic('<rect x="4.5" y="9" width="11" height="8" rx="1.5"/><path d="M7 9V6.5a3 3 0 016 0V9"/>'),
+  key:      _ic('<circle cx="7" cy="13" r="3.2"/><path d="M9.3 10.7L16.5 3.5M14 6l2 2M12 8l1.5 1.5"/>'),
+
+  // --- ยานพาหนะเพิ่มเติม ---
+  truck:    _ic('<path d="M2 5.5h9v8H2zM11 8.5h4l3 3v2h-7z"/><circle cx="5.5" cy="15" r="1.5"/><circle cx="14.5" cy="15" r="1.5"/>'),
+  motorcycle: _ic('<circle cx="5" cy="13.5" r="3"/><circle cx="15" cy="13.5" r="3"/><path d="M5 13.5l3-6h4l3 6M8 7.5L7 5.5h2"/>'),
+  bicycle:  _ic('<circle cx="5" cy="13.5" r="3"/><circle cx="15" cy="13.5" r="3"/><path d="M5 13.5l3.5-6h5l1.5 6M8.5 7.5L7.5 5.5h2M13.5 7.5l-1-2.5h2"/>'),
+  tire:     _ic('<circle cx="10" cy="10" r="7.3"/><circle cx="10" cy="10" r="2.5"/><path d="M10 2.7v4.8M10 12.5v4.8M2.7 10h4.8M12.5 10h4.8"/>'),
+  fuel:     _ic('<rect x="4" y="3" width="7" height="14" rx="1"/><path d="M4 8h7M11 6h2.5A1.5 1.5 0 0115 7.5V14a1 1 0 002 0V8l-2-2"/>'),
+  drone:    _ic('<circle cx="10" cy="10" r="1.8"/><path d="M4 4l4.5 4.5M16 4l-4.5 4.5M4 16l4.5-4.5M16 16l-4.5-4.5"/><circle cx="4" cy="4" r="2"/><circle cx="16" cy="4" r="2"/><circle cx="4" cy="16" r="2"/><circle cx="16" cy="16" r="2"/>'),
+
+  // --- สื่อสาร / IT / ไฟฟ้า ---
+  phone:    _ic('<rect x="6" y="2.5" width="8" height="15" rx="1.5"/><path d="M9 15h2"/>'),
+  laptop:   _ic('<path d="M5 5h10v8H5z"/><path d="M2.5 15.5h15"/>'),
+  tv:       _ic('<rect x="2.5" y="5" width="15" height="10" rx="1.5"/><path d="M7 17.5h6"/>'),
+  mic:      _ic('<rect x="7.5" y="2.5" width="5" height="9" rx="2.5"/><path d="M4.5 9.5a5.5 5.5 0 0011 0M10 15v2.5M7 17.5h6"/>'),
+  headset:  _ic('<path d="M4 11v-1a6 6 0 0112 0v1"/><rect x="3" y="11" width="3" height="5" rx="1"/><rect x="14" y="11" width="3" height="5" rx="1"/><path d="M15.5 16c0 1.5-1.500 2-3.500 2"/>'),
+  speaker:  _ic('<rect x="5" y="2.5" width="10" height="15" rx="1.5"/><circle cx="10" cy="12" r="2.8"/><circle cx="10" cy="6" r=".8"/>'),
+  cctv:     _ic('<path d="M2.5 6.5l11-2.5 1.2 4.5-11 2.5-1.2-4.5z"/><path d="M9 11.500v3M6 17h6M14 7l3 .8"/>'),
+  wifi:     _ic('<path d="M2.5 8a10 10 0 0115 0M5 11a6.500 6.500 0 0110 0M7.5 14a3 3 0 015 0"/><circle cx="10" cy="16.5" r=".8"/>'),
+  server:   _ic('<rect x="3" y="3.5" width="14" height="5" rx="1"/><rect x="3" y="11.5" width="14" height="5" rx="1"/><circle cx="6" cy="6" r=".6"/><circle cx="6" cy="14" r=".6"/>'),
+  battery:  _ic('<rect x="2.5" y="6.5" width="13" height="7" rx="1.5"/><path d="M17.500 9v2M5.500 9v2"/>'),
+  plug:     _ic('<path d="M7 2.500v4M13 2.500v4M5 6.500h10v3a5 5 0 01-10 0v-3zM10 14.500v3"/>'),
+  bulb:     _ic('<path d="M10 2.500a5 5 0 00-3 9v2h6v-2a5 5 0 00-3-9z"/><path d="M8 16.500h4"/>'),
+
+  // --- เครื่องมือ / สำนักงาน / ของใช้ ---
+  toolbox:  _ic('<rect x="2.5" y="7" width="15" height="9.500" rx="1.500"/><path d="M7.500 7V5h5v2M2.500 11.500h15"/>'),
+  gear:     _ic('<circle cx="10" cy="10" r="2.600"/><path d="M10 2.800v2M10 15.200v2M17.200 10h-2M4.800 10h-2M15.100 4.900l-1.400 1.400M6.300 13.700l-1.400 1.400M15.100 15.100l-1.400-1.400M6.300 6.300L4.900 4.900"/>'),
+  scissors: _ic('<circle cx="5.500" cy="14.500" r="2"/><circle cx="14.500" cy="14.500" r="2"/><path d="M7 13L16 3.500M13 13L4 3.500"/>'),
+  ruler:    _ic('<path d="M3 13l10-10 4 4L7 17l-4-4z"/><path d="M6.500 9.500L8 11M9 7l1.500 1.500M11.500 4.500L13 6"/>'),
+  box:      _ic('<path d="M3 6.500l7-3.500 7 3.500v7l-7 3.500-7-3.500v-7z"/><path d="M3 6.500l7 3.500 7-3.500M10 10v7"/>'),
+  folder:   _ic('<path d="M2.500 5.500a1 1 0 011-1H8l2 2h6.500a1 1 0 011 1v8a1 1 0 01-1 1h-13a1 1 0 01-1-1v-10z"/>'),
+  clipboard:_ic('<rect x="4.500" y="4" width="11" height="13.500" rx="1.500"/><path d="M7.500 4V3h5v1M7.500 9h5M7.500 12.500h5"/>'),
+  book:     _ic('<path d="M3 4.500h5a2 2 0 012 2V17a2 2 0 00-2-2H3V4.500zM17 4.500h-5a2 2 0 00-2 2V17a2 2 0 012-2h5V4.500z"/>'),
+  tag:      _ic('<path d="M3 3h6.500l7.500 7.500-6.500 6.500L3 9.500V3z"/><circle cx="6.500" cy="6.500" r="1"/>'),
+  cart:     _ic('<path d="M2 3.500h2.500l2 9h8l1.500-6H5.500"/><circle cx="8" cy="16" r="1.200"/><circle cx="14" cy="16" r="1.200"/>'),
+  scale:    _ic('<path d="M10 3v14M5 17h10M3 6h14"/><path d="M5 6l-2.500 5h5L5 6zM15 6l-2.500 5h5L15 6z"/>'),
+  chair:    _ic('<path d="M6 3h8v7H6z"/><path d="M5 10h10v2.500H5zM6 12.500V17M14 12.500V17"/>'),
+  ac:       _ic('<rect x="2.500" y="5" width="15" height="6" rx="1.500"/><path d="M5 8h10M6 14l-1 3M10 14v3M14 14l1 3"/>'),
+  fridge:   _ic('<rect x="5" y="2.500" width="10" height="15" rx="1.500"/><path d="M5 8.500h10M7.500 5v1.500M7.500 11v2.500"/>'),
+  star:     _ic('<path d="M10 2.500l2.300 4.800 5.200.7-3.800 3.600.9 5.200L10 14.300l-4.600 2.500.9-5.200L2.500 8l5.200-.7L10 2.500z"/>')
+});
    /* ใส่ width/height ให้ทุกไอคอน — CSS ที่กำหนดขนาดไว้แล้วยังชนะตามเดิม
    แต่ถ้าที่ไหนไม่มี CSS ก็จะไม่ขยายเต็มจออีก */
 Object.keys(ICONS).forEach(k => {
@@ -6315,8 +6394,37 @@ function unitDatalistOptions() {
   'เครื่องแบบ/สนาม': 'uniform',
   'อื่นๆ': 'other'
 };
-const ICON_CHOICES = ['gun','vehicle','radio','computer','uniform','other','wrench','swap','user','clock','inbox','checklist','info','warn','log','download','camera','scan'];
 
+/* ===== [แทนที่ของเดิม] รายการไอคอนที่ให้เลือกในหน้าตั้งค่าหมวดหมู่ ===== */
+// [ปรับตรงนี้] ลำดับในอาร์เรย์ = ลำดับที่แสดง / key ต้องมีอยู่ใน ICONS
+const ICON_CHOICES = [
+  // ชุดเดิม
+  'gun','vehicle','radio','computer','uniform','other','wrench','swap','user','clock','inbox','checklist','info','warn','log','download','camera','scan',
+  // ชุดใหม่
+  'shield','helmet','vest','boot','backpack','glasses','umbrella','flashlight','binoculars','whistle',
+  'cone','barrier','siren','extinguisher','firstaid','megaphone','flag','lock','key',
+  'truck','motorcycle','bicycle','tire','fuel','drone',
+  'phone','laptop','tv','mic','headset','speaker','cctv','wifi','server','battery','plug','bulb',
+  'toolbox','gear','scissors','ruler','box','folder','clipboard','book','tag','cart','scale','chair','ac','fridge','star','print'
+];
+
+// ชื่อภาษาไทยของไอคอน (แสดงตอนเอาเมาส์ชี้/กดค้าง) — key ที่ไม่มีในนี้จะแสดงชื่อ key แทน
+const ICON_LABELS = {
+  gun:'อาวุธ', vehicle:'รถยนต์', radio:'วิทยุสื่อสาร', computer:'คอมพิวเตอร์', uniform:'เครื่องแบบ', other:'ทั่วไป',
+  wrench:'ประแจ/ซ่อม', swap:'ยืม-คืน', user:'บุคคล', clock:'เวลา', inbox:'กล่องรับ', checklist:'รายการตรวจ',
+  info:'ข้อมูล', warn:'เตือน', log:'เอกสาร', download:'ดาวน์โหลด', camera:'กล้อง', scan:'สแกน',
+  shield:'โล่/เกราะ', helmet:'หมวกนิรภัย', vest:'เสื้อเกราะ/สะท้อนแสง', boot:'รองเท้าบู๊ต', backpack:'เป้',
+  glasses:'แว่นตา', umbrella:'ร่ม', flashlight:'ไฟฉาย', binoculars:'กล้องส่องทางไกล', whistle:'นกหวีด',
+  cone:'กรวยจราจร', barrier:'แผงกั้น', siren:'ไซเรน/ไฟสัญญาณ', extinguisher:'ถังดับเพลิง', firstaid:'ชุดปฐมพยาบาล',
+  megaphone:'โทรโข่ง', flag:'ธง', lock:'กุญแจล็อก', key:'ลูกกุญแจ',
+  truck:'รถบรรทุก', motorcycle:'จักรยานยนต์', bicycle:'จักรยาน', tire:'ยาง/ล้อ', fuel:'น้ำมัน', drone:'โดรน',
+  phone:'โทรศัพท์', laptop:'โน้ตบุ๊ก', tv:'โทรทัศน์/จอ', mic:'ไมโครโฟน', headset:'หูฟัง', speaker:'ลำโพง',
+  cctv:'กล้องวงจรปิด', wifi:'เครือข่าย', server:'เซิร์ฟเวอร์', battery:'แบตเตอรี่', plug:'ปลั๊กไฟ', bulb:'หลอดไฟ',
+  toolbox:'กล่องเครื่องมือ', gear:'เฟือง/เครื่องจักร', scissors:'กรรไกร', ruler:'ไม้บรรทัด', box:'กล่องพัสดุ',
+  folder:'แฟ้ม', clipboard:'คลิปบอร์ด', book:'หนังสือ', tag:'ป้าย', cart:'รถเข็น', scale:'ตาชั่ง',
+  chair:'เก้าอี้', ac:'เครื่องปรับอากาศ', fridge:'ตู้เย็น', star:'ดาว', print:'เครื่องพิมพ์'
+};   
+   
 function getCategoryIcons() {
   try {
     const raw = state.settings && state.settings.categoryIcons;
@@ -13616,7 +13724,7 @@ function cuRowHtml(original, name, unit, icon) {
       <input class="input cu-name" value="${escapeHtml(name)}" placeholder="ชื่อหมวดหมู่">
     </div>
     <div class="cu-icons">
-      ${ICON_CHOICES.map(k => `<button type="button" class="cu-icon-pick ${k === cur ? 'on' : ''}" data-icon="${k}" title="${k}">${ICONS[k]}</button>`).join('')}
+         ${ICON_CHOICES.filter(k => ICONS[k]).map(k => `<button type="button" class="cu-icon-pick ${k === cur ? 'on' : ''}" data-icon="${k}" title="${escapeHtml(ICON_LABELS[k] || k)}" aria-label="${escapeHtml(ICON_LABELS[k] || k)}">${ICONS[k]}</button>`).join('')}
     </div>
     <input type="hidden" class="cu-icon" value="${cur}">
     <div class="cu-bottom">
