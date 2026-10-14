@@ -6249,6 +6249,11 @@ body:has(#view-monthly .pc-wrap) .toast.show{
 <style id="audit-bottom-tools">
 .audit-bottom-tools{width:100%;height:50px;margin-top:14px;border-radius:16px;font-size:14px;font-weight:600}
 </style>
+
+<style id="audit-filter-tools">
+.audit-filter{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.audit-filter .audit-tools-icon{margin-left:auto}
+</style>
    
 </head>
    
@@ -13224,12 +13229,15 @@ const AUDIT_ICON_MINUS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentCo
 const AUDIT_ICON_TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 13h10l1-13"/><path d="M9 7V4h6v3"/></svg>';
 
 function auditHeaderHtml(mode, yearSel) {
+  const toolsInHeader = mode === 'grid'
+    ? `<button type="button" class="audit-tools-icon" id="btnAuditTools" title="เครื่องมือตรวจนับ" aria-label="เครื่องมือตรวจนับ">${AUDIT_ICON_TOOLS}</button>`
+    : '';
   return `<div class="section-title">ตรวจนับประจำปี
     <span class="section-actions">
       ${viewToggleHtml('audit', mode)}
       <span class="audit-head-actions">
         <button type="button" class="audit-tools-icon" id="btnAuditPrint" title="พิมพ์รายงาน" aria-label="พิมพ์รายงาน">${AUDIT_ICON_PRINT}</button>
-        <button type="button" class="audit-tools-icon" id="btnAuditTools" title="เครื่องมือตรวจนับ" aria-label="เครื่องมือตรวจนับ">${AUDIT_ICON_TOOLS}</button>
+        ${toolsInHeader}
       </span>
       ${yearSel}
     </span>
@@ -13238,7 +13246,18 @@ function auditHeaderHtml(mode, yearSel) {
 
 function wireAuditHeader(kinds) {
   document.getElementById('btnAuditPrint').onclick = () => openAuditPrintSheet(kinds);
-  document.getElementById('btnAuditTools').onclick = openAuditToolsSheet;
+  const toolsBtn = document.getElementById('btnAuditTools');
+  if (toolsBtn) toolsBtn.onclick = openAuditToolsSheet;
+}
+
+/* เรียก fn ครั้งเดียวเมื่อ modal ทุกใบปิดแล้ว ใช้เปิด modal เครื่องมือกลับมา */
+function auditAfterSheetClosed(fn) {
+  const root = document.getElementById('modalRoot');
+  if (!root) return;
+  const obs = new MutationObserver(() => {
+    if (!root.querySelector('.overlay')) { obs.disconnect(); setTimeout(fn, 0); }
+  });
+  obs.observe(root, { childList: true, subtree: true });
 }
 
 function openAuditPrintSheet(kinds) {
@@ -13290,6 +13309,7 @@ function openAuditToolsSheet() {
   document.querySelectorAll('#modalRoot [data-tool]').forEach(b => b.onclick = () => {
     const t = b.dataset.tool;
     closeSheet();
+    auditAfterSheetClosed(openAuditToolsSheet);   // ปิดเมนูย่อยแล้วกลับมาที่เครื่องมือ
     if (t === 'bulk') openBulkAuditModal();
     else if (t === 'clearSel') openBulkAuditModal('clear');
     else clearAllAuditResults();
@@ -13388,19 +13408,17 @@ function drawAuditView() {
         <button type="button" data-aview="done" class="${state.auditView === 'done' ? 'active' : ''}">ตรวจแล้ว</button>
         <button type="button" data-aview="all" class="${state.auditView === 'all' ? 'active' : ''}">ทั้งหมด</button>
       </div>
+      <button type="button" class="audit-tools-icon" id="btnAuditTools" title="เครื่องมือตรวจนับ" aria-label="เครื่องมือตรวจนับ">${AUDIT_ICON_TOOLS}</button>
     </div>
     ${auditCatChipsHtml(all)}
 
     <div id="auditList">
       ${list.length ? list.map(auditRow).join('') : emptyState(emptyMsg)}
     </div>
-
-    <button type="button" class="btn btn-ghost audit-bottom-tools" id="btnAuditToolsBottom">เครื่องมือตรวจนับ</button>
   `;
 
   wireViewToggle(drawAuditView, '#view-audit', 'auditMode');
   wireAuditHeader(kinds);
-  document.getElementById('btnAuditToolsBottom').onclick = openAuditToolsSheet;
 
   el.querySelectorAll('[data-aview]').forEach(b => b.onclick = () => {
     state.auditView = b.dataset.aview;
