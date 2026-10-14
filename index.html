@@ -13031,7 +13031,22 @@ function auditCardRender(host, list) {
     if (e.pointerId !== id0) return;
     id0 = null;
     face.classList.remove('drag');
+
+    const snapBack = () => {
+      face.style.transition = 'transform .25s ease';
+      face.style.transform = '';
+      face.style.opacity = '';
+      stampR.style.opacity = 0;
+      stampL.style.opacity = 0;
+    };
+
     if (moved && Math.abs(dx) >= TH) {
+      // ยานพาหนะ: ไม่บันทึกทันที เด้งการ์ดกลับแล้วเปิดฟอร์มรายคัน
+      if (isVeh) {
+        snapBack();
+        openVehicleAuditForm(id);
+        return;
+      }
       const st = dx > 0 ? 'พบปกติ' : 'ชำรุด';
       face.style.transition = 'transform .22s ease-in, opacity .22s ease-in';
       face.style.transform = `translateX(${Math.sign(dx) * window.innerWidth}px) rotate(${Math.sign(dx) * 18}deg)`;
@@ -13039,10 +13054,8 @@ function auditCardRender(host, list) {
       setTimeout(() => save(st), 200);
       return;
     }
-    face.style.transition = 'transform .25s ease';
-    face.style.transform = '';
-    stampR.style.opacity = 0;
-    stampL.style.opacity = 0;
+
+    snapBack();
     if (!moved) {
       if (isVeh) openVehicleAuditForm(id);
       else openAssetDetail(id);
