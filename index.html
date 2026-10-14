@@ -7791,19 +7791,29 @@ function vehicleNoOf(a) {
   return nums ? Number(nums[nums.length - 1]) : Infinity;
 }
 
+/* หมายเลขรถจากชื่อ เช่น "รถกระบะตรวจการณ์ 1312" -> 1312 (ไม่มีตัวเลขให้ไปท้ายสุด) */
+function vehicleNoOf(a) {
+  const nums = String(a['ชื่อครุภัณฑ์'] || '').match(/\d+/g);
+  return nums ? Number(nums[nums.length - 1]) : Infinity;
+}
+
 function sortAssets(list) {
   const [field, dir] = state.assetSort.split('_');
   const mul = dir === 'desc' ? -1 : 1;
-  // เรียงตามหมายเลขรถแบบตัวเลข เฉพาะตอนกรองเป็น "ยานพาหนะ" และเรียงตามชื่อ
-  const vehicleMode = field === 'name' && state.assetFilter === 'ยานพาหนะ';
+
+  // เรียงยานพาหนะตามหมายเลขรถแบบตัวเลข เมื่อเรียงตามชื่อ (ทั้งหมด หรือกรองเป็นยานพาหนะ)
+  const vehicleSortOn = field === 'name' && (state.assetFilter === 'all' || state.assetFilter === 'ยานพาหนะ');
 
   return [...list].sort((a, b) => {
-    if (vehicleMode) {
-      const na = vehicleNoOf(a), nb = vehicleNoOf(b);
-      if (na !== nb) return mul * (na < nb ? -1 : 1);
-      const c = String(a['ชื่อครุภัณฑ์'] || '').localeCompare(String(b['ชื่อครุภัณฑ์'] || ''), 'th');
-      if (c !== 0) return mul * c;
-      return assetSerialText(a).localeCompare(assetSerialText(b), 'th', { numeric: true });
+    if (vehicleSortOn) {
+      const isVa = a['หมวดหมู่'] === 'ยานพาหนะ';
+      const isVb = b['หมวดหมู่'] === 'ยานพาหนะ';
+      // ทั้งหมด: ยานพาหนะรวมกลุ่มกันก่อน แล้วค่อยเรียงหมวดอื่นตามชื่อ
+      if (state.assetFilter === 'all' && isVa !== isVb) return isVa ? -1 : 1;
+      if (isVa && isVb) {
+        const na = vehicleNoOf(a), nb = vehicleNoOf(b);
+        if (na !== nb) return mul * (na < nb ? -1 : 1);
+      }
     }
     if (field === 'name') {
       const c = String(a['ชื่อครุภัณฑ์'] || '').localeCompare(String(b['ชื่อครุภัณฑ์'] || ''), 'th');
@@ -7815,6 +7825,7 @@ function sortAssets(list) {
     return 0;
   });
 }
+   
 const ASSET_STATUS_COLOR = { 'พร้อมใช้งาน':'var(--ok)', 'กำลังยืม':'var(--warn)', 'ซ่อมบำรุง':'var(--bad)', 'จำหน่ายแล้ว':'var(--off)' };
 const ASSET_STEP = 30; // TODO: ปรับจำนวน "รายการ" ที่แสดงต่อครั้งได้ตามต้องการ (เดิมนับเป็นกลุ่ม ตอนนี้นับเป็นชิ้น)
 
