@@ -5986,6 +5986,24 @@ body:has(#view-monthly .pc-wrap) .toast.show{
 .cu-grip svg{ width:18px; height:18px; }
 </style>
    
+<style id="cu-icon-picker-modal">
+.cu-icon-trigger{
+  width:100%; display:flex; align-items:center; gap:12px;
+  padding:12px 14px; border-radius:14px;
+  border:1px solid var(--gold-line); background:var(--gold-wash);
+  cursor:pointer; text-align:left; font:inherit; color:var(--ink);
+  transition:transform .14s ease, border-color .16s ease;
+}
+.cu-icon-trigger:hover{ border-color:var(--gold); }
+.cu-icon-trigger:active{ transform:scale(.98); }
+.cu-icon-trigger-body{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+.cu-icon-chev{ font-size:22px; line-height:1; color:var(--ink-faint); flex:none; }
+.cu-icon-sheet .cu-tiles-full{
+  max-height:none; overflow:visible;
+  grid-template-columns:repeat(auto-fill,minmax(84px,1fr));
+}
+</style>
+   
 </head>
 <body>
 
@@ -13719,19 +13737,19 @@ function cuRenderList() {
 }
 
 // modal แก้ไขหมวดหมู่ (idx = -1 คือเพิ่มใหม่)
+/* =========================================================
+   [แก้ไข] modal แก้ไขหมวดหมู่: ช่องไอคอนเปิดเป็น modal ซ้อนอีกชั้น
+   ========================================================= */
 function cuOpenModal(idx) {
   const isNew = idx < 0;
   const src = isNew ? { original: '', name: '', unit: '', icon: 'other' } : state.cuDraft[idx];
   if (!src) return;
   let icon = src.icon || 'other';
-  const keys = ICON_CHOICES.filter(k => ICONS[k]);
 
-  const tilesHtml = keys.map(k => {
-    const lbl = cuIconLabel(k);
-    return `<button type="button" class="cu-tile ${k === icon ? 'on' : ''}" data-icon="${k}" data-q="${escapeHtml((lbl + ' ' + k).toLowerCase())}" title="${escapeHtml(lbl)}" aria-label="${escapeHtml(lbl)}">
-      ${ICONS[k]}<span class="cu-tile-lbl">${escapeHtml(lbl)}</span>
-    </button>`;
-  }).join('');
+  const paintIcon = () => {
+    document.getElementById('cu_m_prevIco').innerHTML = ICONS[icon] || ICONS.other;
+    document.getElementById('cu_m_prevName').textContent = cuIconLabel(icon);
+  };
 
   showSheet(`
     <div class="sheet-title">${isNew ? 'เพิ่มหมวดหมู่ใหม่' : 'แก้ไขหมวดหมู่'}</div>
@@ -13745,17 +13763,15 @@ function cuOpenModal(idx) {
       <div class="cu-units">${CU_UNIT_CHIPS.map(u => `<div class="chip" data-u="${escapeHtml(u)}">${escapeHtml(u)}</div>`).join('')}</div>
     </div>
 
-    <div class="field"><label>ไอคอน — แตะเพื่อเลือก ชื่อไอคอนแสดงด้านล่างของแต่ละอัน</label>
-      <div class="cu-prev">
-        <div class="cu-prev-ico" id="cu_m_prevIco">${ICONS[icon] || ICONS.other}</div>
-        <div>
-          <div class="cu-prev-name" id="cu_m_prevName">${escapeHtml(cuIconLabel(icon))}</div>
-          <div class="cu-prev-key">ไอคอนที่เลือกอยู่</div>
-        </div>
-      </div>
-      <input class="input" id="cu_m_search" placeholder="ค้นหาไอคอน เช่น กล้อง, รถ, วิทยุ" autocomplete="off" style="margin-bottom:8px;">
-      <div class="cu-tiles" id="cu_m_grid">${tilesHtml}</div>
-      <div class="hint" id="cu_m_none" style="display:none;text-align:center;">ไม่พบไอคอนที่ค้นหา</div>
+    <div class="field"><label>ไอคอน</label>
+      <button type="button" class="cu-icon-trigger" id="cu_m_iconBtn">
+        <span class="cu-prev-ico" id="cu_m_prevIco"></span>
+        <span class="cu-icon-trigger-body">
+          <span class="cu-prev-name" id="cu_m_prevName"></span>
+          <span class="cu-prev-key">แตะเพื่อเลือกไอคอนใหม่</span>
+        </span>
+        <span class="cu-icon-chev" aria-hidden="true">›</span>
+      </button>
     </div>
 
     <div class="hint" style="margin-top:0;">กด "ตกลง" แล้ว อย่าลืมกดปุ่ม "บันทึกหมวดหมู่ & หน่วยนับ" ด้านล่างหน้าอีกครั้ง เพื่อบันทึกลงระบบจริง</div>
@@ -13767,30 +13783,13 @@ function cuOpenModal(idx) {
     </div>
   `, 'cu-modal-sheet');
 
-  // ---- เลือกไอคอน: แตะแล้วอัปเดตแถบ preview ----
-  const grid = document.getElementById('cu_m_grid');
-  grid.onclick = e => {
-    const t = e.target.closest('.cu-tile');
-    if (!t) return;
-    icon = t.dataset.icon;
-    grid.querySelectorAll('.cu-tile').forEach(x => x.classList.toggle('on', x === t));
-    document.getElementById('cu_m_prevIco').innerHTML = ICONS[icon] || ICONS.other;
-    document.getElementById('cu_m_prevName').textContent = cuIconLabel(icon);
-  };
+  paintIcon();
 
-  // ---- ค้นหาไอคอน ----
-  document.getElementById('cu_m_search').oninput = e => {
-    const q = e.target.value.trim().toLowerCase();
-    let shown = 0;
-    grid.querySelectorAll('.cu-tile').forEach(t => {
-      const hit = !q || t.dataset.q.includes(q);
-      t.style.display = hit ? '' : 'none';
-      if (hit) shown++;
-    });
-    document.getElementById('cu_m_none').style.display = shown ? 'none' : 'block';
-  };
+  // แตะช่องไอคอน -> เปิด modal เลือกไอคอนทับ modal นี้
+  document.getElementById('cu_m_iconBtn').onclick = () =>
+    cuOpenIconPicker(icon, k => { icon = k; paintIcon(); });
 
-  // ---- ปุ่มลัดหน่วยนับ ----
+  // ปุ่มลัดหน่วยนับ
   document.querySelectorAll('.cu-units [data-u]').forEach(c => c.onclick = () => {
     document.getElementById('cu_m_unit').value = c.dataset.u;
   });
@@ -13824,7 +13823,51 @@ function cuOpenModal(idx) {
   if (!window.matchMedia('(pointer:coarse)').matches) setTimeout(() => document.getElementById('cu_m_name')?.focus(), 80);
 }
 
-// บันทึกลงระบบจริง
+/* =========================================================
+   [ใหม่] modal เลือกไอคอน (ซ้อนทับ modal แก้ไขหมวดหมู่)
+   - เลือกแล้วปิดตัวเองและส่งค่ากลับผ่าน onPick
+   - closeSheet() จะคืนหน้าแก้ไขหมวดหมู่ที่ซ่อนไว้ โดยค่าที่พิมพ์ยังอยู่ครบ
+   ========================================================= */
+function cuOpenIconPicker(current, onPick) {
+  const keys = ICON_CHOICES.filter(k => ICONS[k]);
+  const tiles = keys.map(k => {
+    const lbl = cuIconLabel(k);
+    return `<button type="button" class="cu-tile ${k === current ? 'on' : ''}" data-icon="${k}"
+      data-q="${escapeHtml((lbl + ' ' + k).toLowerCase())}" title="${escapeHtml(lbl)}" aria-label="${escapeHtml(lbl)}">
+      ${ICONS[k]}<span class="cu-tile-lbl">${escapeHtml(lbl)}</span>
+    </button>`;
+  }).join('');
+
+  showSheet(`
+    <div class="sheet-title">เลือกไอคอน</div>
+    <input class="input" id="cu_i_search" placeholder="ค้นหาไอคอน เช่น กล้อง, รถ, วิทยุ" autocomplete="off" style="margin-bottom:10px;">
+    <div class="cu-tiles cu-tiles-full" id="cu_i_grid">${tiles}</div>
+    <div class="hint" id="cu_i_none" style="display:none;text-align:center;">ไม่พบไอคอนที่ค้นหา</div>
+    <div class="btn-row"><button class="btn btn-ghost" id="cu_i_cancel">ยกเลิก</button></div>
+  `, 'cu-icon-sheet');
+
+  const grid = document.getElementById('cu_i_grid');
+  grid.onclick = e => {
+    const t = e.target.closest('.cu-tile');
+    if (!t) return;
+    onPick(t.dataset.icon);
+    closeSheet();
+  };
+
+  document.getElementById('cu_i_search').oninput = e => {
+    const q = e.target.value.trim().toLowerCase();
+    let shown = 0;
+    grid.querySelectorAll('.cu-tile').forEach(t => {
+      const hit = !q || t.dataset.q.includes(q);
+      t.style.display = hit ? '' : 'none';
+      if (hit) shown++;
+    });
+    document.getElementById('cu_i_none').style.display = shown ? 'none' : 'block';
+  };
+
+  document.getElementById('cu_i_cancel').onclick = closeSheet;
+}
+
 // บันทึกลงระบบจริง
 async function cuSaveAll() {
   const btn = document.getElementById('btnSaveCategoryUnits');
