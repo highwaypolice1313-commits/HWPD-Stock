@@ -6378,6 +6378,15 @@ html, body{
   .memo-group-body.memo-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
 }
 #memoGrid mark{background:var(--gold-wash);color:var(--gold-deep);border-radius:3px;padding:0 2px}
+
+.memo-kpi-wrap{ width:100%; margin-bottom:14px; }
+.memo-kpi-wrap .rp-kpis{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:10px;
+  width:100%;
+  margin-bottom:0;
+}      
       
 </style>
    
@@ -11976,11 +11985,12 @@ function drawMemos() {
   const groups = memoGroupsOf(list);
   if (state.memoOpenGroups === undefined) state.memoOpenGroups = new Set();
 
-  // ปิด observer เดิมก่อนวาดใหม่ กันค้างและรั่วหน่วยความจำ
   if (drawMemos._io) { drawMemos._io.disconnect(); drawMemos._io = null; }
   if (drawMemos._ro) { drawMemos._ro.disconnect(); drawMemos._ro = null; }
 
   el.innerHTML = `
+    <div class="memo-kpi-wrap">${memoKpiHtml(all)}</div>
+
     <div class="section-title">
       เอกสารใบเบิก-ยืม <small id="memoCountLabel">${list.length} / ${all.length} ฉบับ</small>
       <span class="section-actions">${viewToggleHtml('memos', state.memosView)}</span>
@@ -12000,8 +12010,6 @@ function drawMemos() {
       </select>
     </div>
 
-    ${memoKpiHtml(all)}
-
     <div id="memoGrid">
       ${list.length ? groups.map(([key, items]) => {
         const open = state.memoOpenGroups.has(key) || state.memoMonth !== 'all' || !!q || groups.length === 1;
@@ -12019,7 +12027,6 @@ function drawMemos() {
     </div>
   `;
 
-  // ---- ค้นหาแบบ debounce: วาดใหม่เฉพาะส่วนผลลัพธ์ ----
   const searchEl = document.getElementById('memoSearchInput');
   const applySearch = debounce(() => {
     state.memoSearch = searchEl.value;
@@ -12032,7 +12039,6 @@ function drawMemos() {
   document.getElementById('memoMonthSelect').onchange = e => { state.memoMonth = e.target.value; drawMemos(); };
   document.getElementById('memoSortSelect').onchange = e => { state.memoSort = e.target.value; drawMemos(); };
 
-  // ---- พับ/กางกลุ่มเดือน ----
   el.querySelectorAll('.memo-group-head').forEach(h => h.onclick = () => {
     const g = h.closest('.memo-group');
     const key = g.dataset.mkey;
@@ -12041,12 +12047,10 @@ function drawMemos() {
     if (nowOpen) state.memoOpenGroups.add(key); else state.memoOpenGroups.delete(key);
   });
 
-  // ---- เปิดเอกสาร / ปุ่มลัด ----
   const openMemo = (m) => { if (m) openMemoEditor({ id: m['รหัสใบเบิก'], docHtml: m['เนื้อหาเอกสาร(HTML)'], borrowId: m['รหัสรายการยืม'], readOnly: !isAdmin() }); };
   const findMemo = id => all.find(x => x['รหัสใบเบิก'] === id);
 
   if (isGrid) {
-    // ResizeObserver: ปรับขนาดกระดาษ thumbnail ใหม่ทุกครั้งที่การ์ดเปลี่ยนขนาด
     const thumbRO = ('ResizeObserver' in window)
       ? new ResizeObserver(entries => entries.forEach(en => fitPaper(en.target)))
       : null;
@@ -12062,7 +12066,6 @@ function drawMemos() {
       }
     };
 
-    // IntersectionObserver: วาด thumbnail เฉพาะการ์ดที่ใกล้จะเห็น
     let io = null;
     if ('IntersectionObserver' in window) {
       io = new IntersectionObserver(entries => entries.forEach(en => {
