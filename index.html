@@ -6087,18 +6087,33 @@ body:has(#view-monthly .pc-wrap) .toast.show{
 .ac-seg button.active{background:var(--navy);color:#fff}
 </style>   
 
-   <style id="audit-card-focus">
-.ac-face{min-height:320px;justify-content:center;gap:0}
-.ac-main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:28px 22px;text-align:center}
-.ac-main .ac-ico{width:64px;height:64px;border-radius:20px}
-.ac-main .ac-ico svg{width:30px;height:30px}
-.ac-main .ac-name{font-size:19px;font-weight:700;line-height:1.35}
-.ac-main .ac-sub{font-size:12.5px;white-space:normal}
-.ac-main .ac-pill{font-size:12px;padding:6px 14px}
-.ac-pill.s-ok{color:var(--ok)}
-.ac-pill.s-warn{color:var(--warn)}
-.ac-pill.s-bad{color:var(--bad)}
-.ac-act{padding:0 16px 16px;margin-top:0}
+<style id="audit-card-focus-v2">
+.ac-progress{display:flex;align-items:center;gap:12px;padding:12px 14px;margin:0 auto 14px;max-width:440px;border-radius:16px;background:var(--panel);border:1px solid var(--panel-line);box-shadow:var(--shadow-sm)}
+.ac-progress-txt{font-family:var(--font-num);font-size:13px;white-space:nowrap;color:var(--ink-dim)}
+.ac-progress-txt b{font-size:17px;color:var(--ink)}
+.ac-progress .audit-progress-track{flex:1;margin:0}
+.ac-progress-pct{font-family:var(--font-num);font-weight:700;color:var(--gold-deep);font-size:14px;min-width:40px;text-align:right}
+
+.ac-face{min-height:420px;border-radius:28px;background:linear-gradient(180deg,var(--panel) 0%,var(--panel-soft) 100%);border:1px solid var(--panel-line);box-shadow:0 22px 50px color-mix(in srgb,var(--navy-deep) 14%,transparent)}
+.ac-topbar{height:8px;background:linear-gradient(90deg,var(--navy),var(--gold))}
+.ac-face.st-ok .ac-topbar{background:var(--ok)}
+.ac-face.st-warn .ac-topbar{background:var(--warn)}
+.ac-face.st-bad .ac-topbar{background:var(--bad)}
+.ac-main{padding:30px 24px 16px;gap:14px}
+.ac-main .ac-ico{width:88px;height:88px;border-radius:50%;background:var(--navy-wash);color:var(--navy);box-shadow:inset 0 0 0 1px var(--panel-line),0 10px 24px color-mix(in srgb,var(--navy-deep) 12%,transparent)}
+.ac-main .ac-ico svg{width:40px;height:40px}
+.ac-main .ac-name{font-size:21px;font-weight:700;line-height:1.35;color:var(--ink)}
+.ac-meta{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.ac-tag{font-family:var(--font-num);font-size:11.5px;padding:4px 10px;border-radius:99px;background:var(--off-wash);color:var(--ink-dim)}
+.ac-main .ac-pill{font-size:13px;padding:7px 16px;border-radius:99px;margin-top:4px;background:var(--off-wash);color:var(--ink-dim)}
+.ac-main .ac-pill.s-ok{background:var(--ok-wash);color:var(--ok)}
+.ac-main .ac-pill.s-warn{background:var(--warn-wash);color:var(--warn)}
+.ac-main .ac-pill.s-bad{background:var(--bad-wash);color:var(--bad)}
+.ac-act{padding:0 18px 18px;gap:10px}
+.ac-act button{height:50px;border-radius:16px;font-size:14px}
+.ac-act .ok{box-shadow:0 8px 18px color-mix(in srgb,var(--ok) 30%,transparent)}
+.ac-stamp{font-size:30px;border-radius:14px}
+.ac-nav{max-width:440px;margin:0 auto;width:100%}
 </style>
    
 </head>
@@ -12882,9 +12897,10 @@ function auditCardRender(host, list) {
   const res = rec['ผล'] || 'ยังไม่ตรวจ';
   const isVeh = a['หมวดหมู่'] === 'ยานพาหนะ';
   const checked = auditIsChecked(a);
-  const pillCls = res === 'พบปกติ' ? 's-ok' : (res === 'ชำรุด' ? 's-warn' : (res === 'สูญหาย' || rec['ผลตรวจ(A/D)'] === 'D' ? 's-bad' : ''));
-  const pillTxt = !checked ? 'ยังไม่ตรวจ'
-    : (rec['ผลตรวจ(A/D)'] === 'D' ? 'สูญหาย (D)' : res);
+  const isD = rec['ผลตรวจ(A/D)'] === 'D';
+  const stateCls = !checked ? '' : (isD || res === 'สูญหาย' ? 'st-bad' : (res === 'ชำรุด' ? 'st-warn' : 'st-ok'));
+  const pillCls = !checked ? '' : (isD || res === 'สูญหาย' ? 's-bad' : (res === 'ชำรุด' ? 's-warn' : 's-ok'));
+  const pillTxt = !checked ? 'ยังไม่ตรวจ' : (isD ? 'สูญหาย (D)' : res);
   const sn = isVeh ? (a['ทะเบียนรถ'] || assetSerialText(a)) : assetSerialText(a);
   const n = list.length;
   const dirClass = auditCardAnimDir ? 'enter' : '';
@@ -12895,13 +12911,18 @@ function auditCardRender(host, list) {
       <div class="ac-stack ${dirClass}">
         <div class="ac-b2"></div>
         <div class="ac-b1"></div>
-        <div class="ac-face" id="acFace">
+        <div class="ac-face ${stateCls}" id="acFace">
+          <div class="ac-topbar"></div>
           <span class="ac-stamp r">พบปกติ</span>
           <span class="ac-stamp l">ชำรุด</span>
           <div class="ac-main">
             <span class="ac-ico">${catIcon(a['หมวดหมู่'])}</span>
             <div class="ac-name">${escapeHtml(a['ชื่อครุภัณฑ์'])}</div>
-            ${sn ? `<div class="ac-sub">${escapeHtml(sn)}</div>` : ''}
+            <div class="ac-meta">
+              <span class="ac-tag">${escapeHtml(a['รหัสครุภัณฑ์'])}</span>
+              ${sn ? `<span class="ac-tag">${escapeHtml(sn)}</span>` : ''}
+              ${a['หมวดหมู่'] ? `<span class="ac-tag">${escapeHtml(a['หมวดหมู่'])}</span>` : ''}
+            </div>
             <span class="ac-pill ${pillCls}">${escapeHtml(pillTxt)}</span>
           </div>
           <div class="ac-act">
@@ -13033,11 +13054,16 @@ function drawAuditView() {
 
   const yearSel = `<select class="input sort-select" id="auditYearSelect" style="min-width:130px;">${auditYearOptions()}</select>`;
 
-  // ---------- มุมมองการ์ด: เหลือเฉพาะการ์ด ----------
+  // ---------- มุมมองการ์ด: ความคืบหน้า + การ์ด ----------
   if (isCard) {
     el.innerHTML = `
       <div class="section-title">ตรวจนับประจำปี
         <span class="section-actions">${viewToggleHtml('audit', 'grid')}${yearSel}</span>
+      </div>
+      <div class="ac-progress">
+        <div class="ac-progress-txt"><b>${checked}</b> / ${total}</div>
+        <div class="audit-progress-track"><div class="audit-progress-fill" style="width:${pct}%;"></div></div>
+        <div class="ac-progress-pct">${pct}%</div>
       </div>
       <div id="auditCardHost"></div>
     `;
