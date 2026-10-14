@@ -5934,6 +5934,57 @@ body:has(#view-monthly .pc-wrap) .toast.show{
 .cu-tile.on{ background:var(--navy); border-color:var(--navy); color:#fff; box-shadow:0 0 0 3px var(--gold-wash); }
       
 </style>
+
+   <style id="fix-title-wrap-and-cu-drag">
+/* ชื่อระบบในแถบบน (มือถือ/ไอแพด) ให้ตัดบรรทัดได้ */
+@media (max-width:899px), (hover:none) and (pointer:coarse){
+  .topbar .brand-title{
+    white-space:normal !important;
+    overflow:visible !important;
+    text-overflow:clip !important;
+    line-height:1.25 !important;
+    overflow-wrap:anywhere;
+  }
+}
+/* ชื่อระบบในแถบข้าง (เดสก์ท็อป) ให้ตัดบรรทัดได้ */
+@media (min-width:900px){
+  .tabbar::before{
+    white-space:normal !important;
+    overflow:visible !important;
+    text-overflow:clip !important;
+    line-height:1.3 !important;
+  }
+}
+
+/* หมวดหมู่: แถวลากสลับลำดับ */
+.cu-item{
+  position:relative;
+  cursor:grab;
+  -webkit-user-select:none;
+  user-select:none;
+  -webkit-touch-callout:none;
+  transition:transform .18s ease, box-shadow .18s ease;
+}
+.cu-item.cu-dragging{
+  z-index:20;
+  cursor:grabbing;
+  transition:none;
+  box-shadow:0 14px 30px rgba(20,32,45,.22);
+  background:var(--panel);
+  border-color:var(--gold-line);
+}
+.cu-grip{
+  flex:none;
+  width:32px;
+  height:36px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:var(--ink-faint);
+  border-radius:10px;
+}
+.cu-grip svg{ width:18px; height:18px; }
+</style>
    
 </head>
 <body>
@@ -13509,9 +13560,6 @@ if (pm) pm.onchange = () => { setPdfMode(pm.checked); toast(pm.checked ? 'เป
    
 }
 
-const CU_ICON_UP = '<svg viewBox="0 0 20 20" fill="none"><path d="M5 12l5-5 5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-const CU_ICON_DOWN = '<svg viewBox="0 0 20 20" fill="none"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-
 /* =========================================================
    [เพิ่มใหม่] หมวดหมู่ & หน่วยนับ แบบรายการ + modal แก้ไข
    - state.cuDraft = ร่างที่แก้ไขอยู่ (ยังไม่บันทึกลงฐานข้อมูล)
@@ -13536,6 +13584,100 @@ function cuBuildDraft() {
 function cuMarkDirty() { state.cuDirty = true; }
 
 // วาดรายการแบบกะทัดรัด
+/* =========================================================
+   [ใหม่] ลากสลับลำดับหมวดหมู่: เมาส์กดค้างแล้วลาก / มือถือ-ไอแพดกดค้างแล้วลาก
+   ========================================================= */
+let cuDragBusy = false;     // กำลังลากอยู่หรือไม่
+let cuJustDragged = false;  // กันการเปิด modal หลังลากเสร็จ
+const CU_GRIP_SVG = '<svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><circle cx="7" cy="5" r="1.4"/><circle cx="13" cy="5" r="1.4"/><circle cx="7" cy="10" r="1.4"/><circle cx="13" cy="10" r="1.4"/><circle cx="7" cy="15" r="1.4"/><circle cx="13" cy="15" r="1.4"/></svg>';
+
+function cuBindDragRow(row, wrap) {
+  row.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    if (cuDragBusy) return;
+
+    const isTouch = e.pointerType !== 'mouse';
+    const pid = e.pointerId, sx = e.clientX, sy = e.clientY;
+    const from = Number(row.dataset.i);
+    const items = Array.from(wrap.querySelectorAll('.cu-item'));
+    const rects = items.map(el => el.getBoundingClientRect());
+    const h = rects[from].height;
+    const step = items.length > 1 ? (rects[1].top - rects[0].top) : h;
+    let active = false, target = from, timer = null;
+
+    const onTouchMove = ev => { if (active) ev.preventDefault(); };
+
+    const cleanup = () => {
+      clearTimeout(timer);
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      document.removeEventListener('pointercancel', onUp);
+      document.removeEventListener('touchmove', onTouchMove);
+    };
+
+    const begin = () => {
+      active = true;
+      cuDragBusy = true;
+      row.classList.add('cu-dragging');
+      try { navigator.vibrate && navigator.vibrate(10); } catch (_) {}
+    };
+
+    const update = y => {
+      const dy = y - sy;
+      row.style.transform = 'translate3d(0,' + dy + 'px,0)';
+      const center = rects[from].top + dy + h / 2;
+      // ตำแหน่งใหม่ = จำนวนแถวอื่นที่อยู่เหนือจุดกึ่งกลางของแถวที่ลาก
+      let t = 0;
+      for (let i = 0; i < rects.length; i++) {
+        if (i === from) continue;
+        if (rects[i].top + rects[i].height / 2 < center) t++;
+      }
+      target = t;
+      // เลื่อนแถวอื่นให้เปิดที่ว่างแสดงตำแหน่งที่จะวาง
+      items.forEach((el, i) => {
+        if (i === from) return;
+        let shift = 0;
+        if (from < target && i > from && i <= target) shift = -step;
+        else if (from > target && i >= target && i < from) shift = step;
+        el.style.transform = shift ? 'translate3d(0,' + shift + 'px,0)' : '';
+      });
+    };
+
+    const onMove = ev => {
+      if (ev.pointerId !== pid) return;
+      if (!active) {
+        if (Math.abs(ev.clientX - sx) < 6 && Math.abs(ev.clientY - sy) < 6) return;
+        if (isTouch) { cleanup(); return; }   // มือถือ: ปัดเพื่อเลื่อนหน้าปกติ
+        begin();                              // เมาส์: ลากได้ทันที
+      }
+      update(ev.clientY);
+    };
+
+    const onUp = ev => {
+      if (ev.pointerId !== pid) return;
+      const wasActive = active;
+      cleanup();
+      if (!wasActive) return;               // เป็นแค่การแตะ ปล่อยให้เปิด modal ตามปกติ
+      cuJustDragged = true;
+      setTimeout(() => { cuJustDragged = false; }, 120);
+      cuDragBusy = false;
+      if (target !== from) {
+        const [moved] = state.cuDraft.splice(from, 1);
+        state.cuDraft.splice(target, 0, moved);
+        cuMarkDirty();
+      }
+      cuRenderList();
+    };
+
+    if (isTouch) timer = setTimeout(begin, 260);   // มือถือ/ไอแพด: กดค้างประมาณ 0.26 วินาที
+    document.addEventListener('pointermove', onMove, { passive: false });
+    document.addEventListener('pointerup', onUp);
+    document.addEventListener('pointercancel', onUp);
+    document.addEventListener('touchmove', onTouchMove, { passive: false });
+  });
+}
+
+// วาดรายการแบบกะทัดรัด (แทนฟังก์ชันเดิม)
 function cuRenderList() {
   const wrap = document.getElementById('cuRows');
   if (!wrap) return;
@@ -13543,36 +13685,25 @@ function cuRenderList() {
 
   wrap.innerHTML = d.length ? d.map((c, i) => {
     const count = c.original ? state.assets.filter(a => a['หมวดหมู่'] === c.original).length : 0;
-    return `<div class="cu-item" data-i="${i}" role="button" tabindex="0" title="แตะเพื่อแก้ไข">
+    return `<div class="cu-item" data-i="${i}" role="button" tabindex="0" title="แตะเพื่อแก้ไข · กดค้างแล้วลากเพื่อสลับลำดับ">
       <span class="cu-no">${i + 1}</span>
       <span class="cu-item-ico">${ICONS[c.icon] || ICONS.other}</span>
       <span class="cu-item-body">
         <span class="cu-item-name">${escapeHtml(c.name || '(ยังไม่ตั้งชื่อ)')}</span>
         <span class="cu-item-sub">หน่วยนับ: ${escapeHtml(c.unit || '-')} · ${count} รายการ</span>
       </span>
-      <span class="cu-item-actions">
-        <button type="button" class="cu-btn cu-up" data-i="${i}" title="เลื่อนขึ้น" aria-label="เลื่อนขึ้น" ${i === 0 ? 'disabled' : ''}>${CU_ICON_UP}</button>
-        <button type="button" class="cu-btn cu-down" data-i="${i}" title="เลื่อนลง" aria-label="เลื่อนลง" ${i === d.length - 1 ? 'disabled' : ''}>${CU_ICON_DOWN}</button>
-      </span>
+      <span class="cu-grip" aria-label="กดค้างแล้วลากเพื่อสลับลำดับ">${CU_GRIP_SVG}</span>
     </div>`;
   }).join('') : `<div class="hint">ยังไม่มีหมวดหมู่ — กด "+ เพิ่มหมวดหมู่ใหม่" ด้านล่าง</div>`;
 
-  // กดแถว = เปิด modal แก้ไข
   wrap.querySelectorAll('.cu-item').forEach(row => {
-    const open = () => cuOpenModal(Number(row.dataset.i));
+    const open = () => {
+      if (cuJustDragged) return;            // เพิ่งลากเสร็จ ไม่ต้องเปิด modal
+      cuOpenModal(Number(row.dataset.i));
+    };
     row.onclick = open;
     row.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } };
-  });
-  // ปุ่มเลื่อนขึ้น/ลง (ไม่ให้เปิด modal)
-  wrap.querySelectorAll('.cu-up').forEach(b => b.onclick = e => {
-    e.stopPropagation();
-    const i = Number(b.dataset.i);
-    if (i > 0) { [d[i - 1], d[i]] = [d[i], d[i - 1]]; cuMarkDirty(); cuRenderList(); }
-  });
-  wrap.querySelectorAll('.cu-down').forEach(b => b.onclick = e => {
-    e.stopPropagation();
-    const i = Number(b.dataset.i);
-    if (i < d.length - 1) { [d[i + 1], d[i]] = [d[i], d[i + 1]]; cuMarkDirty(); cuRenderList(); }
+    cuBindDragRow(row, wrap);
   });
 
   // แถบเตือน "ยังไม่ได้บันทึก"
@@ -13816,7 +13947,7 @@ function renderSettings() {
     <div class="settings-panel" data-panel="units" style="display:${state.settingsTab==='units'?'block':'none'};">
       <div class="section-title" style="margin-top:6px; font-size:14px;">หมวดหมู่ & หน่วยนับครุภัณฑ์</div>
       <div class="glass" style="padding:16px;">
-        <div class="hint" style="margin-top:0;">แตะที่หมวดหมู่เพื่อแก้ไขชื่อ หน่วยนับ และไอคอน — แก้ชื่อหมวดหมู่ตรงนี้ได้เลย ระบบจะปรับชื่อหมวดหมู่ในครุภัณฑ์ที่มีอยู่แล้วให้ตรงกันอัตโนมัติเมื่อกดบันทึก</div>
+        <div class="hint" style="margin-top:0;">แตะที่หมวดหมู่เพื่อแก้ไขชื่อ หน่วยนับ และไอคอน — แก้ชื่อหมวดหมู่ตรงนี้ได้เลย ระบบจะปรับชื่อหมวดหมู่ในครุภัณฑ์ที่มีอยู่แล้วให้ตรงกันอัตโนมัติเมื่อกดบันทึก - กดค้างที่แถว (หรือไอคอน ⋮⋮) แล้วลากเพื่อสลับลำดับ</div>
         <div id="cuDirty" class="cu-dirty" style="display:none;">
           <span>มีการแก้ไขที่ยังไม่ได้บันทึก</span>
           <span class="link-btn" id="cuUndo">ย้อนกลับ</span>
