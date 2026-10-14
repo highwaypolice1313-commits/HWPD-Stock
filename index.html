@@ -6245,6 +6245,10 @@ body:has(#view-monthly .pc-wrap) .toast.show{
 .audit-menu-item.danger .audit-menu-txt b{color:var(--bad)}
 .audit-menu-item.danger:hover:not(:disabled){border-color:var(--bad);background:var(--bad-wash)}
 </style>
+
+<style id="audit-bottom-tools">
+.audit-bottom-tools{width:100%;height:50px;margin-top:14px;border-radius:16px;font-size:14px;font-weight:600}
+</style>
    
 </head>
    
@@ -13390,10 +13394,13 @@ function drawAuditView() {
     <div id="auditList">
       ${list.length ? list.map(auditRow).join('') : emptyState(emptyMsg)}
     </div>
+
+    <button type="button" class="btn btn-ghost audit-bottom-tools" id="btnAuditToolsBottom">เครื่องมือตรวจนับ</button>
   `;
 
   wireViewToggle(drawAuditView, '#view-audit', 'auditMode');
   wireAuditHeader(kinds);
+  document.getElementById('btnAuditToolsBottom').onclick = openAuditToolsSheet;
 
   el.querySelectorAll('[data-aview]').forEach(b => b.onclick = () => {
     state.auditView = b.dataset.aview;
