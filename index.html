@@ -6310,6 +6310,15 @@ Object.assign(ICONS, {
   ac:       _ic('<rect x="2.500" y="5" width="15" height="6" rx="1.500"/><path d="M5 8h10M6 14l-1 3M10 14v3M14 14l1 3"/>'),
   fridge:   _ic('<rect x="5" y="2.500" width="10" height="15" rx="1.500"/><path d="M5 8.500h10M7.500 5v1.500M7.500 11v2.500"/>'),
   star:     _ic('<path d="M10 2.500l2.300 4.800 5.200.7-3.800 3.600.9 5.200L10 14.300l-4.600 2.500.9-5.200L2.500 8l5.200-.7L10 2.500z"/>')
+
+   // กล้องติดตัวเจ้าหน้าที่ (bodycam): ตัวกล้องสี่เหลี่ยมมีเลนส์ + ไฟบันทึก + คลิปหนีบด้านล่าง
+  bodycam:   _ic('<rect x="4.5" y="3.5" width="11" height="10" rx="2"/><circle cx="10" cy="8.5" r="2.6"/><circle cx="13" cy="5.5" r=".6" fill="currentColor"/><path d="M8 13.5v2.5a1 1 0 001 1h2a1 1 0 001-1v-2.5"/>'),
+  // กล้องติดหน้ารถ (dashcam): ตัวกล้องมีเลนส์ ติดกับแขนยึดกระจก
+  dashcam:   _ic('<rect x="3" y="6" width="14" height="8" rx="2"/><circle cx="10" cy="10" r="2.3"/><path d="M10 6V3.5M7.5 3.5h5"/>'),
+  // กล้องแอคชั่น (GoPro): กล่องเหลี่ยมเลนส์ใหญ่
+  actioncam: _ic('<rect x="3" y="5" width="14" height="10" rx="2"/><circle cx="10" cy="10" r="3.2"/><circle cx="10" cy="10" r="1.200"/><path d="M14.500 7.500h.5"/>'),
+  // กล้องวิดีโอ (camcorder)
+  videocam:  _ic('<rect x="2.500" y="5.500" width="10" height="9" rx="1.500"/><path d="M12.500 9l5-2.500v7L12.500 11"/>')
 });
    /* ใส่ width/height ให้ทุกไอคอน — CSS ที่กำหนดขนาดไว้แล้วยังชนะตามเดิม
    แต่ถ้าที่ไหนไม่มี CSS ก็จะไม่ขยายเต็มจออีก */
@@ -6444,7 +6453,7 @@ const ICON_CHOICES = [
   'shield','helmet','vest','boot','backpack','glasses','umbrella','flashlight','binoculars','whistle',
   'cone','barrier','siren','extinguisher','firstaid','megaphone','flag','lock','key',
   'truck','motorcycle','bicycle','tire','fuel','drone',
-  'phone','laptop','tv','mic','headset','speaker','cctv','wifi','server','battery','plug','bulb',
+  'phone','laptop','tv','mic','headset','speaker','cctv','wifi','server','battery','plug','bulb','bodycam','dashcam','actioncam','videocam',
   'toolbox','gear','scissors','ruler','box','folder','clipboard','book','tag','cart','scale','chair','ac','fridge','star','print'
 ];
 
@@ -6459,7 +6468,7 @@ const ICON_LABELS = {
   megaphone:'โทรโข่ง', flag:'ธง', lock:'กุญแจล็อก', key:'ลูกกุญแจ',
   truck:'รถบรรทุก', motorcycle:'จักรยานยนต์', bicycle:'จักรยาน', tire:'ยาง/ล้อ', fuel:'น้ำมัน', drone:'โดรน',
   phone:'โทรศัพท์', laptop:'โน้ตบุ๊ก', tv:'โทรทัศน์/จอ', mic:'ไมโครโฟน', headset:'หูฟัง', speaker:'ลำโพง',
-  cctv:'กล้องวงจรปิด', wifi:'เครือข่าย', server:'เซิร์ฟเวอร์', battery:'แบตเตอรี่', plug:'ปลั๊กไฟ', bulb:'หลอดไฟ',
+  cctv:'กล้องวงจรปิด', wifi:'เครือข่าย',  bodycam:'กล้องติดตัว (Bodycam)', dashcam:'กล้องติดรถ', actioncam:'กล้องแอคชั่น', videocam:'กล้องวิดีโอ', server:'เซิร์ฟเวอร์', battery:'แบตเตอรี่', plug:'ปลั๊กไฟ', bulb:'หลอดไฟ',
   toolbox:'กล่องเครื่องมือ', gear:'เฟือง/เครื่องจักร', scissors:'กรรไกร', ruler:'ไม้บรรทัด', box:'กล่องพัสดุ',
   folder:'แฟ้ม', clipboard:'คลิปบอร์ด', book:'หนังสือ', tag:'ป้าย', cart:'รถเข็น', scale:'ตาชั่ง',
   chair:'เก้าอี้', ac:'เครื่องปรับอากาศ', fridge:'ตู้เย็น', star:'ดาว', print:'เครื่องพิมพ์'
