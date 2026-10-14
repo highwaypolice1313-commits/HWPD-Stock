@@ -6318,7 +6318,13 @@ Object.assign(ICONS, {
   // กล้องแอคชั่น (GoPro): กล่องเหลี่ยมเลนส์ใหญ่
   actioncam: _ic('<rect x="3" y="5" width="14" height="10" rx="2"/><circle cx="10" cy="10" r="3.2"/><circle cx="10" cy="10" r="1.200"/><path d="M14.500 7.500h.5"/>'),
   // กล้องวิดีโอ (camcorder)
-  videocam:  _ic('<rect x="2.500" y="5.500" width="10" height="9" rx="1.500"/><path d="M12.500 9l5-2.500v7L12.500 11"/>')
+  videocam:  _ic('<rect x="2.500" y="5.500" width="10" height="9" rx="1.500"/><path d="M12.500 9l5-2.500v7L12.500 11"/>'),
+  // ปืนพก (มองด้านข้าง): ตัวสไลด์ + ด้ามจับ + โกร่งไกปืน +ศูนย์หน้า
+  pistol: _ic('<path d="M2.5 6h13.5a1 1 0 011 1v2.5H8.8L7.8 11H2.5V6z"/><path d="M10.2 9.5l-1.3 6.8a.9.9 0 00.9 1.1h2.3a.9.9 0 00.9-.7L14.6 9.5"/><path d="M7.8 11c0 1.7 1 2.4 2.4 2.4"/><path d="M4 6V4.6h1.6V6"/>'),
+     // ปืนยาว (มองด้านข้าง): พานท้าย + ตัวปืน + ลำกล้อง + ซองกระสุน + โกร่งไก
+  rifle: _ic('<path d="M2 8.2h4V11L4.7 14.6H2.2z"/><path d="M6 8.2h7.2V11H6z"/><path d="M13.2 9.6h5M16.6 9.6V8.1"/><path d="M8.6 11l.7 3.8h2.2L11 11"/><path d="M6.8 11c0 1.2.6 1.8 1.6 1.8"/><path d="M7.4 8.2V7h2.6v1.2"/>'),
+  // อาวุธหนัก (ปืนกล): ตัวรับกระสุนใหญ่ + กล่องกระสุน + หูหิ้ว + ขาทราย
+  heavygun: _ic('<path d="M2 8.4h3v3.2H2z"/><path d="M5 7.6h6.6v4.2H5z"/><path d="M11.6 8.6h3.6v2.2h-3.6z"/><path d="M15.2 9.7h3.4M18.6 8.6v2.2"/><path d="M6.6 7.6V6h3.6v1.6"/><rect x="7" y="11.8" width="3.8" height="3.2" rx=".6"/><path d="M14 10.8l-2 5.4M14 10.8l2 5.4M11.2 16.2h1.6M15.2 16.2h1.6"/>')
 });
    /* ใส่ width/height ให้ทุกไอคอน — CSS ที่กำหนดขนาดไว้แล้วยังชนะตามเดิม
    แต่ถ้าที่ไหนไม่มี CSS ก็จะไม่ขยายเต็มจออีก */
@@ -6448,7 +6454,7 @@ function unitDatalistOptions() {
 // [ปรับตรงนี้] ลำดับในอาร์เรย์ = ลำดับที่แสดง / key ต้องมีอยู่ใน ICONS
 const ICON_CHOICES = [
   // ชุดเดิม
-  'gun','vehicle','radio','computer','uniform','other','wrench','swap','user','clock','inbox','checklist','info','warn','log','download','camera','scan',
+  'gun','pistol','rifle','heavygun','vehicle','radio','computer','uniform','other','wrench','swap','user','clock','inbox','checklist','info','warn','log','download','camera','scan',
   // ชุดใหม่
   'shield','helmet','vest','boot','backpack','glasses','umbrella','flashlight','binoculars','whistle',
   'cone','barrier','siren','extinguisher','firstaid','megaphone','flag','lock','key',
@@ -6459,7 +6465,7 @@ const ICON_CHOICES = [
 
 // ชื่อภาษาไทยของไอคอน (แสดงตอนเอาเมาส์ชี้/กดค้าง) — key ที่ไม่มีในนี้จะแสดงชื่อ key แทน
 const ICON_LABELS = {
-  gun:'อาวุธ', vehicle:'รถยนต์', radio:'วิทยุสื่อสาร', computer:'คอมพิวเตอร์', uniform:'เครื่องแบบ', other:'ทั่วไป',
+  gun:'อาวุธ', pistol:'ปืนพก', rifle:'ปืนยาว', heavygun:'อาวุธหนัก', vehicle:'รถยนต์', radio:'วิทยุสื่อสาร', computer:'คอมพิวเตอร์', uniform:'เครื่องแบบ', other:'ทั่วไป',
   wrench:'ประแจ/ซ่อม', swap:'ยืม-คืน', user:'บุคคล', clock:'เวลา', inbox:'กล่องรับ', checklist:'รายการตรวจ',
   info:'ข้อมูล', warn:'เตือน', log:'เอกสาร', download:'ดาวน์โหลด', camera:'กล้อง', scan:'สแกน',
   shield:'โล่/เกราะ', helmet:'หมวกนิรภัย', vest:'เสื้อเกราะ/สะท้อนแสง', boot:'รองเท้าบู๊ต', backpack:'เป้',
