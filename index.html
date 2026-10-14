@@ -8473,7 +8473,11 @@ function openAssetDetail(id) {
     <div class="detail-row"><span>หมวดหมู่</span><span>${escapeHtml(a['หมวดหมู่'])}</span></div>
     <div class="detail-row"><span>ยี่ห้อ/รุ่น</span><span>${escapeHtml(a['ยี่ห้อ/รุ่น']) || '-'}</span></div>
     <div class="detail-row"><span>หมายเลขเครื่อง</span><span>${escapeHtml(a['หมายเลขเครื่อง']) || '-'}</span></div>
-    ${a['หมวดหมู่'] === 'ยานพาหนะ' ? `<div class="detail-row"><span>ขนาดยาง</span><span>${escapeHtml(a['ขนาดยาง']) || '-'}</span></div>` : ''}
+   ${a['หมวดหมู่'] === 'ยานพาหนะ' ? `
+  <div class="detail-row"><span>ทะเบียนรถ</span><span>${escapeHtml(a['ทะเบียนรถ']) || '-'}</span></div>
+  <div class="detail-row"><span>หมายเลขตัวถัง/แชสซี่</span><span>${escapeHtml(a['หมายเลขตัวถัง']) || '-'}</span></div>
+  <div class="detail-row"><span>หมายเลขเครื่องยนต์</span><span>${escapeHtml(a['หมายเลขเครื่องยนต์']) || '-'}</span></div>
+  <div class="detail-row"><span>ขนาดยาง</span><span>${escapeHtml(a['ขนาดยาง']) || '-'}</span></div>` : ''}
     <div class="detail-row"><span>วันที่รับเข้า</span><span>${systemDate(a['วันที่รับเข้า'])}</span></div>
     <div class="detail-row"><span>มูลค่า</span><span>${a['มูลค่า(บาท)'] ? Number(a['มูลค่า(บาท)']).toLocaleString() + ' บาท' : '-'}</span></div>
     <div class="detail-row"><span>สถานะ</span><span class="status-badge ${statusClass(a['สถานะ'])}">${escapeHtml(a['สถานะ'])}</span></div>
@@ -12874,7 +12878,7 @@ function openBulkAuditModal(action = 'set') {
       <td style="border:1px solid #000; padding:2px 4px;">${toThaiNumber(escapeHtml(a['รหัสครุภัณฑ์']))}</td>
       <td style="border:1px solid #000; padding:2px 4px;">${toThaiNumber(escapeHtml(a['ทะเบียนรถ'])) || ''}</td>
       <td style="border:1px solid #000; padding:2px 4px;">${toThaiNumber(escapeHtml(a['หมายเลขตัวถัง'])) || ''}</td>
-      <td style="border:1px solid #000; padding:2px 4px;">${toThaiNumber(escapeHtml(a['หมายเลขเครื่อง'])) || ''}</td>
+      <td style="border:1px solid #000; padding:2px 4px;">${toThaiNumber(escapeHtml(a['หมายเลขเครื่องยนต์'])) || ''}</td>
       <td style="border:1px solid #000; text-align:center; padding:2px;">${escapeHtml(rec['ผลตรวจ(A/D)']) || ''}</td>
       ${[5, 4, 3, 2, 1, 0].map(scoreCell).join('')}
       <td style="border:1px solid #000; text-align:center; padding:2px;">${thaiDate(rec['วันที่ใช้งานครั้งสุดท้าย'])}</td>
