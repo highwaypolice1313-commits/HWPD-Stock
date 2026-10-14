@@ -6323,6 +6323,31 @@ html, body{
     touch-action: manipulation;
   }
 }
+
+/* ===== ปุ่มในหน้ารายละเอียดครุภัณฑ์: เต็มความกว้าง ===== */
+.asset-actions{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:10px;
+  margin-top:18px;
+  width:100%;
+}
+.asset-actions .btn{
+  width:100%;
+  min-height:52px;
+  margin:0;
+  flex:none;
+}
+/* ปุ่มลบให้เต็มแถวเสมอ เพื่อแยกออกจากปุ่มแก้ไข */
+.asset-actions .btn-danger{ grid-column:1 / -1; }
+
+/* ขยาย modal รายละเอียดครุภัณฑ์บน iPad แนวนอนและคอม */
+@media (min-width:900px){
+  .sheet.asset-detail-sheet{
+    width:min(880px, calc(100vw - 64px));
+    max-width:880px;
+  }
+}      
 </style>
    
 </head>
@@ -8920,8 +8945,7 @@ function openAssetDetail(id, opts = {}) {
     <div class="detail-row"><span>หมายเหตุ</span><span>${escapeHtml(a['หมายเหตุ']) || '-'}</span></div>
     ${a['หมวดหมู่'] === GUN_CATEGORY ? componentsSection(id) : ''}
     ${assetTimelineHtml(a, id)}
-    <div class="btn-row">
-    
+
     ${opts.auditYear ? `
     <div class="audit-detail-actions">
       <div class="memo-section-label" style="margin-top:0;">ตรวจนับประจำปี พ.ศ. ${opts.auditYear + 543}</div>
@@ -8931,16 +8955,16 @@ function openAssetDetail(id, opts = {}) {
         <button class="audit-btn bad" data-ad-status="สูญหาย">สูญหาย</button>
       </div>
     </div>` : `
-    <div class="btn-row">
+    <div class="asset-actions">
       <button class="btn btn-ghost" id="btnShowQr">แสดง QR โค้ด</button>
       <button class="btn btn-ghost" id="btnPrintAssetForm">${isAssetBorrowable(a) ? 'ขอยืมครุภัณฑ์' : 'ครุภัณฑ์นี้ยังไม่พร้อมให้ยืม'}</button>
-    </div>
-    ${isAdmin() ? `<div class="btn-row">
+      ${isAdmin() ? `
       <button class="btn btn-ghost" id="btnQuickStatus">เปลี่ยนสถานะด่วน</button>
       <button class="btn btn-ghost" id="btnEditAsset">แก้ไข</button>
-      <button class="btn btn-danger" id="btnDeleteAsset">ลบ</button>
-    </div>` : ''}`}
-  `);
+      <button class="btn btn-danger" id="btnDeleteAsset">ลบ</button>` : ''}
+    </div>`}
+  `, 'asset-detail-sheet');
+   
   const qrBtn = document.getElementById('btnShowQr');
   if (qrBtn) qrBtn.onclick = () => openQrView(a);
    
