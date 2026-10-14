@@ -6254,6 +6254,25 @@ body:has(#view-monthly .pc-wrap) .toast.show{
 .audit-filter{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .audit-filter .audit-tools-icon{margin-left:auto}
 </style>
+
+<style id="audit-tool-group">
+.audit-toolbar{display:flex;justify-content:flex-end;margin-bottom:12px}
+.audit-tool-group{display:inline-flex;gap:6px;margin-left:auto}
+.audit-tool-btn{
+  height:40px;padding:0 14px;border-radius:12px;
+  border:1px solid var(--panel-line);background:var(--panel);color:var(--navy);
+  display:inline-flex;align-items:center;gap:8px;
+  font:inherit;font-size:13px;font-weight:600;cursor:pointer;
+  transition:border-color .15s ease,color .15s ease;
+}
+.audit-tool-btn svg{width:18px;height:18px;flex:none}
+.audit-tool-btn:hover{border-color:var(--gold-line);color:var(--gold-deep)}
+.audit-tool-btn:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+@media (max-width:520px){
+  .audit-tool-btn{width:40px;padding:0;justify-content:center}
+  .audit-tool-btn span{display:none}
+}
+</style>
    
 </head>
    
@@ -13228,14 +13247,17 @@ const AUDIT_ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentCo
 const AUDIT_ICON_MINUS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><line x1="8" y1="12" x2="16" y2="12"/></svg>';
 const AUDIT_ICON_TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 13h10l1-13"/><path d="M9 7V4h6v3"/></svg>';
 
+function auditToolGroupHtml() {
+  return `<div class="audit-tool-group">
+    <button type="button" class="audit-tool-btn" id="btnAuditPrint" title="พิมพ์รายงาน" aria-label="พิมพ์รายงาน">${AUDIT_ICON_PRINT}<span>พิมพ์</span></button>
+    <button type="button" class="audit-tool-btn" id="btnAuditTools" title="เครื่องมือตรวจนับ" aria-label="เครื่องมือตรวจนับ">${AUDIT_ICON_TOOLS}<span>เครื่องมือ</span></button>
+  </div>`;
+}
+
 function auditHeaderHtml(mode, yearSel) {
   return `<div class="section-title">ตรวจนับประจำปี
     <span class="section-actions">
       ${viewToggleHtml('audit', mode)}
-      <span class="audit-head-actions">
-        <button type="button" class="audit-tools-icon" id="btnAuditPrint" title="พิมพ์รายงาน" aria-label="พิมพ์รายงาน">${AUDIT_ICON_PRINT}</button>
-        <button type="button" class="audit-tools-icon" id="btnAuditTools" title="เครื่องมือตรวจนับ" aria-label="เครื่องมือตรวจนับ">${AUDIT_ICON_TOOLS}</button>
-      </span>
       ${yearSel}
     </span>
   </div>`;
@@ -13243,8 +13265,7 @@ function auditHeaderHtml(mode, yearSel) {
 
 function wireAuditHeader(kinds) {
   document.getElementById('btnAuditPrint').onclick = () => openAuditPrintSheet(kinds);
-  const toolsBtns = document.querySelectorAll('#btnAuditTools, #btnAuditToolsRow');
-  toolsBtns.forEach(b => b.onclick = openAuditToolsSheet);
+  document.getElementById('btnAuditTools').onclick = openAuditToolsSheet;
 }
 
 /* เรียก fn ครั้งเดียวเมื่อ modal ทุกใบปิดแล้ว ใช้เปิด modal เครื่องมือกลับมา */
@@ -13357,6 +13378,7 @@ function drawAuditView() {
   if (isCard) {
     el.innerHTML = `
       ${auditHeaderHtml('grid', yearSel)}
+      <div class="audit-toolbar">${auditToolGroupHtml()}</div>
       <div class="ac-progress">
         <div class="ac-progress-txt"><b>${checked}</b> / ${total}</div>
         <div class="audit-progress-track"><div class="audit-progress-fill" style="width:${pct}%;"></div></div>
@@ -13405,7 +13427,7 @@ function drawAuditView() {
         <button type="button" data-aview="done" class="${state.auditView === 'done' ? 'active' : ''}">ตรวจแล้ว</button>
         <button type="button" data-aview="all" class="${state.auditView === 'all' ? 'active' : ''}">ทั้งหมด</button>
       </div>
-      <button type="button" class="audit-tools-icon" id="btnAuditToolsRow" title="เครื่องมือตรวจนับ" aria-label="เครื่องมือตรวจนับ">${AUDIT_ICON_TOOLS}</button>
+      ${auditToolGroupHtml()}
     </div>
     ${auditCatChipsHtml(all)}
 
