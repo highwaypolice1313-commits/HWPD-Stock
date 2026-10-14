@@ -11989,12 +11989,13 @@ function drawMemos() {
   if (drawMemos._ro) { drawMemos._ro.disconnect(); drawMemos._ro = null; }
 
   el.innerHTML = `
-    <div class="memo-kpi-wrap">${memoKpiHtml(all)}</div>
+    <div class="memo-kpi-wrap"></div>
 
     <div class="section-title">
       เอกสารใบเบิก-ยืม <small id="memoCountLabel">${list.length} / ${all.length} ฉบับ</small>
       <span class="section-actions">${viewToggleHtml('memos', state.memosView)}</span>
     </div>
+    ${memoKpiHtml(all)}
     <div class="hint" style="margin-top:0;">${isAdmin() ? 'แตะที่เอกสารเพื่อเปิดดู/แก้ไข · ปุ่มลัดมุมการ์ดใช้พิมพ์หรือคัดลอกได้เลย' : 'แตะที่เอกสารเพื่อเปิดดูหรือพิมพ์ได้เท่านั้น'}</div>
 
     <div class="search-row">
