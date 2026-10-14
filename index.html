@@ -6323,6 +6323,41 @@ html, body{
     touch-action: manipulation;
   }
 }
+
+/* ===== ปุ่มในหน้ารายละเอียดครุภัณฑ์: เต็มความกว้าง ===== */
+.sheet .asset-actions{
+  display:grid !important;
+  grid-template-columns:repeat(4, minmax(0,1fr)) !important;
+  gap:10px !important;
+  margin-top:18px !important;
+  width:100% !important;
+}
+.sheet .asset-actions > .btn{
+  width:100% !important;
+  min-width:0 !important;
+  min-height:52px !important;
+  margin:0 !important;
+  flex:none !important;
+}
+/* ปุ่มลบให้เต็มแถวเสมอ */
+.sheet .asset-actions > .btn-danger{
+  grid-column:1 / -1 !important;
+}
+
+/* บนจอแคบ (มือถือ) ให้เหลือ 2 คอลัมน์ */
+@media (max-width:640px){
+  .sheet .asset-actions{
+    grid-template-columns:repeat(2, minmax(0,1fr)) !important;
+  }
+}
+
+/* ขยาย modal บน iPad/คอม */
+@media (min-width:900px){
+  .sheet.asset-detail-sheet{
+    width:min(880px, calc(100vw - 64px)) !important;
+    max-width:880px !important;
+  }
+}      
 </style>
    
 </head>
@@ -8920,7 +8955,6 @@ function openAssetDetail(id, opts = {}) {
     <div class="detail-row"><span>หมายเหตุ</span><span>${escapeHtml(a['หมายเหตุ']) || '-'}</span></div>
     ${a['หมวดหมู่'] === GUN_CATEGORY ? componentsSection(id) : ''}
     ${assetTimelineHtml(a, id)}
-    <div class="btn-row">
     
     ${opts.auditYear ? `
     <div class="audit-detail-actions">
@@ -8931,16 +8965,16 @@ function openAssetDetail(id, opts = {}) {
         <button class="audit-btn bad" data-ad-status="สูญหาย">สูญหาย</button>
       </div>
     </div>` : `
-    <div class="btn-row">
+    <div class="asset-actions">
       <button class="btn btn-ghost" id="btnShowQr">แสดง QR โค้ด</button>
       <button class="btn btn-ghost" id="btnPrintAssetForm">${isAssetBorrowable(a) ? 'ขอยืมครุภัณฑ์' : 'ครุภัณฑ์นี้ยังไม่พร้อมให้ยืม'}</button>
-    </div>
-    ${isAdmin() ? `<div class="btn-row">
+      ${isAdmin() ? `
       <button class="btn btn-ghost" id="btnQuickStatus">เปลี่ยนสถานะด่วน</button>
       <button class="btn btn-ghost" id="btnEditAsset">แก้ไข</button>
-      <button class="btn btn-danger" id="btnDeleteAsset">ลบ</button>
-    </div>` : ''}`}
-  `);
+      <button class="btn btn-danger" id="btnDeleteAsset">ลบ</button>` : ''}
+    </div>`}
+  `, 'asset-detail-sheet'); 
+   
   const qrBtn = document.getElementById('btnShowQr');
   if (qrBtn) qrBtn.onclick = () => openQrView(a);
    
