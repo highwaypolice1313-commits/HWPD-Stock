@@ -6398,9 +6398,10 @@ html, body{
 .memo-search{position:relative;flex:1 1 auto;min-width:0}
 .memo-search svg{position:absolute;left:15px;top:50%;transform:translateY(-50%);width:17px;height:17px;color:var(--ink-faint);pointer-events:none}
 .memo-search .input{padding-left:42px;height:46px;border-radius:99px}
-.memo-sort-btn{flex:none;width:46px;height:46px;border-radius:99px;border:1px solid var(--panel-line);background:var(--panel);color:var(--navy);display:grid;place-items:center;cursor:pointer;box-shadow:var(--shadow-sm);transition:transform .15s ease,border-color .15s ease}
-.memo-sort-btn:hover{border-color:var(--gold-line);transform:translateY(-1px)}
-.memo-sort-btn svg{width:18px;height:18px}
+.memo-sort-chip{flex:none;height:46px;padding:0 14px;border-radius:99px;border:1px solid var(--panel-line);background:var(--panel);color:var(--ink);font:inherit;font-size:13px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;box-shadow:var(--shadow-sm);white-space:nowrap}
+.memo-sort-chip:active{transform:scale(.97)}
+.memo-sort-k{font-size:11px;color:var(--ink-faint)}
+.memo-sort-caret{font-size:10px;color:var(--ink-dim)}
 .memo-month-row{position:relative;display:flex;gap:7px;overflow-x:auto;padding:2px 2px 10px;margin-bottom:4px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .memo-month-row::-webkit-scrollbar{display:none}
 .memo-month-chip{flex:none;padding:7px 14px;border-radius:99px;border:1px solid var(--panel-line);background:var(--panel);color:var(--ink-dim);font:inherit;font-size:12.5px;cursor:pointer;white-space:nowrap;transition:background .15s ease,color .15s ease}
@@ -12001,10 +12002,28 @@ const MEMO_SORT_LABEL = {
   date_asc: 'วันที่เก่าสุดก่อน',
   subject_asc: 'เรื่อง ก-ฮ'
 };
-function memoSortCycle() {
-  const order = ['date_desc', 'date_asc', 'subject_asc'];
-  const i = order.indexOf(state.memoSort);
-  state.memoSort = order[(i + 1) % order.length];
+function openMemoSortSheet() {
+  const opts = [
+    ['date_desc', 'วันที่ล่าสุดก่อน'],
+    ['date_asc', 'วันที่เก่าสุดก่อน'],
+    ['subject_asc', 'เรื่อง ก-ฮ']
+  ];
+  showSheet(`
+    <div class="sheet-title">เรียงลำดับเอกสาร</div>
+    <div class="ax-pills" style="flex-direction:column;align-items:stretch;gap:8px;">
+      ${opts.map(([v, t]) => `
+        <button type="button" class="ax-pill ${state.memoSort === v ? 'active' : ''}" data-ms="${v}" style="justify-content:space-between;width:100%;">
+          ${t}${state.memoSort === v ? ' ✓' : ''}
+        </button>`).join('')}
+    </div>
+    <div class="btn-row"><button class="btn btn-ghost" id="msClose">ปิด</button></div>
+  `);
+  document.querySelectorAll('[data-ms]').forEach(b => b.onclick = () => {
+    state.memoSort = b.dataset.ms;
+    closeSheet();
+    drawMemos();
+  });
+  document.getElementById('msClose').onclick = closeSheet;
 }
 
 /* ---- ป้ายชิปเดือนแบบสั้น เช่น "มิ.ย. 69" ---- */
@@ -12182,7 +12201,9 @@ function drawMemos() {
         ${searchSvg}
         <input class="input" id="memoSearchInput" placeholder="ค้นหาเรื่อง / ผู้ขอเบิก / เลขที่หนังสือ..." value="${escapeHtml(state.memoSearch)}" autocomplete="off">
       </div>
-      <button type="button" class="memo-sort-btn" id="memoSortBtn" title="เรียง: ${sortLabel}" aria-label="เรียง: ${sortLabel}">${sortSvg}</button>
+      <button type="button" class="memo-sort-chip" id="memoSortBtn" aria-label="เรียงลำดับ: ${sortLabel}">
+  <span class="memo-sort-k">เรียง</span>${sortLabel}<span class="memo-sort-caret">▾</span>
+</button>
     </div>
 
     <div class="memo-month-row" id="memoMonthRow">
@@ -12219,8 +12240,8 @@ function drawMemos() {
   }, 220);
   searchEl.oninput = applySearch;
 
-  // เรียงลำดับ (ปุ่มเดียววนรอบ)
-  document.getElementById('memoSortBtn').onclick = () => { memoSortCycle(); drawMemos(); };
+  // เรียงลำดับ 
+  document.getElementById('memoSortBtn').onclick = openMemoSortSheet;
 
   // ชิปเดือน + เลื่อนให้ชิปที่เลือกอยู่กลางแถว
   el.querySelectorAll('[data-mm]').forEach(b => b.onclick = () => { state.memoMonth = b.dataset.mm; drawMemos(); });
