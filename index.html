@@ -6264,10 +6264,10 @@ body:has(#view-monthly .pc-wrap) .toast.show{
 .audit-action-btn:focus-visible{outline:2px solid var(--gold,#b8893a);outline-offset:2px}
 #auditCardHost{margin-top:0}
 .audit-actions + #auditCardHost{margin-top:10px}
-@media (max-width:520px){
-  .audit-filter{gap:6px}
-  .audit-actions{width:100%;margin-left:0;justify-content:stretch}
-  .audit-action-btn{flex:1 1 0;padding:0 8px;font-size:12.5px}
+/* มือถือ: ซ่อนแถบ 3 ปุ่ม ไปใช้ได้จากเมนู "เครื่องมือตรวจนับ" ที่หัวข้อแทน */
+@media (max-width:640px){
+  .audit-actions{display:none !important}
+  .audit-filter{justify-content:flex-start}
 }
 </style>
 </head>
