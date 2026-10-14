@@ -9203,6 +9203,7 @@ function openAssetForm(a) {
   <div class="field"><label>ขนาดยาง</label><input class="input" id="f_tireSize" placeholder="เช่น 265/65R17" value="${a ? escapeHtml(a['ขนาดยาง'])||'' : ''}"></div>
   <div class="field"><label>ทะเบียนรถ</label><input class="input" id="f_licensePlate" value="${a ? escapeHtml(a['ทะเบียนรถ'])||'' : ''}"></div>
   <div class="field"><label>หมายเลขตัวถัง/แชสซี่</label><input class="input" id="f_chassisNo" value="${a ? escapeHtml(a['หมายเลขตัวถัง'])||'' : ''}"></div>
+  <div class="field"><label>หมายเลขเครื่องยนต์</label><input class="input" id="f_engineNo" value="${a ? escapeHtml(a['หมายเลขเครื่องยนต์'])||'' : ''}"></div>
 </div>
 
     <div class="field"><label>วันที่รับเข้า</label><input class="input" type="date" id="f_date" value="${a && a['วันที่รับเข้า'] ? isoDate(a['วันที่รับเข้า']) : isoDate()}"></div>
@@ -9221,12 +9222,12 @@ document.getElementById('f_cat').onchange = toggleVehicleFields;
 toggleVehicleFields();
   document.getElementById('btnCancel').onclick = closeSheet;
   document.getElementById('btnSave').onclick = async () => {
-    const payload = {
+const payload = {
   id: a ? a['รหัสครุภัณฑ์'] : undefined,
   name: val('f_name'), category: val('f_cat'), brand: val('f_brand'), serial: val('f_serial'),
   receivedDate: val('f_date'), value: val('f_value'), status: val('f_status'), holder: val('f_holder'), unit: val('f_unit'),
   renewalDue: val('f_renewal'), note: val('f_note'),
-  licensePlate: val('f_licensePlate'), chassisNo: val('f_chassisNo'), tireSize: val('f_tireSize')
+  licensePlate: val('f_licensePlate'), chassisNo: val('f_chassisNo'), engineNo: val('f_engineNo'), tireSize: val('f_tireSize')
 };
     if (!payload.name) { toast('กรุณากรอกชื่อครุภัณฑ์'); return; }
     const saveBtn = document.getElementById('btnSave'); if (saveBtn.disabled) return; setButtonBusy(saveBtn, true); setLoading(true, 'กำลังบันทึกข้อมูล...');
