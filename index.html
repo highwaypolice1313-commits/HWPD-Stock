@@ -6255,21 +6255,6 @@ body:has(#view-monthly .pc-wrap) .toast.show{
 .audit-filter .audit-tools-icon{margin-left:auto}
 </style>
    
-<style id="audit-action-buttons">
-.audit-filter{justify-content:flex-start}
-.audit-actions{display:flex;flex-wrap:wrap;gap:6px;margin-left:auto;justify-content:flex-end}
-.audit-action-btn{height:38px;padding:0 14px;border-radius:12px;border:1px solid var(--panel-line,#e6e0d2);background:#fff;color:var(--navy,#17324f);font:inherit;font-size:13px;font-weight:600;white-space:nowrap;cursor:pointer;transition:background .15s}
-.audit-action-btn:hover{background:var(--panel-soft,#f7f4ec)}
-.audit-action-btn.danger{color:var(--bad,#b23a4d)}
-.audit-action-btn:focus-visible{outline:2px solid var(--gold,#b8893a);outline-offset:2px}
-#auditCardHost{margin-top:0}
-.audit-actions + #auditCardHost{margin-top:10px}
-/* มือถือ: ซ่อนแถบ 3 ปุ่ม ไปใช้ได้จากเมนู "เครื่องมือตรวจนับ" ที่หัวข้อแทน */
-@media (max-width:640px){
-  .audit-actions{display:none !important}
-  .audit-filter{justify-content:flex-start}
-}
-</style>
 </head>
    
 <body>
@@ -13243,23 +13228,6 @@ const AUDIT_ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentCo
 const AUDIT_ICON_MINUS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><line x1="8" y1="12" x2="16" y2="12"/></svg>';
 const AUDIT_ICON_TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 13h10l1-13"/><path d="M9 7V4h6v3"/></svg>';
 
-/* ปุ่มลัด 3 ปุ่ม: ตรวจหลายรายการ / ล้างผลบางรายการ / ล้างผลทั้งหมด */
-function auditActionsHtml() {
-  return `<div class="audit-actions">
-    <button type="button" class="audit-action-btn" id="btnAuditBulk" title="ตรวจหลายรายการพร้อมกัน">ตรวจหลายรายการ</button>
-    <button type="button" class="audit-action-btn" id="btnAuditClearSel" title="ล้างผลบางรายการ">ล้างบางรายการ</button>
-    <button type="button" class="audit-action-btn danger" id="btnAuditClearAll" title="ล้างผลทั้งหมด">ล้างทั้งหมด</button>
-  </div>`;
-}
-
-function wireAuditActions() {
-  const bulk = document.getElementById('btnAuditBulk');
-  if (!bulk) return;
-  bulk.onclick = () => openBulkAuditModal();
-  document.getElementById('btnAuditClearSel').onclick = () => openBulkAuditModal('clear');
-  document.getElementById('btnAuditClearAll').onclick = () => clearAllAuditResults();
-}
-
 function auditHeaderHtml(mode, yearSel) {
   return `<div class="section-title">ตรวจนับประจำปี
     <span class="section-actions">
@@ -13275,11 +13243,11 @@ function auditHeaderHtml(mode, yearSel) {
 
 function wireAuditHeader(kinds) {
   document.getElementById('btnAuditPrint').onclick = () => openAuditPrintSheet(kinds);
-  const toolsBtns = document.querySelectorAll('#btnAuditTools');
+  const toolsBtns = document.querySelectorAll('#btnAuditTools, #btnAuditToolsRow');
   toolsBtns.forEach(b => b.onclick = openAuditToolsSheet);
 }
 
-/* เรียก fn ครั้งเดียวเมื่อ modal ทุกใบปิดแล้ว ใช้เปิด modal เครื่องมือกลับมา */
+/* เรียก fn เมื่อ modal ย่อยที่เปิดขึ้นมาปิดแล้ว (รอให้มีการเปิดก่อน แล้วค่อยรอปิด) */
 function auditAfterSheetClosed(fn) {
   const root = document.getElementById('modalRoot');
   if (!root) return;
@@ -13288,7 +13256,7 @@ function auditAfterSheetClosed(fn) {
     if (root.querySelector('.overlay')) { seen = true; return; }
     if (seen) { obs.disconnect(); clearTimeout(guard); setTimeout(fn, 0); }
   });
-  // กันกรณีไม่มี modal ย่อยเปิดขึ้นมา (เช่น ไม่มีผลให้ล้าง) จะได้ไม่ค้าง observer ไว้
+  // ถ้าไม่มี modal ย่อยเปิดขึ้นมาเลย (เช่น ไม่มีผลให้ล้าง) ให้เลิกเฝ้าเอง จะได้ไม่เด้งเมนูผิดจังหวะ
   const guard = setTimeout(() => obs.disconnect(), 1500);
   obs.observe(root, { childList: true, subtree: true });
 }
@@ -13309,13 +13277,13 @@ function openAuditPrintSheet(kinds) {
     <div class="audit-menu">${items || '<div class="hint" style="margin:0;">ยังไม่มีรายการให้พิมพ์</div>'}</div>
     <div class="btn-row"><button class="btn btn-ghost" id="auditPrintClose">ปิด</button></div>
   `);
-  document.querySelectorAll('#modalRoot [data-print]').forEach(b => b.onclick = () => {
-    const k = kinds.find(x => x.key === b.dataset.print);
-    closeSheet();
-    if (!k) return;
-    k.run();                                             // เปิดรายงานย่อย
-    auditAfterSheetClosed(() => openAuditPrintSheet(kinds)); // ปิดแล้วกลับมาเมนูพิมพ์
-  });
+document.querySelectorAll('#modalRoot [data-print]').forEach(b => b.onclick = () => {
+  const k = kinds.find(x => x.key === b.dataset.print);
+  closeSheet();
+  if (!k) return;
+  k.run();                                                  // เปิดรายงานย่อย
+  auditAfterSheetClosed(() => openAuditPrintSheet(kinds));  // ปิดแล้วกลับมาเมนูพิมพ์
+});
   document.getElementById('auditPrintClose').onclick = closeSheet;
 }
 
@@ -13341,13 +13309,13 @@ function openAuditToolsSheet() {
     </div>
     <div class="btn-row"><button class="btn btn-ghost" id="auditToolsClose">ปิด</button></div>
   `);
-  document.querySelectorAll('#modalRoot [data-tool]').forEach(b => b.onclick = () => {
-    const t = b.dataset.tool;
-    closeSheet();
-    if (t === 'bulk') openBulkAuditModal('set', openAuditToolsSheet);
-    else if (t === 'clearSel') openBulkAuditModal('clear', openAuditToolsSheet);
-    else clearAllAuditResults(openAuditToolsSheet);
-  });
+document.querySelectorAll('#modalRoot [data-tool]').forEach(b => b.onclick = () => {
+  const t = b.dataset.tool;
+  closeSheet();
+  if (t === 'bulk') openBulkAuditModal('set', openAuditToolsSheet);
+  else if (t === 'clearSel') openBulkAuditModal('clear', openAuditToolsSheet);
+  else clearAllAuditResults(openAuditToolsSheet);
+});
   document.getElementById('auditToolsClose').onclick = closeSheet;
 }
 
@@ -13399,12 +13367,10 @@ function drawAuditView() {
         <div class="audit-progress-track"><div class="audit-progress-fill" style="width:${pct}%;"></div></div>
         <div class="ac-progress-pct">${pct}%</div>
       </div>
-      ${auditActionsHtml()}
       <div id="auditCardHost"></div>
     `;
     wireViewToggle(drawAuditView, '#view-audit', 'auditMode');
     wireAuditHeader(kinds);
-    wireAuditActions();
     document.getElementById('auditYearSelect').onchange = e => {
       state.auditYear = Number(e.target.value);
       state.auditMsg = '';
@@ -13444,7 +13410,7 @@ function drawAuditView() {
         <button type="button" data-aview="done" class="${state.auditView === 'done' ? 'active' : ''}">ตรวจแล้ว</button>
         <button type="button" data-aview="all" class="${state.auditView === 'all' ? 'active' : ''}">ทั้งหมด</button>
       </div>
-      ${auditActionsHtml()}
+      <button type="button" class="audit-tools-icon" id="btnAuditToolsRow" title="เครื่องมือตรวจนับ" aria-label="เครื่องมือตรวจนับ">${AUDIT_ICON_TOOLS}</button>
     </div>
     ${auditCatChipsHtml(all)}
 
@@ -13455,7 +13421,6 @@ function drawAuditView() {
 
   wireViewToggle(drawAuditView, '#view-audit', 'auditMode');
   wireAuditHeader(kinds);
-  wireAuditActions();
 
   el.querySelectorAll('[data-aview]').forEach(b => b.onclick = () => {
     state.auditView = b.dataset.aview;
@@ -14014,7 +13979,6 @@ async function clearAllAuditResults(onDone = null) {
 
   if (!ids.length) {
     toast('ยังไม่มีผลตรวจให้ล้าง');
-    back();
     return;
   }
 
@@ -14022,7 +13986,7 @@ async function clearAllAuditResults(onDone = null) {
     title:'ล้างผลตรวจทั้งหมด',
     okText:'ล้างผลตรวจทั้งหมด',
     tone:'bad'
-  })) { back(); return; }
+  })) return;
 
   setLoading(true, 'กำลังล้างผลตรวจ 0/' + ids.length + '...');
   const loadingText = document.getElementById('loadingText');
@@ -14038,7 +14002,6 @@ async function clearAllAuditResults(onDone = null) {
   setLoading(false);
   drawAuditView();
   toast('ล้างผลตรวจแล้ว ' + (ids.length - failed) + '/' + ids.length + ' รายการ' + (failed ? ' (ล้มเหลว ' + failed + ')' : ''));
-  back();
 }
 
 async function setAuditStatus(assetId, status) {
