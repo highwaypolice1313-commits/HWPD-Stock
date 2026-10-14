@@ -13247,13 +13247,17 @@ function wireAuditHeader(kinds) {
   toolsBtns.forEach(b => b.onclick = openAuditToolsSheet);
 }
 
-/* เรียก fn ครั้งเดียวเมื่อ modal ทุกใบปิดแล้ว ใช้เปิด modal เครื่องมือกลับมา */
+/* เรียก fn เมื่อ modal ย่อยที่เปิดขึ้นมาปิดแล้ว (รอให้มีการเปิดก่อน แล้วค่อยรอปิด) */
 function auditAfterSheetClosed(fn) {
   const root = document.getElementById('modalRoot');
   if (!root) return;
+  let seen = false;
   const obs = new MutationObserver(() => {
-    if (!root.querySelector('.overlay')) { obs.disconnect(); setTimeout(fn, 0); }
+    if (root.querySelector('.overlay')) { seen = true; return; }
+    if (seen) { obs.disconnect(); clearTimeout(guard); setTimeout(fn, 0); }
   });
+  // ถ้าไม่มี modal ย่อยเปิดขึ้นมาเลย (เช่น ไม่มีผลให้ล้าง) ให้เลิกเฝ้าเอง จะได้ไม่เด้งเมนูผิดจังหวะ
+  const guard = setTimeout(() => obs.disconnect(), 1500);
   obs.observe(root, { childList: true, subtree: true });
 }
 
@@ -13273,11 +13277,13 @@ function openAuditPrintSheet(kinds) {
     <div class="audit-menu">${items || '<div class="hint" style="margin:0;">ยังไม่มีรายการให้พิมพ์</div>'}</div>
     <div class="btn-row"><button class="btn btn-ghost" id="auditPrintClose">ปิด</button></div>
   `);
-  document.querySelectorAll('#modalRoot [data-print]').forEach(b => b.onclick = () => {
-    const k = kinds.find(x => x.key === b.dataset.print);
-    closeSheet();
-    if (k) k.run();
-  });
+document.querySelectorAll('#modalRoot [data-print]').forEach(b => b.onclick = () => {
+  const k = kinds.find(x => x.key === b.dataset.print);
+  closeSheet();
+  if (!k) return;
+  k.run();                                                  // เปิดรายงานย่อย
+  auditAfterSheetClosed(() => openAuditPrintSheet(kinds));  // ปิดแล้วกลับมาเมนูพิมพ์
+});
   document.getElementById('auditPrintClose').onclick = closeSheet;
 }
 
