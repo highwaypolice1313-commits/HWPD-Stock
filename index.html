@@ -5873,6 +5873,16 @@ body:has(#view-monthly .pc-wrap) .toast.show{
 .cu-btn.cu-del{ width:auto; padding:0 12px; font-size:12.5px; background:var(--bad-wash); color:var(--bad); border-color:transparent; }
       
 </style>
+
+   <style id="cat-icon-picker">
+.cu-icons{ display:flex; flex-wrap:wrap; gap:6px; }
+.cu-icon-pick{
+  width:34px; height:34px; border-radius:10px; border:1px solid var(--panel-line);
+  background:var(--panel); color:var(--ink-dim); display:flex; align-items:center; justify-content:center; cursor:pointer;
+}
+.cu-icon-pick svg{ width:17px; height:17px; }
+.cu-icon-pick.on{ background:var(--navy); border-color:var(--navy); color:#fff; box-shadow:0 0 0 3px var(--gold-wash); }
+</style>
    
 </head>
 <body>
@@ -6296,6 +6306,26 @@ function unitDatalistOptions() {
   const units = Array.from(new Set(Object.values(getCategoryUnits())));
   return units.map(u => `<option value="${escapeHtml(u)}"></option>`).join('');
 }
+
+   const DEFAULT_CATEGORY_ICONS = {
+  'อาวุธปืน': 'gun',
+  'ยานพาหนะ': 'vehicle',
+  'สื่อสาร': 'radio',
+  'คอมพิวเตอร์/IT': 'computer',
+  'เครื่องแบบ/สนาม': 'uniform',
+  'อื่นๆ': 'other'
+};
+const ICON_CHOICES = ['gun','vehicle','radio','computer','uniform','other','wrench','swap','user','clock','inbox','checklist','info','warn','log','download','camera','scan'];
+
+function getCategoryIcons() {
+  try {
+    const raw = state.settings && state.settings.categoryIcons;
+    const obj = raw ? JSON.parse(raw) : null;
+    if (obj && typeof obj === 'object') return { ...DEFAULT_CATEGORY_ICONS, ...obj };
+  } catch (e) {}
+  return { ...DEFAULT_CATEGORY_ICONS };
+}
+   
 /* ========================================================= SESSION (localStorage) */
    
 function loadSession() {
@@ -7025,7 +7055,8 @@ function statusClass(s) {
            'รออนุมัติ':'status-pending','ถูกปฏิเสธ':'status-rejected' }[s] || '';
 }
 function catIcon(c) {
-  return { 'อาวุธปืน':ICONS.gun, 'ยานพาหนะ':ICONS.vehicle, 'สื่อสาร':ICONS.radio, 'คอมพิวเตอร์/IT':ICONS.computer, 'เครื่องแบบ/สนาม':ICONS.uniform }[c] || ICONS.other;
+  const key = getCategoryIcons()[c];
+  return (key && ICONS[key]) || ICONS.other;
 }
 const isAdmin = () => state.role === 'admin';
 function escapeHtml(s) {
@@ -13576,13 +13607,18 @@ function renderSettings() {
     toast('ดาวน์โหลดไฟล์สำรองข้อมูลแล้ว');
   };
 
-function cuRowHtml(original, name, unit) {
+function cuRowHtml(original, name, unit, icon) {
+  const cur = icon || 'other';
   return `<div class="cu-row">
     <input type="hidden" class="cu-original" value="${escapeHtml(original)}">
     <div class="cu-top">
       <span class="cu-no"></span>
       <input class="input cu-name" value="${escapeHtml(name)}" placeholder="ชื่อหมวดหมู่">
     </div>
+    <div class="cu-icons">
+      ${ICON_CHOICES.map(k => `<button type="button" class="cu-icon-pick ${k === cur ? 'on' : ''}" data-icon="${k}" title="${k}">${ICONS[k]}</button>`).join('')}
+    </div>
+    <input type="hidden" class="cu-icon" value="${cur}">
     <div class="cu-bottom">
       <input class="input cu-unit" value="${escapeHtml(unit)}" placeholder="หน่วยนับ เช่น เครื่อง">
       <div class="cu-actions">
@@ -13606,6 +13642,14 @@ function cuRefreshRows() {
 function wireCategoryUnitRows() {
   const wrap = document.getElementById('cuRows');
   if (!wrap) return;
+  wrap.querySelectorAll('.cu-row').forEach(row => {
+  row.querySelectorAll('.cu-icon-pick').forEach(btn => {
+      btn.onclick = () => {
+        row.querySelectorAll('.cu-icon-pick').forEach(x => x.classList.toggle('on', x === btn));
+        row.querySelector('.cu-icon').value = btn.dataset.icon;
+      };
+    });
+  });
   wrap.querySelectorAll('.cu-row').forEach(row => {
     row.querySelector('.cu-up').onclick = () => {
       const prev = row.previousElementSibling;
@@ -13632,7 +13676,7 @@ function wireCategoryUnitRows() {
 
 document.getElementById('btnAddCategory').onclick = () => {
   const wrap = document.getElementById('cuRows');
-  wrap.insertAdjacentHTML('beforeend', cuRowHtml('', '', ''));
+  wrap.insertAdjacentHTML('beforeend', cuRowHtml('', '', '', 'other'));
   wireCategoryUnitRows();
   const last = wrap.lastElementChild;
   last.querySelector('.cu-name').focus();
@@ -13645,11 +13689,13 @@ document.getElementById('btnAddCategory').onclick = () => {
     const categories = [];
     const unitsObj = {};
     const renames = [];
+    const iconsObj = {};
     for (const row of rows) {
       const original = row.querySelector('.cu-original').value;
       const name = row.querySelector('.cu-name').value.trim();
       const unit = row.querySelector('.cu-unit').value.trim();
       if (!name) continue; // ข้ามแถวที่ไม่ได้กรอกชื่อหมวดหมู่
+      iconsObj[name] = row.querySelector('.cu-icon').value || 'other';
       if (categories.includes(name)) { toast('มีชื่อหมวดหมู่ซ้ำกัน: ' + name); return; }
       categories.push(name);
       unitsObj[name] = unit || 'เครื่อง';
@@ -13661,6 +13707,7 @@ document.getElementById('btnAddCategory').onclick = () => {
       await apiPost('updateSystemSettings', {
         assetCategories: JSON.stringify(categories),
         categoryUnits: JSON.stringify(unitsObj),
+        categoryIcons: JSON.stringify(iconsObj),
         categoryRenames: JSON.stringify(renames)
       });
       toast('บันทึกหมวดหมู่และหน่วยนับแล้ว');
