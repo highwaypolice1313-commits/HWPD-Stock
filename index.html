@@ -13169,7 +13169,7 @@ async function applyBulk(status) {
       <td style="border:1px solid #000; text-align:center; padding:2px;">${escapeHtml(rec['ผลตรวจ(A/D)']) || ''}</td>
       ${[5, 4, 3, 2, 1, 0].map(scoreCell).join('')}
       <td style="border:1px solid #000; text-align:center; padding:2px;">${thaiDate(rec['วันที่ใช้งานครั้งสุดท้าย'])}</td>
-      <td style="border:1px solid #000; text-align:center; padding:2px;">${thaiDate(rec['วันที่ตรวจ'])}</td>
+      <td style="border:1px solid #000; text-align:center; padding:2px; white-space:nowrap;">${thaiDateAbbr(rec['วันที่ตรวจ'])}</td>
       <td style="border:1px solid #000; text-align:center; padding:2px;">${rec['ความเห็นคณะกรรมการ'] === 'สมควรเก็บไว้ใช้งาน' ? '๑' : ''}</td>
       <td style="border:1px solid #000; text-align:center; padding:2px;">${rec['ความเห็นคณะกรรมการ'] === 'สมควรจำหน่าย' ? '๑' : ''}</td>
       <td style="border:1px solid #000; padding:2px 4px;">${rec['ความเห็นคณะกรรมการ'] === 'ให้หน่วยงานอื่น' ? '✓' : ''}</td>
