@@ -14623,6 +14623,7 @@ ${pages}`;
 
   // Override เฉพาะฟังก์ชันหน้าเดือน — ฟังก์ชันเดิมทั้งหมดด้านอื่นยังอยู่ครบ
   window.renderMonthly = renderMonthlyEnhanced;
+  window.mcSetView = (v) => { setMcViewMode(v); renderMonthlyEnhanced(); };
 
   // Function declarations ใน global scope จะถูกเรียกจากระบบ navigation
   // จึงกำหนด property ไว้ด้วยเพื่อรองรับโค้ดเดิมที่เรียกผ่าน window
@@ -14639,10 +14640,10 @@ window.pcHeaderHtml = function(curY, curM, years, view, sub){
         <div class="pc-hd-sub" data-sub>${escapeHtml(sub || '')}</div>
       </div>
       <div class="pc-hd-tools">
-        <div class="mc-view-toggle" role="group" aria-label="มุมมอง">
-          <button type="button" data-pv="list" class="${view === 'list' ? 'active' : ''}" title="มุมมองรายการ" aria-label="มุมมองรายการ">${ICONS.listView}</button>
-          <button type="button" data-pv="card" class="${view === 'card' ? 'active' : ''}" title="มุมมองการ์ด" aria-label="มุมมองการ์ด">${ICONS.gridView}</button>
-        </div>
+<div class="view-toggle">
+  <button type="button" class="vt-btn ${view === 'list' ? 'active' : ''}" data-pv="list" title="มุมมองรายการ" aria-label="มุมมองรายการ">${ICONS.listView}</button>
+  <button type="button" class="vt-btn ${view === 'card' ? 'active' : ''}" data-pv="card" title="มุมมองการ์ด" aria-label="มุมมองการ์ด">${ICONS.gridView}</button>
+</div>
 <button type="button" class="icon-btn" data-pp title="พิมพ์รายงาน" aria-label="พิมพ์รายงาน">${ICONS.print}</button>
       </div>
     </div>
@@ -14934,8 +14935,9 @@ window.pcHeaderHtml = function(curY, curM, years, view, sub){
     const py = grid.querySelector('[data-py]');
     if (pm) pm.onchange = e => proxyChange('mcMonth', e.target.value);
     if (py) py.onchange = e => proxyChange('mcYear', e.target.value);
-    const pl = grid.querySelector('[data-pv="list"]');
-    if (pl) pl.onclick = () => { const b = document.querySelector('[data-mcv="list"]'); if (b) b.click(); };
+grid.querySelectorAll('[data-pv]').forEach(b => b.onclick = () => {
+  window.mcSetView(b.dataset.pv === 'card' ? 'grid' : 'list');
+});
     const pp = grid.querySelector('[data-pp]');
     if (pp) pp.onclick = () => {
       pp.blur();
