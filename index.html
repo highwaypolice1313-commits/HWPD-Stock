@@ -12709,7 +12709,6 @@ function drawAuditView() {
         <div class="hint" style="margin-top:0;">บันทึกหรือล้างผลตรวจนับของปี พ.ศ. ${state.auditYear + 543}</div>
         <div class="btn-row">
           <button class="btn btn-ok" id="btnBulkAudit">ตรวจนับหลายรายการพร้อมกัน</button>
-          <button class="btn btn-ok" id="btnBulkAudit">ตรวจนับหลายรายการพร้อมกัน</button>
          <button class="btn btn-ghost" id="btnBulkVehicleAudit">ตรวจยานพาหนะหลายคันพร้อมกัน</button>
         </div>
         <div class="btn-row" style="margin-top:10px;">
@@ -12810,10 +12809,19 @@ function openBulkVehicleAuditForm(vehicleIds, onDone) {
   const list = vehicleIds.map(id => state.assets.find(a => a['รหัสครุภัณฑ์'] === id)).filter(Boolean);
   if (!list.length) { onDone && onDone(); return; }
 
+  const DECISIONS = [
+    ['', '— ไม่ระบุ —'],
+    ['สมควรเก็บไว้ใช้งาน', 'สมควรเก็บไว้ใช้งาน/ซ่อมไว้ใช้งาน'],
+    ['สมควรจำหน่าย', 'สมควรจำหน่าย'],
+    ['ให้หน่วยงานอื่น', 'จำเป็นต้องให้หน่วยงานอื่น']
+  ];
+  const decisionOptions = sel => DECISIONS.map(([v, t]) =>
+    `<option value="${v}" ${sel === v ? 'selected' : ''}>${t}</option>`).join('');
+
   const rowHtml = a => {
     const rec = auditRecordFor(a['รหัสครุภัณฑ์']) || {};
     return `<div class="glass list-item bva-row" data-id="${escapeHtml(a['รหัสครุภัณฑ์'])}" style="cursor:default; flex-wrap:wrap; gap:8px;">
-      <div class="li-body" style="flex:1 1 160px;">
+      <div class="li-body" style="flex:1 1 180px; min-width:0;">
         <div class="li-title">${escapeHtml(a['ชื่อครุภัณฑ์'])}</div>
         <div class="li-sub">ทะเบียน ${escapeHtml(a['ทะเบียนรถ'] || '-')}</div>
       </div>
@@ -12821,8 +12829,11 @@ function openBulkVehicleAuditForm(vehicleIds, onDone) {
         <option value="A" ${rec['ผลตรวจ(A/D)'] === 'D' ? '' : 'selected'}>A เป็นอยู่จริง</option>
         <option value="D" ${rec['ผลตรวจ(A/D)'] === 'D' ? 'selected' : ''}>D สูญหาย</option>
       </select>
-      <select class="input bva-score" style="flex:0 0 90px;">
+      <select class="input bva-score" style="flex:0 0 80px;">
         ${[5,4,3,2,1,0].map(n => `<option value="${n}" ${String(rec['คะแนนสภาพ']) === String(n) ? 'selected' : ''}>${n}</option>`).join('')}
+      </select>
+      <select class="input bva-decision" style="flex:1 1 100%;">
+        ${decisionOptions(rec['ความเห็นคณะกรรมการ'] || '')}
       </select>
     </div>`;
   };
@@ -12844,13 +12855,8 @@ function openBulkVehicleAuditForm(vehicleIds, onDone) {
     </div>
     <div class="memo-two-col">
       <div class="field"><label>วันที่ใช้งานครั้งสุดท้าย</label><input class="input" type="date" id="bva_lastused"></div>
-      <div class="field"><label>ความเห็นคณะกรรมการ</label>
-        <select class="input" id="bva_decision">
-          <option value="">— ไม่ระบุ —</option>
-          <option value="สมควรเก็บไว้ใช้งาน">สมควรเก็บไว้ใช้งาน/ซ่อมไว้ใช้งาน</option>
-          <option value="สมควรจำหน่าย">สมควรจำหน่าย</option>
-          <option value="ให้หน่วยงานอื่น">จำเป็นต้องให้หน่วยงานอื่น</option>
-        </select>
+      <div class="field"><label>ความเห็นคณะกรรมการ (ทุกคัน)</label>
+        <select class="input" id="bva_decision">${decisionOptions('')}</select>
       </div>
     </div>
     <div class="field"><label>หมายเหตุ (ทุกคัน)</label><input class="input" id="bva_note"></div>
@@ -12871,10 +12877,11 @@ function openBulkVehicleAuditForm(vehicleIds, onDone) {
   `);
 
   document.getElementById('bva_apply_all').onclick = () => {
-    const f = val('bva_found_all'), s = val('bva_score_all');
+    const f = val('bva_found_all'), s = val('bva_score_all'), d = val('bva_decision');
     document.querySelectorAll('.bva-row').forEach(r => {
       r.querySelector('.bva-found').value = f;
       r.querySelector('.bva-score').value = s;
+      r.querySelector('.bva-decision').value = d;
     });
     toast('ใช้ค่ากับทุกคันแล้ว');
   };
@@ -12884,7 +12891,6 @@ function openBulkVehicleAuditForm(vehicleIds, onDone) {
     const btn = document.getElementById('bva_save');
     if (btn.disabled) return;
     const lastUsed = val('bva_lastused');
-    const decision = val('bva_decision');
     const note = val('bva_note');
     setButtonBusy(btn, true);
     setLoading(true, 'กำลังบันทึกผลตรวจรถ 0/' + list.length + '...');
@@ -12895,6 +12901,7 @@ function openBulkVehicleAuditForm(vehicleIds, onDone) {
       const row = document.querySelector('.bva-row[data-id="' + a['รหัสครุภัณฑ์'] + '"]');
       const found = row ? row.querySelector('.bva-found').value : 'A';
       const score = row ? row.querySelector('.bva-score').value : '';
+      const decision = row ? row.querySelector('.bva-decision').value : '';
       const status = found === 'A' ? 'พบปกติ' : 'สูญหาย';
       try {
         await apiPost('saveAuditRecord', {
