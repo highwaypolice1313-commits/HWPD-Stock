@@ -6007,6 +6007,20 @@ body:has(#view-monthly .pc-wrap) .toast.show{
 <style id="vehicle-list-plate">
 .ax-sub{ font-size:11.5px; color:var(--ink-dim); font-family:var(--font-num); }
 </style>   
+
+<style id="audit-row-status-color">
+.audit-row{ position:relative; overflow:hidden; transition:background .2s ease, border-color .2s ease; }
+.audit-row::before{
+  content:""; position:absolute; left:0; top:0; bottom:0; width:4px;
+  background:var(--panel-line);
+}
+.audit-row.ar-ok{ background:linear-gradient(90deg, var(--ok-wash), var(--panel) 60%); border-color:color-mix(in srgb, var(--ok) 35%, var(--panel-line)); }
+.audit-row.ar-ok::before{ background:var(--ok); }
+.audit-row.ar-warn{ background:linear-gradient(90deg, var(--warn-wash), var(--panel) 60%); border-color:color-mix(in srgb, var(--warn) 35%, var(--panel-line)); }
+.audit-row.ar-warn::before{ background:var(--warn); }
+.audit-row.ar-bad{ background:linear-gradient(90deg, var(--bad-wash), var(--panel) 60%); border-color:color-mix(in srgb, var(--bad) 35%, var(--panel-line)); }
+.audit-row.ar-bad::before{ background:var(--bad); }
+</style>
    
 </head>
 <body>
@@ -12787,9 +12801,15 @@ function drawAuditView() {
 function auditRow(a) {
   const rec = auditRecordFor(a['รหัสครุภัณฑ์']);
   const status = rec ? rec['ผล'] : 'ยังไม่ตรวจ';
+  const found = rec ? rec['ผลตรวจ(A/D)'] : '';
   const cls = { 'พบปกติ': 'status-ready', 'ชำรุด': 'status-repair', 'สูญหาย': 'status-overdue', 'ยังไม่ตรวจ': 'status-disposed' }[status] || '';
+  // สีแถวตามผลตรวจ: ยังไม่ตรวจ = สีเดิม / พบปกติ-A = เขียว / ชำรุด = เหลือง / สูญหาย-D = แดง
+  let rowCls = '';
+  if (status === 'สูญหาย' || found === 'D') rowCls = 'ar-bad';
+  else if (status === 'ชำรุด') rowCls = 'ar-warn';
+  else if (status === 'พบปกติ' || found === 'A') rowCls = 'ar-ok';
   const isVehicle = a['หมวดหมู่'] === 'ยานพาหนะ';
-  return `<div class="glass list-item" style="cursor:${isVehicle?'pointer':'default'};" ${isVehicle ? `data-vehicle-audit="${escapeHtml(a['รหัสครุภัณฑ์'])}"` : ''}>
+  return `<div class="glass list-item audit-row ${rowCls}" style="cursor:${isVehicle?'pointer':'default'};" ${isVehicle ? `data-vehicle-audit="${escapeHtml(a['รหัสครุภัณฑ์'])}"` : ''}>
     <div class="li-icon">${catIcon(a['หมวดหมู่'])}</div>
     <div class="li-body"><div class="li-title">${escapeHtml(a['ชื่อครุภัณฑ์'])}</div><div class="li-sub">${escapeHtml(a['ทะเบียนรถ']||a['รหัสครุภัณฑ์'])}</div></div>
     <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
