@@ -9852,7 +9852,7 @@ function renderBorrow() {
   const catCounts = {};
   baseForCat.forEach(b => { const c = borrowCategoryOf(b); catCounts[c] = (catCounts[c] || 0) + 1; });
   const catOrder = Array.from(new Set(getCategories().concat(['อื่นๆ'])));
-  const catPills = [{ v: 'all', label: 'ทั้งหมด', n: baseForCat.length, icon: ICONS.other }]
+   const catPills = [{ v: 'all', label: 'ทั้งหมด', n: baseForCat.length, icon: ICONS.other }]
     .concat(catOrder
       .filter(c => catCounts[c])
       .map(c => ({ v: c, label: c, n: catCounts[c], icon: catIcon(c) })));
@@ -9875,9 +9875,8 @@ function renderBorrow() {
     </div>
     <div class="search-row">
     <div class="ax-pills">
-      ${catPills.map(p => `<div class="ax-pill ${state.borrowCat === p.v ? 'active' : ''}" data-bcat="${escapeHtml(p.v)}">${p.icon}${escapeHtml(p.label)} <b>${p.n}</b></div>`).join('')}
-    </div>
-    <div class="search-row">
+      ${catPills.map(p => `<div class="ax-pill ${state.borrowCat === p.v ? 'active' : ''}" data-bcat="${escapeHtml(p.v)}">${escapeHtml(p.label)} <b>${p.n}</b></div>`).join('')}
+    </div> 
       <input class="input" id="borrowSearchInput" placeholder="ค้นหาชื่อผู้ยืมหรือครุภัณฑ์..." value="${escapeHtml(state.borrowSearch)}">
       <select class="input sort-select" id="borrowSortSelect">
         <option value="due_asc" ${state.borrowSort==='due_asc'?'selected':''}>กำหนดคืนใกล้สุด</option>
