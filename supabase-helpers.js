@@ -206,12 +206,12 @@ async function logActivitySb(actor, action, detail) {
 }
 
 // ==================== GET-side actions ====================
-const SETTING_KEYS = ['orgName', 'orgPhone', 'docNoPrefix', 'docNoNext', 'renewalAlertDays', 'garudaLogo', 'auditCommittee', 'auditPeriodStart', 'auditPeriodEnd', 'categoryUnits', 'assetCategories', 'categoryIcons', 'memoAddressee'];
+const SETTING_KEYS = ['orgName', 'orgPhone', 'docNoPrefix', 'docNoNext', 'renewalAlertDays', 'garudaLogo', 'auditCommittee', 'auditPeriodStart', 'auditPeriodEnd', 'categoryUnits', 'assetCategories', 'memoAddressee'];
 
 async function sGetSystemSettings() {
   const { data, error } = await sb.from('system_settings').select('*');
   if (error) throw new Error(error.message);
-  const s = { orgName: '', orgPhone: '', docNoPrefix: '', docNoNext: '', renewalAlertDays: 30, garudaLogo: '', auditCommittee: '', auditPeriodStart: '', auditPeriodEnd: '', categoryUnits: '', assetCategories: '', categoryIcons: '', memoAddressee: '' };
+  const s = { orgName: '', orgPhone: '', docNoPrefix: '', docNoNext: '', renewalAlertDays: 30, garudaLogo: '', auditCommittee: '', auditPeriodStart: '', auditPeriodEnd: '', categoryUnits: '', assetCategories: '', memoAddressee: '' };
   (data || []).forEach(row => { if (SETTING_KEYS.indexOf(row.key) !== -1) s[row.key] = row.value; });
   const days = Number(s.renewalAlertDays);
   s.renewalAlertDays = (s.renewalAlertDays !== '' && !isNaN(days) && days >= 0) ? days : 30;
@@ -672,7 +672,6 @@ if (p.auditPeriodStart !== undefined) updates.auditPeriodStart = String(p.auditP
 if (p.auditPeriodEnd !== undefined) updates.auditPeriodEnd = String(p.auditPeriodEnd || '').trim();
 if (p.categoryUnits !== undefined) updates.categoryUnits = String(p.categoryUnits || '');
 if (p.assetCategories !== undefined) updates.assetCategories = String(p.assetCategories || '');
-if (p.categoryIcons !== undefined) updates.categoryIcons = String(p.categoryIcons || '');
 
   // เปลี่ยนชื่อหมวดหมู่ในครุภัณฑ์ที่มีอยู่แล้วให้ตรงกับชื่อใหม่ (ทำก่อนบันทึกการตั้งค่า)
   if (p.categoryRenames !== undefined) {
