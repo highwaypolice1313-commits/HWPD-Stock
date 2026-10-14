@@ -13309,14 +13309,13 @@ function openAuditToolsSheet() {
     </div>
     <div class="btn-row"><button class="btn btn-ghost" id="auditToolsClose">ปิด</button></div>
   `);
-  document.querySelectorAll('#modalRoot [data-tool]').forEach(b => b.onclick = () => {
-    const t = b.dataset.tool;
-    closeSheet();
-    auditAfterSheetClosed(openAuditToolsSheet);   // ปิดเมนูย่อยแล้วกลับมาที่เครื่องมือ
-    if (t === 'bulk') openBulkAuditModal();
-    else if (t === 'clearSel') openBulkAuditModal('clear');
-    else clearAllAuditResults();
-  });
+document.querySelectorAll('#modalRoot [data-tool]').forEach(b => b.onclick = () => {
+  const t = b.dataset.tool;
+  closeSheet();
+  if (t === 'bulk') openBulkAuditModal('set', openAuditToolsSheet);
+  else if (t === 'clearSel') openBulkAuditModal('clear', openAuditToolsSheet);
+  else clearAllAuditResults(openAuditToolsSheet);
+});
   document.getElementById('auditToolsClose').onclick = closeSheet;
 }
 
@@ -13602,7 +13601,7 @@ function openBulkVehicleAuditForm(vehicleIds, onDone) {
   };
 }
    
-function openBulkAuditModal(action = 'set') {
+function openBulkAuditModal(action = 'set', onClose = null) {
   const clearMode = action === 'clear';
   const selected = new Set();
   let bCat = 'all', bQ = '', bPendingOnly = !clearMode;
@@ -13621,7 +13620,7 @@ function openBulkAuditModal(action = 'set') {
     return list;
   }
 
-  function closeModal() { root.remove(); }
+  function closeModal() { root.remove(); if (typeof onClose === 'function') setTimeout(onClose, 0); }
 
   /* ยืนยันภายใน modal นี้เอง เพื่อไม่ให้ confirmSheet ของ #modalRoot ไปอยู่ใต้ modal หลัก */
   function confirmInsideBulk(message, opts = {}) {
@@ -13972,7 +13971,8 @@ async function clearAuditStatus(assetId) {
   if (idx !== -1) state.auditRecords.splice(idx, 1);
 }
 
-async function clearAllAuditResults() {
+async function clearAllAuditResults(onDone = null) {
+  const back = () => { if (typeof onDone === 'function') setTimeout(onDone, 0); };
   const ids = state.auditRecords
     .filter(r => r['ผล'] && r['ผล'] !== 'ยังไม่ตรวจ')
     .map(r => r['รหัสครุภัณฑ์']);
