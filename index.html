@@ -5829,7 +5829,7 @@ body:has(#view-monthly .pc-wrap) .toast.show{
   margin-left:auto;
 }
 
-/* สวิตช์ toggle สำหรับตั้งค่า PDF */
+      /* สวิตช์ toggle สำหรับตั้งค่า PDF */
 .pdf-switch-row{
   display:flex; align-items:center; justify-content:space-between; gap:14px;
   cursor:pointer; user-select:none;
@@ -5847,7 +5847,7 @@ body:has(#view-monthly .pc-wrap) .toast.show{
 }
 .pdf-switch-input:checked + .pdf-switch-track{ background:var(--navy); }
 .pdf-switch-input:checked + .pdf-switch-track .pdf-switch-thumb{ transform:translateX(18px); }
-.pdf-switch-input:focus-visible + .pdf-switch-track{ outline:2px solid var(--navy); outline-offset:2px; }.
+.pdf-switch-input:focus-visible + .pdf-switch-track{ outline:2px solid var(--navy); outline-offset:2px; }
       
 </style>
    
@@ -13241,7 +13241,7 @@ function renderViewerSettings() {
       </div>
       <div class="hint" style="margin-top:10px;">เลื่อนในกรอบเพื่อดูธีมเพิ่มเติม · บันทึกไว้เฉพาะเครื่อง/เบราว์เซอร์นี้</div>
     </div>
-       <div class="section-title" style="margin-top:6px; font-size:14px;">รูปแบบการพิมพ์</div>
+<div class="section-title" style="margin-top:6px; font-size:14px;">รูปแบบการพิมพ์</div>
 <div class="glass" style="padding:14px; margin-bottom:16px;">
   <label class="pdf-switch-row">
     <span class="pdf-switch-text">
@@ -13251,6 +13251,7 @@ function renderViewerSettings() {
     <input type="checkbox" id="st_pdfmode" class="pdf-switch-input" ${isPdfMode() ? 'checked' : ''}>
     <span class="pdf-switch-track" aria-hidden="true"><span class="pdf-switch-thumb"></span></span>
   </label>
+</div>
 </div>`
      ;
 
@@ -13320,7 +13321,7 @@ function renderSettings() {
         </div>
         <div class="hint" style="margin-top:10px;">เลื่อนในกรอบเพื่อดูธีมเพิ่มเติม · บันทึกไว้เฉพาะเครื่อง/เบราว์เซอร์นี้</div>
       </div>
-                  <div class="section-title" style="margin-top:6px; font-size:14px;">รูปแบบการพิมพ์</div>
+<div class="section-title" style="margin-top:6px; font-size:14px;">รูปแบบการพิมพ์</div>
 <div class="glass" style="padding:14px; margin-bottom:16px;">
   <label class="pdf-switch-row">
     <span class="pdf-switch-text">
@@ -13331,6 +13332,7 @@ function renderSettings() {
     <span class="pdf-switch-track" aria-hidden="true"><span class="pdf-switch-thumb"></span></span>
   </label>
 </div>
+    </div>
     
     <div class="settings-panel" data-panel="committee" style="display:${state.settingsTab==='committee'?'block':'none'};">
       ${auditCommitteeSettingsSectionHtml(s)}
