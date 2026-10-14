@@ -6087,33 +6087,62 @@ body:has(#view-monthly .pc-wrap) .toast.show{
 .ac-seg button.active{background:var(--navy);color:#fff}
 </style>   
 
-<style id="audit-card-focus-v2">
-.ac-progress{display:flex;align-items:center;gap:12px;padding:12px 14px;margin:0 auto 14px;max-width:440px;border-radius:16px;background:var(--panel);border:1px solid var(--panel-line);box-shadow:var(--shadow-sm)}
-.ac-progress-txt{font-family:var(--font-num);font-size:13px;white-space:nowrap;color:var(--ink-dim)}
-.ac-progress-txt b{font-size:17px;color:var(--ink)}
-.ac-progress .audit-progress-track{flex:1;margin:0}
-.ac-progress-pct{font-family:var(--font-num);font-weight:700;color:var(--gold-deep);font-size:14px;min-width:40px;text-align:right}
+<style id="audit-card-design-v3">
+.ac-progress{display:flex;align-items:center;gap:12px;padding:12px 16px;margin:0 auto 16px;max-width:440px;border-radius:18px;background:var(--panel);border:1px solid var(--panel-line);box-shadow:var(--shadow-sm)}
+.ac-progress-txt{font-family:var(--font-num);font-size:12px;color:var(--ink-dim);white-space:nowrap}
+.ac-progress-txt b{font-size:18px;color:var(--ink);font-weight:700}
+.ac-progress .audit-progress-track{flex:1;margin:0;height:8px}
+.ac-progress-pct{font-family:var(--font-num);font-weight:700;color:var(--gold-deep);font-size:14px;min-width:42px;text-align:right}
 
-.ac-face{min-height:420px;border-radius:28px;background:linear-gradient(180deg,var(--panel) 0%,var(--panel-soft) 100%);border:1px solid var(--panel-line);box-shadow:0 22px 50px color-mix(in srgb,var(--navy-deep) 14%,transparent)}
-.ac-topbar{height:8px;background:linear-gradient(90deg,var(--navy),var(--gold))}
-.ac-face.st-ok .ac-topbar{background:var(--ok)}
-.ac-face.st-warn .ac-topbar{background:var(--warn)}
-.ac-face.st-bad .ac-topbar{background:var(--bad)}
-.ac-main{padding:30px 24px 16px;gap:14px}
-.ac-main .ac-ico{width:88px;height:88px;border-radius:50%;background:var(--navy-wash);color:var(--navy);box-shadow:inset 0 0 0 1px var(--panel-line),0 10px 24px color-mix(in srgb,var(--navy-deep) 12%,transparent)}
-.ac-main .ac-ico svg{width:40px;height:40px}
-.ac-main .ac-name{font-size:21px;font-weight:700;line-height:1.35;color:var(--ink)}
-.ac-meta{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
-.ac-tag{font-family:var(--font-num);font-size:11.5px;padding:4px 10px;border-radius:99px;background:var(--off-wash);color:var(--ink-dim)}
-.ac-main .ac-pill{font-size:13px;padding:7px 16px;border-radius:99px;margin-top:4px;background:var(--off-wash);color:var(--ink-dim)}
-.ac-main .ac-pill.s-ok{background:var(--ok-wash);color:var(--ok)}
-.ac-main .ac-pill.s-warn{background:var(--warn-wash);color:var(--warn)}
-.ac-main .ac-pill.s-bad{background:var(--bad-wash);color:var(--bad)}
-.ac-act{padding:0 18px 18px;gap:10px}
-.ac-act button{height:50px;border-radius:16px;font-size:14px}
-.ac-act .ok{box-shadow:0 8px 18px color-mix(in srgb,var(--ok) 30%,transparent)}
-.ac-stamp{font-size:30px;border-radius:14px}
-.ac-nav{max-width:440px;margin:0 auto;width:100%}
+.ac-wrap{max-width:440px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.ac-stack{position:relative;margin:0 8px}
+.ac-b1,.ac-b2{position:absolute;left:0;right:0;bottom:0;border-radius:28px;background:color-mix(in srgb,var(--panel-line) 50%,var(--panel))}
+.ac-b1{top:10px;left:10px;right:10px}
+.ac-b2{top:20px;left:20px;right:20px}
+
+.ac-face{position:relative;z-index:1;display:flex;flex-direction:column;min-height:430px;overflow:hidden;border-radius:28px;background:var(--panel);border:1px solid var(--panel-line);box-shadow:var(--shadow-md);touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}
+.ac-face.drag{transition:none;cursor:grabbing}
+
+.ac-hero{position:relative;padding:28px 22px 22px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;background:radial-gradient(260px 160px at 50% 0%,var(--navy-wash),transparent 70%)}
+.ac-face.st-ok .ac-hero{background:radial-gradient(260px 160px at 50% 0%,var(--ok-wash),transparent 70%)}
+.ac-face.st-warn .ac-hero{background:radial-gradient(260px 160px at 50% 0%,var(--warn-wash),transparent 70%)}
+.ac-face.st-bad .ac-hero{background:radial-gradient(260px 160px at 50% 0%,var(--bad-wash),transparent 70%)}
+
+.ac-ico{width:84px;height:84px;border-radius:26px;display:grid;place-items:center;background:var(--panel);color:var(--navy);box-shadow:0 0 0 1px var(--panel-line),0 14px 28px color-mix(in srgb,var(--navy-deep) 14%,transparent)}
+.ac-ico svg{width:38px;height:38px}
+.ac-face.st-ok .ac-ico{color:var(--ok)}
+.ac-face.st-warn .ac-ico{color:var(--warn)}
+.ac-face.st-bad .ac-ico{color:var(--bad)}
+
+.ac-name{font-size:21px;font-weight:700;line-height:1.35;color:var(--ink);max-width:340px}
+.ac-stat{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:700;padding:7px 16px;border-radius:99px;background:var(--off-wash);color:var(--ink-dim)}
+.ac-stat::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}
+.ac-stat.s-ok{background:var(--ok-wash);color:var(--ok)}
+.ac-stat.s-warn{background:var(--warn-wash);color:var(--warn)}
+.ac-stat.s-bad{background:var(--bad-wash);color:var(--bad)}
+
+.ac-info{margin:0 20px;padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:10px;border-radius:18px;background:var(--panel-soft);border:1px solid var(--panel-line)}
+.ac-info div{min-width:0}
+.ac-info span{display:block;font-size:11px;color:var(--ink-faint);margin-bottom:3px}
+.ac-info b{display:block;font-family:var(--font-num);font-size:13px;color:var(--ink);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ac-info .full{grid-column:1 / -1}
+
+.ac-hint{margin:14px 20px 0;text-align:center;font-size:11.5px;color:var(--ink-faint)}
+
+.ac-act{margin-top:auto;padding:16px 16px 16px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.ac-act button{height:52px;border-radius:18px;border:1px solid var(--panel-line);background:var(--panel-soft);font:inherit;font-size:14px;font-weight:700;color:var(--ink);cursor:pointer;transition:transform .12s ease}
+.ac-act button:active{transform:scale(.96)}
+.ac-act .ok{background:var(--ok);color:#fff;border-color:transparent;box-shadow:0 10px 20px color-mix(in srgb,var(--ok) 28%,transparent)}
+.ac-act .warn{color:var(--warn);background:var(--warn-wash);border-color:transparent}
+.ac-act .bad{color:var(--bad);background:var(--bad-wash);border-color:transparent}
+
+.ac-stamp{position:absolute;top:38%;left:50%;transform:translate(-50%,-50%) rotate(-12deg);font-size:28px;font-weight:700;padding:6px 18px;border:3px solid currentColor;border-radius:14px;background:var(--panel);opacity:0;pointer-events:none;white-space:nowrap;z-index:3}
+.ac-stamp.r{color:var(--ok)}
+.ac-stamp.l{color:var(--warn);transform:translate(-50%,-50%) rotate(10deg)}
+
+.ac-nav{display:flex;justify-content:space-between;align-items:center;padding:0 4px}
+.ac-nb{width:44px;height:44px;border-radius:50%;border:1px solid var(--panel-line);background:var(--panel);font-size:20px;cursor:pointer;color:var(--ink)}
+.ac-navlbl{font-size:12px;color:var(--ink-dim);font-family:var(--font-num)}
 </style>
    
 </head>
@@ -12894,14 +12923,15 @@ function auditCardRender(host, list) {
   const a = list[auditCardIdx];
   const id = a['รหัสครุภัณฑ์'];
   const rec = auditRecordFor(id) || {};
-  const res = rec['ผล'] || 'ยังไม่ตรวจ';
+  const res = rec['ผล'] || '';
   const isVeh = a['หมวดหมู่'] === 'ยานพาหนะ';
   const checked = auditIsChecked(a);
   const isD = rec['ผลตรวจ(A/D)'] === 'D';
-  const stateCls = !checked ? '' : (isD || res === 'สูญหาย' ? 'st-bad' : (res === 'ชำรุด' ? 'st-warn' : 'st-ok'));
-  const pillCls = !checked ? '' : (isD || res === 'สูญหาย' ? 's-bad' : (res === 'ชำรุด' ? 's-warn' : 's-ok'));
-  const pillTxt = !checked ? 'ยังไม่ตรวจ' : (isD ? 'สูญหาย (D)' : res);
-  const sn = isVeh ? (a['ทะเบียนรถ'] || assetSerialText(a)) : assetSerialText(a);
+
+  const tone = !checked ? '' : (isD || res === 'สูญหาย' ? 'bad' : (res === 'ชำรุด' ? 'warn' : 'ok'));
+  const statTxt = !checked ? 'ยังไม่ตรวจ' : (isD ? 'สูญหาย (D)' : (res || 'ตรวจแล้ว'));
+  const sn = assetSerialText(a) || '-';
+  const plate = a['ทะเบียนรถ'] || '';
   const n = list.length;
   const dirClass = auditCardAnimDir ? 'enter' : '';
   auditCardAnimDir = 0;
@@ -12911,20 +12941,20 @@ function auditCardRender(host, list) {
       <div class="ac-stack ${dirClass}">
         <div class="ac-b2"></div>
         <div class="ac-b1"></div>
-        <div class="ac-face ${stateCls}" id="acFace">
-          <div class="ac-topbar"></div>
+        <div class="ac-face ${tone ? 'st-' + tone : ''}" id="acFace">
           <span class="ac-stamp r">พบปกติ</span>
           <span class="ac-stamp l">ชำรุด</span>
-          <div class="ac-main">
+          <div class="ac-hero">
             <span class="ac-ico">${catIcon(a['หมวดหมู่'])}</span>
             <div class="ac-name">${escapeHtml(a['ชื่อครุภัณฑ์'])}</div>
-            <div class="ac-meta">
-              <span class="ac-tag">${escapeHtml(a['รหัสครุภัณฑ์'])}</span>
-              ${sn ? `<span class="ac-tag">${escapeHtml(sn)}</span>` : ''}
-              ${a['หมวดหมู่'] ? `<span class="ac-tag">${escapeHtml(a['หมวดหมู่'])}</span>` : ''}
-            </div>
-            <span class="ac-pill ${pillCls}">${escapeHtml(pillTxt)}</span>
+            <span class="ac-stat ${tone ? 's-' + tone : ''}">${escapeHtml(statTxt)}</span>
           </div>
+          <div class="ac-info">
+            <div><span>รหัสครุภัณฑ์</span><b>${escapeHtml(id)}</b></div>
+            <div><span>${isVeh ? 'ทะเบียน' : 'หมายเลขเครื่อง'}</span><b>${escapeHtml(isVeh ? (plate || '-') : sn)}</b></div>
+            <div class="full"><span>หมวดหมู่ / ผู้ครอบครอง</span><b>${escapeHtml(a['หมวดหมู่'] || '-')} · ${escapeHtml(a['ผู้ครอบครอง/หน่วยงาน'] || 'คลังพัสดุ')}</b></div>
+          </div>
+          <div class="ac-hint">ปัดขวา = พบปกติ · ปัดซ้าย = ชำรุด · แตะการ์ดดูรายละเอียด</div>
           <div class="ac-act">
             <button type="button" class="ok" data-act="ok">พบปกติ</button>
             <button type="button" class="warn" data-act="warn">ชำรุด</button>
