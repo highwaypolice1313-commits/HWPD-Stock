@@ -12709,6 +12709,8 @@ function drawAuditView() {
         <div class="hint" style="margin-top:0;">บันทึกหรือล้างผลตรวจนับของปี พ.ศ. ${state.auditYear + 543}</div>
         <div class="btn-row">
           <button class="btn btn-ok" id="btnBulkAudit">ตรวจนับหลายรายการพร้อมกัน</button>
+          <button class="btn btn-ok" id="btnBulkAudit">ตรวจนับหลายรายการพร้อมกัน</button>
+         <button class="btn btn-ghost" id="btnBulkVehicleAudit">ตรวจยานพาหนะหลายคันพร้อมกัน</button>
         </div>
         <div class="btn-row" style="margin-top:10px;">
           <button class="btn btn-ghost" id="btnClearAuditSelected">ล้างผลตรวจเฉพาะรายการ</button>
@@ -12762,6 +12764,13 @@ function drawAuditView() {
 
   // ตรวจนับ
   document.getElementById('btnBulkAudit').onclick = () => openBulkAuditModal();
+  document.getElementById('btnBulkVehicleAudit').onclick = () => {
+  const vehicleIds = state.assets
+    .filter(a => a['หมวดหมู่'] === 'ยานพาหนะ')
+    .map(a => a['รหัสครุภัณฑ์']);
+  if (!vehicleIds.length) { toast('ยังไม่มียานพาหนะในระบบ'); return; }
+  openBulkVehicleAuditForm(vehicleIds);
+  };
   document.getElementById('btnClearAuditAll').onclick = clearAllAuditResults;
   document.getElementById('btnClearAuditSelected').onclick = () => openBulkAuditModal('clear');
 
