@@ -6163,6 +6163,12 @@ body:has(#view-monthly .pc-wrap) .toast.show{
 .ac-catchip.on b{color:#fff}
 .ac-catchip.done{opacity:.6}
 </style>
+
+<style id="audit-detail-actions">
+.audit-detail-actions{margin:14px 0 4px}
+.audit-detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.audit-detail-grid .audit-btn{height:52px;font-size:14px;font-weight:700;border-radius:16px}
+</style>
    
 </head>
 <body>
@@ -8760,14 +8766,16 @@ function openAssetDetail(id, opts = {}) {
     ${assetTimelineHtml(a, id)}
     <div class="btn-row">
     
-        ${opts.auditYear ? `
-    <div class="memo-section-label">ตรวจนับประจำปี พ.ศ. ${opts.auditYear + 543}</div>
-    <div class="audit-btn-row" style="justify-content:stretch; display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px;">
-      <button class="audit-btn ok" data-ad-status="พบปกติ" style="padding:12px 6px;">พบปกติ</button>
-      <button class="audit-btn warn" data-ad-status="ชำรุด" style="padding:12px 6px;">ชำรุด</button>
-      <button class="audit-btn bad" data-ad-status="สูญหาย" style="padding:12px 6px;">สูญหาย</button>
-    </div>` : ''}
-    
+    ${opts.auditYear ? `
+    <div class="audit-detail-actions">
+      <div class="memo-section-label" style="margin-top:0;">ตรวจนับประจำปี พ.ศ. ${opts.auditYear + 543}</div>
+      <div class="audit-detail-grid">
+        <button class="audit-btn ok" data-ad-status="พบปกติ">พบปกติ</button>
+        <button class="audit-btn warn" data-ad-status="ชำรุด">ชำรุด</button>
+        <button class="audit-btn bad" data-ad-status="สูญหาย">สูญหาย</button>
+      </div>
+    </div>` : `
+    <div class="btn-row">
       <button class="btn btn-ghost" id="btnShowQr">แสดง QR โค้ด</button>
       <button class="btn btn-ghost" id="btnPrintAssetForm">${isAssetBorrowable(a) ? 'ขอยืมครุภัณฑ์' : 'ครุภัณฑ์นี้ยังไม่พร้อมให้ยืม'}</button>
     </div>
@@ -8775,9 +8783,10 @@ function openAssetDetail(id, opts = {}) {
       <button class="btn btn-ghost" id="btnQuickStatus">เปลี่ยนสถานะด่วน</button>
       <button class="btn btn-ghost" id="btnEditAsset">แก้ไข</button>
       <button class="btn btn-danger" id="btnDeleteAsset">ลบ</button>
-    </div>` : ''}
+    </div>` : ''}`}
   `);
-  document.getElementById('btnShowQr').onclick = () => openQrView(a);
+  const qrBtn = document.getElementById('btnShowQr');
+  if (qrBtn) qrBtn.onclick = () => openQrView(a);
    
     if (opts.auditYear) {
     document.querySelectorAll('[data-ad-status]').forEach(b => b.onclick = async () => {
@@ -8839,13 +8848,14 @@ function openAssetDetail(id, opts = {}) {
     }
   }
   if (isAdmin()) {
-    document.getElementById('btnQuickStatus').onclick = () => openQuickStatusForm(a);
-    document.getElementById('btnEditAsset').onclick = () => openAssetForm(a);
-    document.getElementById('btnDeleteAsset').onclick = async () => {
+    const on = (elId, fn) => { const el = document.getElementById(elId); if (el) el.onclick = fn; };
+    on('btnQuickStatus', () => openQuickStatusForm(a));
+    on('btnEditAsset', () => openAssetForm(a));
+    on('btnDeleteAsset', async () => {
       if (!await confirmSheet('ยืนยันการลบครุภัณฑ์นี้?', {title:'ลบครุภัณฑ์', okText:'ลบรายการ', tone:'bad'})) return;
       try { await apiPost('deleteAsset', { id }); closeAllSheets(); toast('ลบรายการแล้ว'); await reloadThen(renderAssets); }
       catch (err) { toast(err.message || 'ลบไม่สำเร็จ'); }
-    };
+    });
     document.querySelectorAll('.btnAddComponent').forEach(b => b.onclick = () => openComponentForm(id));
     document.querySelectorAll('.comp-item').forEach(it => it.onclick = () => openComponentForm(id, componentsOf(id).find(c => c['รหัสส่วนควบ'] === it.dataset.id)));
   }
