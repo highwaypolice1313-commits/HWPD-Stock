@@ -13296,6 +13296,9 @@ const pm = document.getElementById('st_pdfmode');
 if (pm) pm.onchange = () => { setPdfMode(pm.checked); toast(pm.checked ? 'เปลี่ยนเป็นบันทึก PDF' : 'เปลี่ยนเป็นพิมพ์ปกติ'); };
    
 }
+
+const CU_ICON_UP = '<svg viewBox="0 0 20 20" fill="none"><path d="M5 12l5-5 5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const CU_ICON_DOWN = '<svg viewBox="0 0 20 20" fill="none"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
    
 /* ---- (ข) แก้ renderSettings() ให้เป็นแบบนี้ทั้งฟังก์ชัน (แทนที่ของเดิมทั้งหมด) ---- */
 function renderSettings() {
@@ -13572,9 +13575,6 @@ function renderSettings() {
     toast('ดาวน์โหลดไฟล์สำรองข้อมูลแล้ว');
   };
 
-const CU_ICON_UP = '<svg viewBox="0 0 20 20" fill="none"><path d="M5 12l5-5 5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-const CU_ICON_DOWN = '<svg viewBox="0 0 20 20" fill="none"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-
 function cuRowHtml(original, name, unit) {
   return `<div class="cu-row">
     <input type="hidden" class="cu-original" value="${escapeHtml(original)}">
@@ -13678,6 +13678,7 @@ document.getElementById('btnAddCategory').onclick = () => {
 updDocPreview();
 
   wireAuditCommitteeSettingsHandlers();
+    wireCategoryUnitRows();
   if (state.settingsTab === 'activity') loadActivityPanel();   // กรณีรีเฟรชแล้วค้างอยู่แท็บนี้
 
    // ใส่ท้าย renderSettings() และ renderViewerSettings()
