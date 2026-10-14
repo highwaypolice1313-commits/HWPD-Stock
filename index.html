@@ -13248,12 +13248,23 @@ function drawAuditView() {
   const emptyMsg = state.auditView === 'pending' ? 'ตรวจครบทุกรายการในหมวดนี้แล้ว 🎉' : 'ยังไม่มีรายการในมุมมองนี้';
 
   // เครื่องมือทั้งหมดย่อไว้ใน modal เดียว
+  const openAuditPrint = () => {
+    showSheet(`
+      <div class="sheet-title">พิมพ์รายงาน</div>
+      <div class="audit-print-grid">${printHtml}</div>
+      <div class="btn-row"><button class="btn btn-ghost" id="auditPrintClose">ปิด</button></div>
+    `);
+    document.querySelectorAll('#modalRoot [data-print]').forEach(b => b.onclick = () => {
+      const k = kinds.find(x => x.key === b.dataset.print);
+      closeSheet();
+      if (k) k.run();
+    });
+    document.getElementById('auditPrintClose').onclick = closeSheet;
+  };
+
   const openAuditTools = () => {
     showSheet(`
-      <div class="sheet-title">พิมพ์รายงาน & เครื่องมือ</div>
-      <div class="memo-section-label" style="margin-top:0;">พิมพ์รายงาน</div>
-      <div class="audit-print-grid">${printHtml}</div>
-      <div class="memo-section-label">เครื่องมือ</div>
+      <div class="sheet-title">เครื่องมือตรวจนับ</div>
       <div class="audit-tool-list">
         <button type="button" class="btn btn-ghost" data-tool="bulk">ตรวจหลายรายการพร้อมกัน</button>
         <button type="button" class="btn btn-ghost" data-tool="clearSel">ล้างผลบางรายการ</button>
@@ -13261,11 +13272,6 @@ function drawAuditView() {
       </div>
       <div class="btn-row"><button class="btn btn-ghost" id="auditToolsClose">ปิด</button></div>
     `);
-    document.querySelectorAll('#modalRoot [data-print]').forEach(b => b.onclick = () => {
-      const k = kinds.find(x => x.key === b.dataset.print);
-      closeSheet();
-      if (k) k.run();
-    });
     document.querySelectorAll('#modalRoot [data-tool]').forEach(b => b.onclick = () => {
       const t = b.dataset.tool;
       closeSheet();
@@ -13280,8 +13286,11 @@ function drawAuditView() {
     <div class="section-title">ตรวจนับประจำปี
       <span class="section-actions">
         ${viewToggleHtml('audit', 'list')}
-        <button type="button" class="audit-tools-icon" id="btnAuditTools" title="พิมพ์รายงาน & เครื่องมือ" aria-label="พิมพ์รายงาน และเครื่องมือ">
+        <button type="button" class="audit-tools-icon" id="btnAuditPrint" title="พิมพ์รายงาน" aria-label="พิมพ์รายงาน">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 9V3h10v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/></svg>
+        </button>
+        <button type="button" class="audit-tools-icon" id="btnAuditTools" title="เครื่องมือตรวจนับ" aria-label="เครื่องมือตรวจนับ">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="9" cy="6" r="2.2" fill="currentColor"/><circle cx="15" cy="12" r="2.2" fill="currentColor"/><circle cx="8" cy="18" r="2.2" fill="currentColor"/></svg>
         </button>
         ${yearSel}
       </span>
@@ -13340,6 +13349,7 @@ function drawAuditView() {
   const vehBtn = document.getElementById('btnAuditVeh');
   if (vehBtn) vehBtn.onclick = () => openBulkVehicleAuditForm(vehQueue);
 
+  document.getElementById('btnAuditPrint').onclick = openAuditPrint;
   document.getElementById('btnAuditTools').onclick = openAuditTools;
 
   document.getElementById('auditList').onclick = e => {
