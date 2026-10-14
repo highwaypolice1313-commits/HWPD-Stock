@@ -13258,10 +13258,13 @@ function auditActionsHtml() {
 
 /* ช่องค้นหาแบบเดียวกับหน้าตรวจประจำเดือน แต่กดแล้วเปิด modal ให้ค้นหาและเลือกประเภทได้ */
 function auditSearchTriggerHtml() {
+  const label = state.auditStartCat
+    ? 'เริ่มจาก: ' + escapeHtml(state.auditStartCat) + ' (แตะเพื่อเปลี่ยนประเภท)'
+    : 'แตะเพื่อเลือกประเภทที่จะเริ่มตรวจ...';
   return `<div class="search-row audit-search-row">
-    <button type="button" class="input audit-search-trigger" id="auditSearchOpen" aria-label="ค้นหาหรือเลือกครุภัณฑ์เพื่อตรวจ">
+    <button type="button" class="input audit-search-trigger" id="auditSearchOpen" aria-label="เลือกประเภทเพื่อตรวจ">
       <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-      <span>ค้นหาหรือเลือกประเภทเพื่อตรวจ...</span>
+      <span>${label}</span>
     </button>
   </div>`;
 }
@@ -13365,6 +13368,72 @@ function openAuditToolsSheet() {
   document.getElementById('auditToolsClose').onclick = closeSheet;
 }
 
+   /* ===== ลำดับประเภทสำหรับมุมมองการ์ดตรวจนับ ===== */
+function auditCategoryList() {
+  const cats = getCategories().slice();
+  state.assets.forEach(a => {
+    const c = a['หมวดหมู่'];
+    if (c && !cats.includes(c)) cats.push(c);
+  });
+  return cats.filter(c => state.assets.some(a => a['หมวดหมู่'] === c));
+}
+
+/* จัดลำดับการ์ดใหม่: เริ่มจากประเภทที่เลือก แล้วไล่ไปประเภทถัดไป วนกลับมาประเภทก่อนหน้า */
+function auditCardOrder(list) {
+  const cats = auditCategoryList();
+  const start = cats.indexOf(state.auditStartCat);
+  if (start < 0) return list;
+  const n = cats.length;
+  const rank = a => {
+    const i = cats.indexOf(a['หมวดหมู่']);
+    return i < 0 ? n : (i - start + n) % n;
+  };
+  return list.map((a, idx) => ({ a, idx }))
+    .sort((x, y) => rank(x.a) - rank(y.a) || x.idx - y.idx)   // คงลำดับเดิมภายในประเภทเดียวกัน
+    .map(x => x.a);
+}
+
+/* modal เลือกประเภทที่จะเริ่มตรวจ */
+function openAuditCategoryPicker() {
+  const cats = auditCategoryList();
+  const cur = state.auditStartCat || '';
+  const stat = c => {
+    const pool = state.assets.filter(a => c === '' || a['หมวดหมู่'] === c);
+    return { total: pool.length, done: pool.filter(auditIsChecked).length };
+  };
+  const row = (value, label, iconHtml) => {
+    const s = stat(value);
+    const finished = s.total && s.done === s.total;
+    return `<div class="glass list-item aud-cat-item" data-cat="${escapeHtml(value)}" style="cursor:pointer;${cur === value ? 'border-color:var(--gold);' : ''}">
+      <div class="li-icon">${iconHtml}</div>
+      <div class="li-body">
+        <div class="li-title">${escapeHtml(label)}</div>
+        <div class="li-sub">ตรวจแล้ว ${s.done}/${s.total}${finished ? ' · ครบแล้ว' : ''}</div>
+      </div>
+      ${cur === value ? '<div class="status-badge status-ready">เริ่มจากนี่</div>' : ''}
+    </div>`;
+  };
+
+  showSheet(`
+    <div class="sheet-title">เลือกประเภทที่จะเริ่มตรวจ</div>
+    <div class="hint" style="margin-top:0;">การ์ดจะเริ่มจากประเภทที่เลือก แล้วไล่ไปประเภทถัดไปตามลำดับ</div>
+    <div id="audCatList">
+      ${row('', 'ทุกประเภท (ตามลำดับปกติ)', ICONS.other)}
+      ${cats.map(c => row(c, c, catIcon(c))).join('')}
+    </div>
+    <div class="btn-row"><button class="btn btn-ghost" id="audCatCancel">ปิด</button></div>
+  `);
+
+  document.querySelectorAll('#audCatList .aud-cat-item').forEach(el => el.onclick = () => {
+    state.auditStartCat = el.dataset.cat;
+    auditCardIdx = 0;
+    auditCardAnimDir = 1;
+    closeSheet();
+    drawAuditView();
+  });
+  document.getElementById('audCatCancel').onclick = closeSheet;
+}
+
 function drawAuditView() {
   const el = document.getElementById('view-audit');
   if (state.auditCat === undefined) state.auditCat = 'all';
@@ -13386,9 +13455,11 @@ function drawAuditView() {
   const catChecked = catAssets.filter(auditIsChecked).length;
   const catLabel = state.auditCat === 'all' ? 'ทุกหมวด' : escapeHtml(state.auditCat);
 
-  let list = catAssets;
+  // มุมมองการ์ดไม่ใช้ตัวกรองหมวดแบบเดิม แต่ใช้ "เริ่มจากประเภท" แทน
+  let list = isCard ? all : catAssets;
   if (state.auditView === 'pending') list = list.filter(a => !auditIsChecked(a));
   else if (state.auditView === 'done') list = list.filter(auditIsChecked);
+  if (isCard) list = auditCardOrder(list);
 
   const walkQueue = catAssets.filter(a => !isVeh(a) && !auditIsChecked(a)).map(a => a['รหัสครุภัณฑ์']);
   const vehQueue = catAssets.filter(a => isVeh(a) && !auditIsChecked(a)).map(a => a['รหัสครุภัณฑ์']);
@@ -13420,7 +13491,7 @@ function drawAuditView() {
     wireViewToggle(drawAuditView, '#view-audit', 'auditMode');
     wireAuditHeader(kinds);
     wireAuditActions();
-    document.getElementById('auditSearchOpen').onclick = () => openBulkAuditModal();
+    document.getElementById('auditSearchOpen').onclick = openAuditCategoryPicker;
     document.getElementById('auditYearSelect').onchange = e => {
       state.auditYear = Number(e.target.value);
       state.auditMsg = '';
