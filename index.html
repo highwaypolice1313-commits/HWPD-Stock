@@ -9813,8 +9813,6 @@ function borrowCategoryOf(b) {
   const a = state.assets.find(x => x['รหัสครุภัณฑ์'] === b['รหัสครุภัณฑ์']);
   return a ? (a['หมวดหมู่'] || 'อื่นๆ') : 'อื่นๆ';
 }
-
-document.querySelectorAll('[data-btab]').forEach(c => c.onclick = () => { state.borrowTab = c.dataset.btab; state.borrowCat = 'all'; renderBorrow(); });
    
 function renderBorrow() {
   const el = document.getElementById('view-borrow');
@@ -9895,7 +9893,7 @@ function renderBorrow() {
   document.querySelectorAll('.borrow-item').forEach(it => it.onclick = () => openBorrowDetail(it.dataset.id));
   document.getElementById('btnExportBorrow').onclick = () => exportCsv('ยืมคืน.csv', ['รหัสรายการ','รหัสครุภัณฑ์','ชื่อครุภัณฑ์','ผู้ยืม','วันที่ยืม','กำหนดคืน','วันที่คืนจริง','สถานะ','ผู้อนุมัติ','หมายเหตุ'], state.borrow);
   document.getElementById('btnPrintAllBorrow').onclick = printAllBorrow;
-  document.querySelectorAll('[data-btab]').forEach(c => c.onclick = () => { state.borrowTab = c.dataset.btab; renderBorrow(); });
+  document.querySelectorAll('[data-btab]').forEach(c => c.onclick = () => { state.borrowTab = c.dataset.btab; state.borrowCat = 'all'; renderBorrow(); });
   document.querySelectorAll('[data-bcat]').forEach(p => p.onclick = () => { state.borrowCat = p.dataset.bcat; renderBorrow(); });
   const searchInput = document.getElementById('borrowSearchInput');
   searchInput.oninput = (e) => {
