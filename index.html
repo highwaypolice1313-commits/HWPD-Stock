@@ -12795,6 +12795,13 @@ function drawAuditView() {
   if (vBtn) vBtn.onclick = () => printWithSign(printVehicleAuditReport);
 
   document.querySelectorAll('[data-vehicle-audit]').forEach(x => x.onclick = () => openVehicleAuditForm(x.dataset.vehicleAudit));
+  document.querySelectorAll('[data-asset-detail]').forEach(row => {
+  row.onclick = e => {
+    if (e.target.closest('.audit-btn')) return;
+    if (row.dataset.vehicleAudit) return;
+    openAssetDetail(row.dataset.assetDetail);
+  };
+}); 
   document.getElementById('auditYearSelect').onchange = (e) => { state.auditYear = Number(e.target.value); renderAudit(); };
 }
    
@@ -12809,7 +12816,7 @@ function auditRow(a) {
   else if (status === 'ชำรุด') rowCls = 'ar-warn';
   else if (status === 'พบปกติ' || found === 'A') rowCls = 'ar-ok';
   const isVehicle = a['หมวดหมู่'] === 'ยานพาหนะ';
-  return `<div class="glass list-item audit-row ${rowCls}" style="cursor:${isVehicle?'pointer':'default'};" ${isVehicle ? `data-vehicle-audit="${escapeHtml(a['รหัสครุภัณฑ์'])}"` : ''}>
+   return `<div class="glass list-item audit-row ${rowCls}" data-asset-detail="${escapeHtml(a['รหัสครุภัณฑ์'])}" style="cursor:pointer;" ${isVehicle ? `data-vehicle-audit="${escapeHtml(a['รหัสครุภัณฑ์'])}"` : ''}>
     <div class="li-icon">${catIcon(a['หมวดหมู่'])}</div>
     <div class="li-body"><div class="li-title">${escapeHtml(a['ชื่อครุภัณฑ์'])}</div><div class="li-sub">${escapeHtml(a['ทะเบียนรถ']||a['รหัสครุภัณฑ์'])}</div></div>
     <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
