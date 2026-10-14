@@ -6049,6 +6049,43 @@ body:has(#view-monthly .pc-wrap) .toast.show{
 .audit-tools{margin-top:6px}
 </style>
    
+<style id="audit-card-view">
+.ac-wrap{max-width:440px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+.ac-stack{position:relative;margin:0 10px}
+.ac-b1,.ac-b2{position:absolute;left:0;right:0;bottom:0;border-radius:24px;background:color-mix(in srgb,var(--panel-line) 55%,var(--panel))}
+.ac-b1{top:12px;left:10px;right:10px}
+.ac-b2{top:22px;left:20px;right:20px}
+.ac-face{position:relative;z-index:1;background:var(--panel);border:1px solid var(--panel-line);border-radius:24px;box-shadow:var(--shadow-md);overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;min-height:340px;display:flex;flex-direction:column}
+.ac-face.drag{transition:none;cursor:grabbing}
+.ac-head{padding:16px;background:var(--panel-soft);border-bottom:1px solid color-mix(in srgb,var(--ink) 6%,transparent);display:flex;gap:12px;align-items:center}
+.ac-head.s-ok{background:linear-gradient(160deg,color-mix(in srgb,var(--ok) 22%,var(--panel)),color-mix(in srgb,var(--ok) 8%,var(--panel)))}
+.ac-head.s-warn{background:linear-gradient(160deg,color-mix(in srgb,var(--warn) 22%,var(--panel)),color-mix(in srgb,var(--warn) 8%,var(--panel)))}
+.ac-head.s-bad{background:linear-gradient(160deg,color-mix(in srgb,var(--bad) 20%,var(--panel)),color-mix(in srgb,var(--bad) 7%,var(--panel)))}
+.ac-ico{width:46px;height:46px;border-radius:14px;background:var(--navy-wash);color:var(--navy);display:grid;place-items:center;flex:none}
+.ac-ico svg{width:22px;height:22px}
+.ac-id{flex:1;min-width:0}
+.ac-name{font-size:15px;font-weight:700;color:var(--ink);white-space:normal;line-height:1.35}
+.ac-sub{font-size:11.5px;color:var(--ink-dim);margin-top:3px;font-family:var(--font-num);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ac-pill{flex:none;font-size:11px;font-weight:700;padding:5px 11px;border-radius:99px;background:var(--panel);color:var(--ink-dim);white-space:nowrap}
+.ac-body{padding:16px;flex:1;display:flex;flex-direction:column;gap:10px;font-size:13px;color:var(--ink-dim)}
+.ac-body b{color:var(--ink)}
+.ac-stamp{position:absolute;top:44%;left:50%;transform:translate(-50%,-50%) rotate(-12deg);font-size:26px;font-weight:700;padding:6px 16px;border:3px solid currentColor;border-radius:12px;background:var(--panel);opacity:0;pointer-events:none;white-space:nowrap;z-index:3}
+.ac-stamp.r{color:var(--ok)}
+.ac-stamp.l{color:var(--bad);transform:translate(-50%,-50%) rotate(10deg)}
+.ac-act{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:0 16px 16px;margin-top:auto}
+.ac-act button{height:46px;border-radius:14px;border:1px solid var(--panel-line);background:var(--panel);font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.ac-act .ok{background:var(--ok);color:#fff;border-color:transparent}
+.ac-act .warn{color:var(--warn)}
+.ac-act .bad{color:var(--bad)}
+.ac-nav{display:flex;justify-content:space-between;align-items:center;padding:0 4px}
+.ac-nb{width:42px;height:42px;border-radius:50%;border:1px solid var(--panel-line);background:var(--panel);font-size:18px;cursor:pointer;color:var(--ink)}
+.ac-navlbl{font-size:12px;color:var(--ink-dim);font-family:var(--font-num)}
+.ac-tools{display:flex;justify-content:flex-end}
+.ac-seg{display:inline-flex;border:1px solid var(--panel-line);border-radius:14px;overflow:hidden}
+.ac-seg button{width:42px;height:38px;border:0;background:transparent;color:var(--ink-dim);cursor:pointer;display:grid;place-items:center}
+.ac-seg button svg{width:17px;height:17px}
+.ac-seg button.active{background:var(--navy);color:#fff}
+</style>   
    
 </head>
 <body>
@@ -12812,11 +12849,143 @@ function auditWalkOpen(queue) {
   };
   draw();
 }   
+
+   /* ===== มุมมองการ์ดตรวจนับประจำปี ===== */
+let auditCardIdx = 0;
+let auditCardAnimDir = 0;
+
+function auditCardRender(host, list) {
+  if (!host) return;
+  if (!list.length) { host.innerHTML = emptyState(state.auditView === 'pending' ? 'ตรวจครบทุกรายการในหมวดนี้แล้ว 🎉' : 'ไม่มีรายการในมุมมองนี้'); return; }
+
+  if (auditCardIdx >= list.length) auditCardIdx = 0;
+  const a = list[auditCardIdx];
+  const id = a['รหัสครุภัณฑ์'];
+  const rec = auditRecordFor(id) || {};
+  const res = rec['ผล'] || 'ยังไม่ตรวจ';
+  const isVeh = a['หมวดหมู่'] === 'ยานพาหนะ';
+  const headCls = res === 'พบปกติ' ? 's-ok' : (res === 'ชำรุด' ? 's-warn' : (res === 'สูญหาย' ? 's-bad' : ''));
+  const pillTxt = auditIsChecked(a) ? (rec['ผลตรวจ(A/D)'] === 'D' ? 'สูญหาย (D)' : (res === 'ยังไม่ตรวจ' ? 'ตรวจแล้ว' : res)) : 'ยังไม่ตรวจ';
+  const n = list.length;
+  const dirClass = auditCardAnimDir ? 'enter' : '';
+  auditCardAnimDir = 0;
+
+  host.innerHTML = `
+    <div class="ac-wrap">
+      <div class="ac-stack ${dirClass}">
+        <div class="ac-b2"></div>
+        <div class="ac-b1"></div>
+        <div class="ac-card" style="position:relative;z-index:1;">
+          <div class="ac-face" id="acFace">
+            <span class="ac-stamp r">พบปกติ</span>
+            <span class="ac-stamp l">ชำรุด</span>
+            <div class="ac-head ${headCls}">
+              <span class="ac-ico">${catIcon(a['หมวดหมู่'])}</span>
+              <div class="ac-id">
+                <div class="ac-name">${escapeHtml(a['ชื่อครุภัณฑ์'])}</div>
+                <div class="ac-sub">${escapeHtml(a['รหัสครุภัณฑ์'])}${assetSerialText(a) ? ' · ' + escapeHtml(assetSerialText(a)) : ''}</div>
+              </div>
+              <span class="ac-pill">${pillTxt}</span>
+            </div>
+            <div class="ac-body">
+              <div><b>${escapeHtml(a['หมวดหมู่'] || '-')}</b></div>
+              <div>ผู้ครอบครอง: ${escapeHtml(a['ผู้ครอบครอง/หน่วยงาน'] || 'คลังพัสดุ')}</div>
+              ${isVeh ? `<div>ทะเบียน: ${escapeHtml(a['ทะเบียนรถ'] || '-')}</div>` : ''}
+              ${rec['หมายเหตุ'] ? `<div>หมายเหตุ: ${escapeHtml(rec['หมายเหตุ'])}</div>` : ''}
+              <div style="font-size:11.5px;">ปัดขวา = พบปกติ · ปัดซ้าย = ชำรุด · แตะการ์ดเพื่อดูรายละเอียด</div>
+            </div>
+            <div class="ac-act">
+              <button type="button" class="ok" data-act="ok">พบปกติ</button>
+              <button type="button" class="warn" data-act="warn">ชำรุด</button>
+              <button type="button" class="bad" data-act="bad">สูญหาย</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="ac-nav">
+        <button type="button" class="ac-nb" data-go="-1" aria-label="รายการก่อนหน้า">‹</button>
+        <span class="ac-navlbl">${auditCardIdx + 1} / ${n}</span>
+        <button type="button" class="ac-nb" data-go="1" aria-label="รายการถัดไป">›</button>
+      </div>
+    </div>`;
+
+  const go = d => { auditCardIdx = (auditCardIdx + d + n) % n; auditCardAnimDir = d; auditCardRender(host, list); };
+  host.querySelectorAll('[data-go]').forEach(b => b.onclick = () => go(Number(b.dataset.go)));
+
+  const save = async status => {
+    const cur = list[auditCardIdx];
+    if (!cur) return;
+    if (cur['หมวดหมู่'] === 'ยานพาหนะ') { openVehicleAuditForm(cur['รหัสครุภัณฑ์']); return; }
+    try {
+      await apiPost('saveAuditRecord', {
+        assetId: cur['รหัสครุภัณฑ์'], assetName: cur['ชื่อครุภัณฑ์'], year: state.auditYear, status
+      });
+      await refreshAuditRecords();
+      state.auditMsg = 'บันทึก "' + cur['ชื่อครุภัณฑ์'] + '" เป็น ' + status + ' แล้ว';
+      // รายการถัดไป: ถ้าอยู่มุมมองยังไม่ตรวจ รายการนี้จะหายไปเอง ให้คงตำแหน่งไว้
+      drawAuditView();
+    } catch (err) { toast(err.message || 'บันทึกไม่สำเร็จ'); }
+  };
+
+  const face = host.querySelector('#acFace');
+  host.querySelectorAll('[data-act]').forEach(b => b.onclick = e => {
+    e.stopPropagation();
+    const st = b.dataset.act === 'ok' ? 'พบปกติ' : (b.dataset.act === 'warn' ? 'ชำรุด' : 'สูญหาย');
+    save(st);
+  });
+
+  // ปัดขวา = พบปกติ / ปัดซ้าย = ชำรุด / แตะ = รายละเอียด (รถ = ฟอร์มรถ)
+  let id0 = null, x0 = 0, dx = 0, moved = false;
+  const TH = 90;
+  const stampR = face.querySelector('.ac-stamp.r'), stampL = face.querySelector('.ac-stamp.l');
+  face.addEventListener('pointerdown', e => {
+    if (e.target.closest('button')) return;
+    id0 = e.pointerId; x0 = e.clientX; dx = 0; moved = false;
+  });
+  face.addEventListener('pointermove', e => {
+    if (e.pointerId !== id0) return;
+    dx = e.clientX - x0;
+    if (Math.abs(dx) > 6) {
+      moved = true;
+      try { face.setPointerCapture(id0); } catch (_) {}
+      face.classList.add('drag');
+      face.style.transform = `translateX(${dx}px) rotate(${dx / 40}deg)`;
+      const p = Math.min(1, Math.abs(dx) / TH);
+      stampR.style.opacity = dx > 0 ? p : 0;
+      stampL.style.opacity = dx < 0 ? p : 0;
+    }
+  });
+  face.addEventListener('pointerup', e => {
+    if (e.pointerId !== id0) return;
+    id0 = null;
+    face.classList.remove('drag');
+    if (moved && Math.abs(dx) >= TH) {
+      const st = dx > 0 ? 'พบปกติ' : 'ชำรุด';
+      face.style.transition = 'transform .22s ease-in, opacity .22s ease-in';
+      face.style.transform = `translateX(${Math.sign(dx) * window.innerWidth}px) rotate(${Math.sign(dx) * 18}deg)`;
+      face.style.opacity = '0';
+      setTimeout(() => save(st), 200);
+      return;
+    }
+    face.style.transition = 'transform .25s ease';
+    face.style.transform = '';
+    stampR.style.opacity = 0; stampL.style.opacity = 0;
+    if (!moved) {
+      if (isVeh) openVehicleAuditForm(id);
+      else openAssetDetail(id);
+    }
+  });
+  face.addEventListener('pointercancel', () => {
+    id0 = null; face.classList.remove('drag');
+    face.style.transform = ''; stampR.style.opacity = 0; stampL.style.opacity = 0;
+  });
+}
    
 function drawAuditView() {
   const el = document.getElementById('view-audit');
   if (state.auditCat === undefined) state.auditCat = 'all';
   if (state.auditView === undefined) state.auditView = 'pending';
+  if (state.auditMode === undefined) state.auditMode = getViewMode('audit', 'list');
   if (state.auditMsg === undefined) state.auditMsg = '';
 
   const isVeh = a => a['หมวดหมู่'] === 'ยานพาหนะ';
@@ -12861,13 +13030,18 @@ function drawAuditView() {
     })).join('');
 
   const msgHtml = state.auditMsg ? `<div class="audit-msg">✓ ${escapeHtml(state.auditMsg)}</div>` : '';
-  const emptyMsg = state.auditView === 'pending'
-    ? 'ตรวจครบทุกรายการในหมวดนี้แล้ว 🎉'
-    : 'ยังไม่มีรายการในมุมมองนี้';
+  const emptyMsg = state.auditView === 'pending' ? 'ตรวจครบทุกรายการในหมวดนี้แล้ว 🎉' : 'ยังไม่มีรายการในมุมมองนี้';
+  const isCard = state.auditMode === 'grid';
 
   el.innerHTML = `
     <div class="section-title">ตรวจนับประจำปี
-      <span class="section-actions"><select class="input sort-select" id="auditYearSelect" style="min-width:130px;">${auditYearOptions()}</select></span>
+      <span class="section-actions">
+        <div class="ac-seg">
+          <button type="button" data-amode="list" class="${!isCard ? 'active' : ''}" title="มุมมองรายการ">${ICONS.listView}</button>
+          <button type="button" data-amode="grid" class="${isCard ? 'active' : ''}" title="มุมมองการ์ด">${ICONS.gridView}</button>
+        </div>
+        <select class="input sort-select" id="auditYearSelect" style="min-width:130px;">${auditYearOptions()}</select>
+      </span>
     </div>
 
     <div class="glass audit-hero">
@@ -12882,9 +13056,7 @@ function drawAuditView() {
       <div class="audit-hero-sub">เหลืออีก ${remain} รายการ · ${catLabel}: ตรวจแล้ว ${catChecked}/${catAssets.length}</div>
       ${msgHtml}
       <div class="audit-cta">
-        <button class="btn btn-primary" id="btnAuditWalk" ${walkQueue.length ? '' : 'disabled'}>
-          ตรวจต่อ (ทั่วไป) ${walkQueue.length} รายการ
-        </button>
+        <button class="btn btn-primary" id="btnAuditWalk" ${walkQueue.length ? '' : 'disabled'}>ตรวจต่อ (ทั่วไป) ${walkQueue.length} รายการ</button>
         ${vehQueue.length ? `<button class="btn btn-ghost" id="btnAuditVeh">ตรวจยานพาหนะที่ยังไม่ตรวจ ${vehQueue.length} คัน</button>` : ''}
       </div>
     </div>
@@ -12910,18 +13082,20 @@ function drawAuditView() {
     </div>
 
     <div id="auditList" style="margin-top:12px;">
-      ${list.length ? list.map(auditRow).join('') : emptyState(emptyMsg)}
+      ${isCard ? '<div id="auditCardHost"></div>' : (list.length ? list.map(auditRow).join('') : emptyState(emptyMsg))}
     </div>
   `;
 
+  el.querySelectorAll('[data-amode]').forEach(b => b.onclick = () => {
+    state.auditMode = b.dataset.amode;
+    setViewMode('audit', state.auditMode);
+    drawAuditView();
+  });
   el.querySelectorAll('[data-aview]').forEach(b => b.onclick = () => {
     state.auditView = b.dataset.aview;
     drawAuditView();
   });
-  document.getElementById('auditCatSelect').onchange = e => {
-    state.auditCat = e.target.value;
-    drawAuditView();
-  };
+  document.getElementById('auditCatSelect').onchange = e => { state.auditCat = e.target.value; drawAuditView(); };
   document.getElementById('auditYearSelect').onchange = e => {
     state.auditYear = Number(e.target.value);
     state.auditMsg = '';
@@ -12942,7 +13116,11 @@ function drawAuditView() {
   document.getElementById('btnClearAuditSelected').onclick = () => openBulkAuditModal('clear');
   document.getElementById('btnClearAuditAll').onclick = clearAllAuditResults;
 
-  // คลิกแบบ delegation: ปุ่มสถานะ / รถเปิดฟอร์มรถ / รายการอื่นเปิดรายละเอียด
+  if (isCard) {
+    auditCardRender(document.getElementById('auditCardHost'), list);
+    return;
+  }
+
   document.getElementById('auditList').onclick = e => {
     const btn = e.target.closest('.audit-btn');
     if (btn) { e.stopPropagation(); setAuditStatus(btn.dataset.id, btn.dataset.status); return; }
