@@ -9669,6 +9669,25 @@ function openBorrowDetail(id) {
   }
   document.getElementById('btnPrintForm').onclick = async () => {
     if (isAdmin()) {
+      try {
+        // ดึงเอกสารล่าสุดจากเซิร์ฟเวอร์ทุกครั้ง เพื่อไม่ให้ค่าเก่าในเครื่องทำให้เลข/ลายเซ็นไม่ตรง
+        const memos = await apiGet('getMemos', { token: state.sessionToken });
+        state.memos = memos || [];
+        const memo = state.memos.find(x => x['รหัสรายการยืม'] === b['รหัสรายการ']);
+        if (memo) {
+          openMemoEditor({
+            id: memo['รหัสใบเบิก'],
+            docHtml: memo['เนื้อหาเอกสาร(HTML)'],
+            borrowId: b['รหัสรายการ'],
+            readOnly: false
+          });
+          return;
+        }
+      } catch (e) {
+        toast(e.message || 'โหลดเอกสารไม่สำเร็จ');
+        return;
+      }
+      // ยังไม่เคยมีเอกสาร จึงสร้างใหม่
       openPrintMemoForm({ borrow: b, componentNames: compNames });
       return;
     }
@@ -11585,11 +11604,10 @@ document.getElementById('btnMemoPrint').onclick = () => {
     const g = (id) => { const e = document.getElementById(id); return e ? e.textContent.trim() : ''; };
     const payload = {
       id: opts.id || undefined,
-      subject: g('ed_subject') || 'ไม่ระบุเรื่อง',
-      docNo: g('ed_docno'),
-      // ฐานข้อมูลเก็บวันที่มาตรฐาน ISO; ตัว HTML ของเอกสารยังแสดงเลขไทยตามรูปแบบเดิม
+      subject: thaiToArabic(g('ed_subject')) || 'ไม่ระบุเรื่อง',
+      docNo: thaiToArabic(g('ed_docno')),
       docDate: normalizeDocumentDateForDb(g('ed_docdate')),
-      requesterName: g('ed_reqname') || g('ed_reqname2'),
+      requesterName: thaiToArabic(g('ed_reqname') || g('ed_reqname2')),
       html: thaiifyHtml(b.innerHTML),
       borrowId: opts.borrowId || '',
       status: 'บันทึกแล้ว'
