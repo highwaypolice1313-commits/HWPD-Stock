@@ -12650,7 +12650,10 @@ async function renderAudit() {
 function auditRecordFor(assetId) { return state.auditRecords.find(r => r['รหัสครุภัณฑ์'] === assetId); }
 function auditIsChecked(a) {
   const r = auditRecordFor(a['รหัสครุภัณฑ์']);
-  return !!(r && r['ผล'] && r['ผล'] !== 'ยังไม่ตรวจ');
+  if (!r) return false;
+  const res = String(r['ผล'] || '').trim();
+  const found = String(r['ผลตรวจ(A/D)'] || '').trim();
+  return (res && res !== 'ยังไม่ตรวจ') || !!found;
 }
 
   function auditYearOptions() {
@@ -12792,6 +12795,120 @@ function auditRow(a) {
     </div>
   </div>`;
 }
+
+/* ===== ตรวจรถพร้อมกันหลายคัน: กรอกรายละเอียดทีเดียว (A/D, คะแนนสภาพ, ความเห็น ฯลฯ) ===== */
+function openBulkVehicleAuditForm(vehicleIds, onDone) {
+  const list = vehicleIds.map(id => state.assets.find(a => a['รหัสครุภัณฑ์'] === id)).filter(Boolean);
+  if (!list.length) { onDone && onDone(); return; }
+
+  const rowHtml = a => {
+    const rec = auditRecordFor(a['รหัสครุภัณฑ์']) || {};
+    return `<div class="glass list-item bva-row" data-id="${escapeHtml(a['รหัสครุภัณฑ์'])}" style="cursor:default; flex-wrap:wrap; gap:8px;">
+      <div class="li-body" style="flex:1 1 160px;">
+        <div class="li-title">${escapeHtml(a['ชื่อครุภัณฑ์'])}</div>
+        <div class="li-sub">ทะเบียน ${escapeHtml(a['ทะเบียนรถ'] || '-')}</div>
+      </div>
+      <select class="input bva-found" style="flex:0 0 120px;">
+        <option value="A" ${rec['ผลตรวจ(A/D)'] === 'D' ? '' : 'selected'}>A เป็นอยู่จริง</option>
+        <option value="D" ${rec['ผลตรวจ(A/D)'] === 'D' ? 'selected' : ''}>D สูญหาย</option>
+      </select>
+      <select class="input bva-score" style="flex:0 0 90px;">
+        ${[5,4,3,2,1,0].map(n => `<option value="${n}" ${String(rec['คะแนนสภาพ']) === String(n) ? 'selected' : ''}>${n}</option>`).join('')}
+      </select>
+    </div>`;
+  };
+
+  showSheet(`
+    <div class="sheet-title">ตรวจยานพาหนะ ${list.length} คันพร้อมกัน</div>
+    <div class="hint" style="margin-top:0;">ค่าที่กรอกด้านล่างจะใช้กับทุกคัน ปรับรายคันได้ที่ตารางด้านล่าง</div>
+
+    <div class="field"><label>ผลการตรวจสอบ (ทุกคัน)</label>
+      <select class="input" id="bva_found_all">
+        <option value="A">A — เป็นอยู่จริง</option>
+        <option value="D">D — สูญหาย</option>
+      </select>
+    </div>
+    <div class="field"><label>สภาพเป็นทันช้าย (ทุกคัน)</label>
+      <select class="input" id="bva_score_all">
+        ${[5,4,3,2,1,0].map(n => `<option value="${n}" ${n === 5 ? 'selected' : ''}>${n}</option>`).join('')}
+      </select>
+    </div>
+    <div class="memo-two-col">
+      <div class="field"><label>วันที่ใช้งานครั้งสุดท้าย</label><input class="input" type="date" id="bva_lastused"></div>
+      <div class="field"><label>ความเห็นคณะกรรมการ</label>
+        <select class="input" id="bva_decision">
+          <option value="">— ไม่ระบุ —</option>
+          <option value="สมควรเก็บไว้ใช้งาน">สมควรเก็บไว้ใช้งาน/ซ่อมไว้ใช้งาน</option>
+          <option value="สมควรจำหน่าย">สมควรจำหน่าย</option>
+          <option value="ให้หน่วยงานอื่น">จำเป็นต้องให้หน่วยงานอื่น</option>
+        </select>
+      </div>
+    </div>
+    <div class="field"><label>หมายเหตุ (ทุกคัน)</label><input class="input" id="bva_note"></div>
+
+    <div class="btn-row" style="margin-top:0;">
+      <button class="btn btn-ghost" id="bva_apply_all">ใช้ค่านี้กับทุกคัน</button>
+    </div>
+
+    <div class="memo-section-label">รายคัน (ปรับค่าเฉพาะคันได้)</div>
+    <div id="bva_rows" style="display:flex; flex-direction:column; gap:8px;">
+      ${list.map(rowHtml).join('')}
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="bva_cancel">ยกเลิก</button>
+      <button class="btn btn-primary" id="bva_save">บันทึกผลตรวจรถ ${list.length} คัน</button>
+    </div>
+  `);
+
+  document.getElementById('bva_apply_all').onclick = () => {
+    const f = val('bva_found_all'), s = val('bva_score_all');
+    document.querySelectorAll('.bva-row').forEach(r => {
+      r.querySelector('.bva-found').value = f;
+      r.querySelector('.bva-score').value = s;
+    });
+    toast('ใช้ค่ากับทุกคันแล้ว');
+  };
+  document.getElementById('bva_cancel').onclick = closeSheet;
+
+  document.getElementById('bva_save').onclick = async () => {
+    const btn = document.getElementById('bva_save');
+    if (btn.disabled) return;
+    const lastUsed = val('bva_lastused');
+    const decision = val('bva_decision');
+    const note = val('bva_note');
+    setButtonBusy(btn, true);
+    setLoading(true, 'กำลังบันทึกผลตรวจรถ 0/' + list.length + '...');
+    const loadingText = document.getElementById('loadingText');
+    let done = 0, failed = 0;
+
+    for (const a of list) {
+      const row = document.querySelector('.bva-row[data-id="' + a['รหัสครุภัณฑ์'] + '"]');
+      const found = row ? row.querySelector('.bva-found').value : 'A';
+      const score = row ? row.querySelector('.bva-score').value : '';
+      const status = found === 'A' ? 'พบปกติ' : 'สูญหาย';
+      try {
+        await apiPost('saveAuditRecord', {
+          assetId: a['รหัสครุภัณฑ์'], assetName: a['ชื่อครุภัณฑ์'], year: state.auditYear,
+          status, foundStatus: found, conditionScore: score,
+          lastUsedDate: lastUsed, committeeDecision: decision, note
+        });
+      } catch (err) { failed++; }
+      done++;
+      if (loadingText) loadingText.textContent = 'กำลังบันทึกผลตรวจรถ ' + done + '/' + list.length + '...';
+    }
+
+    try {
+      state.auditRecords = (await apiGet('getAuditRecords', { year: state.auditYear, token: state.sessionToken })) || [];
+    } catch (e) {}
+    setLoading(false);
+    closeSheet();
+    drawAuditView();
+    toast('บันทึกผลตรวจรถแล้ว ' + (list.length - failed) + '/' + list.length + ' คัน' + (failed ? ' (ล้มเหลว ' + failed + ')' : ''));
+    onDone && onDone();
+  };
+}
+   
 function openBulkAuditModal(action = 'set') {
   const clearMode = action === 'clear';
   const selected = new Set();
@@ -12962,31 +13079,49 @@ function openBulkAuditModal(action = 'set') {
     toast('ล้างผลตรวจแล้ว ' + (ids.length - failed) + '/' + ids.length + ' รายการ' + (failed ? ' (ล้มเหลว ' + failed + ')' : ''));
   }
 
-  async function applyBulk(status) {
-    const ids = Array.from(selected);
-    if (!ids.length) { toast('กรุณาเลือกอย่างน้อย 1 รายการ'); return; }
-    if (!await confirmInsideBulk('ยืนยันบันทึกผลตรวจ "' + status + '" ให้ทั้งหมด ' + ids.length + ' รายการ?', {title:'บันทึกผลตรวจหลายรายการ', okText:'บันทึกผลตรวจ'})) return;
+async function applyBulk(status) {
+  const ids = Array.from(selected);
+  if (!ids.length) { toast('กรุณาเลือกอย่างน้อย 1 รายการ'); return; }
 
-    setLoading(true, 'กำลังบันทึกผลตรวจ 0/' + ids.length + '...');
+  const vehicleIds = ids.filter(id => {
+    const a = state.assets.find(x => x['รหัสครุภัณฑ์'] === id);
+    return a && a['หมวดหมู่'] === 'ยานพาหนะ';
+  });
+  const otherIds = ids.filter(id => !vehicleIds.includes(id));
+
+  // ส่วนที่ไม่ใช่รถ: บันทึกสถานะตามปกติ
+  if (otherIds.length) {
+    if (!await confirmInsideBulk('ยืนยันบันทึกผลตรวจ "' + status + '" ให้ ' + otherIds.length + ' รายการที่ไม่ใช่ยานพาหนะ?', {title:'บันทึกผลตรวจหลายรายการ', okText:'บันทึกผลตรวจ'})) return;
+    setLoading(true, 'กำลังบันทึกผลตรวจ 0/' + otherIds.length + '...');
     const loadingText = document.getElementById('loadingText');
     let done = 0, failed = 0;
-    for (const id of ids) {
+    for (const id of otherIds) {
       const asset = state.assets.find(a => a['รหัสครุภัณฑ์'] === id);
       try {
         await apiPost('saveAuditRecord', { assetId: id, assetName: asset ? asset['ชื่อครุภัณฑ์'] : '', year: state.auditYear, status });
-        const idx = state.auditRecords.findIndex(r => r['รหัสครุภัณฑ์'] === id);
-        const rec = { 'รหัสครุภัณฑ์': id, 'ผล': status, 'ปีที่ตรวจ': state.auditYear, 'ผู้ตรวจ': state.user.name, 'วันที่ตรวจ': new Date() };
-        if (idx === -1) state.auditRecords.push(rec); else state.auditRecords[idx] = rec;
       } catch (err) { failed++; }
       done++;
-      if (loadingText) loadingText.textContent = 'กำลังบันทึกผลตรวจ ' + done + '/' + ids.length + '...';
+      if (loadingText) loadingText.textContent = 'กำลังบันทึกผลตรวจ ' + done + '/' + otherIds.length + '...';
     }
+    try {
+      state.auditRecords = (await apiGet('getAuditRecords', { year: state.auditYear, token: state.sessionToken })) || [];
+    } catch (e) {}
     setLoading(false);
+    toast('บันทึกผลตรวจแล้ว ' + (otherIds.length - failed) + '/' + otherIds.length + ' รายการ' + (failed ? ' (ล้มเหลว ' + failed + ')' : ''));
+  }
+
+  // ส่วนที่เป็นรถ: เปิดฟอร์มกรอกรายละเอียดรถทีเดียว
+  if (vehicleIds.length) {
     closeModal();
     selected.clear();
-    drawAuditView();
-    toast('บันทึกผลตรวจแล้ว ' + (ids.length - failed) + '/' + ids.length + ' รายการ' + (failed ? ' (ล้มเหลว ' + failed + ')' : ''));
+    openBulkVehicleAuditForm(vehicleIds);
+    return;
   }
+
+  closeModal();
+  selected.clear();
+  drawAuditView();
+}
 
   draw();
 }
