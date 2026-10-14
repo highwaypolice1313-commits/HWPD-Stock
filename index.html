@@ -6269,6 +6269,10 @@ body:has(#view-monthly .pc-wrap) .toast.show{
   .audit-actions{display:none !important}
   .audit-filter{justify-content:flex-start}
 }
+.audit-search-row{margin:0 0 10px}
+.audit-search-trigger{display:flex;align-items:center;gap:10px;width:100%;text-align:left;cursor:pointer;color:var(--ink-faint,#8a93a0);font:inherit;font-size:14px}
+.audit-search-trigger svg{flex:none;color:var(--navy,#17324f)}
+.audit-search-trigger:hover{border-color:var(--gold-line,#c9a86a)}
 </style>
 </head>
    
@@ -13252,6 +13256,16 @@ function auditActionsHtml() {
   </div>`;
 }
 
+/* ช่องค้นหาแบบเดียวกับหน้าตรวจประจำเดือน แต่กดแล้วเปิด modal ให้ค้นหาและเลือกประเภทได้ */
+function auditSearchTriggerHtml() {
+  return `<div class="search-row audit-search-row">
+    <button type="button" class="input audit-search-trigger" id="auditSearchOpen" aria-label="ค้นหาหรือเลือกครุภัณฑ์เพื่อตรวจ">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <span>ค้นหาหรือเลือกประเภทเพื่อตรวจ...</span>
+    </button>
+  </div>`;
+}
+
 function wireAuditActions() {
   const bulk = document.getElementById('btnAuditBulk');
   if (!bulk) return;
@@ -13399,12 +13413,14 @@ function drawAuditView() {
         <div class="audit-progress-track"><div class="audit-progress-fill" style="width:${pct}%;"></div></div>
         <div class="ac-progress-pct">${pct}%</div>
       </div>
+      ${auditSearchTriggerHtml()}
       ${auditActionsHtml()}
       <div id="auditCardHost"></div>
     `;
     wireViewToggle(drawAuditView, '#view-audit', 'auditMode');
     wireAuditHeader(kinds);
     wireAuditActions();
+    document.getElementById('auditSearchOpen').onclick = () => openBulkAuditModal();
     document.getElementById('auditYearSelect').onchange = e => {
       state.auditYear = Number(e.target.value);
       state.auditMsg = '';
