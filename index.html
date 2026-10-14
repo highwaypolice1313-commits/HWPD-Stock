@@ -6389,6 +6389,74 @@ html, body{
 }      
       
 </style>
+
+<style id="memo-redesign">
+/* ===== เอกสารใบเบิก-ยืม: ปรับหน้าตาใหม่ ===== */
+
+/* ---- 2) แถบค้นหา + เรียง + ชิปเดือน ---- */
+.memo-toolbar{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+.memo-search{position:relative;flex:1 1 auto;min-width:0}
+.memo-search svg{position:absolute;left:15px;top:50%;transform:translateY(-50%);width:17px;height:17px;color:var(--ink-faint);pointer-events:none}
+.memo-search .input{padding-left:42px;height:46px;border-radius:99px}
+.memo-sort-btn{flex:none;width:46px;height:46px;border-radius:99px;border:1px solid var(--panel-line);background:var(--panel);color:var(--navy);display:grid;place-items:center;cursor:pointer;box-shadow:var(--shadow-sm);transition:transform .15s ease,border-color .15s ease}
+.memo-sort-btn:hover{border-color:var(--gold-line);transform:translateY(-1px)}
+.memo-sort-btn svg{width:18px;height:18px}
+.memo-month-row{position:relative;display:flex;gap:7px;overflow-x:auto;padding:2px 2px 10px;margin-bottom:4px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.memo-month-row::-webkit-scrollbar{display:none}
+.memo-month-chip{flex:none;padding:7px 14px;border-radius:99px;border:1px solid var(--panel-line);background:var(--panel);color:var(--ink-dim);font:inherit;font-size:12.5px;cursor:pointer;white-space:nowrap;transition:background .15s ease,color .15s ease}
+.memo-month-chip b{font-family:var(--font-num);font-weight:600;margin-left:6px;color:var(--ink)}
+.memo-month-chip.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.memo-month-chip.on b{color:#fff}
+
+/* ---- 3) KPI เป็นแถบเลื่อนบนมือถือ ---- */
+.memo-kpi-strip{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;padding:2px 2px 12px;margin-bottom:6px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.memo-kpi-strip::-webkit-scrollbar{display:none}
+.memo-kpi-strip > .rp-kpi{flex:0 0 150px;scroll-snap-align:start;margin:0}
+@media (min-width:900px){
+  .memo-kpi-strip{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));overflow:visible;scroll-snap-type:none}
+  .memo-kpi-strip > .rp-kpi{flex:none}
+}
+
+/* ---- 4) หัวกลุ่มเดือนที่มีสถิติ ---- */
+.memo-group-stat{font-size:11px;font-weight:500;color:var(--ink-dim);margin-left:auto;white-space:nowrap}
+.memo-group-head .ap-count{margin-left:0}
+
+/* ---- 1) การ์ดเอกสารแบบสองชั้น ---- */
+.memo-card{position:relative;overflow:hidden}
+.memo-card-body{padding:11px 13px 13px}
+.memo-title{font-size:13.5px;font-weight:600;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.memo-meta-row{display:flex;align-items:center;gap:6px;margin-top:7px;min-width:0}
+.memo-docno{flex:none;font-family:var(--font-num);font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:99px;background:var(--gold-wash);color:var(--gold-deep);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.memo-by{font-size:11px;color:var(--ink-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.memo-date{font-size:10.5px;color:var(--ink-faint);margin-top:4px}
+
+/* จุดสถานะลายเซ็นมุมซ้ายบน */
+.memo-sig-dot{position:absolute;top:12px;left:12px;width:10px;height:10px;border-radius:50%;z-index:4;box-shadow:0 0 0 3px rgba(255,255,255,.85);pointer-events:none}
+.memo-sig-dot.is-ok{background:var(--ok)}
+.memo-sig-dot.is-warn{background:var(--warn)}
+.memo-sig-dot.is-pending{background:var(--info)}
+
+/* ---- 6) กระดาษจริงในการ์ด: เงา + มุมพับ + แถบเตือนถ้ายังไม่เซ็น ---- */
+.memo-thumb{box-shadow:inset 0 -18px 26px -20px rgba(20,32,45,.25)}
+.memo-thumb::after{
+  content:"";position:absolute;top:0;right:0;width:20px;height:20px;z-index:2;pointer-events:none;
+  background:linear-gradient(to bottom left, rgba(20,32,45,.16) 50%, transparent 50%);
+  box-shadow:-1px 1px 2px rgba(20,32,45,.10);
+}
+.memo-card.is-unsigned .memo-thumb::before{
+  content:"";position:absolute;left:0;right:0;top:0;height:6px;z-index:2;pointer-events:none;
+  background:repeating-linear-gradient(-45deg,var(--warn) 0 6px,transparent 6px 12px);opacity:.6;
+}
+
+/* ---- 5) skeleton ตอนโหลด ---- */
+.memo-skel-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+.memo-skel{border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--panel-line)}
+.memo-skel-img{aspect-ratio:1 / 1.12;border-radius:0;border:0}
+.memo-skel-line{height:11px;border-radius:6px;margin:12px 12px 0}
+.memo-skel-line.short{width:55%;margin-bottom:12px}
+.memo-skel-pill{flex:0 0 150px;height:82px;border-radius:18px}
+@media (max-width:520px){ .memo-skel-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px} }
+</style>   
    
 </head>
    
@@ -11872,6 +11940,33 @@ function memoMonthLabel(key) {
   return TH_MONTHS_FULL[+m - 1] + ' ' + (+y + 543);
 }
 
+/* ---- ลำดับการเรียงแบบวนรอบด้วยปุ่มเดียว ---- */
+const MEMO_SORT_LABEL = {
+  date_desc: 'วันที่ล่าสุดก่อน',
+  date_asc: 'วันที่เก่าสุดก่อน',
+  subject_asc: 'เรื่อง ก-ฮ'
+};
+function memoSortCycle() {
+  const order = ['date_desc', 'date_asc', 'subject_asc'];
+  const i = order.indexOf(state.memoSort);
+  state.memoSort = order[(i + 1) % order.length];
+}
+
+/* ---- ป้ายชิปเดือนแบบสั้น เช่น "มิ.ย. 69" ---- */
+function memoMonthChipLabel(key) {
+  if (key === 'unknown') return 'ไม่ระบุ';
+  const [y, m] = key.split('-');
+  return TH_MONTHS_ABBR[+m - 1] + ' ' + String(+y + 543).slice(-2);
+}
+
+/* ---- โทนสถานะลายเซ็น: ok / warn / pending ---- */
+function memoSigTone(html) {
+  const t = memoSigStatus(html).txt;
+  if (t === 'ครบลายเซ็น') return 'ok';
+  if (t === 'ยังไม่เซ็น') return 'pending';
+  return 'warn';
+}   
+
 function memoGroupsOf(list) {
   const map = new Map();
   list.forEach(m => {
@@ -11886,21 +11981,32 @@ function memoKpiHtml(all) {
   const nowKey = (() => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); })();
   const thisMonth = all.filter(m => memoMonthKey(m) === nowKey).length;
   const noDocNo = all.filter(m => !memoDocNo(m)).length;
-  const unsigned = all.filter(m => memoSigStatus(m['เนื้อหาเอกสาร(HTML)']).txt !== 'ครบลายเซ็น').length;
+  const unsigned = all.filter(m => memoSigTone(m['เนื้อหาเอกสาร(HTML)']) !== 'ok').length;
 
   const counts = {};
   all.forEach(m => { const n = String(m['ผู้ขอเบิก'] || '').trim(); if (n) counts[n] = (counts[n] || 0) + 1; });
   const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
 
-  return `<div class="rp-kpis">
+  return `<div class="memo-kpi-strip">
     <div class="glass rp-kpi"><div class="k-num">${all.length}</div><div class="k-label">เอกสารทั้งหมด</div></div>
     <div class="glass rp-kpi info"><div class="k-num">${thisMonth}</div><div class="k-label">เดือนนี้</div></div>
     <div class="glass rp-kpi warn"><div class="k-num">${unsigned}</div><div class="k-label">ยังไม่ครบลายเซ็น</div></div>
     <div class="glass rp-kpi bad"><div class="k-num">${noDocNo}</div><div class="k-label">ยังไม่มีเลขที่หนังสือ</div></div>
     <div class="glass rp-kpi gold"><div class="k-num" style="font-size:15px;">${top ? escapeHtml(top[0]) : '-'}</div><div class="k-label">ผู้ขอเบิกมากที่สุด${top ? ' · ' + top[1] + ' ฉบับ' : ''}</div></div>
   </div>`;
-}   
+} 
 
+function memoSkeletonHtml() {
+  const pills = Array.from({ length: 5 }, () => '<div class="skeleton-shimmer memo-skel-pill"></div>').join('');
+  const card = `<div class="glass memo-skel">
+    <div class="skeleton-shimmer memo-skel-img"></div>
+    <div class="skeleton-shimmer memo-skel-line"></div>
+    <div class="skeleton-shimmer memo-skel-line short"></div>
+  </div>`;
+  return `<div class="memo-kpi-strip">${pills}</div>
+    <div class="memo-skel-grid">${Array.from({ length: 6 }, () => card).join('')}</div>`;
+}
+   
 function memoQuickActionsHtml(id) {
   return `<div class="memo-quick" data-qa="${escapeHtml(id)}">
     <button type="button" class="icon-btn" data-qa-act="print" title="พิมพ์">${ICONS.print}</button>
@@ -11935,7 +12041,7 @@ async function renderMemos() {
   if (state.memoMonth === undefined) state.memoMonth = 'all';
   if (state.memoLimit === undefined) state.memoLimit = MEMO_STEP;
   const el = document.getElementById('view-memos');
-  el.innerHTML = emptyState('กำลังโหลดเอกสารใบเบิก-ยืม...');
+  el.innerHTML = memoSkeletonHtml();
   try { state.memos = await apiGet('getMemos', { token: state.sessionToken }); } catch (e) {
     toast('โหลดเอกสารไม่สำเร็จ: ' + (e.message || ''));
   }
@@ -11996,39 +12102,48 @@ function drawMemos() {
   const groups = memoGroupsOf(list);
   if (state.memoOpenGroups === undefined) state.memoOpenGroups = new Set();
 
+  const monthCount = {};
+  all.forEach(m => { const k = memoMonthKey(m); monthCount[k] = (monthCount[k] || 0) + 1; });
+
   if (drawMemos._io) { drawMemos._io.disconnect(); drawMemos._io = null; }
   if (drawMemos._ro) { drawMemos._ro.disconnect(); drawMemos._ro = null; }
 
-  el.innerHTML = `
-    <div class="memo-kpi-wrap"></div>
+  const searchSvg = '<svg viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.8" stroke="currentColor" stroke-width="1.6"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+  const sortSvg = '<svg viewBox="0 0 20 20" fill="none"><path d="M6 4v12M3.5 13.5L6 16l2.5-2.5M14 16V4m0 0l-2.5 2.5M14 4l2.5 2.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const sortLabel = MEMO_SORT_LABEL[state.memoSort] || '';
 
+  el.innerHTML = `
     <div class="section-title">
       เอกสารใบเบิก-ยืม <small id="memoCountLabel">${list.length} / ${all.length} ฉบับ</small>
       <span class="section-actions">${viewToggleHtml('memos', state.memosView)}</span>
     </div>
+
     ${memoKpiHtml(all)}
+
     <div class="hint" style="margin-top:0;">${isAdmin() ? 'แตะที่เอกสารเพื่อเปิดดู/แก้ไข · ปุ่มลัดมุมการ์ดใช้พิมพ์หรือคัดลอกได้เลย' : 'แตะที่เอกสารเพื่อเปิดดูหรือพิมพ์ได้เท่านั้น'}</div>
 
-    <div class="search-row">
-      <input class="input" id="memoSearchInput" placeholder="ค้นหาเรื่อง / ผู้ขอเบิก / เลขที่หนังสือ..." value="${escapeHtml(state.memoSearch)}">
-      <select class="input sort-select" id="memoMonthSelect">
-        <option value="all">ทุกเดือน</option>
-        ${months.map(k => `<option value="${k}" ${state.memoMonth === k ? 'selected' : ''}>${memoMonthLabel(k)}</option>`).join('')}
-      </select>
-      <select class="input sort-select" id="memoSortSelect">
-        <option value="date_desc" ${state.memoSort==='date_desc'?'selected':''}>วันที่ล่าสุดก่อน</option>
-        <option value="date_asc" ${state.memoSort==='date_asc'?'selected':''}>วันที่เก่าสุดก่อน</option>
-        <option value="subject_asc" ${state.memoSort==='subject_asc'?'selected':''}>เรื่อง ก-ฮ</option>
-      </select>
+    <div class="memo-toolbar">
+      <div class="memo-search">
+        ${searchSvg}
+        <input class="input" id="memoSearchInput" placeholder="ค้นหาเรื่อง / ผู้ขอเบิก / เลขที่หนังสือ..." value="${escapeHtml(state.memoSearch)}" autocomplete="off">
+      </div>
+      <button type="button" class="memo-sort-btn" id="memoSortBtn" title="เรียง: ${sortLabel}" aria-label="เรียง: ${sortLabel}">${sortSvg}</button>
+    </div>
+
+    <div class="memo-month-row" id="memoMonthRow">
+      <button type="button" class="memo-month-chip ${state.memoMonth === 'all' ? 'on' : ''}" data-mm="all">ทั้งหมด<b>${all.length}</b></button>
+      ${months.map(k => `<button type="button" class="memo-month-chip ${state.memoMonth === k ? 'on' : ''}" data-mm="${k}">${memoMonthChipLabel(k)}<b>${monthCount[k] || 0}</b></button>`).join('')}
     </div>
 
     <div id="memoGrid">
       ${list.length ? groups.map(([key, items]) => {
         const open = state.memoOpenGroups.has(key) || state.memoMonth !== 'all' || !!q || groups.length === 1;
+        const signed = items.filter(x => memoSigTone(x['เนื้อหาเอกสาร(HTML)']) === 'ok').length;
         return `<div class="ap-group memo-group ${open ? 'open' : ''}" data-mkey="${key}">
           <div class="memo-group-head">
             <svg class="ap-caret" viewBox="0 0 20 20" fill="none"><path d="M7 4l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
             <span>${memoMonthLabel(key)}</span>
+            <span class="memo-group-stat">ครบลายเซ็น ${signed}/${items.length}</span>
             <span class="ap-count">${items.length} ฉบับ</span>
           </div>
           <div class="memo-group-body ${isGrid ? 'memo-grid' : ''}">
@@ -12039,6 +12154,7 @@ function drawMemos() {
     </div>
   `;
 
+  // ค้นหา (debounce + คงโฟกัส)
   const searchEl = document.getElementById('memoSearchInput');
   const applySearch = debounce(() => {
     state.memoSearch = searchEl.value;
@@ -12048,9 +12164,16 @@ function drawMemos() {
   }, 220);
   searchEl.oninput = applySearch;
 
-  document.getElementById('memoMonthSelect').onchange = e => { state.memoMonth = e.target.value; drawMemos(); };
-  document.getElementById('memoSortSelect').onchange = e => { state.memoSort = e.target.value; drawMemos(); };
+  // เรียงลำดับ (ปุ่มเดียววนรอบ)
+  document.getElementById('memoSortBtn').onclick = () => { memoSortCycle(); drawMemos(); };
 
+  // ชิปเดือน + เลื่อนให้ชิปที่เลือกอยู่กลางแถว
+  el.querySelectorAll('[data-mm]').forEach(b => b.onclick = () => { state.memoMonth = b.dataset.mm; drawMemos(); });
+  const monthRow = document.getElementById('memoMonthRow');
+  const activeChip = monthRow && monthRow.querySelector('.on');
+  if (activeChip) monthRow.scrollLeft = activeChip.offsetLeft - monthRow.clientWidth / 2 + activeChip.clientWidth / 2;
+
+  // พับ/กางกลุ่มเดือน
   el.querySelectorAll('.memo-group-head').forEach(h => h.onclick = () => {
     const g = h.closest('.memo-group');
     const key = g.dataset.mkey;
@@ -12115,30 +12238,37 @@ function drawMemos() {
   }
 }
    
+function memoCard(m, q = '') {
+  const html = m['เนื้อหาเอกสาร(HTML)'];
+  const sig = memoSigStatus(html);
+  const tone = memoSigTone(html);
+  const docNo = memoDocNo(m);
+  return `<div class="glass memo-card ${tone === 'ok' ? '' : 'is-unsigned'}" data-id="${escapeHtml(m['รหัสใบเบิก'])}">
+    <span class="memo-sig-dot is-${tone}" title="${sig.txt}" aria-label="${sig.txt}"></span>
+    <div class="memo-thumb" data-thumb></div>
+    ${memoQuickActionsHtml(m['รหัสใบเบิก'])}
+    <div class="memo-card-body">
+      <div class="memo-title">${memoHighlight(m['เรื่อง'] || 'ไม่ระบุเรื่อง', q)}</div>
+      <div class="memo-meta-row">
+        ${docNo ? `<span class="memo-docno">${memoHighlight(docNo, q)}</span>` : ''}
+        <span class="memo-by">${memoHighlight(m['ผู้ขอเบิก'] || '-', q)}</span>
+      </div>
+      <div class="memo-date">${systemDate(m['วันที่สร้าง'])} · ${sig.txt}</div>
+    </div>
+  </div>`;
+}
+
 function memoRow(m, q = '') {
-  const sig = memoSigStatus(m['เนื้อหาเอกสาร(HTML)']);
+  const html = m['เนื้อหาเอกสาร(HTML)'];
+  const sig = memoSigStatus(html);
   const docNo = memoDocNo(m);
   return `<div class="glass list-item memo-row" data-id="${escapeHtml(m['รหัสใบเบิก'])}">
     <div class="li-icon">${ICONS.log}</div>
     <div class="li-body">
       <div class="li-title">${memoHighlight(m['เรื่อง'] || 'ไม่ระบุเรื่อง', q)}</div>
-      <div class="li-sub">${docNo ? memoHighlight(docNo, q) + ' · ' : ''}${memoHighlight(m['ผู้ขอเบิก'] || '', q)}${m['ผู้ขอเบิก'] ? ' · ' : ''}${systemDate(m['วันที่สร้าง'])}</div>
+      <div class="li-sub">${docNo ? `<span class="memo-docno" style="display:inline-block;margin-right:6px;">${memoHighlight(docNo, q)}</span>` : ''}${memoHighlight(m['ผู้ขอเบิก'] || '', q)}${m['ผู้ขอเบิก'] ? ' · ' : ''}${systemDate(m['วันที่สร้าง'])}</div>
     </div>
     <span class="status-badge ${sig.cls}">${sig.txt}</span>
-  </div>`;
-}
-
-function memoCard(m, q = '') {
-  const sig = memoSigStatus(m['เนื้อหาเอกสาร(HTML)']);
-  const docNo = memoDocNo(m);
-  return `<div class="glass memo-card" data-id="${escapeHtml(m['รหัสใบเบิก'])}">
-    <div class="memo-thumb" data-thumb></div>
-    ${memoQuickActionsHtml(m['รหัสใบเบิก'])}
-    <div class="memo-card-body">
-      <div class="li-title">${memoHighlight(m['เรื่อง'] || 'ไม่ระบุเรื่อง', q)}</div>
-      <div class="li-sub">${docNo ? memoHighlight(docNo, q) + ' · ' : ''}${memoHighlight(m['ผู้ขอเบิก'] || '', q)}${m['ผู้ขอเบิก'] ? ' · ' : ''}${systemDate(m['วันที่สร้าง'])}</div>
-      <span class="status-badge ${sig.cls}" style="margin-top:6px;">${sig.txt}</span>
-    </div>
   </div>`;
 }
 
