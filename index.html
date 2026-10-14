@@ -5848,6 +5848,31 @@ body:has(#view-monthly .pc-wrap) .toast.show{
 .pdf-switch-input:checked + .pdf-switch-track{ background:var(--navy); }
 .pdf-switch-input:checked + .pdf-switch-track .pdf-switch-thumb{ transform:translateX(18px); }
 .pdf-switch-input:focus-visible + .pdf-switch-track{ outline:2px solid var(--navy); outline-offset:2px; }
+
+/* ===== รายการหมวดหมู่ (ตั้งค่า) — ใช้ได้ดีบนมือถือ ===== */
+.cu-list{ display:flex; flex-direction:column; gap:10px; margin-top:12px; }
+.cu-row{
+  background:var(--panel-soft); border:1px solid var(--panel-line); border-radius:14px;
+  padding:12px; display:flex; flex-direction:column; gap:10px;
+}
+.cu-top{ display:flex; align-items:center; gap:10px; }
+.cu-top .cu-name{ flex:1; min-width:0; }
+.cu-no{
+  flex:none; width:26px; height:26px; border-radius:50%;
+  background:var(--navy-wash); color:var(--navy);
+  font-family:var(--font-num); font-size:12px; font-weight:600;
+  display:flex; align-items:center; justify-content:center;
+}
+.cu-bottom{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.cu-bottom .cu-unit{ flex:1 1 140px; min-width:0; }
+.cu-actions{ display:flex; gap:6px; flex:none; margin-left:auto; }
+.cu-btn{
+  width:38px; height:38px; border-radius:11px; border:1px solid var(--panel-line);
+  background:#fff; color:var(--ink); display:flex; align-items:center; justify-content:center; cursor:pointer;
+}
+.cu-btn svg{ width:16px; height:16px; }
+.cu-btn:disabled{ opacity:.35; cursor:default; }
+.cu-btn.cu-del{ width:auto; padding:0 12px; font-size:12.5px; background:var(--bad-wash); color:var(--bad); border-color:transparent; }
       
 </style>
    
@@ -13342,16 +13367,9 @@ function renderSettings() {
       <div class="section-title" style="margin-top:6px; font-size:14px;">หมวดหมู่ & หน่วยนับครุภัณฑ์</div>
       <div class="glass" style="padding:16px;">
         <div class="hint" style="margin-top:0;">จัดการรายการหมวดหมู่ครุภัณฑ์ที่ใช้ทั้งระบบ พร้อมกำหนดหน่วยนับสำหรับเอกสารบันทึกข้อความ (ใบเบิก) — แก้ชื่อหมวดหมู่ตรงนี้ได้เลย ระบบจะปรับชื่อหมวดหมู่ในครุภัณฑ์ที่มีอยู่แล้วให้ตรงกันอัตโนมัติเมื่อกดบันทึก</div>
-        <div id="cuRows" style="margin-top:12px;">
-          ${cats.map((c, i) => `
-            <div class="memo-two-col cu-row" style="align-items:flex-end;" data-idx="${i}">
-              <input type="hidden" class="cu-original" value="${escapeHtml(c)}">
-              <div class="field" style="flex:2 1 160px;"><label>ชื่อหมวดหมู่</label><input class="input cu-name" value="${escapeHtml(c)}"></div>
-              <div class="field" style="max-width:140px;"><label>หน่วยนับ</label><input class="input cu-unit" value="${escapeHtml(catUnits[c] || '')}" placeholder="เช่น เครื่อง"></div>
-              <div class="field" style="max-width:56px;"><button type="button" class="btn btn-danger cu-del" style="padding:12px; width:100%;" title="ลบหมวดหมู่นี้">ลบ</button></div>
-            </div>
-          `).join('')}
-        </div>
+<div id="cuRows" class="cu-list">
+  ${cats.map((c, i) => cuRowHtml(c, c, catUnits[c] || '')).join('')}
+</div>
         <button type="button" class="mf-add" id="btnAddCategory" style="margin-top:4px;">+ เพิ่มหมวดหมู่ใหม่</button>
         <div class="btn-row" style="margin-top:14px;"><button class="btn btn-primary" id="btnSaveCategoryUnits">บันทึกหมวดหมู่ & หน่วยนับ</button></div>
       </div>
@@ -13556,37 +13574,71 @@ function renderSettings() {
     toast('ดาวน์โหลดไฟล์สำรองข้อมูลแล้ว');
   };
 
-  function wireCategoryUnitRows() {
-    document.querySelectorAll('.cu-del').forEach(btn => {
-      btn.onclick = async () => {
-        const row = btn.closest('.cu-row');
-        const original = row.querySelector('.cu-original').value;
-        // ถ้าหมวดหมู่นี้มีครุภัณฑ์ใช้อยู่แล้ว เตือนก่อนลบ
-        if (original) {
-          const count = state.assets.filter(a => a['หมวดหมู่'] === original).length;
-          if (count > 0 && !await confirmSheet('มีครุภัณฑ์ ' + count + ' รายการอยู่ในหมวดหมู่ "' + original + '" หากลบหมวดหมู่นี้ ครุภัณฑ์เดิมจะยังคงข้อมูลไว้ แต่จะไม่แสดงในตัวกรองหมวดหมู่อีกต่อไป ยืนยันการลบ?', {title:'ลบหมวดหมู่', okText:'ลบหมวดหมู่', tone:'bad'})) return;
-        }
-        row.remove();
-      };
-    });
-  }
-  wireCategoryUnitRows();
+const CU_ICON_UP = '<svg viewBox="0 0 20 20" fill="none"><path d="M5 12l5-5 5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const CU_ICON_DOWN = '<svg viewBox="0 0 20 20" fill="none"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
-  document.getElementById('btnAddCategory').onclick = () => {
-    const wrap = document.getElementById('cuRows');
-    const div = document.createElement('div');
-    div.className = 'memo-two-col cu-row';
-    div.style.alignItems = 'flex-end';
-    div.innerHTML = `
-      <input type="hidden" class="cu-original" value="">
-      <div class="field" style="flex:2 1 160px;"><label>ชื่อหมวดหมู่</label><input class="input cu-name" placeholder="เช่น เครื่องมือช่าง"></div>
-      <div class="field" style="max-width:140px;"><label>หน่วยนับ</label><input class="input cu-unit" placeholder="เช่น เครื่อง"></div>
-      <div class="field" style="max-width:56px;"><button type="button" class="btn btn-danger cu-del" style="padding:12px; width:100%;" title="ลบหมวดหมู่นี้">ลบ</button></div>
-    `;
-    wrap.appendChild(div);
-    wireCategoryUnitRows();
-    div.querySelector('.cu-name').focus();
-  };
+function cuRowHtml(original, name, unit) {
+  return `<div class="cu-row">
+    <input type="hidden" class="cu-original" value="${escapeHtml(original)}">
+    <div class="cu-top">
+      <span class="cu-no"></span>
+      <input class="input cu-name" value="${escapeHtml(name)}" placeholder="ชื่อหมวดหมู่">
+    </div>
+    <div class="cu-bottom">
+      <input class="input cu-unit" value="${escapeHtml(unit)}" placeholder="หน่วยนับ เช่น เครื่อง">
+      <div class="cu-actions">
+        <button type="button" class="cu-btn cu-up" title="เลื่อนขึ้น" aria-label="เลื่อนขึ้น">${CU_ICON_UP}</button>
+        <button type="button" class="cu-btn cu-down" title="เลื่อนลง" aria-label="เลื่อนลง">${CU_ICON_DOWN}</button>
+        <button type="button" class="cu-btn cu-del" title="ลบหมวดหมู่นี้">ลบ</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function cuRefreshRows() {
+  const rows = Array.from(document.querySelectorAll('#cuRows .cu-row'));
+  rows.forEach((r, i) => {
+    r.querySelector('.cu-no').textContent = i + 1;
+    r.querySelector('.cu-up').disabled = (i === 0);
+    r.querySelector('.cu-down').disabled = (i === rows.length - 1);
+  });
+}
+
+function wireCategoryUnitRows() {
+  const wrap = document.getElementById('cuRows');
+  if (!wrap) return;
+  wrap.querySelectorAll('.cu-row').forEach(row => {
+    row.querySelector('.cu-up').onclick = () => {
+      const prev = row.previousElementSibling;
+      if (prev) wrap.insertBefore(row, prev);
+      cuRefreshRows();
+    };
+    row.querySelector('.cu-down').onclick = () => {
+      const next = row.nextElementSibling;
+      if (next) wrap.insertBefore(next, row);
+      cuRefreshRows();
+    };
+    row.querySelector('.cu-del').onclick = async () => {
+      const original = row.querySelector('.cu-original').value;
+      if (original) {
+        const count = state.assets.filter(a => a['หมวดหมู่'] === original).length;
+        if (count > 0 && !await confirmSheet('มีครุภัณฑ์ ' + count + ' รายการอยู่ในหมวดหมู่ "' + original + '" หากลบหมวดหมู่นี้ ครุภัณฑ์เดิมจะยังคงข้อมูลไว้ แต่จะไม่แสดงในตัวกรองหมวดหมู่อีกต่อไป ยืนยันการลบ?', {title:'ลบหมวดหมู่', okText:'ลบหมวดหมู่', tone:'bad'})) return;
+      }
+      row.remove();
+      cuRefreshRows();
+    };
+  });
+  cuRefreshRows();
+}
+
+document.getElementById('btnAddCategory').onclick = () => {
+  const wrap = document.getElementById('cuRows');
+  wrap.insertAdjacentHTML('beforeend', cuRowHtml('', '', ''));
+  wireCategoryUnitRows();
+  const last = wrap.lastElementChild;
+  last.querySelector('.cu-name').focus();
+  last.scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
 
   document.getElementById('btnSaveCategoryUnits').onclick = async () => {
     const btn = document.getElementById('btnSaveCategoryUnits');
