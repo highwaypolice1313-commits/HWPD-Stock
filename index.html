@@ -6021,6 +6021,34 @@ body:has(#view-monthly .pc-wrap) .toast.show{
 .audit-row.ar-bad{ background:linear-gradient(90deg, var(--bad-wash), var(--panel) 60%); border-color:color-mix(in srgb, var(--bad) 35%, var(--panel-line)); }
 .audit-row.ar-bad::before{ background:var(--bad); }
 </style>
+
+<style id="audit-page-v2">
+.audit-hero{padding:18px;margin-bottom:14px}
+.audit-hero-top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-bottom:10px}
+.audit-hero-lbl{font-size:12px;color:var(--ink-dim)}
+.audit-hero-num{font-family:var(--font-num);font-size:30px;font-weight:700;line-height:1.1}
+.audit-hero-num span{font-size:15px;color:var(--ink-dim);font-weight:400}
+.audit-hero-pct{font-family:var(--font-num);font-size:22px;font-weight:700;color:var(--gold-deep)}
+.audit-hero-sub{font-size:12px;color:var(--ink-dim);margin-top:8px}
+.audit-msg{margin-top:12px;padding:9px 12px;border-radius:12px;background:var(--ok-wash);color:var(--ok);font-size:12.5px}
+.audit-cta{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.audit-cta .btn{flex:1 1 220px}
+.audit-filter{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.audit-seg{display:inline-flex;padding:3px;border-radius:99px;background:var(--off-wash);gap:2px}
+.audit-seg button{border:0;background:transparent;padding:8px 14px;border-radius:99px;font:inherit;font-size:12.5px;color:var(--ink-dim);cursor:pointer}
+.audit-seg button.active{background:var(--navy);color:#fff}
+.audit-filter select{flex:1 1 180px;max-width:280px}
+.audit-print{padding:16px;margin-bottom:14px}
+.audit-print-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.audit-print-btn{border:1px solid var(--panel-line);background:var(--panel);border-radius:14px;padding:12px;text-align:left;font:inherit;cursor:pointer;color:var(--ink);display:flex;flex-direction:column;gap:4px}
+.audit-print-btn:disabled{opacity:.5;cursor:not-allowed}
+.audit-print-btn:not(:disabled):hover{border-color:var(--gold-line)}
+.audit-print-btn b{font-size:13.5px}
+.audit-print-btn small{font-size:11.5px;color:var(--ink-dim)}
+.audit-walk-btns{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.audit-tools{margin-top:6px}
+</style>
+   
    
 </head>
 <body>
@@ -12677,133 +12705,252 @@ function auditIsChecked(a) {
   if (!years.includes(state.auditYear)) years.unshift(state.auditYear);
   return years.map(y => `<option value="${y}" ${y === state.auditYear ? 'selected' : ''}>พ.ศ. ${y + 543}</option>`).join('');
 }
+
+/* ===== หน้าตรวจนับประจำปี v2: ตัวช่วย ===== */
+function auditIsChecked(a) {
+  const r = auditRecordFor(a['รหัสครุภัณฑ์']);
+  if (!r) return false;
+  const res = String(r['ผล'] || '').trim();
+  const found = String(r['ผลตรวจ(A/D)'] || '').trim();
+  return (res && res !== 'ยังไม่ตรวจ') || !!found;
+}
+
+async function refreshAuditRecords() {
+  try {
+    state.auditRecords = (await apiGet('getAuditRecords', { year: state.auditYear, token: state.sessionToken })) || [];
+  } catch (e) { /* ใช้ค่าเดิมในเครื่องไปก่อน */ }
+}
+
+async function setAuditStatus(assetId, status) {
+  const asset = state.assets.find(a => a['รหัสครุภัณฑ์'] === assetId);
+  const name = asset ? asset['ชื่อครุภัณฑ์'] : '';
+  try {
+    await apiPost('saveAuditRecord', { assetId, assetName: name, year: state.auditYear, status });
+    await refreshAuditRecords();
+    state.auditMsg = 'บันทึก "' + name + '" เป็น ' + status + ' แล้ว';
+    drawAuditView();
+  } catch (err) { toast(err.message || 'บันทึกผลตรวจนับไม่สำเร็จ'); }
+}
+
+/* ตรวจต่อเนื่อง: แสดงทีละรายการที่ยังไม่ตรวจ (ไม่รวมยานพาหนะ) */
+let auditWalkRoot = null;
+function auditWalkOpen(queue) {
+  if (!queue.length) return;
+  if (auditWalkRoot) auditWalkRoot.remove();
+  auditWalkRoot = document.createElement('div');
+  document.body.appendChild(auditWalkRoot);
+
+  const findA = id => state.assets.find(a => a['รหัสครุภัณฑ์'] === id);
+  let i = 0;
+
+  const close = () => {
+    if (auditWalkRoot) auditWalkRoot.remove();
+    auditWalkRoot = null;
+    drawAuditView();
+  };
+
+  const skipChecked = () => {
+    while (i < queue.length) {
+      const a = findA(queue[i]);
+      if (a && !auditIsChecked(a)) break;
+      i++;
+    }
+  };
+
+  const draw = () => {
+    if (!auditWalkRoot) return;
+    skipChecked();
+    if (i >= queue.length) {
+      state.auditMsg = 'ตรวจครบทุกรายการในชุดนี้แล้ว';
+      close();
+      return;
+    }
+    const a = findA(queue[i]);
+    auditWalkRoot.innerHTML = `
+      <div class="overlay" style="z-index:96;">
+        <div class="sheet" style="max-height:92vh;">
+          <button class="sheet-close" id="awClose" type="button">${ICONS.close}</button>
+          <div class="sheet-handle"></div>
+          <div class="sheet-title">ตรวจต่อเนื่อง</div>
+          <div class="hint" style="margin-top:0;">รายการที่ ${i + 1} จาก ${queue.length} · เหลืออีก ${queue.length - i - 1}</div>
+          <div class="glass" style="padding:16px;margin:12px 0;display:flex;gap:12px;align-items:center;">
+            <div class="li-icon">${catIcon(a['หมวดหมู่'])}</div>
+            <div style="min-width:0;">
+              <div class="li-title" style="white-space:normal;">${escapeHtml(a['ชื่อครุภัณฑ์'])}</div>
+              <div class="li-sub">${escapeHtml(a['รหัสครุภัณฑ์'])} · ${escapeHtml(assetSerialText(a) || 'ไม่ระบุหมายเลขเครื่อง')}</div>
+            </div>
+          </div>
+          <div class="audit-walk-btns">
+            <button class="btn btn-ok" data-st="พบปกติ">พบปกติ</button>
+            <button class="btn btn-ghost" data-st="ชำรุด">ชำรุด</button>
+            <button class="btn btn-danger" data-st="สูญหาย">สูญหาย</button>
+          </div>
+          <div class="btn-row"><button class="btn btn-ghost" id="awSkip">ข้ามรายการนี้</button></div>
+        </div>
+      </div>`;
+
+    auditWalkRoot.querySelector('#awClose').onclick = close;
+    auditWalkRoot.querySelector('#awSkip').onclick = () => { i++; draw(); };
+    auditWalkRoot.querySelectorAll('[data-st]').forEach(b => b.onclick = async () => {
+      const cur = findA(queue[i]);
+      if (!cur) return;
+      auditWalkRoot.querySelectorAll('[data-st]').forEach(x => x.disabled = true);
+      try {
+        await apiPost('saveAuditRecord', {
+          assetId: cur['รหัสครุภัณฑ์'], assetName: cur['ชื่อครุภัณฑ์'],
+          year: state.auditYear, status: b.dataset.st
+        });
+        state.auditMsg = 'บันทึก "' + cur['ชื่อครุภัณฑ์'] + '" เป็น ' + b.dataset.st + ' แล้ว';
+        await refreshAuditRecords();
+        i++;
+        draw();
+      } catch (err) {
+        toast(err.message || 'บันทึกไม่สำเร็จ');
+        auditWalkRoot.querySelectorAll('[data-st]').forEach(x => x.disabled = false);
+      }
+    });
+  };
+  draw();
+}   
    
 function drawAuditView() {
   const el = document.getElementById('view-audit');
   if (state.auditCat === undefined) state.auditCat = 'all';
-  if (state.auditPending === undefined) state.auditPending = false;
+  if (state.auditView === undefined) state.auditView = 'pending';
+  if (state.auditMsg === undefined) state.auditMsg = '';
 
-  const total = state.assets.length;
-  const checked = state.assets.filter(auditIsChecked).length;
-  const pct = total ? Math.round((checked / total) * 100) : 0;
+  const isVeh = a => a['หมวดหมู่'] === 'ยานพาหนะ';
+  const isComm = a => a['หมวดหมู่'] === 'สื่อสาร';
+  const all = state.assets;
+  const total = all.length;
+  const checked = all.filter(auditIsChecked).length;
+  const pct = total ? Math.round(checked / total * 100) : 0;
+  const remain = total - checked;
 
-  const catStats = getCategories().map(c => {
-    const list = state.assets.filter(a => a['หมวดหมู่'] === c);
-    return { name: c, total: list.length, done: list.filter(auditIsChecked).length };
-  }).filter(s => s.total > 0);
+  const inCat = a => state.auditCat === 'all' || a['หมวดหมู่'] === state.auditCat;
+  const catAssets = all.filter(inCat);
+  const catChecked = catAssets.filter(auditIsChecked).length;
+  const catLabel = state.auditCat === 'all' ? 'ทุกหมวด' : escapeHtml(state.auditCat);
 
-  let list = state.assets.filter(a => state.auditCat === 'all' || a['หมวดหมู่'] === state.auditCat);
-  const catTotal = list.length;
-  const catDone = list.filter(auditIsChecked).length;
-  const catPct = catTotal ? Math.round((catDone / catTotal) * 100) : 0;
-  if (state.auditPending) list = list.filter(a => !auditIsChecked(a));
+  let list = catAssets;
+  if (state.auditView === 'pending') list = list.filter(a => !auditIsChecked(a));
+  else if (state.auditView === 'done') list = list.filter(auditIsChecked);
 
-  const showVehicleBtn = true;
-  const hasComms = state.assets.some(a => a['หมวดหมู่'] === 'สื่อสาร');
-  const emptyMsg = state.auditPending
+  const walkQueue = catAssets.filter(a => !isVeh(a) && !auditIsChecked(a)).map(a => a['รหัสครุภัณฑ์']);
+  const vehQueue = catAssets.filter(a => isVeh(a) && !auditIsChecked(a)).map(a => a['รหัสครุภัณฑ์']);
+
+  const kinds = [
+    { key: 'general', label: 'ครุภัณฑ์ทั่วไป', pool: all.filter(a => !isVeh(a) && !isComm(a)), run: () => printWithSign(printOfficialGeneralReport) },
+    { key: 'comms', label: 'เครื่องมือสื่อสาร', pool: all.filter(isComm), run: () => printWithSign(printCommsAuditReport) },
+    { key: 'vehicle', label: 'ยานพาหนะ (บชก.3)', pool: all.filter(isVeh), run: () => printWithSign(printVehicleAuditReport) }
+  ].map(k => {
+    const done = k.pool.filter(auditIsChecked).length;
+    return { key: k.key, label: k.label, run: k.run, total: k.pool.length, done, missing: k.pool.length - done };
+  }).filter(k => k.total > 0);
+
+  const printHtml = kinds.map(k => `
+    <button type="button" class="audit-print-btn" data-print="${k.key}" ${k.done ? '' : 'disabled'}>
+      <b>${k.label}</b>
+      <small>${!k.done ? 'ยังไม่มีผลตรวจ' : (k.missing ? 'ยังขาด ' + k.missing + ' รายการ' : 'ครบ ' + k.total + ' รายการ')}</small>
+    </button>`).join('');
+
+  const catOptions = [`<option value="all" ${state.auditCat === 'all' ? 'selected' : ''}>ทุกหมวดหมู่ (${total})</option>`]
+    .concat(getCategories().map(c => {
+      const n = all.filter(a => a['หมวดหมู่'] === c).length;
+      return n ? `<option value="${escapeHtml(c)}" ${state.auditCat === c ? 'selected' : ''}>${escapeHtml(c)} (${n})</option>` : '';
+    })).join('');
+
+  const msgHtml = state.auditMsg ? `<div class="audit-msg">✓ ${escapeHtml(state.auditMsg)}</div>` : '';
+  const emptyMsg = state.auditView === 'pending'
     ? 'ตรวจครบทุกรายการในหมวดนี้แล้ว 🎉'
-    : 'ยังไม่มีครุภัณฑ์ในหมวดนี้';
+    : 'ยังไม่มีรายการในมุมมองนี้';
 
   el.innerHTML = `
-    <div class="section-title">ตรวจนับพัสดุประจำปี
+    <div class="section-title">ตรวจนับประจำปี
       <span class="section-actions"><select class="input sort-select" id="auditYearSelect" style="min-width:130px;">${auditYearOptions()}</select></span>
     </div>
 
-    <div class="glass" style="padding:18px; margin-bottom:14px;">
-      <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:8px;">
-        <span>ความคืบหน้ารวมทั้งระบบ</span><span>${checked} / ${total} รายการ (${pct}%)</span>
+    <div class="glass audit-hero">
+      <div class="audit-hero-top">
+        <div>
+          <div class="audit-hero-lbl">ความคืบหน้า พ.ศ. ${state.auditYear + 543}</div>
+          <div class="audit-hero-num">${checked}<span> / ${total} รายการ</span></div>
+        </div>
+        <div class="audit-hero-pct">${pct}%</div>
       </div>
       <div class="audit-progress-track"><div class="audit-progress-fill" style="width:${pct}%;"></div></div>
-    </div>
-
-    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:14px; margin-bottom:16px;">
-      <!-- กล่องที่ 1: ตรวจนับ -->
-      <div class="glass" style="padding:16px;">
-        <div class="mf-section-title"><span class="mf-step">1</span> ตรวจนับ</div>
-        <div class="hint" style="margin-top:0;">บันทึกหรือล้างผลตรวจนับของปี พ.ศ. ${state.auditYear + 543}</div>
-        <div class="btn-row">
-          <button class="btn btn-ok" id="btnBulkAudit">ตรวจนับหลายรายการพร้อมกัน</button>
-         <button class="btn btn-ok" id="btnBulkVehicleAudit">ตรวจยานพาหนะหลายคันพร้อมกัน</button>
-        </div>
-        <div class="btn-row" style="margin-top:10px;">
-          <button class="btn btn-ghost" id="btnClearAuditSelected">ล้างผลตรวจเฉพาะรายการ</button>
-          <button class="btn btn-danger" id="btnClearAuditAll">ล้างผลตรวจทั้งหมด</button>
-        </div>
-      </div>
-
-      <!-- กล่องที่ 2: พิมพ์รายงาน -->
-      <div class="glass" style="padding:16px;">
-        <div class="mf-section-title"><span class="mf-step">2</span> พิมพ์รายงาน</div>
-        <div class="hint" style="margin-top:0;">ก่อนพิมพ์ ระบบจะให้เลือกว่าจะใส่ลายเซ็นคณะกรรมการหรือไม่</div>
-        <div class="btn-row">
-          <button class="btn btn-primary" id="btnPrintOfficialGeneral">ครุภัณฑ์ทั่วไป</button>
-          ${hasComms ? `<button class="btn btn-ghost" id="btnPrintCommsReport">เครื่องมือสื่อสาร</button>` : ''}
-          ${showVehicleBtn ? `<button class="btn btn-ghost" id="btnPrintVehicleReport">ยานพาหนะ (บชก.3)</button>` : ''}
-        </div>
+      <div class="audit-hero-sub">เหลืออีก ${remain} รายการ · ${catLabel}: ตรวจแล้ว ${catChecked}/${catAssets.length}</div>
+      ${msgHtml}
+      <div class="audit-cta">
+        <button class="btn btn-primary" id="btnAuditWalk" ${walkQueue.length ? '' : 'disabled'}>
+          ตรวจต่อ (ทั่วไป) ${walkQueue.length} รายการ
+        </button>
+        ${vehQueue.length ? `<button class="btn btn-ghost" id="btnAuditVeh">ตรวจยานพาหนะที่ยังไม่ตรวจ ${vehQueue.length} คัน</button>` : ''}
       </div>
     </div>
 
-    <div class="chip-row">
-      <div class="chip ${state.auditCat === 'all' ? 'active' : ''}" data-acat="all">ทั้งหมด ${checked}/${total}</div>
-      ${catStats.map(s => `
-        <div class="chip ${state.auditCat === s.name ? 'active' : ''}" data-acat="${escapeHtml(s.name)}">
-          ${escapeHtml(s.name)} ${s.done}/${s.total}${s.done === s.total ? ' ✓' : ''}
-        </div>`).join('')}
+    <div class="audit-filter">
+      <div class="audit-seg">
+        <button type="button" data-aview="pending" class="${state.auditView === 'pending' ? 'active' : ''}">ยังไม่ตรวจ</button>
+        <button type="button" data-aview="done" class="${state.auditView === 'done' ? 'active' : ''}">ตรวจแล้ว</button>
+        <button type="button" data-aview="all" class="${state.auditView === 'all' ? 'active' : ''}">ทั้งหมด</button>
+      </div>
+      <select class="input" id="auditCatSelect">${catOptions}</select>
     </div>
 
-    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
-      <div class="chip ${state.auditPending ? 'active' : ''}" id="auditPendingChip">เฉพาะที่ยังไม่ตรวจ</div>
-      <span class="hint" style="margin:0;">
-        ${state.auditCat === 'all' ? 'ทุกหมวด' : escapeHtml(state.auditCat)}: ตรวจแล้ว ${catDone}/${catTotal} (${catPct}%)
-      </span>
+    <div class="glass audit-print">
+      <div class="mf-section-title" style="margin-bottom:10px;">พิมพ์รายงาน</div>
+      <div class="audit-print-grid">${printHtml}</div>
     </div>
-    <div class="audit-progress-track" style="margin-bottom:14px;"><div class="audit-progress-fill" style="width:${catPct}%;"></div></div>
 
-    <div id="auditList">${list.length ? list.map(auditRow).join('') : emptyState(emptyMsg)}</div>
+    <div class="btn-row audit-tools">
+      <button class="btn btn-ghost" id="btnBulkAudit">ตรวจหลายรายการพร้อมกัน</button>
+      <button class="btn btn-ghost" id="btnClearAuditSelected">ล้างผลบางรายการ</button>
+      <button class="btn btn-danger" id="btnClearAuditAll">ล้างผลทั้งหมด</button>
+    </div>
+
+    <div id="auditList" style="margin-top:12px;">
+      ${list.length ? list.map(auditRow).join('') : emptyState(emptyMsg)}
+    </div>
   `;
 
-  document.querySelectorAll('[data-acat]').forEach(c => c.onclick = () => {
-    state.auditCat = c.dataset.acat;
+  el.querySelectorAll('[data-aview]').forEach(b => b.onclick = () => {
+    state.auditView = b.dataset.aview;
     drawAuditView();
   });
-  document.getElementById('auditPendingChip').onclick = () => {
-    state.auditPending = !state.auditPending;
+  document.getElementById('auditCatSelect').onchange = e => {
+    state.auditCat = e.target.value;
     drawAuditView();
   };
-  document.querySelectorAll('.audit-btn[data-status]').forEach(b => b.onclick = (e) => {
-    e.stopPropagation();
-    setAuditStatus(b.dataset.id, b.dataset.status);
+  document.getElementById('auditYearSelect').onchange = e => {
+    state.auditYear = Number(e.target.value);
+    state.auditMsg = '';
+    renderAudit();
+  };
+
+  const walkBtn = document.getElementById('btnAuditWalk');
+  if (walkBtn) walkBtn.onclick = () => auditWalkOpen(walkQueue);
+  const vehBtn = document.getElementById('btnAuditVeh');
+  if (vehBtn) vehBtn.onclick = () => openBulkVehicleAuditForm(vehQueue);
+
+  el.querySelectorAll('[data-print]').forEach(b => b.onclick = () => {
+    const k = kinds.find(x => x.key === b.dataset.print);
+    if (k) k.run();
   });
 
-  // ตรวจนับ
   document.getElementById('btnBulkAudit').onclick = () => openBulkAuditModal();
-  document.getElementById('btnBulkVehicleAudit').onclick = () => {
-  const vehicleIds = state.assets
-    .filter(a => a['หมวดหมู่'] === 'ยานพาหนะ')
-    .map(a => a['รหัสครุภัณฑ์']);
-  if (!vehicleIds.length) { toast('ยังไม่มียานพาหนะในระบบ'); return; }
-  openBulkVehicleAuditForm(vehicleIds);
-  };
-  document.getElementById('btnClearAuditAll').onclick = clearAllAuditResults;
   document.getElementById('btnClearAuditSelected').onclick = () => openBulkAuditModal('clear');
+  document.getElementById('btnClearAuditAll').onclick = clearAllAuditResults;
 
-  // พิมพ์รายงาน (ถามเรื่องลายเซ็นก่อนทุกครั้ง)
-  document.getElementById('btnPrintOfficialGeneral').onclick = () => printWithSign(printOfficialGeneralReport);
-  const commsBtn = document.getElementById('btnPrintCommsReport');
-  if (commsBtn) commsBtn.onclick = () => printWithSign(printCommsAuditReport);
-  const vBtn = document.getElementById('btnPrintVehicleReport');
-  if (vBtn) vBtn.onclick = () => printWithSign(printVehicleAuditReport);
-
-  document.querySelectorAll('[data-vehicle-audit]').forEach(x => x.onclick = () => openVehicleAuditForm(x.dataset.vehicleAudit));
-
-  document.querySelectorAll('[data-asset-detail]').forEach(row => {
-    row.onclick = e => {
-      if (e.target.closest('.audit-btn')) return;
-      openAssetDetail(row.dataset.assetDetail);
-    };
-  });
-   
-  document.getElementById('auditYearSelect').onchange = (e) => { state.auditYear = Number(e.target.value); renderAudit(); };
+  // คลิกแบบ delegation: ปุ่มสถานะ / รถเปิดฟอร์มรถ / รายการอื่นเปิดรายละเอียด
+  document.getElementById('auditList').onclick = e => {
+    const btn = e.target.closest('.audit-btn');
+    if (btn) { e.stopPropagation(); setAuditStatus(btn.dataset.id, btn.dataset.status); return; }
+    const row = e.target.closest('.audit-row');
+    if (!row) return;
+    if (row.dataset.vehicleAudit) openVehicleAuditForm(row.dataset.vehicleAudit);
+    else if (row.dataset.assetDetail) openAssetDetail(row.dataset.assetDetail);
+  };
 }
    
 function auditRow(a) {
