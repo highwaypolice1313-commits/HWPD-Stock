@@ -13671,48 +13671,39 @@ document.getElementById('btnAddCategory').onclick = () => {
   last.scrollIntoView({ behavior: 'smooth', block: 'center' });
 };
 
-  document.getElementById('btnSaveCategoryUnits').onclick = async () => {
-    const btn = document.getElementById('btnSaveCategoryUnits');
-    const rows = Array.from(document.querySelectorAll('.cu-row'));
-    const categories = [];
-    const unitsObj = {};
-    const renames = [];
-    for (const row of rows) {
-      const original = row.querySelector('.cu-original').value;
-      const name = row.querySelector('.cu-name').value.trim();
-      const unit = row.querySelector('.cu-unit').value.trim();
-      if (!name) continue; // ข้ามแถวที่ไม่ได้กรอกชื่อหมวดหมู่
-      if (categories.includes(name)) { toast('มีชื่อหมวดหมู่ซ้ำกัน: ' + name); return; }
-      categories.push(name);
-      unitsObj[name] = unit || 'เครื่อง';
-      if (original && original !== name) renames.push({ old: original, new: name });
-    }
-    if (!categories.length) { toast('ต้องมีอย่างน้อย 1 หมวดหมู่'); return; }
-    setButtonBusy(btn, true); setLoading(true, 'กำลังบันทึกหมวดหมู่...');
-    try {
-      await apiPost('updateSystemSettings', {
-        assetCategories: JSON.stringify(categories),
-        categoryUnits: JSON.stringify(unitsObj),
-        categoryRenames: JSON.stringify(renames)
-      });
-      toast('บันทึกหมวดหมู่และหน่วยนับแล้ว');
-      await reloadThen(renderSettings);
-    } catch (err) { toast(err.message || 'บันทึกไม่สำเร็จ'); }
-    finally { setLoading(false); setButtonBusy(btn, false); }
-
-     const iconsObj = {};
-// ภายในลูป for (const row of rows) หลังจากได้ name แล้ว
-iconsObj[name] = row.querySelector('.cu-icon').value || 'other';
-
-// แล้วส่งไปพร้อมค่าอื่นใน apiPost
-await apiPost('updateSystemSettings', {
-  assetCategories: JSON.stringify(categories),
-  categoryUnits: JSON.stringify(unitsObj),
-  categoryIcons: JSON.stringify(iconsObj),
-  categoryRenames: JSON.stringify(renames)
-});
-     
-  };
+document.getElementById('btnSaveCategoryUnits').onclick = async () => {
+  const btn = document.getElementById('btnSaveCategoryUnits');
+  const rows = Array.from(document.querySelectorAll('.cu-row'));
+  const categories = [];
+  const unitsObj = {};
+  const iconsObj = {};
+  const renames = [];
+  for (const row of rows) {
+    const original = row.querySelector('.cu-original').value;
+    const name = row.querySelector('.cu-name').value.trim();
+    const unit = row.querySelector('.cu-unit').value.trim();
+    const icon = row.querySelector('.cu-icon').value || 'other';
+    if (!name) continue;
+    if (categories.includes(name)) { toast('มีชื่อหมวดหมู่ซ้ำกัน: ' + name); return; }
+    categories.push(name);
+    unitsObj[name] = unit || 'เครื่อง';
+    iconsObj[name] = icon;
+    if (original && original !== name) renames.push({ old: original, new: name });
+  }
+  if (!categories.length) { toast('ต้องมีอย่างน้อย 1 หมวดหมู่'); return; }
+  setButtonBusy(btn, true); setLoading(true, 'กำลังบันทึกหมวดหมู่...');
+  try {
+    await apiPost('updateSystemSettings', {
+      assetCategories: JSON.stringify(categories),
+      categoryUnits: JSON.stringify(unitsObj),
+      categoryIcons: JSON.stringify(iconsObj),
+      categoryRenames: JSON.stringify(renames)
+    });
+    toast('บันทึกหมวดหมู่และหน่วยนับแล้ว');
+    await reloadThen(renderSettings);
+  } catch (err) { toast(err.message || 'บันทึกไม่สำเร็จ'); }
+  finally { setLoading(false); setButtonBusy(btn, false); }
+};
 
   const updDocPreview = () => {
   const p = document.getElementById('st_docpreview');
