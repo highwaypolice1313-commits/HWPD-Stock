@@ -13229,15 +13229,12 @@ const AUDIT_ICON_MINUS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentCo
 const AUDIT_ICON_TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 13h10l1-13"/><path d="M9 7V4h6v3"/></svg>';
 
 function auditHeaderHtml(mode, yearSel) {
-  const toolsInHeader = mode === 'grid'
-    ? `<button type="button" class="audit-tools-icon" id="btnAuditTools" title="เครื่องมือตรวจนับ" aria-label="เครื่องมือตรวจนับ">${AUDIT_ICON_TOOLS}</button>`
-    : '';
   return `<div class="section-title">ตรวจนับประจำปี
     <span class="section-actions">
       ${viewToggleHtml('audit', mode)}
       <span class="audit-head-actions">
         <button type="button" class="audit-tools-icon" id="btnAuditPrint" title="พิมพ์รายงาน" aria-label="พิมพ์รายงาน">${AUDIT_ICON_PRINT}</button>
-        ${toolsInHeader}
+        <button type="button" class="audit-tools-icon" id="btnAuditTools" title="เครื่องมือตรวจนับ" aria-label="เครื่องมือตรวจนับ">${AUDIT_ICON_TOOLS}</button>
       </span>
       ${yearSel}
     </span>
@@ -13246,8 +13243,8 @@ function auditHeaderHtml(mode, yearSel) {
 
 function wireAuditHeader(kinds) {
   document.getElementById('btnAuditPrint').onclick = () => openAuditPrintSheet(kinds);
-  const toolsBtn = document.getElementById('btnAuditTools');
-  if (toolsBtn) toolsBtn.onclick = openAuditToolsSheet;
+  const toolsBtns = document.querySelectorAll('#btnAuditTools, #btnAuditToolsRow');
+  toolsBtns.forEach(b => b.onclick = openAuditToolsSheet);
 }
 
 /* เรียก fn ครั้งเดียวเมื่อ modal ทุกใบปิดแล้ว ใช้เปิด modal เครื่องมือกลับมา */
@@ -13408,7 +13405,7 @@ function drawAuditView() {
         <button type="button" data-aview="done" class="${state.auditView === 'done' ? 'active' : ''}">ตรวจแล้ว</button>
         <button type="button" data-aview="all" class="${state.auditView === 'all' ? 'active' : ''}">ทั้งหมด</button>
       </div>
-      <button type="button" class="audit-tools-icon" id="btnAuditTools" title="เครื่องมือตรวจนับ" aria-label="เครื่องมือตรวจนับ">${AUDIT_ICON_TOOLS}</button>
+      <button type="button" class="audit-tools-icon" id="btnAuditToolsRow" title="เครื่องมือตรวจนับ" aria-label="เครื่องมือตรวจนับ">${AUDIT_ICON_TOOLS}</button>
     </div>
     ${auditCatChipsHtml(all)}
 
