@@ -6279,25 +6279,6 @@ const DEFAULT_CATEGORY_UNITS = {
   'เครื่องแบบ/สนาม': 'ชุด',
   'อื่นๆ': 'รายการ'
 };
-
-const DEFAULT_CATEGORY_ICONS = {
-  'อาวุธปืน': 'gun',
-  'ยานพาหนะ': 'vehicle',
-  'สื่อสาร': 'radio',
-  'คอมพิวเตอร์/IT': 'computer',
-  'เครื่องแบบ/สนาม': 'uniform',
-  'อื่นๆ': 'other'
-};
-const ICON_CHOICES = ['gun','vehicle','radio','computer','uniform','other','wrench','swap','user','clock','inbox','checklist','info','warn','log','download','camera','scan'];
-
-function getCategoryIcons() {
-  try {
-    const raw = state.settings && state.settings.categoryIcons;
-    const obj = raw ? JSON.parse(raw) : null;
-    if (obj && typeof obj === 'object') return { ...DEFAULT_CATEGORY_ICONS, ...obj };
-  } catch (e) {}
-  return { ...DEFAULT_CATEGORY_ICONS };
-}
    
 function getCategoryUnits() {
   try {
@@ -7044,8 +7025,7 @@ function statusClass(s) {
            'รออนุมัติ':'status-pending','ถูกปฏิเสธ':'status-rejected' }[s] || '';
 }
 function catIcon(c) {
-  const key = getCategoryIcons()[c];
-  return (key && ICONS[key]) || ICONS.other;
+  return { 'อาวุธปืน':ICONS.gun, 'ยานพาหนะ':ICONS.vehicle, 'สื่อสาร':ICONS.radio, 'คอมพิวเตอร์/IT':ICONS.computer, 'เครื่องแบบ/สนาม':ICONS.uniform }[c] || ICONS.other;
 }
 const isAdmin = () => state.role === 'admin';
 function escapeHtml(s) {
@@ -13596,18 +13576,13 @@ function renderSettings() {
     toast('ดาวน์โหลดไฟล์สำรองข้อมูลแล้ว');
   };
 
-function cuRowHtml(original, name, unit, icon) {
-  const cur = icon || 'other';
+function cuRowHtml(original, name, unit) {
   return `<div class="cu-row">
     <input type="hidden" class="cu-original" value="${escapeHtml(original)}">
     <div class="cu-top">
       <span class="cu-no"></span>
       <input class="input cu-name" value="${escapeHtml(name)}" placeholder="ชื่อหมวดหมู่">
     </div>
-    <div class="cu-icons">
-      ${ICON_CHOICES.map(k => `<button type="button" class="cu-icon-pick ${k === cur ? 'on' : ''}" data-icon="${k}" title="${k}">${ICONS[k]}</button>`).join('')}
-    </div>
-    <input type="hidden" class="cu-icon" value="${cur}">
     <div class="cu-bottom">
       <input class="input cu-unit" value="${escapeHtml(unit)}" placeholder="หน่วยนับ เช่น เครื่อง">
       <div class="cu-actions">
@@ -13631,13 +13606,6 @@ function cuRefreshRows() {
 function wireCategoryUnitRows() {
   const wrap = document.getElementById('cuRows');
   if (!wrap) return;
-   wrap.querySelectorAll('.cu-row').forEach(row => {
-  row.querySelectorAll('.cu-icon-pick').forEach(btn => {
-    btn.onclick = () => {
-      row.querySelectorAll('.cu-icon-pick').forEach(x => x.classList.toggle('on', x === btn));
-      row.querySelector('.cu-icon').value = btn.dataset.icon;
-    };
-  });
   wrap.querySelectorAll('.cu-row').forEach(row => {
     row.querySelector('.cu-up').onclick = () => {
       const prev = row.previousElementSibling;
@@ -13664,47 +13632,43 @@ function wireCategoryUnitRows() {
 
 document.getElementById('btnAddCategory').onclick = () => {
   const wrap = document.getElementById('cuRows');
-  wrap.insertAdjacentHTML('beforeend', cuRowHtml('', '', '', 'other'));
+  wrap.insertAdjacentHTML('beforeend', cuRowHtml('', '', ''));
   wireCategoryUnitRows();
   const last = wrap.lastElementChild;
   last.querySelector('.cu-name').focus();
   last.scrollIntoView({ behavior: 'smooth', block: 'center' });
 };
 
-document.getElementById('btnSaveCategoryUnits').onclick = async () => {
-  const btn = document.getElementById('btnSaveCategoryUnits');
-  const rows = Array.from(document.querySelectorAll('.cu-row'));
-  const categories = [];
-  const unitsObj = {};
-  const iconsObj = {};
-  const renames = [];
-  for (const row of rows) {
-    const original = row.querySelector('.cu-original').value;
-    const name = row.querySelector('.cu-name').value.trim();
-    const unit = row.querySelector('.cu-unit').value.trim();
-    const icon = row.querySelector('.cu-icon').value || 'other';
-    if (!name) continue;
-    if (categories.includes(name)) { toast('มีชื่อหมวดหมู่ซ้ำกัน: ' + name); return; }
-    categories.push(name);
-    unitsObj[name] = unit || 'เครื่อง';
-    iconsObj[name] = icon;
-    if (original && original !== name) renames.push({ old: original, new: name });
-  }
-  if (!categories.length) { toast('ต้องมีอย่างน้อย 1 หมวดหมู่'); return; }
-  setButtonBusy(btn, true); setLoading(true, 'กำลังบันทึกหมวดหมู่...');
-  try {
-    await apiPost('updateSystemSettings', {
-      assetCategories: JSON.stringify(categories),
-      categoryUnits: JSON.stringify(unitsObj),
-      categoryIcons: JSON.stringify(iconsObj),
-      categoryRenames: JSON.stringify(renames)
-    });
-    toast('บันทึกหมวดหมู่และหน่วยนับแล้ว');
-    await reloadThen(renderSettings);
-  } catch (err) { toast(err.message || 'บันทึกไม่สำเร็จ'); }
-  finally { setLoading(false); setButtonBusy(btn, false); }
-};
-   
+  document.getElementById('btnSaveCategoryUnits').onclick = async () => {
+    const btn = document.getElementById('btnSaveCategoryUnits');
+    const rows = Array.from(document.querySelectorAll('.cu-row'));
+    const categories = [];
+    const unitsObj = {};
+    const renames = [];
+    for (const row of rows) {
+      const original = row.querySelector('.cu-original').value;
+      const name = row.querySelector('.cu-name').value.trim();
+      const unit = row.querySelector('.cu-unit').value.trim();
+      if (!name) continue; // ข้ามแถวที่ไม่ได้กรอกชื่อหมวดหมู่
+      if (categories.includes(name)) { toast('มีชื่อหมวดหมู่ซ้ำกัน: ' + name); return; }
+      categories.push(name);
+      unitsObj[name] = unit || 'เครื่อง';
+      if (original && original !== name) renames.push({ old: original, new: name });
+    }
+    if (!categories.length) { toast('ต้องมีอย่างน้อย 1 หมวดหมู่'); return; }
+    setButtonBusy(btn, true); setLoading(true, 'กำลังบันทึกหมวดหมู่...');
+    try {
+      await apiPost('updateSystemSettings', {
+        assetCategories: JSON.stringify(categories),
+        categoryUnits: JSON.stringify(unitsObj),
+        categoryRenames: JSON.stringify(renames)
+      });
+      toast('บันทึกหมวดหมู่และหน่วยนับแล้ว');
+      await reloadThen(renderSettings);
+    } catch (err) { toast(err.message || 'บันทึกไม่สำเร็จ'); }
+    finally { setLoading(false); setButtonBusy(btn, false); }
+  };
+
   const updDocPreview = () => {
   const p = document.getElementById('st_docpreview');
   if (!p) return;
