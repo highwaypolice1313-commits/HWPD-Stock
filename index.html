@@ -15712,23 +15712,32 @@ function renderSettings() {
       if (lbl && t) lbl.textContent = 'ใช้อยู่: ' + t.name;
     };
   });
+
+   function prepareImageFileRaw(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = () => reject(new Error('อ่านไฟล์รูปไม่สำเร็จ'));
+    r.readAsDataURL(file);
+  });
+}
    
-  document.getElementById('btnUploadGaruda').onclick = async () => {
-    const inp = document.getElementById('st_garuda');
-    const file = inp.files && inp.files[0];
-    if (!file) { toast('กรุณาเลือกไฟล์รูปภาพก่อน'); return; }
-    const btn = document.getElementById('btnUploadGaruda'); setButtonBusy(btn, true, 'กำลังเตรียมรูป...'); setLoading(true, 'กำลังเตรียมตราครุฑ...');
-    try {
-      const compressed = await prepareImageFile(file, 60000);
-      setButtonBusy(btn, true, 'กำลังอัปโหลด...');
-      try {
-        const url = await uploadImageToDrive(compressed, 'garuda');
-        await apiPost('updateSystemSettings', { garudaLogo: url });
-        toast('อัปโหลดตราครุฑแล้ว'); await reloadThen(renderSettings);
-      }
-      catch (err) { toast(err.message || 'อัปโหลดไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(btn, false); }
-    } catch (err) { toast(err.message || 'เตรียมรูปไม่สำเร็จ'); setLoading(false); setButtonBusy(btn, false); }
-  };
+document.getElementById('btnUploadGaruda').onclick = async () => {
+  const inp = document.getElementById('st_garuda');
+  const file = inp.files && inp.files[0];
+  if (!file) { toast('กรุณาเลือกไฟล์รูปภาพก่อน'); return; }
+  const btn = document.getElementById('btnUploadGaruda');
+  setButtonBusy(btn, true, 'กำลังเตรียมรูป...'); setLoading(true, 'กำลังเตรียมตราครุฑ...');
+  try {
+    // ย่อให้เล็ก ไม่ต้องอัปโหลด Drive จึงไม่มีปัญหา CORS
+    const small = await compressImageDataUrl(await prepareImageFileRaw(file), 20000);
+    await apiPost('updateSystemSettings', { garudaLogo: small });
+    toast('บันทึกตราครุฑแล้ว'); await reloadThen(renderSettings);
+  } catch (err) {
+    toast(err.message || 'บันทึกไม่สำเร็จ');
+  } finally { setLoading(false); setButtonBusy(btn, false); }
+};
+   
   const btnRemoveG = document.getElementById('btnRemoveGaruda');
   if (btnRemoveG) btnRemoveG.onclick = async () => {
     if (!await confirmSheet('ยืนยันลบรูปตราครุฑ?', {title:'ลบตราครุฑ', okText:'ลบรูป', tone:'bad'})) return;
