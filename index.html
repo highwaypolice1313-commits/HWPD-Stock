@@ -9808,11 +9808,20 @@ function borrowDaysInfo(b) {
   if (days === 0) return 'ครบกำหนดวันนี้';
   return 'เหลืออีก ' + days + ' วัน';
 }
+
+function borrowCategoryOf(b) {
+  const a = state.assets.find(x => x['รหัสครุภัณฑ์'] === b['รหัสครุภัณฑ์']);
+  return a ? (a['หมวดหมู่'] || 'อื่นๆ') : 'อื่นๆ';
+}
+
+document.querySelectorAll('[data-btab]').forEach(c => c.onclick = () => { state.borrowTab = c.dataset.btab; state.borrowCat = 'all'; renderBorrow(); });
+   
 function renderBorrow() {
   const el = document.getElementById('view-borrow');
   if (state.borrowTab === undefined) state.borrowTab = 'active';
   if (state.borrowSearch === undefined) state.borrowSearch = '';
   if (state.borrowSort === undefined) state.borrowSort = 'due_asc';
+  if (state.borrowCat === undefined) state.borrowCat = 'all';
   if (state.borrowView === undefined) state.borrowView = getViewMode('borrow');
 
   const pending = state.borrow.filter(b => b['สถานะ'] === 'รออนุมัติ');
@@ -9831,7 +9840,8 @@ function renderBorrow() {
   let list = { pending, active, history }[state.borrowTab] || [];
   const q = state.borrowSearch.toLowerCase();
   if (q) list = list.filter(b => String(b['ผู้ยืม']||'').toLowerCase().includes(q) || String(b['ชื่อครุภัณฑ์']||'').toLowerCase().includes(q));
-
+  if (state.borrowCat !== 'all') list = list.filter(b => borrowCategoryOf(b) === state.borrowCat);
+   
   const [sField, sDir] = state.borrowSort.split('_');
   const sMul = sDir === 'desc' ? -1 : 1;
   list = [...list].sort((a, b) => {
@@ -9839,6 +9849,13 @@ function renderBorrow() {
     if (sField === 'name') return sMul * String(a['ผู้ยืม']||'').localeCompare(String(b['ผู้ยืม']||''), 'th');
     return 0;
   });
+
+  const baseForCat = { pending, active, history }[state.borrowTab] || [];
+  const catCounts = {};
+  baseForCat.forEach(b => { const c = borrowCategoryOf(b); catCounts[c] = (catCounts[c] || 0) + 1; });
+  const catOrder = getCategories().concat(['อื่นๆ']);
+  const catPills = [{ v: 'all', label: 'ทั้งหมด', n: baseForCat.length }]
+    .concat(catOrder.filter(c => catCounts[c]).map(c => ({ v: c, label: c, n: catCounts[c] }))); 
 
   const isGrid = state.borrowView === 'grid';
 
@@ -9857,6 +9874,9 @@ function renderBorrow() {
       <div class="stat-card bad"><div class="stat-num">${overdueCount}</div><div class="stat-label">เกินกำหนด</div></div>
     </div>
     <div class="search-row">
+    <div class="ax-pills">
+      ${catPills.map(p => `<div class="ax-pill ${state.borrowCat === p.v ? 'active' : ''}" data-bcat="${escapeHtml(p.v)}">${escapeHtml(p.label)} <b>${p.n}</b></div>`).join('')}
+    </div> 
       <input class="input" id="borrowSearchInput" placeholder="ค้นหาชื่อผู้ยืมหรือครุภัณฑ์..." value="${escapeHtml(state.borrowSearch)}">
       <select class="input sort-select" id="borrowSortSelect">
         <option value="due_asc" ${state.borrowSort==='due_asc'?'selected':''}>กำหนดคืนใกล้สุด</option>
@@ -9876,6 +9896,7 @@ function renderBorrow() {
   document.getElementById('btnExportBorrow').onclick = () => exportCsv('ยืมคืน.csv', ['รหัสรายการ','รหัสครุภัณฑ์','ชื่อครุภัณฑ์','ผู้ยืม','วันที่ยืม','กำหนดคืน','วันที่คืนจริง','สถานะ','ผู้อนุมัติ','หมายเหตุ'], state.borrow);
   document.getElementById('btnPrintAllBorrow').onclick = printAllBorrow;
   document.querySelectorAll('[data-btab]').forEach(c => c.onclick = () => { state.borrowTab = c.dataset.btab; renderBorrow(); });
+  document.querySelectorAll('[data-bcat]').forEach(p => p.onclick = () => { state.borrowCat = p.dataset.bcat; renderBorrow(); });
   const searchInput = document.getElementById('borrowSearchInput');
   searchInput.oninput = (e) => {
     state.borrowSearch = e.target.value;
