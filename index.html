@@ -7966,6 +7966,81 @@ const MAINT_SWIPE = {
   run: (act, m) => { if (act === 'edit') openMaintEditForm(m); else deleteMaintItem(m); }
 };
 
+   /* ===== ปัดแถว: เอกสารใบเบิก / ยืม-คืน / จนท.ในสังกัด ===== */
+const MEMO_SWIPE = {
+  selector: '.list-item.memo-row',
+  find: id => state.memos.find(m => m['รหัสใบเบิก'] === id),
+  buttons: () => swBtn('ok', ICONS.edit, 'แก้ไข', 'edit') + swBtn('danger', ICONS.trash, 'ลบ', 'del'),
+  run: (act, m) => {
+    if (act === 'edit') {
+      openMemoEditor({ id: m['รหัสใบเบิก'], docHtml: m['เนื้อหาเอกสาร(HTML)'], borrowId: m['รหัสรายการยืม'], readOnly: false });
+    } else {
+      deleteMemoItem(m);
+    }
+  }
+};
+
+const BORROW_SWIPE = {
+  selector: '.list-item.borrow-item',
+  find: id => state.borrow.find(b => b['รหัสรายการ'] === id),
+  buttons: () => swBtn('ok', ICONS.edit, 'แก้ไข', 'edit') + swBtn('danger', ICONS.trash, 'ลบ', 'del'),
+  run: (act, b) => {
+    if (act === 'edit') openBorrowEditForm(b);
+    else deleteBorrowItem(b);
+  }
+};
+
+const USER_SWIPE = {
+  selector: '.list-item.user-item',
+  find: id => state.users.find(u =>
+    (officerId(u) || u['LINEUserId'] || u['ชื่อผู้ใช้'] || u['ชื่อ-สกุล']) === id),
+  buttons: () => swBtn('ok', ICONS.edit, 'แก้ไข', 'edit') + swBtn('danger', ICONS.trash, 'ลบ', 'del'),
+  run: (act, u) => {
+    if (act === 'edit') openUserForm(u);
+    else deleteUserItem(u);
+  }
+};
+
+async function deleteMemoItem(m) {
+  if (!await confirmSheet('ยืนยันการลบเอกสาร "' + (m['เรื่อง'] || '') + '" ?', { title: 'ลบเอกสาร', okText: 'ลบเอกสาร', tone: 'bad' })) return;
+  setLoading(true, 'กำลังลบเอกสาร...');
+  try {
+    await apiPost('deleteMemo', { id: m['รหัสใบเบิก'] });
+    toast('ลบเอกสารแล้ว');
+    await reloadThen(renderMemos);
+  } catch (err) { toast(err.message || 'ลบไม่สำเร็จ'); }
+  finally { setLoading(false); }
+}
+
+async function deleteBorrowItem(b) {
+  const eff = effectiveBorrowStatus(b);
+  const stillActive = eff === 'กำลังยืม' || eff === 'เกินกำหนด';
+  const msg = stillActive
+    ? 'รายการนี้ยังไม่ได้คืน หากลบ ครุภัณฑ์ "' + (b['ชื่อครุภัณฑ์'] || '') + '" จะถูกปรับสถานะกลับเป็น "พร้อมใช้งาน" ทันที ยืนยันการลบ?'
+    : 'ยืนยันการลบรายการยืม-คืนนี้? (ไม่สามารถกู้คืนได้)';
+  if (!await confirmSheet(msg, { title: 'ลบรายการยืม-คืน', okText: 'ลบรายการ', tone: 'bad' })) return;
+  setLoading(true, 'กำลังลบรายการ...');
+  try {
+    await apiPost('deleteBorrow', { id: b['รหัสรายการ'] });
+    toast('ลบรายการยืม-คืนแล้ว');
+    await reloadThen(renderBorrow);
+  } catch (err) { toast(err.message || 'ลบไม่สำเร็จ'); }
+  finally { setLoading(false); }
+}
+
+async function deleteUserItem(u) {
+  if (!await confirmSheet('ยืนยันการลบรายชื่อ "' + officerFullName(u) + '" ?', { title: 'ลบรายชื่อเจ้าหน้าที่', okText: 'ลบรายชื่อ', tone: 'bad' })) return;
+  const oid = officerId(u);
+  const identifier = u['LINEUserId'] || u['ชื่อผู้ใช้'] || u['ชื่อ-สกุล'];
+  setLoading(true, 'กำลังลบรายชื่อ จนท....');
+  try {
+    await apiPost('deleteUser', oid ? { officerId: oid } : { identifier });
+    toast('ลบรายชื่อเรียบร้อยแล้ว');
+    await reloadThen(renderUsers);
+  } catch (err) { toast('ลบไม่สำเร็จ: ' + (err.message || 'เกิดข้อผิดพลาด')); }
+  finally { setLoading(false); }
+}
+   
 function wireSwipeRows(listEl, cfg) {
   const C = cfg || ASSET_SWIPE;
   Array.from(listEl.querySelectorAll(C.selector)).forEach(row => {
@@ -9421,6 +9496,7 @@ function renderBorrow() {
   };
   document.getElementById('borrowSortSelect').onchange = (e) => { state.borrowSort = e.target.value; renderBorrow(); };
   wireViewToggle(renderBorrow, '#view-borrow', 'borrowView');
+  if (isAdmin() && !isGrid) wireSwipeRows(document.getElementById('borrowList'), BORROW_SWIPE);
   requestAnimationFrame(() => applyPremiumMotion(el));
 }
 function borrowCard(b) {
@@ -10617,6 +10693,7 @@ function drawUsers() {
     if (u) openOfficerProfile(u);
   });
   wireViewToggle(drawUsers, '#view-users', 'usersView');
+  if (isAdmin() && !isGrid) wireSwipeRows(document.getElementById('userList'), USER_SWIPE);
 }
 function userCard(u) {
   const idf = officerId(u) || u['LINEUserId'] || u['ชื่อผู้ใช้'] || u['ชื่อ-สกุล'] || '';
@@ -11380,6 +11457,7 @@ function drawMemos() {
   }
 
   wireViewToggle(drawMemos, '#view-memos', 'memosView');
+  if (isAdmin() && !isGrid) wireSwipeRows(document.getElementById('memoGrid'), MEMO_SWIPE);
 }
    
 function memoRow(m) {
