@@ -6254,6 +6254,21 @@ body:has(#view-monthly .pc-wrap) .toast.show{
 .audit-filter{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .audit-filter .audit-tools-icon{margin-left:auto}
 </style>
+
+<style id="audit-action-buttons">
+.audit-filter{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.audit-actions{display:flex;flex-wrap:wrap;gap:8px;margin-left:auto;justify-content:flex-end}
+.audit-action-btn{
+  height:38px;padding:0 14px;border-radius:12px;
+  border:1px solid var(--panel-line);background:var(--panel);color:var(--navy);
+  font:inherit;font-size:13px;font-weight:600;white-space:nowrap;cursor:pointer;
+  transition:border-color .15s ease,background .15s ease;
+}
+.audit-action-btn:hover{border-color:var(--gold-line)}
+.audit-action-btn:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.audit-action-btn.danger{color:var(--bad);background:var(--bad-wash);border-color:transparent}
+.audit-toolbar{display:flex;justify-content:flex-end;margin-bottom:12px}
+</style>   
    
 </head>
    
@@ -13232,10 +13247,8 @@ function auditHeaderHtml(mode, yearSel) {
   return `<div class="section-title">ตรวจนับประจำปี
     <span class="section-actions">
       ${viewToggleHtml('audit', mode)}
-      <span class="audit-head-actions">
-        <button type="button" class="audit-tools-icon" id="btnAuditPrint" title="พิมพ์รายงาน" aria-label="พิมพ์รายงาน">${AUDIT_ICON_PRINT}</button>
-        <button type="button" class="audit-tools-icon" id="btnAuditTools" title="เครื่องมือตรวจนับ" aria-label="เครื่องมือตรวจนับ">${AUDIT_ICON_TOOLS}</button>
-      </span>
+      <button type="button" class="audit-tool-btn" id="btnAuditPrint" title="พิมพ์รายงาน" aria-label="พิมพ์รายงาน">${AUDIT_ICON_PRINT}</button>
+      <button type="button" class="audit-tool-btn" id="btnAuditTools" title="เครื่องมือตรวจนับ" aria-label="เครื่องมือตรวจนับ">${AUDIT_ICON_TOOLS}</button>
       ${yearSel}
     </span>
   </div>`;
@@ -13243,8 +13256,10 @@ function auditHeaderHtml(mode, yearSel) {
 
 function wireAuditHeader(kinds) {
   document.getElementById('btnAuditPrint').onclick = () => openAuditPrintSheet(kinds);
-  const toolsBtns = document.querySelectorAll('#btnAuditTools, #btnAuditToolsRow');
-  toolsBtns.forEach(b => b.onclick = openAuditToolsSheet);
+  document.getElementById('btnAuditTools').onclick = openAuditToolsSheet;
+  document.getElementById('btnAuditBulk').onclick = () => openBulkAuditModal();
+  document.getElementById('btnAuditClearSel').onclick = () => openBulkAuditModal('clear');
+  document.getElementById('btnAuditClearAll').onclick = clearAllAuditResults;
 }
 
 /* เรียก fn ครั้งเดียวเมื่อ modal ทุกใบปิดแล้ว ใช้เปิด modal เครื่องมือกลับมา */
