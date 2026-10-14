@@ -6153,6 +6153,16 @@ body:has(#view-monthly .pc-wrap) .toast.show{
 .ac-act{padding:12px 14px 14px}
 .ac-act button{height:46px}
 </style>
+
+<style id="audit-cat-chips">
+.ac-catrow{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 10px;margin-bottom:6px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.ac-catrow::-webkit-scrollbar{display:none}
+.ac-catchip{flex:none;display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:99px;border:1px solid var(--panel-line);background:var(--panel);color:var(--ink-dim);font:inherit;font-size:12.5px;cursor:pointer;white-space:nowrap;transition:background .15s ease,color .15s ease,border-color .15s ease}
+.ac-catchip b{font-family:var(--font-num);font-weight:600;color:var(--ink)}
+.ac-catchip.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.ac-catchip.on b{color:#fff}
+.ac-catchip.done{opacity:.6}
+</style>
    
 </head>
 <body>
@@ -13069,6 +13079,20 @@ function auditCardRender(host, list) {
     stampL.style.opacity = 0;
   });
 }
+
+function auditCatChipsHtml(all) {
+  const chips = [{ v: 'all', label: 'ทั้งหมด', n: all.length, done: all.filter(auditIsChecked).length }]
+    .concat(getCategories().map(c => {
+      const pool = all.filter(a => a['หมวดหมู่'] === c);
+      return { v: c, label: c, n: pool.length, done: pool.filter(auditIsChecked).length };
+    }))
+    .filter(c => c.v === 'all' || c.n > 0);
+
+  return `<div class="ac-catrow" id="auditCatRow">${chips.map(c => `
+    <button type="button" class="ac-catchip ${state.auditCat === c.v ? 'on' : ''} ${c.n && c.done === c.n ? 'done' : ''}" data-acat="${escapeHtml(c.v)}">
+      ${escapeHtml(c.label)} <b>${c.done}/${c.n}</b>
+    </button>`).join('')}</div>`;
+}   
    
 function drawAuditView() {
   const el = document.getElementById('view-audit');
@@ -13176,7 +13200,7 @@ function drawAuditView() {
         <button type="button" data-aview="done" class="${state.auditView === 'done' ? 'active' : ''}">ตรวจแล้ว</button>
         <button type="button" data-aview="all" class="${state.auditView === 'all' ? 'active' : ''}">ทั้งหมด</button>
       </div>
-      <select class="input" id="auditCatSelect">${catOptions}</select>
+      ${auditCatChipsHtml(all)}
     </div>
 
     <div class="glass audit-print">
@@ -13201,7 +13225,11 @@ function drawAuditView() {
     state.auditView = b.dataset.aview;
     drawAuditView();
   });
-  document.getElementById('auditCatSelect').onchange = e => { state.auditCat = e.target.value; drawAuditView(); };
+  el.querySelectorAll('[data-acat]').forEach(b => b.onclick = () => {
+    state.auditCat = b.dataset.acat;
+    state.auditCatTouched = true;
+    drawAuditView();
+  });
   document.getElementById('auditYearSelect').onchange = e => {
     state.auditYear = Number(e.target.value);
     state.auditMsg = '';
@@ -13230,6 +13258,8 @@ function drawAuditView() {
     if (row.dataset.vehicleAudit) openVehicleAuditForm(row.dataset.vehicleAudit);
     else if (row.dataset.assetDetail) openAssetDetail(row.dataset.assetDetail);
   };
+  const activeChip = el.querySelector('.ac-catchip.on');
+  if (activeChip) activeChip.scrollIntoView({ block: 'nearest', inline: 'center' });
 }
    
 function auditRow(a) {
