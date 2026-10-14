@@ -6208,6 +6208,43 @@ body:has(#view-monthly .pc-wrap) .toast.show{
 .audit-tools-icon:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 .audit-tools-icon svg{width:18px;height:18px}
 </style>
+
+<style id="audit-menu-v1">
+.audit-head-actions{display:inline-flex;align-items:center;gap:8px}
+.audit-tools-icon{
+  width:42px;height:42px;border-radius:14px;
+  border:1px solid var(--panel-line);background:var(--panel);color:var(--navy);
+  display:inline-grid;place-items:center;cursor:pointer;flex:none;
+  transition:border-color .15s ease,background .15s ease,color .15s ease;
+}
+.audit-tools-icon:hover{border-color:var(--gold-line);color:var(--gold-deep)}
+.audit-tools-icon:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.audit-tools-icon svg{width:20px;height:20px}
+
+.audit-menu{display:flex;flex-direction:column;gap:8px;margin:4px 0 2px}
+.audit-menu-item{
+  display:flex;align-items:center;gap:12px;width:100%;
+  padding:12px 14px;border:1px solid var(--panel-line);background:var(--panel);
+  border-radius:14px;font:inherit;color:var(--ink);text-align:left;cursor:pointer;
+  transition:border-color .15s ease,background .15s ease;
+}
+.audit-menu-item:hover:not(:disabled){border-color:var(--gold-line);background:var(--panel-soft)}
+.audit-menu-item:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.audit-menu-item:disabled{opacity:.5;cursor:not-allowed}
+.audit-menu-ico{
+  width:36px;height:36px;border-radius:11px;flex:none;
+  display:grid;place-items:center;background:var(--navy-wash);color:var(--navy);
+}
+.audit-menu-ico svg{width:18px;height:18px}
+.audit-menu-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.audit-menu-txt b{font-size:14px;font-weight:700}
+.audit-menu-txt small{font-size:12px;color:var(--ink-dim)}
+.audit-menu-chev{font-size:18px;color:var(--ink-faint);flex:none}
+.audit-menu-item.danger{background:var(--bad-wash);border-color:transparent}
+.audit-menu-item.danger .audit-menu-ico{background:var(--panel);color:var(--bad)}
+.audit-menu-item.danger .audit-menu-txt b{color:var(--bad)}
+.audit-menu-item.danger:hover:not(:disabled){border-color:var(--bad);background:var(--bad-wash)}
+</style>
    
 </head>
    
@@ -13175,6 +13212,87 @@ function auditCatChipsHtml(all) {
     </button>`).join('')}</div>`;
 }   
    
+/* ===== ส่วนหัวและเมนูตรวจนับประจำปี (ใช้ได้ทั้งมุมมองการ์ดและรายการ) ===== */
+const AUDIT_ICON_PRINT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 9V3h10v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/></svg>';
+const AUDIT_ICON_TOOLS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="9" cy="6" r="2.2" fill="currentColor"/><circle cx="15" cy="12" r="2.2" fill="currentColor"/><circle cx="8" cy="18" r="2.2" fill="currentColor"/></svg>';
+const AUDIT_ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg>';
+const AUDIT_ICON_MINUS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><line x1="8" y1="12" x2="16" y2="12"/></svg>';
+const AUDIT_ICON_TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 13h10l1-13"/><path d="M9 7V4h6v3"/></svg>';
+
+function auditHeaderHtml(mode, yearSel) {
+  return `<div class="section-title">ตรวจนับประจำปี
+    <span class="section-actions">
+      ${viewToggleHtml('audit', mode)}
+      <span class="audit-head-actions">
+        <button type="button" class="audit-tools-icon" id="btnAuditPrint" title="พิมพ์รายงาน" aria-label="พิมพ์รายงาน">${AUDIT_ICON_PRINT}</button>
+        <button type="button" class="audit-tools-icon" id="btnAuditTools" title="เครื่องมือตรวจนับ" aria-label="เครื่องมือตรวจนับ">${AUDIT_ICON_TOOLS}</button>
+      </span>
+      ${yearSel}
+    </span>
+  </div>`;
+}
+
+function wireAuditHeader(kinds) {
+  document.getElementById('btnAuditPrint').onclick = () => openAuditPrintSheet(kinds);
+  document.getElementById('btnAuditTools').onclick = openAuditToolsSheet;
+}
+
+function openAuditPrintSheet(kinds) {
+  const items = kinds.map(k => `
+    <button type="button" class="audit-menu-item" data-print="${k.key}" ${k.done ? '' : 'disabled'}>
+      <span class="audit-menu-ico">${AUDIT_ICON_PRINT}</span>
+      <span class="audit-menu-txt">
+        <b>${k.label}</b>
+        <small>${!k.done ? 'ยังไม่มีผลตรวจ' : (k.missing ? 'ยังขาด ' + k.missing + ' รายการ' : 'ครบ ' + k.total + ' รายการ')}</small>
+      </span>
+      <span class="audit-menu-chev" aria-hidden="true">›</span>
+    </button>`).join('');
+
+  showSheet(`
+    <div class="sheet-title">พิมพ์รายงาน</div>
+    <div class="audit-menu">${items || '<div class="hint" style="margin:0;">ยังไม่มีรายการให้พิมพ์</div>'}</div>
+    <div class="btn-row"><button class="btn btn-ghost" id="auditPrintClose">ปิด</button></div>
+  `);
+  document.querySelectorAll('#modalRoot [data-print]').forEach(b => b.onclick = () => {
+    const k = kinds.find(x => x.key === b.dataset.print);
+    closeSheet();
+    if (k) k.run();
+  });
+  document.getElementById('auditPrintClose').onclick = closeSheet;
+}
+
+function openAuditToolsSheet() {
+  showSheet(`
+    <div class="sheet-title">เครื่องมือตรวจนับ</div>
+    <div class="audit-menu">
+      <button type="button" class="audit-menu-item" data-tool="bulk">
+        <span class="audit-menu-ico">${AUDIT_ICON_CHECK}</span>
+        <span class="audit-menu-txt"><b>ตรวจหลายรายการพร้อมกัน</b><small>เลือกหลายรายการแล้วบันทึกผลครั้งเดียว</small></span>
+        <span class="audit-menu-chev" aria-hidden="true">›</span>
+      </button>
+      <button type="button" class="audit-menu-item" data-tool="clearSel">
+        <span class="audit-menu-ico">${AUDIT_ICON_MINUS}</span>
+        <span class="audit-menu-txt"><b>ล้างผลบางรายการ</b><small>เลือกเฉพาะรายการที่ต้องการลบผลตรวจ</small></span>
+        <span class="audit-menu-chev" aria-hidden="true">›</span>
+      </button>
+      <button type="button" class="audit-menu-item danger" data-tool="clearAll">
+        <span class="audit-menu-ico">${AUDIT_ICON_TRASH}</span>
+        <span class="audit-menu-txt"><b>ล้างผลทั้งหมด</b><small>ลบผลตรวจของปีนี้ทั้งหมด ต้องยืนยันก่อนดำเนินการ</small></span>
+        <span class="audit-menu-chev" aria-hidden="true">›</span>
+      </button>
+    </div>
+    <div class="btn-row"><button class="btn btn-ghost" id="auditToolsClose">ปิด</button></div>
+  `);
+  document.querySelectorAll('#modalRoot [data-tool]').forEach(b => b.onclick = () => {
+    const t = b.dataset.tool;
+    closeSheet();
+    if (t === 'bulk') openBulkAuditModal();
+    else if (t === 'clearSel') openBulkAuditModal('clear');
+    else clearAllAuditResults();
+  });
+  document.getElementById('auditToolsClose').onclick = closeSheet;
+}
+
 function drawAuditView() {
   const el = document.getElementById('view-audit');
   if (state.auditCat === undefined) state.auditCat = 'all';
@@ -13217,9 +13335,7 @@ function drawAuditView() {
   // ---------- มุมมองการ์ด ----------
   if (isCard) {
     el.innerHTML = `
-    <div class="section-title">ตรวจนับประจำปี
-      <span class="section-actions">${viewToggleHtml('audit', 'grid')}${yearSel}</span>
-    </div>
+      ${auditHeaderHtml('grid', yearSel)}
       <div class="ac-progress">
         <div class="ac-progress-txt"><b>${checked}</b> / ${total}</div>
         <div class="audit-progress-track"><div class="audit-progress-fill" style="width:${pct}%;"></div></div>
@@ -13228,6 +13344,7 @@ function drawAuditView() {
       <div id="auditCardHost"></div>
     `;
     wireViewToggle(drawAuditView, '#view-audit', 'auditMode');
+    wireAuditHeader(kinds);
     document.getElementById('auditYearSelect').onchange = e => {
       state.auditYear = Number(e.target.value);
       state.auditMsg = '';
@@ -13238,63 +13355,11 @@ function drawAuditView() {
   }
 
   // ---------- มุมมองรายการ ----------
-  const printHtml = kinds.map(k => `
-    <button type="button" class="audit-print-btn" data-print="${k.key}" ${k.done ? '' : 'disabled'}>
-      <b>${k.label}</b>
-      <small>${!k.done ? 'ยังไม่มีผลตรวจ' : (k.missing ? 'ยังขาด ' + k.missing + ' รายการ' : 'ครบ ' + k.total + ' รายการ')}</small>
-    </button>`).join('');
-
   const msgHtml = state.auditMsg ? `<div class="audit-msg">✓ ${escapeHtml(state.auditMsg)}</div>` : '';
   const emptyMsg = state.auditView === 'pending' ? 'ตรวจครบทุกรายการในหมวดนี้แล้ว 🎉' : 'ยังไม่มีรายการในมุมมองนี้';
 
-  // เครื่องมือทั้งหมดย่อไว้ใน modal เดียว
-  const openAuditPrint = () => {
-    showSheet(`
-      <div class="sheet-title">พิมพ์รายงาน</div>
-      <div class="audit-print-grid">${printHtml}</div>
-      <div class="btn-row"><button class="btn btn-ghost" id="auditPrintClose">ปิด</button></div>
-    `);
-    document.querySelectorAll('#modalRoot [data-print]').forEach(b => b.onclick = () => {
-      const k = kinds.find(x => x.key === b.dataset.print);
-      closeSheet();
-      if (k) k.run();
-    });
-    document.getElementById('auditPrintClose').onclick = closeSheet;
-  };
-
-  const openAuditTools = () => {
-    showSheet(`
-      <div class="sheet-title">เครื่องมือตรวจนับ</div>
-      <div class="audit-tool-list">
-        <button type="button" class="btn btn-ghost" data-tool="bulk">ตรวจหลายรายการพร้อมกัน</button>
-        <button type="button" class="btn btn-ghost" data-tool="clearSel">ล้างผลบางรายการ</button>
-        <button type="button" class="btn btn-danger" data-tool="clearAll">ล้างผลทั้งหมด</button>
-      </div>
-      <div class="btn-row"><button class="btn btn-ghost" id="auditToolsClose">ปิด</button></div>
-    `);
-    document.querySelectorAll('#modalRoot [data-tool]').forEach(b => b.onclick = () => {
-      const t = b.dataset.tool;
-      closeSheet();
-      if (t === 'bulk') openBulkAuditModal();
-      else if (t === 'clearSel') openBulkAuditModal('clear');
-      else clearAllAuditResults();
-    });
-    document.getElementById('auditToolsClose').onclick = closeSheet;
-  };
-
   el.innerHTML = `
-    <div class="section-title">ตรวจนับประจำปี
-      <span class="section-actions">
-        ${viewToggleHtml('audit', 'list')}
-        <button type="button" class="audit-tools-icon" id="btnAuditPrint" title="พิมพ์รายงาน" aria-label="พิมพ์รายงาน">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 9V3h10v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/></svg>
-        </button>
-        <button type="button" class="audit-tools-icon" id="btnAuditTools" title="เครื่องมือตรวจนับ" aria-label="เครื่องมือตรวจนับ">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="9" cy="6" r="2.2" fill="currentColor"/><circle cx="15" cy="12" r="2.2" fill="currentColor"/><circle cx="8" cy="18" r="2.2" fill="currentColor"/></svg>
-        </button>
-        ${yearSel}
-      </span>
-    </div>
+    ${auditHeaderHtml('list', yearSel)}
 
     <div class="glass audit-hero">
       <div class="audit-hero-top">
@@ -13328,6 +13393,7 @@ function drawAuditView() {
   `;
 
   wireViewToggle(drawAuditView, '#view-audit', 'auditMode');
+  wireAuditHeader(kinds);
 
   el.querySelectorAll('[data-aview]').forEach(b => b.onclick = () => {
     state.auditView = b.dataset.aview;
@@ -13348,9 +13414,6 @@ function drawAuditView() {
   if (walkBtn) walkBtn.onclick = () => auditWalkOpen(walkQueue);
   const vehBtn = document.getElementById('btnAuditVeh');
   if (vehBtn) vehBtn.onclick = () => openBulkVehicleAuditForm(vehQueue);
-
-  document.getElementById('btnAuditPrint').onclick = openAuditPrint;
-  document.getElementById('btnAuditTools').onclick = openAuditTools;
 
   document.getElementById('auditList').onclick = e => {
     const btn = e.target.closest('.audit-btn');
