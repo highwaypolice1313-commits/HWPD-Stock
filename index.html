@@ -6325,30 +6325,39 @@ html, body{
 }
 
 /* ===== ปุ่มในหน้ารายละเอียดครุภัณฑ์: เต็มความกว้าง ===== */
-.asset-actions{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
-  gap:10px;
-  margin-top:18px;
-  width:100%;
+.sheet .asset-actions{
+  display:grid !important;
+  grid-template-columns:repeat(4, minmax(0,1fr)) !important;
+  gap:10px !important;
+  margin-top:18px !important;
+  width:100% !important;
 }
-.asset-actions .btn{
-  width:100%;
-  min-height:52px;
-  margin:0;
-  flex:none;
+.sheet .asset-actions > .btn{
+  width:100% !important;
+  min-width:0 !important;
+  min-height:52px !important;
+  margin:0 !important;
+  flex:none !important;
 }
-/* ปุ่มลบให้เต็มแถวเสมอ เพื่อแยกออกจากปุ่มแก้ไข */
-.asset-actions .btn-danger{ grid-column:1 / -1; }
+/* ปุ่มลบให้เต็มแถวเสมอ */
+.sheet .asset-actions > .btn-danger{
+  grid-column:1 / -1 !important;
+}
 
-/* ขยาย modal รายละเอียดครุภัณฑ์บน iPad แนวนอนและคอม */
+/* บนจอแคบ (มือถือ) ให้เหลือ 2 คอลัมน์ */
+@media (max-width:640px){
+  .sheet .asset-actions{
+    grid-template-columns:repeat(2, minmax(0,1fr)) !important;
+  }
+}
+
+/* ขยาย modal บน iPad/คอม */
 @media (min-width:900px){
   .sheet.asset-detail-sheet{
-    width:min(880px, calc(100vw - 64px));
-    max-width:880px;
+    width:min(880px, calc(100vw - 64px)) !important;
+    max-width:880px !important;
   }
-}      
-</style>
+}
    
 </head>
    
