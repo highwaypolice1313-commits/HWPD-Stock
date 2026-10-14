@@ -8245,8 +8245,8 @@ function assetFiltered() {
     if (state.assetFilter !== 'all' && a['หมวดหมู่'] !== state.assetFilter) return false;
     if (state.assetStatusFilter !== 'all' && a['สถานะ'] !== state.assetStatusFilter) return false;
     if (!q) return true;
-    return [a['ชื่อครุภัณฑ์'], a['รหัสครุภัณฑ์'], a['หมายเลขเครื่อง'], a['ทะเบียนรถ'], a['ยี่ห้อ/รุ่น']]
-      .map(x => String(x || '').toLowerCase()).join(' | ').includes(q);
+   return [m['เรื่อง'], m['ผู้ขอเบิก'], memoDocNo(m), m['รหัสใบเบิก']]
+  .map(x => String(x || '').toLowerCase()).join(' | ').includes(q);
   });
   return sortAssets(list);
 }
@@ -11885,7 +11885,7 @@ function memoGroupsOf(list) {
 function memoKpiHtml(all) {
   const nowKey = (() => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); })();
   const thisMonth = all.filter(m => memoMonthKey(m) === nowKey).length;
-  const noDocNo = all.filter(m => !String(m['เลขที่หนังสือ'] || '').trim()).length;
+  const noDocNo = all.filter(m => !memoDocNo(m)).length;
   const unsigned = all.filter(m => memoSigStatus(m['เนื้อหาเอกสาร(HTML)']).txt !== 'ครบลายเซ็น').length;
 
   const counts = {};
@@ -11942,8 +11942,10 @@ async function renderMemos() {
   drawMemos();
 }
 
-   function memoFiltered() {
+function memoFiltered() {
   const q = (state.memoSearch || '').trim().toLowerCase();
+  const norm = s => thaiToArabic(String(s || '')).toLowerCase();
+
   let list = (state.memos || []).filter(m => {
     if (state.memoMonth !== 'all') {
       const d = toDate(m['วันที่สร้าง']);
@@ -11951,8 +11953,8 @@ async function renderMemos() {
       if (key !== state.memoMonth) return false;
     }
     if (!q) return true;
-    return [m['เรื่อง'], m['ผู้ขอเบิก'], m['เลขที่หนังสือ'], m['รหัสใบเบิก']]
-      .map(x => String(x || '').toLowerCase()).join(' | ').includes(q);
+    return [m['เรื่อง'], m['ผู้ขอเบิก'], memoDocNo(m), m['รหัสใบเบิก']]
+      .map(norm).join(' | ').includes(norm(q));
   });
 
   const [field, dir] = state.memoSort.split('_');
@@ -11974,6 +11976,15 @@ function memoMonthOptions() {
   });
   return Array.from(set).sort().reverse();
 }
+
+function memoDocNo(m) {
+  const direct = String(m['เลขที่หนังสือ'] || m['เลขที่'] || m['docNo'] || '').trim();
+  if (direct) return direct;
+  const html = String(m['เนื้อหาเอกสาร(HTML)'] || '');
+  const mt = /id="ed_docno"[^>]*>([^<]*)</.exec(html);
+  const txt = mt ? mt[1].replace(/\./g, '').trim() : '';
+  return txt;
+}   
    
 function drawMemos() {
   const el = document.getElementById('view-memos');
@@ -12106,11 +12117,12 @@ function drawMemos() {
    
 function memoRow(m, q = '') {
   const sig = memoSigStatus(m['เนื้อหาเอกสาร(HTML)']);
+  const docNo = memoDocNo(m);
   return `<div class="glass list-item memo-row" data-id="${escapeHtml(m['รหัสใบเบิก'])}">
     <div class="li-icon">${ICONS.log}</div>
     <div class="li-body">
       <div class="li-title">${memoHighlight(m['เรื่อง'] || 'ไม่ระบุเรื่อง', q)}</div>
-      <div class="li-sub">${m['เลขที่หนังสือ'] ? memoHighlight(m['เลขที่หนังสือ'], q) + ' · ' : ''}${memoHighlight(m['ผู้ขอเบิก'] || '', q)}${m['ผู้ขอเบิก'] ? ' · ' : ''}${systemDate(m['วันที่สร้าง'])}</div>
+      <div class="li-sub">${docNo ? memoHighlight(docNo, q) + ' · ' : ''}${memoHighlight(m['ผู้ขอเบิก'] || '', q)}${m['ผู้ขอเบิก'] ? ' · ' : ''}${systemDate(m['วันที่สร้าง'])}</div>
     </div>
     <span class="status-badge ${sig.cls}">${sig.txt}</span>
   </div>`;
@@ -12118,12 +12130,13 @@ function memoRow(m, q = '') {
 
 function memoCard(m, q = '') {
   const sig = memoSigStatus(m['เนื้อหาเอกสาร(HTML)']);
+  const docNo = memoDocNo(m);
   return `<div class="glass memo-card" data-id="${escapeHtml(m['รหัสใบเบิก'])}">
     <div class="memo-thumb" data-thumb></div>
     ${memoQuickActionsHtml(m['รหัสใบเบิก'])}
     <div class="memo-card-body">
       <div class="li-title">${memoHighlight(m['เรื่อง'] || 'ไม่ระบุเรื่อง', q)}</div>
-      <div class="li-sub">${m['เลขที่หนังสือ'] ? memoHighlight(m['เลขที่หนังสือ'], q) + ' · ' : ''}${memoHighlight(m['ผู้ขอเบิก'] || '', q)}${m['ผู้ขอเบิก'] ? ' · ' : ''}${systemDate(m['วันที่สร้าง'])}</div>
+      <div class="li-sub">${docNo ? memoHighlight(docNo, q) + ' · ' : ''}${memoHighlight(m['ผู้ขอเบิก'] || '', q)}${m['ผู้ขอเบิก'] ? ' · ' : ''}${systemDate(m['วันที่สร้าง'])}</div>
       <span class="status-badge ${sig.cls}" style="margin-top:6px;">${sig.txt}</span>
     </div>
   </div>`;
