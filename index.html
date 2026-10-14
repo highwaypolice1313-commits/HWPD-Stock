@@ -12698,7 +12698,7 @@ function drawAuditView() {
   const catPct = catTotal ? Math.round((catDone / catTotal) * 100) : 0;
   if (state.auditPending) list = list.filter(a => !auditIsChecked(a));
 
-  const showVehicleBtn = state.auditCat === 'all' || state.auditCat === 'ยานพาหนะ';
+  const showVehicleBtn = true;
   const hasComms = state.assets.some(a => a['หมวดหมู่'] === 'สื่อสาร');
   const emptyMsg = state.auditPending
     ? 'ตรวจครบทุกรายการในหมวดนี้แล้ว 🎉'
