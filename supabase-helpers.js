@@ -106,7 +106,8 @@ const assetToThai = r => ({
   'หมายเลขเครื่อง': r.serial, 'วันที่รับเข้า': r.received_date, 'มูลค่า(บาท)': r.value,
   'สถานะ': r.status, 'ผู้ครอบครอง/หน่วยงาน': r.holder, 'หน่วยงาน': r.unit, 'หมายเหตุ': r.note,
   'รูปภาพ(URL)': r.image_url, 'วันที่บันทึก': r.created_at, 'วันครบกำหนดตรวจสภาพ/ต่อทะเบียน': r.renewal_due,
-  'ทะเบียนรถ': r.license_plate, 'หมายเลขตัวถัง': r.chassis_no,'ทะเบียนรถ': r.license_plate, 'หมายเลขตัวถัง': r.chassis_no, 'ขนาดยาง': r.tire_size
+  'ทะเบียนรถ': r.license_plate, 'หมายเลขตัวถัง': r.chassis_no, 'หมายเลขเครื่องยนต์': r.engine_no,
+  'ขนาดยาง': r.tire_size
 });
 
 const auditToThai = r => ({
@@ -324,7 +325,7 @@ async function sAddAsset(p, actor) {
   received_date: p.receivedDate || null, value: (p.value !== undefined && p.value !== '') ? Number(p.value) : null,
   status: p.status || 'พร้อมใช้งาน', holder: p.holder || '', unit: p.unit || '',
   note: p.note || '', image_url: p.imageUrl || '', renewal_due: p.renewalDue || null,
-  license_plate: p.licensePlate || '', chassis_no: p.chassisNo || '' , license_plate: p.licensePlate || '', chassis_no: p.chassisNo || '', tire_size: p.tireSize || ''  // เพิ่มบรรทัดนี้
+  license_plate: p.licensePlate || '', chassis_no: p.chassisNo || '' , license_plate: p.licensePlate || '', chassis_no: p.chassisNo || '', engine_no: p.engineNo || '',  tire_size: p.tireSize || ''  // เพิ่มบรรทัดนี้
 };
   const { error } = await sb.from('assets').insert(row);
   if (error) throw new Error('เพิ่มครุภัณฑ์ไม่สำเร็จ: ' + error.message);
@@ -332,9 +333,9 @@ async function sAddAsset(p, actor) {
   return { id };
 }
 async function sUpdateAsset(p, actor) {
-  const map = { name: 'name', category: 'category', brand: 'brand', serial: 'serial', receivedDate: 'received_date',
+const map = { name: 'name', category: 'category', brand: 'brand', serial: 'serial', receivedDate: 'received_date',
   value: 'value', status: 'status', holder: 'holder', unit: 'unit', note: 'note', imageUrl: 'image_url', renewalDue: 'renewal_due',
-  licensePlate: 'license_plate', chassisNo: 'chassis_no',licensePlate: 'license_plate', chassisNo: 'chassis_no', tireSize: 'tire_size' };   // เพิ่ม 2 ตัวนี้
+  licensePlate: 'license_plate', chassisNo: 'chassis_no', engineNo: 'engine_no', tireSize: 'tire_size' };
   const upd = {};
   Object.keys(map).forEach(k => {
     if (p[k] === undefined) return;
