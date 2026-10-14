@@ -6165,9 +6165,13 @@ body:has(#view-monthly .pc-wrap) .toast.show{
 </style>
 
 <style id="audit-detail-actions">
-.audit-detail-actions{margin:14px 0 4px}
-.audit-detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.audit-detail-grid .audit-btn{height:52px;font-size:14px;font-weight:700;border-radius:16px}
+.audit-detail-actions{
+  display:block; box-sizing:border-box;
+  width:100%; flex:0 0 100%; align-self:stretch; justify-self:stretch; grid-column:1 / -1;
+}
+.audit-detail-actions .memo-section-label{display:block; width:100%; box-sizing:border-box;}
+.audit-detail-grid{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; width:100%; box-sizing:border-box;}
+.audit-detail-grid .audit-btn{height:52px; font-size:14px; font-weight:700; border-radius:16px; width:100%;}
 </style>
    
 </head>
