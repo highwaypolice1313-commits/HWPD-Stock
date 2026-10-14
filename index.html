@@ -11852,8 +11852,21 @@ function refitAllPapers() {
   paperContainers.forEach(c => fitPaper(c));
 }
 window.addEventListener('resize', () => { clearTimeout(window._refitT); window._refitT = setTimeout(refitAllPapers, 120); });
+
+   function emblemHtmlNow() {
+  const logo = state.settings && state.settings.garudaLogo;
+  return logo
+    ? `<img src="${escapeHtml(logo)}" alt="ตราครุฑ">`
+    : `<div class="pf-emblem-placeholder">[ ตราครุฑ ]</div>`;
+}
+
 function wrapPfDoc(innerHtml, editable) {
-  return `<div class="pf-doc" id="memoDocBody" ${editable ? 'contenteditable="true" spellcheck="false"' : ''}>${thaiifyHtml(innerHtml || '')}</div>`;
+  // เปลี่ยนช่องตราครุฑในเอกสารเก่าให้เป็นรูปปัจจุบันทุกครั้ง
+  const fixed = String(innerHtml || '').replace(
+    /<div class="pf-emblem">[\s\S]*?<\/div>(?=\s*<div class="pf-title-wrap">)/,
+    `<div class="pf-emblem">${emblemHtmlNow()}</div>`
+  );
+  return `<div class="pf-doc" id="memoDocBody" ${editable ? 'contenteditable="true" spellcheck="false"' : ''}>${thaiifyHtml(fixed)}</div>`;
 }
 function alignPfRankToName(container) {
   if (!container) return;
