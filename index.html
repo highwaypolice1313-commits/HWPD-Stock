@@ -9183,6 +9183,22 @@ function safeFileName(s, fallback = 'เอกสาร') {
     .slice(0, 80);                            // จำกัดความยาว
   return t || fallback;
 }
+
+async function imageToDataUrl(src) {
+  try {
+    const r = await fetch(src, { mode: 'cors', cache: 'force-cache' });
+    if (!r.ok) return '';
+    const b = await r.blob();
+    return await new Promise((res, rej) => {
+      const f = new FileReader();
+      f.onload = () => res(f.result);
+      f.onerror = rej;
+      f.readAsDataURL(b);
+    });
+  } catch (e) {
+    return '';
+  }
+}     
    
 async function savePrintAreaAsPdf(filename) {
   const pa = document.getElementById('printArea');
@@ -9227,16 +9243,28 @@ async function savePrintAreaAsPdf(filename) {
 
     /* 3) รอฟอนต์ + แปลงรูปเป็น data URL (กัน canvas ถูก taint จาก CORS) */
     if (document.fonts && document.fonts.ready) await document.fonts.ready;
+    const missingImgs = [];
     await Promise.all(Array.from(host.querySelectorAll('img')).map(async img => {
-      try {
-        if (img.src && !img.src.startsWith('data:')) {
-          const r = await fetch(img.src, { mode: 'cors' });
-          const b = await r.blob();
-          img.src = await new Promise(res => { const f = new FileReader(); f.onload = () => res(f.result); f.readAsDataURL(b); });
+      if (!img.src || img.src.startsWith('data:')) return;
+      const d = await imageToDataUrl(img.src);
+      if (d) {
+        img.src = d;
+      } else {
+        missingImgs.push(img.alt || 'รูป');
+        if (img.closest('.pf-emblem')) {
+          const ph = document.createElement('div');
+          ph.className = 'pf-emblem-placeholder';
+          ph.textContent = '[ ตราครุฑ ]';
+          img.replaceWith(ph);
+        } else {
+          img.remove();
         }
-        if (img.decode) await img.decode().catch(() => {});
-      } catch (e) { /* ใช้ src เดิม */ }
+      }
+      if (img.decode && img.isConnected) await img.decode().catch(() => {});
     }));
+    if (missingImgs.length) {
+      toast('บางรูปโหลดไม่ได้ (อาจถูกบล็อกจากเซิร์ฟเวอร์รูป) จึงไม่ปรากฏในไฟล์ PDF');
+    }
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 
     const { jsPDF } = window.jspdf;
@@ -9251,8 +9279,22 @@ async function savePrintAreaAsPdf(filename) {
         const cv = await html2canvas(pages[i], opt);
         pdf.addImage(cv.toDataURL('image/png'), 'PNG', 0, 0, 210, 297);
       }
+    } else if (pa.querySelector('.pf-doc')) {
+      /* บันทึกข้อความ: ย่อให้พอดี 1 หน้า A4 ไม่ตัดกลางเอกสาร */
+      const availMm = H - margin[0] - margin[2];
+      const fullH = Math.ceil(host.scrollHeight);
+      const fullMm = fullH / MM;
+      const k = Math.min(1, availMm / fullMm);
+      const drawW = contentWmm * k;
+      const drawH = fullMm * k;
+      const cv = await html2canvas(host, Object.assign({}, opt, {
+        x: 0, y: 0, width: contentW, height: fullH,
+        windowWidth: contentW, windowHeight: fullH
+      }));
+      pdf.addImage(cv.toDataURL('image/png'), 'PNG',
+        margin[3] + (contentWmm - drawW) / 2, margin[0], drawW, drawH);
     } else {
-      /* 4) หาจุดตัดหน้า: ตัดที่ท้ายแถว/บล็อก ไม่ตัดกลางแถวตาราง */
+      /* เอกสารยาวหลายหน้า: หาจุดตัดที่ท้ายแถว/บล็อก ไม่ตัดกลางแถวตาราง */
       const top0 = host.getBoundingClientRect().top;
       const total = Math.ceil(host.scrollHeight);
       const stops = Array.from(host.querySelectorAll('tr,.pf-sign,.pf-body,.pf-note,.avoid-break'))
