@@ -6003,6 +6003,10 @@ body:has(#view-monthly .pc-wrap) .toast.show{
   grid-template-columns:repeat(auto-fill,minmax(84px,1fr));
 }
 </style>
+
+<style id="vehicle-list-plate">
+.ax-sub{ font-size:11.5px; color:var(--ink-dim); font-family:var(--font-num); }
+</style>   
    
 </head>
 <body>
@@ -7781,13 +7785,28 @@ function drawLine(id, dataObj) {
   });
 }
 /* ========================================================= ASSETS (v5: หมวดใหญ่เป็นปุ่ม + รายการ/การ์ดแบบรายชิ้น) */
+/* หมายเลขรถจากชื่อ เช่น "รถกระบะตรวจการณ์ 1312" -> 1312 (ไม่มีตัวเลขให้ไปท้ายสุด) */
+function vehicleNoOf(a) {
+  const nums = String(a['ชื่อครุภัณฑ์'] || '').match(/\d+/g);
+  return nums ? Number(nums[nums.length - 1]) : Infinity;
+}
+
 function sortAssets(list) {
   const [field, dir] = state.assetSort.split('_');
   const mul = dir === 'desc' ? -1 : 1;
+  // เรียงตามหมายเลขรถแบบตัวเลข เฉพาะตอนกรองเป็น "ยานพาหนะ" และเรียงตามชื่อ
+  const vehicleMode = field === 'name' && state.assetFilter === 'ยานพาหนะ';
+
   return [...list].sort((a, b) => {
+    if (vehicleMode) {
+      const na = vehicleNoOf(a), nb = vehicleNoOf(b);
+      if (na !== nb) return mul * (na < nb ? -1 : 1);
+      const c = String(a['ชื่อครุภัณฑ์'] || '').localeCompare(String(b['ชื่อครุภัณฑ์'] || ''), 'th');
+      if (c !== 0) return mul * c;
+      return assetSerialText(a).localeCompare(assetSerialText(b), 'th', { numeric: true });
+    }
     if (field === 'name') {
       const c = String(a['ชื่อครุภัณฑ์'] || '').localeCompare(String(b['ชื่อครุภัณฑ์'] || ''), 'th');
-      // ชื่อเหมือนกัน -> เรียงตามหมายเลขเครื่อง/ทะเบียนต่อ เพื่อให้ของชนิดเดียวกันอยู่ติดกันและเรียงสวย
       if (c !== 0) return mul * c;
       return assetSerialText(a).localeCompare(assetSerialText(b), 'th', { numeric: true });
     }
@@ -7802,10 +7821,20 @@ const ASSET_STEP = 30; // TODO: ปรับจำนวน "รายการ"
 function assetSerialHtml(a) {
   const serial = String(a['หมายเลขเครื่อง'] || '').trim();
   const plate = String(a['ทะเบียนรถ'] || '').trim();
+
+  if (a['หมวดหมู่'] === 'ยานพาหนะ') {
+    const plateHtml = plate
+      ? `<span class="ax-serial">ทะเบียน ${escapeHtml(plate)}</span>`
+      : `<span class="none">ยังไม่ระบุทะเบียน</span>`;
+    const snHtml = serial ? ` <span class="ax-sub">· S/N ${escapeHtml(serial)}</span>` : '';
+    return plateHtml + snHtml;
+  }
+
   if (serial) return `<span class="ax-serial">S/N ${escapeHtml(serial)}</span>`;
   if (plate) return `<span class="ax-serial">ทะเบียน ${escapeHtml(plate)}</span>`;
   return `<span class="none">ไม่ระบุหมายเลขเครื่อง</span>`;
 }
+   
 function assetSerialText(a) {
   return String(a['หมายเลขเครื่อง'] || '').trim() || String(a['ทะเบียนรถ'] || '').trim() || '';
 }
