@@ -13671,6 +13671,7 @@ function cuOpenModal(idx) {
 }
 
 // บันทึกลงระบบจริง
+// บันทึกลงระบบจริง
 async function cuSaveAll() {
   const btn = document.getElementById('btnSaveCategoryUnits');
   if (!btn || btn.disabled) return;
@@ -13693,9 +13694,24 @@ async function cuSaveAll() {
       categoryIcons: JSON.stringify(iconsObj),
       categoryRenames: JSON.stringify(renames)
     });
-    state.cuDraft = null; state.cuDirty = false;   // ให้ renderSettings สร้างร่างใหม่จากข้อมูลที่เพิ่งบันทึก
-    toast('บันทึกหมวดหมู่และหน่วยนับแล้ว');
+
+    // อัปเดตค่าในหน่วยความจำทันที ให้หน้าอื่นเห็นไอคอนใหม่โดยไม่ต้องรอโหลดซ้ำ
+    state.settings = state.settings || {};
+    state.settings.assetCategories = JSON.stringify(categories);
+    state.settings.categoryUnits   = JSON.stringify(unitsObj);
+    state.settings.categoryIcons   = JSON.stringify(iconsObj);
+
+    state.cuDraft = null; state.cuDirty = false;
     await reloadThen(renderSettings);
+
+    // ตรวจว่าเซิร์ฟเวอร์เก็บไอคอนกลับมาตรงกับที่บันทึกจริงไหม
+    const saved = getCategoryIcons();
+    const mismatch = categories.filter(c => saved[c] !== iconsObj[c]);
+    if (mismatch.length) {
+      toast('บันทึกแล้ว แต่เซิร์ฟเวอร์ไม่ได้เก็บไอคอนของ: ' + mismatch.join(', '), 'bad');   // [ปรับตรงนี้] ข้อความเตือน
+    } else {
+      toast('บันทึกหมวดหมู่และหน่วยนับแล้ว');
+    }
   } catch (err) { toast(err.message || 'บันทึกไม่สำเร็จ'); }
   finally { setLoading(false); setButtonBusy(btn, false); }
 }
