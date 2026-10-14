@@ -11816,8 +11816,13 @@ function buildMemoBodyHtml(m) {
 }
 
 /* ---------- รายการเอกสาร (การ์ดตัวอย่างกระดาษจริง) ---------- */
+const MEMO_STEP = 24; // [ปรับตรงนี้] จำนวนเอกสารที่แสดงต่อครั้ง
 async function renderMemos() {
   if (state.memosView === undefined) state.memosView = getViewMode('memos', 'grid');
+  if (state.memoSearch === undefined) state.memoSearch = '';
+  if (state.memoSort === undefined) state.memoSort = 'date_desc';
+  if (state.memoMonth === undefined) state.memoMonth = 'all';
+  if (state.memoLimit === undefined) state.memoLimit = MEMO_STEP;
   const el = document.getElementById('view-memos');
   el.innerHTML = emptyState('กำลังโหลดเอกสารใบเบิก-ยืม...');
   try { state.memos = await apiGet('getMemos', { token: state.sessionToken }); } catch (e) {
@@ -11825,18 +11830,93 @@ async function renderMemos() {
   }
   drawMemos();
 }
+
+   function memoFiltered() {
+  const q = (state.memoSearch || '').trim().toLowerCase();
+  let list = (state.memos || []).filter(m => {
+    if (state.memoMonth !== 'all') {
+      const d = toDate(m['วันที่สร้าง']);
+      const key = isNaN(d) ? '' : d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+      if (key !== state.memoMonth) return false;
+    }
+    if (!q) return true;
+    return [m['เรื่อง'], m['ผู้ขอเบิก'], m['เลขที่หนังสือ'], m['รหัสใบเบิก']]
+      .map(x => String(x || '').toLowerCase()).join(' | ').includes(q);
+  });
+
+  const [field, dir] = state.memoSort.split('_');
+  const mul = dir === 'asc' ? 1 : -1;
+  list.sort((a, b) => {
+    if (field === 'date') return mul * (toDate(a['วันที่สร้าง'] || 0) - toDate(b['วันที่สร้าง'] || 0));
+    if (field === 'subject') return mul * String(a['เรื่อง'] || '').localeCompare(String(b['เรื่อง'] || ''), 'th');
+    return 0;
+  });
+  return list;
+}
+
+// รายการเดือนที่มีเอกสาร (สร้างจากข้อมูลจริง ไม่ต้อง hard-code)
+function memoMonthOptions() {
+  const set = new Set();
+  (state.memos || []).forEach(m => {
+    const d = toDate(m['วันที่สร้าง']);
+    if (!isNaN(d)) set.add(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'));
+  });
+  return Array.from(set).sort().reverse();
+}
+   
 function drawMemos() {
   const el = document.getElementById('view-memos');
-  const list = state.memos || [];
+  const all = state.memos || [];
+  const list = memoFiltered();
+  const shown = list.slice(0, state.memoLimit);
   const isGrid = state.memosView === 'grid';
+  const months = memoMonthOptions();
+
   el.innerHTML = `
     <div class="section-title">
-      เอกสารใบเบิก-ยืม <small>${list.length} ฉบับ</small>
+      เอกสารใบเบิก-ยืม <small>${list.length} / ${all.length} ฉบับ</small>
       <span class="section-actions">${viewToggleHtml('memos', state.memosView)}</span>
     </div>
     <div class="hint" style="margin-top:0;">${isAdmin() ? 'แตะที่เอกสารเพื่อเปิดดู/แก้ไข แล้วบันทึกหรือพิมพ์ได้' : 'แตะที่เอกสารเพื่อเปิดดูหรือพิมพ์ได้เท่านั้น — ผู้ดูอย่างเดียวแก้ไขหรือลบเอกสารไม่ได้'}</div>
-    <div class="${isGrid ? 'memo-grid' : ''}" id="memoGrid">${list.length ? list.map(isGrid ? memoCard : memoRow).join('') : emptyState('ยังไม่มีเอกสารที่บันทึกไว้ — กดปุ่ม + เพื่อสร้างเอกสารใหม่')}</div>
+
+    <div class="search-row">
+      <input class="input" id="memoSearchInput" placeholder="ค้นหาเรื่อง / ผู้ขอเบิก / เลขที่หนังสือ..." value="${escapeHtml(state.memoSearch)}">
+      <select class="input sort-select" id="memoMonthSelect">
+        <option value="all">ทุกเดือน</option>
+        ${months.map(k => {
+          const [y, m] = k.split('-');
+          return `<option value="${k}" ${state.memoMonth === k ? 'selected' : ''}>${TH_MONTHS_FULL[+m - 1]} ${+y + 543}</option>`;
+        }).join('')}
+      </select>
+      <select class="input sort-select" id="memoSortSelect">
+        <option value="date_desc" ${state.memoSort==='date_desc'?'selected':''}>วันที่ล่าสุดก่อน</option>
+        <option value="date_asc" ${state.memoSort==='date_asc'?'selected':''}>วันที่เก่าสุดก่อน</option>
+        <option value="subject_asc" ${state.memoSort==='subject_asc'?'selected':''}>เรื่อง ก-ฮ</option>
+      </select>
+    </div>
+
+    <div class="${isGrid ? 'memo-grid' : ''}" id="memoGrid">
+      ${shown.length
+        ? shown.map(isGrid ? memoCard : memoRow).join('')
+        : emptyState(all.length ? 'ไม่พบเอกสารที่ตรงกับการค้นหา' : 'ยังไม่มีเอกสารที่บันทึกไว้ — กดปุ่ม + เพื่อสร้างเอกสารใหม่')}
+    </div>
+    ${list.length > shown.length ? `<button class="ax-more" id="btnMemoMore">แสดงเพิ่ม (อีก ${list.length - shown.length} ฉบับ)</button>` : ''}
   `;
+
+  // ---- ผูกเหตุการณ์ ----
+  const searchEl = document.getElementById('memoSearchInput');
+  searchEl.oninput = (e) => {
+    state.memoSearch = e.target.value;
+    state.memoLimit = MEMO_STEP;
+    const pos = e.target.selectionStart;
+    drawMemos();
+    const again = document.getElementById('memoSearchInput');
+    if (again) { again.focus(); try { again.setSelectionRange(pos, pos); } catch (err) {} }
+  };
+  document.getElementById('memoMonthSelect').onchange = e => { state.memoMonth = e.target.value; state.memoLimit = MEMO_STEP; drawMemos(); };
+  document.getElementById('memoSortSelect').onchange = e => { state.memoSort = e.target.value; drawMemos(); };
+  const more = document.getElementById('btnMemoMore');
+  if (more) more.onclick = () => { state.memoLimit += MEMO_STEP; drawMemos(); };
 
   const openMemo = (m) => {
     if (!m) return;
@@ -11848,20 +11928,17 @@ function drawMemos() {
     });
   };
 
-  // ยกเลิก observer ของรอบวาดก่อนหน้า (กันค้างเมื่อสลับมุมมอง/วาดหน้าใหม่)
   if (drawMemos._io) { drawMemos._io.disconnect(); drawMemos._io = null; }
 
   if (isGrid) {
-    // สร้างกระดาษ A4 ตัวอย่างเฉพาะการ์ดที่เลื่อนมาใกล้จอ ไม่สร้างทุกใบพร้อมกัน
     const mountThumb = (card) => {
-      const m = list.find(x => x['รหัสใบเบิก'] === card.dataset.id);
+      const m = all.find(x => x['รหัสใบเบิก'] === card.dataset.id);
       const thumb = card.querySelector('[data-thumb]');
       if (m && thumb && !thumb.dataset.mounted) {
         thumb.dataset.mounted = '1';
         mountPaper(thumb, wrapPfDoc(m['เนื้อหาเอกสาร(HTML)'], false));
       }
     };
-
     let io = null;
     if ('IntersectionObserver' in window) {
       io = new IntersectionObserver((entries) => {
@@ -11873,16 +11950,14 @@ function drawMemos() {
       }, { rootMargin: '400px' });
       drawMemos._io = io;
     }
-
     document.querySelectorAll('.memo-card').forEach(card => {
-      const m = list.find(x => x['รหัสใบเบิก'] === card.dataset.id);
-      if (io) io.observe(card);
-      else mountThumb(card);   // เบราว์เซอร์เก่าที่ไม่มี IntersectionObserver
+      const m = all.find(x => x['รหัสใบเบิก'] === card.dataset.id);
+      if (io) io.observe(card); else mountThumb(card);
       card.onclick = () => openMemo(m);
     });
   } else {
     document.querySelectorAll('.memo-row').forEach(row => {
-      const m = list.find(x => x['รหัสใบเบิก'] === row.dataset.id);
+      const m = all.find(x => x['รหัสใบเบิก'] === row.dataset.id);
       row.onclick = () => openMemo(m);
     });
   }
@@ -11896,11 +11971,12 @@ function memoRow(m) {
     <div class="li-icon">${ICONS.log}</div>
     <div class="li-body">
       <div class="li-title">${escapeHtml(m['เรื่อง']) || 'ไม่ระบุเรื่อง'}</div>
-      <div class="li-sub">${escapeHtml(m['ผู้ขอเบิก']) || ''}${m['ผู้ขอเบิก'] ? ' · ' : ''}${systemDate(m['วันที่สร้าง'])}</div>
+      <div class="li-sub">${m['เลขที่หนังสือ'] ? escapeHtml(m['เลขที่หนังสือ']) + ' · ' : ''}${escapeHtml(m['ผู้ขอเบิก']) || ''}${m['ผู้ขอเบิก'] ? ' · ' : ''}${systemDate(m['วันที่สร้าง'])}</div>
     </div>
     <div class="status-badge status-ready">${escapeHtml(m['สถานะ']) || 'บันทึกแล้ว'}</div>
   </div>`;
 }
+   
 function memoCard(m) {
   return `<div class="glass memo-card" data-id="${escapeHtml(m['รหัสใบเบิก'])}">
     <div class="memo-thumb" data-thumb></div>
