@@ -6952,15 +6952,66 @@ const DEFAULT_AUDIT_COMMITTEE = [
   { role: 'เจ้าหน้าที่ตรวจสอบพัสดุ',       rank: '', name: '', position: '' },
   { role: 'เจ้าหน้าที่ตรวจสอบพัสดุ/เลขานุการ', rank: '', name: '', position: '' }
 ];
+   
+const AC_ROLE_OPTIONS = [
+  'หัวหน้าเจ้าหน้าที่ตรวจสอบพัสดุ',
+  'เจ้าหน้าที่ตรวจสอบพัสดุ',
+  'เจ้าหน้าที่ตรวจสอบพัสดุ/เลขานุการ'
+];
+ 
+/* อ่านรายชื่อจากการตั้งค่า (ข้อมูลเก่า 4 คนยังใช้ได้ทันที; on ไม่มีค่า = ใส่ในรายงาน) */
 function getAuditCommittee() {
   try {
     const raw = state.settings && state.settings.auditCommittee;
     const arr = raw ? JSON.parse(raw) : null;
-    if (Array.isArray(arr) && arr.length === 4) return arr;
+    if (Array.isArray(arr) && arr.length) {
+      return arr.map(m => ({
+        role: m.role || AC_ROLE_OPTIONS[1],
+        rank: m.rank || '',
+        name: m.name || '',
+        position: m.position || '',
+        on: m.on !== false
+      }));
+    }
   } catch (e) {}
-  return DEFAULT_AUDIT_COMMITTEE.map(x => ({ ...x }));
+  return DEFAULT_AUDIT_COMMITTEE.map(x => ({ ...x, on: true }));
 }
 
+function auditRoleKind(role) {
+  if (/หัวหน้า/.test(role || '')) return 'head';
+  if (/เลขานุการ/.test(role || '')) return 'sec';
+  return 'mem';
+}   
+
+function committeeOrdered() {
+  const order = { head: 0, mem: 1, sec: 2 };
+  return getAuditCommittee()
+    .map((m, i) => ({ m, i }))
+    .filter(x => x.m.on)
+    .sort((a, b) => (order[auditRoleKind(a.m.role)] - order[auditRoleKind(b.m.role)]) || (a.i - b.i));
+}   
+
+/* ---------- บล็อกลายเซ็นหนึ่งคน ----------
+   ชื่อ/บทบาท/ตำแหน่งใช้สองคอลัมน์ (colspan) และตัดบรรทัดได้ ไม่ดันทะลุขอบกระดาษ */
+function committeeOneBlock(m, sigW, fs, sigUrl, sigH, tblWidth) {
+  const rank = toThaiNumber(escapeHtml(m.rank)) || '........';
+  const name = toThaiNumber(escapeHtml(m.name)) || '..........................';
+  const position = toThaiNumber(escapeHtml(m.position)) || '&nbsp;';
+  const role = toThaiNumber(escapeHtml(m.role));
+  const sigCell = sigUrl
+    ? `<img src="${escapeHtml(sigUrl)}" alt="" style="display:block; width:${sigW}; height:${sigH}; object-fit:contain; margin:0 auto;">`
+    : '&nbsp;';
+  return `<table style="${tblWidth}; margin:0 auto; border-collapse:collapse; font-size:${fs}; color:#000; break-inside:avoid; page-break-inside:avoid;">
+    <tr>
+      <td style="white-space:nowrap; text-align:right; vertical-align:bottom; padding:0 1.5mm 0 0;">ลงชื่อ ${rank}</td>
+      <td style="width:${sigW}; height:${sigH}; border-bottom:1px dotted #000; padding:0; text-align:center; vertical-align:bottom;">${sigCell}</td>
+    </tr>
+    <tr><td colspan="2" style="text-align:center; padding-top:1mm;">( ${name} )</td></tr>
+    <tr><td colspan="2" style="text-align:center;">เป็น${role}</td></tr>
+    <tr><td colspan="2" style="text-align:center;">${position}</td></tr>
+  </table>`;
+}
+   
 /* ---- หน่วยนับตามหมวดหมู่ครุภัณฑ์ (ใช้ในเอกสารบันทึกข้อความ) ---- */
 // ค่าเริ่มต้น — TODO: แก้หน่วยนับเริ่มต้นตรงนี้ได้ตามต้องการ หรือไปแก้ที่หน้า "ตั้งค่าระบบ" ก็ได้
 const DEFAULT_CATEGORY_UNITS = {
@@ -7092,7 +7143,8 @@ function pickAuditSignatures() {
   return new Promise(resolve => {
     const root = document.getElementById('modalRoot');
     if (!root) return resolve(null);
-    const committee = getAuditCommittee();
+   const committee = committeeOrdered().map(x => x.m);
+   if (!committee.length) return resolve([]);
     const sigs = committee.map(committeeSignatureUrl);
     const rows = committee.map((m, i) => {
       const full = ((m.rank || '') + ' ' + (m.name || '')).trim();
@@ -7143,52 +7195,55 @@ async function printWithSign(printFn) {
   try { printFn(); } finally { auditSignCurrent = []; }
 }
 
+ 
+/* ---------- ส่วนลายเซ็นท้ายรายงาน ---------- */
 function committeeSignBlockHtml(compact) {
-  const [head, m1, m2, sec] = getAuditCommittee();
+  const list = committeeOrdered().map(x => x.m);
+  if (!list.length) return '';
   const signs = auditSignCurrent || [];
-
+ 
   const S = compact
-    ? { headSig:'38mm', memSig:'28mm', sigH:'6mm', headFs:'10.5pt', memFs:'9.5pt', topMt:'2mm', gridMt:'2mm', cellPad:'0.5mm 1mm' }
-    : { headSig:'50mm', memSig:'30mm', sigH:'9mm', headFs:'14pt',   memFs:'12pt',  topMt:'4mm', gridMt:'5mm', cellPad:'2mm 1mm' };
-
-  const block = (m, sigW, fs, sigUrl) => {
-    const rank = toThaiNumber(escapeHtml(m.rank)) || '........';
-    const name = toThaiNumber(escapeHtml(m.name)) || '..........................';
-    const position = toThaiNumber(escapeHtml(m.position)) || '&nbsp;';
-    const role = toThaiNumber(escapeHtml(m.role));
-    const sigCell = sigUrl
-      ? `<img src="${escapeHtml(sigUrl)}" alt="" style="display:block; width:${sigW}; height:${S.sigH}; object-fit:contain; margin:0 auto;">`
-      : '&nbsp;';
-    return `
-      <table style="border-collapse:collapse; margin:0 auto; font-size:${fs}; color:#000; break-inside:avoid; page-break-inside:avoid;">
-        <tr>
-          <td style="white-space:nowrap; text-align:right; vertical-align:bottom; padding:0 1.5mm 0 0;">ลงชื่อ ${rank}</td>
-          <td style="width:${sigW}; height:${S.sigH}; border-bottom:1px dotted #000; padding:0; text-align:center; vertical-align:bottom;">${sigCell}</td>
-          <td style="white-space:nowrap; text-align:left; vertical-align:bottom; padding:0 0 0 1.5mm;">เป็น${role}</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td style="text-align:center; white-space:nowrap; padding-top:1.5mm;">( ${name} )</td>
-          <td></td>
-        </tr>
-        <tr>
-          <td></td>
-          <td style="text-align:center; white-space:nowrap;">${position}</td>
-          <td></td>
-        </tr>
-      </table>`;
-  };
-
-  return `
-    <div style="margin-top:${S.topMt};">${block(head, S.headSig, S.headFs, signs[0])}</div>
-    <table style="width:100%; border-collapse:collapse; margin-top:${S.gridMt}; table-layout:fixed;">
-      <tr style="break-inside:avoid; page-break-inside:avoid;">
-        <td style="padding:${S.cellPad}; width:50%; vertical-align:top;">${block(m1, S.memSig, S.memFs, signs[1])}</td>
-        <td style="padding:${S.cellPad}; width:50%; vertical-align:top;">${block(m2, S.memSig, S.memFs, signs[2])}</td>
-      </tr>
-    </table>
-    <div style="margin-top:${S.gridMt};">${block(sec, S.headSig, S.headFs, signs[3])}</div>
-  `;
+    ? { headSig: '38mm', memSig: '28mm', sigH: '6mm', headFs: '10.5pt', memFs: '9.5pt', gap: '2mm', cellPad: '0.5mm 1mm' }
+    : { headSig: '50mm', memSig: '30mm', sigH: '9mm', headFs: '14pt', memFs: '12pt', gap: '5mm', cellPad: '2mm 1mm' };
+ 
+  const heads = [], mems = [], secs = [];
+  list.forEach((m, k) => {
+    const item = { m, sig: signs[k] };
+    const kind = auditRoleKind(m.role);
+    if (kind === 'head') heads.push(item);
+    else if (kind === 'sec') secs.push(item);
+    else mems.push(item);
+  });
+ 
+  const fullBlock = item => `<div style="margin-top:${S.gap};">${committeeOneBlock(item.m, S.headSig, S.headFs, item.sig, S.sigH, 'width:110mm')}</div>`;
+ 
+  // กรรมการ: จัดเป็นแถวละ 2 คน ตารางคงที่ ไม่ล้นคอลัมน์
+  let memHtml = '';
+  for (let i = 0; i < mems.length; i += 2) {
+    const a = mems[i], b = mems[i + 1];
+    memHtml += `<tr style="break-inside:avoid; page-break-inside:avoid;">
+      <td style="padding:${S.cellPad}; width:50%; vertical-align:top;">${committeeOneBlock(a.m, S.memSig, S.memFs, a.sig, S.sigH, 'width:100%')}</td>
+      <td style="padding:${S.cellPad}; width:50%; vertical-align:top;">${b ? committeeOneBlock(b.m, S.memSig, S.memFs, b.sig, S.sigH, 'width:100%') : ''}</td>
+    </tr>`;
+  }
+  const memTable = mems.length
+    ? `<table style="width:100%; border-collapse:collapse; margin-top:${S.gap}; table-layout:fixed;">${memHtml}</table>`
+    : '';
+ 
+  // ครอบทั้งส่วนไว้ไม่ให้ขาดกลางหน้ากระดาษ (ถ้าเกินหน้าเดียวจริง เบราว์เซอร์จะตัดให้เอง)
+  return `<div style="break-inside:avoid; page-break-inside:avoid;">
+    ${heads.map(fullBlock).join('')}
+    ${memTable}
+    ${secs.map(fullBlock).join('')}
+  </div>`;
+}
+   
+/* ---------- หน้าตั้งค่า: แก้ไขรายชื่อแบบร่าง แล้วค่อยกดบันทึก ---------- */
+let acDraft = null;   // ร่างรายชื่อระหว่างแก้ไข (ยังไม่บันทึก)
+ 
+function acDraftList() {
+  if (!acDraft) acDraft = getAuditCommittee().map(m => ({ ...m }));
+  return acDraft;
 }
  
 /* ---- 2.3 แปลง "ผล" ที่ตรวจในระบบ (พบปกติ/ชำรุด/สูญหาย/ยังไม่ตรวจ) ----
@@ -15870,82 +15925,127 @@ function mcChecklistSheet(u) {
 
 /* ---- (ก) วางฟังก์ชันสองตัวนี้ไว้ "ก่อน" function renderSettings() { ... }
    (นอกฟังก์ชัน ไม่ใช่ข้างในเทมเพลต) ---- */
+
 function auditCommitteeSettingsSectionHtml(s) {
-  const c = getAuditCommittee();
-  const person = (idx, label) => {
-    const p = c[idx];
-    const full = ((p.rank || '') + ' ' + (p.name || '')).trim();
-    return `
-    <div class="memo-section-label" style="margin-top:${idx === 0 ? '0' : '10px'};">${label}</div>
-    <input type="hidden" class="ac-rank" data-idx="${idx}" value="${escapeHtml(p.rank)}">
-    <input type="hidden" class="ac-name" data-idx="${idx}" value="${escapeHtml(p.name)}">
-    <div class="glass list-item ac-trigger" data-idx="${idx}" style="cursor:pointer;">
-      <div class="li-icon">${ICONS.user}</div>
-      <div class="li-body">
-        <div class="li-title ac-title" data-idx="${idx}">${escapeHtml(full || 'แตะเพื่อเลือกรายชื่อ')}</div>
-        <div class="li-sub">เลือกจากทำเนียบ หรือพิมพ์ชื่อเอง</div>
-      </div>
-      <span class="status-badge status-ready" style="flex:none;">เลือก</span>
-    </div>
-    <div class="field" style="margin-top:8px;"><label>ตำแหน่ง</label><input class="input ac-position" data-idx="${idx}" value="${escapeHtml(p.position)}"></div>`;
-  };
   return `
     <div class="section-title" style="margin-top:20px; font-size:14px;">คณะกรรมการตรวจสอบพัสดุประจำปี</div>
     <div class="glass" style="padding:16px; margin-bottom:6px;">
-      <div class="hint" style="margin-top:0;">เลือกรายชื่อจากทำเนียบ จนท.ในสังกัดเพื่อป้องกันการพิมพ์ชื่อผิดพลาด ใช้พิมพ์ท้ายรายงานตรวจสอบพัสดุทุกฉบับ (ครุภัณฑ์ทั่วไป / เครื่องมือสื่อสาร / ยานพาหนะ)</div>
+      <div class="hint" style="margin-top:0;">กดรายชื่อเพื่อเลือกจากทำเนียบ จนท.ในสังกัด หรือพิมพ์ชื่อเอง · ติ๊ก "ใส่ในรายงาน" เพื่อเปิด/ปิดคนนั้นในรายงานที่พิมพ์ · เพิ่มหรือลบได้ตามต้องการ</div>
       <div class="memo-two-col" style="margin-top:10px;">
         <div class="field"><label>เริ่มตรวจสอบวันที่</label><input class="input" type="date" id="ac_start" value="${escapeHtml(s.auditPeriodStart || '')}"></div>
         <div class="field"><label>เสร็จสิ้นวันที่</label><input class="input" type="date" id="ac_end" value="${escapeHtml(s.auditPeriodEnd || '')}"></div>
       </div>
-      ${person(0, '1) หัวหน้าเจ้าหน้าที่ตรวจสอบพัสดุ')}
-      ${person(1, '2) เจ้าหน้าที่ตรวจสอบพัสดุ (คนที่ 1)')}
-      ${person(2, '3) เจ้าหน้าที่ตรวจสอบพัสดุ (คนที่ 2)')}
-      ${person(3, '4) เจ้าหน้าที่ตรวจสอบพัสดุ/เลขานุการ')}
+      <div id="acEditor" style="margin-top:12px;"></div>
       <div class="btn-row" style="margin-top:14px;"><button class="btn btn-primary" id="btnSaveAuditCommittee">บันทึกคณะกรรมการ</button></div>
     </div>`;
 }
-function wireAuditCommitteeSettingsHandlers() {
-  document.querySelectorAll('.ac-trigger').forEach(t => {
-    t.onclick = () => {
-      const idx = t.dataset.idx;
-      const q = sel => document.querySelector(sel + '[data-idx="' + idx + '"]');
-      const cur = (q('.ac-rank').value + ' ' + q('.ac-name').value).trim();
-      openOfficerPickerSheet(cur, (name, u) => {
-        if (u) {
-          q('.ac-rank').value = u['ยศ'] || '';
-          q('.ac-name').value = u['ชื่อ-สกุล'] || '';
-          q('.ac-position').value = u['ตำแหน่ง'] || '';
-        } else {
-          const s = splitRankName(name);
-          q('.ac-rank').value = s.rank;
-          q('.ac-name').value = s.name;
-        }
-        q('.ac-title').textContent = (q('.ac-rank').value + ' ' + q('.ac-name').value).trim();
-      });
-    };
+
+ 
+function drawAuditCommitteeEditor() {
+  const host = document.getElementById('acEditor');
+  if (!host) return;
+  const list = acDraftList();
+  const onCount = list.filter(m => m.on).length;
+  const roleOpts = cur => AC_ROLE_OPTIONS
+    .map(r => `<option value="${escapeHtml(r)}" ${r === cur ? 'selected' : ''}>${escapeHtml(r)}</option>`).join('');
+ 
+  const cards = list.map((m, i) => {
+    const full = ((m.rank || '') + ' ' + (m.name || '')).trim();
+    return `<div class="glass" style="padding:12px; margin-bottom:8px; ${m.on ? '' : 'opacity:.6;'}">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; flex:1;">
+          <input type="checkbox" data-acon="${i}" ${m.on ? 'checked' : ''} style="width:18px; height:18px;">
+          <b>${m.on ? 'ใส่ในรายงาน' : 'ไม่ใส่ในรายงาน'}</b>
+        </label>
+        <button class="btn btn-ghost" data-acdel="${i}" style="flex:none; min-height:36px;">ลบ</button>
+      </div>
+      <div class="field"><label>บทบาทในรายงาน</label><select class="input" data-acrole="${i}">${roleOpts(m.role)}</select></div>
+      <div class="field"><label>รายชื่อ</label><button class="input" data-acpick="${i}" style="text-align:left; cursor:pointer;">${escapeHtml(full || 'แตะเพื่อเลือกรายชื่อ')}</button></div>
+      <div class="field"><label>ตำแหน่ง</label><input class="input" data-acpos="${i}" value="${escapeHtml(m.position || '')}"></div>
+    </div>`;
+  }).join('');
+ 
+  host.innerHTML = `
+    <div class="hint" style="margin:0 0 8px;">ใส่ในรายงาน ${onCount} คน จากทั้งหมด ${list.length} คน</div>
+    ${cards || '<div class="hint">ยังไม่มีคณะกรรมการ กด "เพิ่มคณะกรรมการ" ด้านล่าง</div>'}
+    <div class="btn-row" style="justify-content:flex-start;"><button class="btn btn-ghost" id="acAdd">+ เพิ่มคณะกรรมการ</button></div>`;
+ 
+  host.querySelector('#acAdd').onclick = () => {
+    acDraftList().push({ role: AC_ROLE_OPTIONS[1], rank: '', name: '', position: '', on: true });
+    drawAuditCommitteeEditor();
+  };
+  host.querySelectorAll('[data-acon]').forEach(c => c.onchange = () => {
+    list[+c.dataset.acon].on = c.checked;
+    drawAuditCommitteeEditor();
   });
+  host.querySelectorAll('[data-acdel]').forEach(b => b.onclick = () => {
+    list.splice(+b.dataset.acdel, 1);
+    drawAuditCommitteeEditor();
+  });
+  host.querySelectorAll('[data-acrole]').forEach(sel => sel.onchange = () => {
+    list[+sel.dataset.acrole].role = sel.value;
+    drawAuditCommitteeEditor();
+  });
+  host.querySelectorAll('[data-acpos]').forEach(inp => inp.oninput = () => {
+    list[+inp.dataset.acpos].position = inp.value;   // ไม่วาดใหม่ ไม่ให้เคอร์เซอร์หลุด
+  });
+  host.querySelectorAll('[data-acpick]').forEach(b => b.onclick = () => {
+    const i = +b.dataset.acpick;
+    const cur = ((list[i].rank || '') + ' ' + (list[i].name || '')).trim();
+    openOfficerPickerSheet(cur, (name, u) => {
+      if (u) {
+        list[i].rank = u['ยศ'] || '';
+        list[i].name = u['ชื่อ-สกุล'] || '';
+        list[i].position = u['ตำแหน่ง'] || '';
+      } else {
+        const sp = splitRankName(name);
+        list[i].rank = sp.rank;
+        list[i].name = sp.name;
+      }
+      drawAuditCommitteeEditor();
+    });
+  });
+}   
+
+
+function wireAuditCommitteeSettingsHandlers() {
+  acDraft = null;   // เปิดหน้าใหม่ทีไร เริ่มจากค่าที่บันทึกไว้เสมอ
+  drawAuditCommitteeEditor();
+ 
   const btn = document.getElementById('btnSaveAuditCommittee');
   if (!btn) return;
   btn.onclick = async () => {
-    const committee = DEFAULT_AUDIT_COMMITTEE.map((_, idx) => ({
-      role: DEFAULT_AUDIT_COMMITTEE[idx].role,
-      rank: (document.querySelector('.ac-rank[data-idx="' + idx + '"]') || {}).value || '',
-      name: (document.querySelector('.ac-name[data-idx="' + idx + '"]') || {}).value || '',
-      position: (document.querySelector('.ac-position[data-idx="' + idx + '"]') || {}).value || ''
+    const committee = acDraftList().map(m => ({
+      role: m.role,
+      rank: (m.rank || '').trim(),
+      name: (m.name || '').trim(),
+      position: (m.position || '').trim(),
+      on: !!m.on
     }));
-    setButtonBusy(btn, true); setLoading(true, 'กำลังบันทึกคณะกรรมการ...');
+    if (!committee.some(m => m.on)) {
+      toast('ต้องมีคณะกรรมการที่ใส่ในรายงานอย่างน้อย 1 คน');
+      return;
+    }
+    setButtonBusy(btn, true);
+    setLoading(true, 'กำลังบันทึกคณะกรรมการ...');
     try {
       await apiPost('updateSystemSettings', {
         auditCommittee: JSON.stringify(committee),
         auditPeriodStart: val('ac_start'),
         auditPeriodEnd: val('ac_end')
       });
+      acDraft = null;
       toast('บันทึกคณะกรรมการตรวจสอบพัสดุแล้ว');
       await reloadThen(renderSettings);
-    } catch (err) { toast(err.message || 'บันทึกไม่สำเร็จ'); }
-    finally { setLoading(false); setButtonBusy(btn, false); }
+    } catch (err) {
+      toast(err.message || 'บันทึกไม่สำเร็จ');
+    } finally {
+      setLoading(false);
+      setButtonBusy(btn, false);
+    }
   };
-}
+}   
+
  /* [เพิ่ม] โหลดและแสดงบันทึกกิจกรรมล่าสุดในหน้าตั้งค่า (แท็บ "บันทึกกิจกรรม") */
 async function loadActivityPanel() {
   const box = document.getElementById('activityPanelList');
