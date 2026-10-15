@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="th" data-theme="bento">
+<html lang="th" data-theme="dawn">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#17324f">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>พัสดุครุภัณฑ์ • Bento Design</title>
+<title>ระบบพัสดุครุภัณฑ์ - ตำรวจทางหลวง</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Sarabun:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
 <!-- TODO: วางไฟล์สองตัวนี้ไว้โฟลเดอร์เดียวกับ index.html -->
@@ -26,45 +26,24 @@ html{ -webkit-text-size-adjust:100%; text-size-adjust:100%; }
 /* =========================================================
    DESIGN TOKENS — "รุ่งอรุณ ทางหลวง" (dawn patrol)
    ========================================================= */
-:root {
-  --font-th: 'Prompt', 'Kanit', sans-serif;
-  --font-disp: 'Fraunces', 'Kanit', serif;
-  --font-num: 'Inter', 'Kanit', sans-serif;
-  --bg-0: #f4f1ea;
-  --bg-1: #f8f5f0;
-  --panel: #ffffff;
-  --panel-soft: #fbfaf7;
-  --panel-line: #e8ddd0;
-  --panel-hi: #f6efe1;
-  --ink: #1d1b16;
-  --ink-dim: #8a8576;
-  --ink-faint: #b5a89a;
-  --navy: #1d1b16;
-  --navy-deep: #1d1b16;
-  --navy-wash: rgba(29, 27, 22, 0.07);
-  --navy-line: rgba(29, 27, 22, 0.22);
-  --gold: #d8f35a;
-  --gold-deep: #d8f35a;
-  --gold-wash: rgba(216, 243, 90, 0.14);
-  --gold-line: rgba(216, 243, 90, 0.4);
-  --ok: #1d9a6c;
-  --ok-wash: rgba(29, 154, 108, 0.12);
-  --warn: #f0a020;
-  --warn-wash: rgba(240, 160, 32, 0.14);
-  --bad: #e5484d;
-  --bad-wash: rgba(229, 72, 77, 0.12);
-  --off: #7b8790;
-  --off-wash: rgba(123, 135, 144, 0.12);
-  --info: #4a86b4;
-  --info-wash: rgba(74, 134, 180, 0.12);
-  --r-xl: 28px;
-  --r-lg: 24px;
-  --r-md: 20px;
-  --r-sm: 16px;
-  --r-tag: 99px;
-  --shadow-sm: 0 2px 8px rgba(29, 27, 22, 0.08);
-  --shadow-md: 0 8px 24px rgba(29, 27, 22, 0.12);
-  --shadow-lg: 0 16px 40px rgba(29, 27, 22, 0.16);
+:root{
+  --dawn-1:#fdf2e4; --dawn-2:#f7e6de; --dawn-3:#eef0ec; --dawn-4:#e4ecee;
+  --bg-0:#eef1f0; --bg-1:#f6f1ea;
+  --panel:#ffffff; --panel-soft:#fbfaf7; --panel-line:#eae3d6; --panel-hi:#f6efe1;
+  --ink:#20303f; --ink-dim:#6c7b83; --ink-faint:#a3aeae;
+  --navy:#17324f; --navy-deep:#0c1e33; --navy-wash:rgba(23,50,79,.07); --navy-line:rgba(23,50,79,.22);
+  --gold:#bb8a3f; --gold-deep:#8a641f; --gold-wash:rgba(187,138,63,.14); --gold-line:rgba(187,138,63,.4);
+  --ok:#2a8f68; --ok-wash:rgba(42,143,104,.12);
+  --warn:#c1852a; --warn-wash:rgba(193,133,42,.14);
+  --bad:#c1495a; --bad-wash:rgba(193,73,90,.12);
+  --off:#7b8790; --off-wash:rgba(123,135,144,.12);
+  --info:#4a86b4; --info-wash:rgba(74,134,180,.12);
+  --side-1:#14304e; --side-2:#0c1e33;
+  --r-xl:26px; --r-lg:20px; --r-md:16px; --r-sm:13px; --r-tag:99px;
+  --font-th:'Kanit',sans-serif; --font-disp:'Fraunces','Kanit',serif; --font-num:'Inter','Kanit',sans-serif;
+  --shadow-sm:0 1px 2px rgba(32,48,63,.05), 0 6px 16px rgba(32,48,63,.05);
+  --shadow-md:0 10px 28px rgba(32,48,63,.09);
+  --shadow-lg:0 20px 48px rgba(20,32,45,.14);
 }
 :root[data-theme="forest"]{
   --dawn-1:#eef6ee; --dawn-2:#e6f0e8; --dawn-3:#eaf1ec; --dawn-4:#dfece6; --bg-0:#e9f0ec; --bg-1:#f2f6f1;
@@ -112,7 +91,7 @@ html,body{margin:0;padding:0;height:100%;}
 html{overflow-x:hidden; width:100%; touch-action:pan-y;}
 body{
   font-family:var(--font-th); color:var(--ink); min-height:100vh;
-  background: #f4f1ea;
+  background:
     radial-gradient(900px 480px at 8% -8%, var(--dawn-1), transparent 60%),
     radial-gradient(820px 460px at 100% 0%, var(--dawn-2), transparent 55%),
     radial-gradient(1000px 620px at 50% 120%, var(--dawn-4), transparent 60%),
@@ -12186,93 +12165,51 @@ function memoDocNo(m) {
   const txt = mt ? mt[1].replace(/\./g, '').trim() : '';
   return txt;
 }   
-   
-function drawMemos() {
-  const el = document.getElementById('view-memos');
+
+   /* วาดเฉพาะส่วนรายการเอกสาร (ไม่วาดหัวหน้าใหม่) — ใช้ตอนพิมพ์ค้นหาเพื่อไม่ให้คีย์บอร์ดมือถือหลุด */
+function drawMemoList() {
+  const host = document.getElementById('memoGridHost');
+  if (!host) { drawMemos(); return; }
+
   const all = state.memos || [];
   const list = memoFiltered();
   const q = (state.memoSearch || '').trim().toLowerCase();
   const isGrid = state.memosView === 'grid';
-  const months = memoMonthOptions();
   const groups = memoGroupsOf(list);
   if (state.memoOpenGroups === undefined) state.memoOpenGroups = new Set();
 
-  const monthCount = {};
-  all.forEach(m => { const k = memoMonthKey(m); monthCount[k] = (monthCount[k] || 0) + 1; });
+  const countEl = document.getElementById('memoCountLabel');
+  if (countEl) countEl.textContent = list.length + ' / ' + all.length + ' ฉบับ';
 
   if (drawMemos._io) { drawMemos._io.disconnect(); drawMemos._io = null; }
   if (drawMemos._ro) { drawMemos._ro.disconnect(); drawMemos._ro = null; }
 
-  const searchSvg = '<svg viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.8" stroke="currentColor" stroke-width="1.6"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
-  const sortSvg = '<svg viewBox="0 0 20 20" fill="none"><path d="M6 4v12M3.5 13.5L6 16l2.5-2.5M14 16V4m0 0l-2.5 2.5M14 4l2.5 2.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-  const sortLabel = MEMO_SORT_LABEL[state.memoSort] || '';
-
-  el.innerHTML = `
-    <div class="section-title">
-      เอกสารใบเบิก-ยืม <small id="memoCountLabel">${list.length} / ${all.length} ฉบับ</small>
-      <span class="section-actions">${viewToggleHtml('memos', state.memosView)}</span>
-    </div>
-
-    ${memoKpiHtml(all)}
-
-    <div class="hint" style="margin-top:0;">${isAdmin() ? 'แตะที่เอกสารเพื่อเปิดดู/แก้ไข · ปุ่มลัดมุมการ์ดใช้พิมพ์หรือคัดลอกได้เลย' : 'แตะที่เอกสารเพื่อเปิดดูหรือพิมพ์ได้เท่านั้น'}</div>
-
-    <div class="memo-toolbar">
-      <div class="memo-search">
-        ${searchSvg}
-        <input class="input" id="memoSearchInput" type="search" inputmode="search" enterkeyhint="search" placeholder="ค้นหาเรื่อง / ผู้ขอเบิก / เลขที่หนังสือ..." value="${escapeHtml(state.memoSearch)}" autocomplete="off">
+  host.innerHTML = list.length ? groups.map(([key, items]) => {
+    const open = state.memoOpenGroups.has(key) || state.memoMonth !== 'all' || !!q || groups.length === 1;
+    const signed = items.filter(x => memoSigTone(x['เนื้อหาเอกสาร(HTML)']) === 'ok').length;
+    return `<div class="ap-group memo-group ${open ? 'open' : ''}" data-mkey="${key}">
+      <div class="memo-group-head">
+        <svg class="ap-caret" viewBox="0 0 20 20" fill="none"><path d="M7 4l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>${memoMonthLabel(key)}</span>
+        <span class="memo-group-stat">ครบลายเซ็น ${signed}/${items.length}</span>
+        <span class="ap-count">${items.length} ฉบับ</span>
       </div>
-      <button type="button" class="memo-sort-chip" id="memoSortBtn" aria-label="เรียงลำดับ: ${sortLabel}">
-  <span class="memo-sort-k">เรียง</span>${sortLabel}<span class="memo-sort-caret">▾</span>
-</button>
-    </div>
+      <div class="memo-group-body ${isGrid ? 'memo-grid' : ''}">
+        ${items.map(m => isGrid ? memoCard(m, q) : memoRow(m, q)).join('')}
+      </div>
+    </div>`;
+  }).join('') : emptyState(all.length ? 'ไม่พบเอกสารที่ตรงกับการค้นหา' : 'ยังไม่มีเอกสารที่บันทึกไว้ — กดปุ่ม + เพื่อสร้างเอกสารใหม่');
 
-    <div class="memo-month-row" id="memoMonthRow">
-      <button type="button" class="memo-month-chip ${state.memoMonth === 'all' ? 'on' : ''}" data-mm="all">ทั้งหมด<b>${all.length}</b></button>
-      ${months.map(k => `<button type="button" class="memo-month-chip ${state.memoMonth === k ? 'on' : ''}" data-mm="${k}">${memoMonthChipLabel(k)}<b>${monthCount[k] || 0}</b></button>`).join('')}
-    </div>
+  wireMemoListEvents(isGrid);
+}
 
-    <div id="memoGrid">
-      ${list.length ? groups.map(([key, items]) => {
-        const open = state.memoOpenGroups.has(key) || state.memoMonth !== 'all' || !!q || groups.length === 1;
-        const signed = items.filter(x => memoSigTone(x['เนื้อหาเอกสาร(HTML)']) === 'ok').length;
-        return `<div class="ap-group memo-group ${open ? 'open' : ''}" data-mkey="${key}">
-          <div class="memo-group-head">
-            <svg class="ap-caret" viewBox="0 0 20 20" fill="none"><path d="M7 4l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            <span>${memoMonthLabel(key)}</span>
-            <span class="memo-group-stat">ครบลายเซ็น ${signed}/${items.length}</span>
-            <span class="ap-count">${items.length} ฉบับ</span>
-          </div>
-          <div class="memo-group-body ${isGrid ? 'memo-grid' : ''}">
-            ${items.map(m => isGrid ? memoCard(m, q) : memoRow(m, q)).join('')}
-          </div>
-        </div>`;
-      }).join('') : emptyState(all.length ? 'ไม่พบเอกสารที่ตรงกับการค้นหา' : 'ยังไม่มีเอกสารที่บันทึกไว้ — กดปุ่ม + เพื่อสร้างเอกสารใหม่')}
-    </div>
-  `;
+/* ผูก event ให้รายการ (แยกออกมาเพื่อเรียกซ้ำได้หลังวาดรายการใหม่) */
+function wireMemoListEvents(isGrid) {
+  const el = document.getElementById('view-memos');
+  const all = state.memos || [];
+  const findMemo = id => all.find(x => x['รหัสใบเบิก'] === id);
+  const openMemo = (m) => { if (m) openMemoEditor({ id: m['รหัสใบเบิก'], docHtml: m['เนื้อหาเอกสาร(HTML)'], borrowId: m['รหัสรายการยืม'], readOnly: !isAdmin() }); };
 
-  // ค้นหา (debounce + คงโฟกัส)
-  const searchEl = document.getElementById('memoSearchInput');
-const applySearch = debounce(() => {
-  state.memoSearch = searchEl.value;
-  drawMemos();
-  if (document.activeElement === searchEl || !window.matchMedia('(pointer:coarse)').matches) {
-    const again = document.getElementById('memoSearchInput');
-    if (again) { again.focus(); try { again.setSelectionRange(again.value.length, again.value.length); } catch (e) {} }
-  }
-}, 220);
-  searchEl.oninput = applySearch;
-
-  // เรียงลำดับ 
-  document.getElementById('memoSortBtn').onclick = openMemoSortSheet;
-
-  // ชิปเดือน + เลื่อนให้ชิปที่เลือกอยู่กลางแถว
-  el.querySelectorAll('[data-mm]').forEach(b => b.onclick = () => { state.memoMonth = b.dataset.mm; drawMemos(); });
-  const monthRow = document.getElementById('memoMonthRow');
-  const activeChip = monthRow && monthRow.querySelector('.on');
-  if (activeChip) monthRow.scrollLeft = activeChip.offsetLeft - monthRow.clientWidth / 2 + activeChip.clientWidth / 2;
-
-  // พับ/กางกลุ่มเดือน
   el.querySelectorAll('.memo-group-head').forEach(h => h.onclick = () => {
     const g = h.closest('.memo-group');
     const key = g.dataset.mkey;
@@ -12281,15 +12218,9 @@ const applySearch = debounce(() => {
     if (nowOpen) state.memoOpenGroups.add(key); else state.memoOpenGroups.delete(key);
   });
 
-  const openMemo = (m) => { if (m) openMemoEditor({ id: m['รหัสใบเบิก'], docHtml: m['เนื้อหาเอกสาร(HTML)'], borrowId: m['รหัสรายการยืม'], readOnly: !isAdmin() }); };
-  const findMemo = id => all.find(x => x['รหัสใบเบิก'] === id);
-
   if (isGrid) {
-    const thumbRO = ('ResizeObserver' in window)
-      ? new ResizeObserver(entries => entries.forEach(en => fitPaper(en.target)))
-      : null;
+    const thumbRO = ('ResizeObserver' in window) ? new ResizeObserver(entries => entries.forEach(en => fitPaper(en.target))) : null;
     drawMemos._ro = thumbRO;
-
     const mountThumb = (card) => {
       const m = findMemo(card.dataset.id);
       const thumb = card.querySelector('[data-thumb]');
@@ -12299,7 +12230,6 @@ const applySearch = debounce(() => {
         if (thumbRO) thumbRO.observe(thumb);
       }
     };
-
     let io = null;
     if ('IntersectionObserver' in window) {
       io = new IntersectionObserver(entries => entries.forEach(en => {
@@ -12309,13 +12239,9 @@ const applySearch = debounce(() => {
       }), { rootMargin: '400px' });
       drawMemos._io = io;
     }
-
     el.querySelectorAll('.memo-card').forEach(card => {
       if (io) io.observe(card); else mountThumb(card);
-      card.onclick = e => {
-        if (e.target.closest('.memo-quick')) return;
-        openMemo(findMemo(card.dataset.id));
-      };
+      card.onclick = e => { if (e.target.closest('.memo-quick')) return; openMemo(findMemo(card.dataset.id)); };
       card.querySelectorAll('[data-qa-act]').forEach(btn => btn.onclick = e => {
         e.stopPropagation();
         const m = findMemo(card.dataset.id);
@@ -12326,15 +12252,73 @@ const applySearch = debounce(() => {
       });
     });
   } else {
-    el.querySelectorAll('.memo-row').forEach(row => {
-      row.onclick = () => openMemo(findMemo(row.dataset.id));
-    });
+    el.querySelectorAll('.memo-row').forEach(row => { row.onclick = () => openMemo(findMemo(row.dataset.id)); });
   }
 
-  wireViewToggle(drawMemos, '#view-memos', 'memosView');
   if (isAdmin() && !isGrid) {
     el.querySelectorAll('#memoGrid .memo-group-body').forEach(body => wireSwipeRows(body, MEMO_SWIPE));
   }
+}
+   
+function drawMemos() {
+  const el = document.getElementById('view-memos');
+  const all = state.memos || [];
+  const isGrid = state.memosView === 'grid';
+  const months = memoMonthOptions();
+  if (state.memoOpenGroups === undefined) state.memoOpenGroups = new Set();
+
+  const monthCount = {};
+  all.forEach(m => { const k = memoMonthKey(m); monthCount[k] = (monthCount[k] || 0) + 1; });
+
+  const searchSvg = '<svg viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.8" stroke="currentColor" stroke-width="1.6"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+  const sortLabel = MEMO_SORT_LABEL[state.memoSort] || '';
+
+  el.innerHTML = `
+    <div class="section-title">
+      เอกสารใบเบิก-ยืม <small id="memoCountLabel"></small>
+      <span class="section-actions">${viewToggleHtml('memos', state.memosView)}</span>
+    </div>
+
+    ${memoKpiHtml(all)}
+
+    <div class="hint" style="margin-top:0;">${isAdmin() ? 'แตะที่เอกสารเพื่อเปิดดู/แก้ไข · ปุ่มลัดมุมการ์ดใช้พิมพ์หรือคัดลอกได้เลย' : 'แตะที่เอกสารเพื่อเปิดดูหรือพิมพ์ได้เท่านั้น'}</div>
+
+    <div class="memo-toolbar">
+      <div class="memo-search">
+        ${searchSvg}
+        <input class="input" id="memoSearchInput" type="search" inputmode="search" enterkeyhint="search" placeholder="ค้นหาเรื่อง / ผู้ขอเบิก / เลขที่หนังสือ..." value="${escapeHtml(state.memoSearch || '')}" autocomplete="off">
+      </div>
+      <button type="button" class="memo-sort-chip" id="memoSortBtn" aria-label="เรียงลำดับ: ${sortLabel}">
+        <span class="memo-sort-k">เรียง</span>${sortLabel}<span class="memo-sort-caret">▾</span>
+      </button>
+    </div>
+
+    <div class="memo-month-row" id="memoMonthRow">
+      <button type="button" class="memo-month-chip ${state.memoMonth === 'all' ? 'on' : ''}" data-mm="all">ทั้งหมด<b>${all.length}</b></button>
+      ${months.map(k => `<button type="button" class="memo-month-chip ${state.memoMonth === k ? 'on' : ''}" data-mm="${k}">${memoMonthChipLabel(k)}<b>${monthCount[k] || 0}</b></button>`).join('')}
+    </div>
+
+    <div id="memoGridHost"></div>
+  `;
+
+  // ค้นหา: วาดเฉพาะรายการ ช่องค้นหาไม่ถูกทำลาย คีย์บอร์ดมือถือจึงไม่หลุด
+  const searchEl = document.getElementById('memoSearchInput');
+  searchEl.oninput = debounce(() => {
+    state.memoSearch = searchEl.value;
+    drawMemoList();
+  }, 220);
+
+  // เรียงลำดับ / ชิปเดือน
+  document.getElementById('memoSortBtn').onclick = openMemoSortSheet;
+  el.querySelectorAll('[data-mm]').forEach(b => b.onclick = () => { state.memoMonth = b.dataset.mm; drawMemos(); });
+
+  const monthRow = document.getElementById('memoMonthRow');
+  const activeChip = monthRow && monthRow.querySelector('.on');
+  if (activeChip) monthRow.scrollLeft = activeChip.offsetLeft - monthRow.clientWidth / 2 + activeChip.clientWidth / 2;
+
+  // เติมรายการครั้งแรก + ผูก event รายการ + สลับมุมมอง
+  drawMemoList();
+  wireViewToggle(drawMemos, '#view-memos', 'memosView');
 }
    
 function memoCard(m, q = '') {
