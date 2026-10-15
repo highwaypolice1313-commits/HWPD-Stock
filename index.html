@@ -6646,6 +6646,82 @@ html, body{
   #view-dashboard .dbx-stat-num{font-size:26px}
 }
 </style>
+
+ <style id="dbx-menu-v3">
+@media (max-width:899px){
+  /* การ์ดเมนู: แถบเดียว เลื่อนแนวนอน ขอบซ้ายตรงกับเนื้อหาด้านบน */
+  #view-dashboard .dbx-menu{
+    display:flex;
+    flex-wrap:nowrap;
+    gap:6px;
+    margin:0;
+    padding:14px 10px;
+    overflow-x:auto;
+    overflow-y:hidden;
+    scrollbar-width:none;
+    scroll-snap-type:x mandatory;
+    scroll-padding:0 10px;
+    background:var(--panel);
+    border:1px solid var(--panel-line);
+    border-radius:22px;
+    box-shadow:var(--shadow-sm);
+  }
+  #view-dashboard .dbx-menu::-webkit-scrollbar{display:none}
+
+  #view-dashboard .dbx-tile{
+    flex:0 0 72px;
+    width:72px;
+    min-width:72px;
+    scroll-snap-align:start;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:8px;
+    padding:4px 0;
+    background:transparent;
+    border:none;
+    box-shadow:none;
+    border-radius:16px;
+    color:var(--ink);
+    font:inherit;
+    font-size:11px;
+    font-weight:500;
+    line-height:1.2;
+    cursor:pointer;
+    transition:transform .15s ease;
+  }
+  #view-dashboard .dbx-tile:active{transform:scale(.94)}
+
+  #view-dashboard .dbx-tile-ico{
+    width:52px;
+    height:52px;
+    border-radius:18px;
+    display:grid;
+    place-items:center;
+    background:linear-gradient(145deg,var(--panel),var(--panel-soft));
+    color:var(--navy);
+    border:1px solid var(--panel-line);
+    box-shadow:0 6px 14px color-mix(in srgb,var(--navy-deep) 8%,transparent);
+  }
+  #view-dashboard .dbx-tile-ico svg{width:22px;height:22px}
+  #view-dashboard .dbx-tile.is-gold .dbx-tile-ico{background:linear-gradient(145deg,var(--gold-wash),var(--panel-soft));color:var(--gold-deep)}
+  #view-dashboard .dbx-tile.is-bad .dbx-tile-ico{background:linear-gradient(145deg,var(--bad-wash),var(--panel-soft));color:var(--bad)}
+
+  #view-dashboard .dbx-tile > span:last-child{
+    display:block;
+    width:100%;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    text-align:center;
+  }
+
+  /* แถวสถิติมือถือ: ตัวเลขเด่น */
+  #view-dashboard .dbx-stats{margin-top:12px;gap:10px}
+  #view-dashboard .dbx-stat{padding:14px 12px}
+  #view-dashboard .dbx-stat-num{font-size:26px}
+}
+</style>
    
 </head>
    
@@ -8500,15 +8576,15 @@ function renderDashboard() {
   const statsHtml = (desk) => `
     <div class="${desk ? 'dbx-side' : 'dbx-stats'}">
       <div class="dbx-stat is-out">
-        <div><div class="dbx-stat-lbl">${desk ? 'กำลังถูกยืม' : 'กำลังยืม'}</div><div class="dbx-stat-num" data-count="${borrowed}">0</div></div>
+        <div><div class="dbx-stat-lbl">${desk ? 'กำลังถูกยืม' : 'กำลังยืม'}</div><div class="dbx-stat-num">${borrowed.toLocaleString('en-US')}</div></div>
         ${desk ? `<div class="dbx-ico">${ICONS.swap}</div>` : ''}
       </div>
       <div class="dbx-stat is-bad">
-        <div><div class="dbx-stat-lbl">${desk ? 'เกินกำหนดคืน' : 'เกินกำหนด'}</div><div class="dbx-stat-num" data-count="${overdue}">0</div></div>
+        <div><div class="dbx-stat-lbl">${desk ? 'เกินกำหนดคืน' : 'เกินกำหนด'}</div><div class="dbx-stat-num">${overdue.toLocaleString('en-US')}</div></div>
         ${desk ? `<div class="dbx-ico">${ICONS.warn}</div>` : ''}
       </div>
       <div class="dbx-stat is-ok">
-        <div><div class="dbx-stat-lbl">${desk ? 'อยู่ระหว่างซ่อม' : 'กำลังซ่อม'}</div><div class="dbx-stat-num" data-count="${repair}">0</div></div>
+        <div><div class="dbx-stat-lbl">${desk ? 'อยู่ระหว่างซ่อม' : 'กำลังซ่อม'}</div><div class="dbx-stat-num">${repair.toLocaleString('en-US')}</div></div>
         ${desk ? `<div class="dbx-ico">${ICONS.wrench}</div>` : ''}
       </div>
     </div>`;
