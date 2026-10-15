@@ -6591,6 +6591,61 @@ html, body{
 #view-dashboard .dbx-mob-head .dbx-h1{font-size:24px;margin-top:2px}
 #view-dashboard .dbx-mob .dbx-tile-ico svg{width:20px;height:20px}
 </style>
+
+   <style id="dbx-menu-polish">
+/* เมนูมือถือ: จัดเป็นตารางเต็มความกว้างเนื้อหา ไม่ยื่นชิดขอบจอ */
+@media (max-width:899px){
+  #view-dashboard .dbx-menu{
+    display:grid;
+    grid-template-columns:repeat(5,minmax(0,1fr));
+    gap:8px;
+    margin:0;
+    padding:0;
+    overflow:visible;
+  }
+  #view-dashboard .dbx-tile{
+    flex:none;
+    width:auto;
+    min-width:0;
+    padding:12px 2px 10px;
+    gap:8px;
+    border-radius:18px;
+    background:linear-gradient(180deg,var(--panel),var(--panel-soft));
+    border:1px solid var(--panel-line);
+    box-shadow:0 6px 16px color-mix(in srgb,var(--navy-deep) 6%,transparent);
+    font-size:11px;
+    line-height:1.25;
+    font-weight:500;
+    text-align:center;
+    transition:transform .15s ease,border-color .15s ease;
+  }
+  #view-dashboard .dbx-tile:active{transform:scale(.96)}
+  #view-dashboard .dbx-tile > span:last-child{
+    display:block;
+    max-width:100%;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  #view-dashboard .dbx-tile-ico{
+    width:38px;
+    height:38px;
+    border-radius:13px;
+    background:var(--navy-wash);
+    color:var(--navy);
+  }
+  #view-dashboard .dbx-tile-ico svg{width:18px;height:18px}
+  #view-dashboard .dbx-tile.is-gold .dbx-tile-ico{background:var(--gold-wash);color:var(--gold-deep)}
+  #view-dashboard .dbx-tile.is-bad .dbx-tile-ico{background:var(--bad-wash);color:var(--bad)}
+  #view-dashboard .dbx-tile-ico{overflow:hidden}
+}
+/* แถวสถิติมือถือ ให้ตัวเลขเด่นขึ้น */
+@media (max-width:899px){
+  #view-dashboard .dbx-stats{margin-top:12px}
+  #view-dashboard .dbx-stat{padding:14px 12px}
+  #view-dashboard .dbx-stat-num{font-size:26px}
+}
+</style>
    
 </head>
    
@@ -8404,9 +8459,11 @@ function renderDashboard() {
     : A.reduce((s, a) => s + (Number(String(a['มูลค่า(บาท)'] ?? '').replace(/,/g, '')) || 0), 0);
   const ready = A.filter(a => a['สถานะ'] === 'พร้อมใช้งาน').length;
   const readyPct = total ? Math.round(ready / total * 100) : 0;
-  const borrowed = Number(d.borrowedCount) || A.filter(a => ['กำลังยืม', 'เกินกำหนด'].includes(a['สถานะ'])).length;
-  const overdue = Number(d.overdueCount) || B.filter(b => effectiveBorrowStatus(b) === 'เกินกำหนด').length;
-  const repair = Number(d.repairCount) || A.filter(a => ['ซ่อมบำรุง', 'กำลังซ่อม', 'รอซ่อม'].includes(a['สถานะ'])).length;
+  const M = Array.isArray(state.maint) ? state.maint : [];
+  // นับจากรายการจริง ให้ตรงกับการ์ด "ต้องดำเนินการ" และ "คำขอล่าสุด"
+  const borrowed = B.filter(b => ['กำลังยืม', 'เกินกำหนด'].includes(effectiveBorrowStatus(b))).length;
+  const overdue  = B.filter(b => effectiveBorrowStatus(b) === 'เกินกำหนด').length;
+  const repair   = M.filter(m => m['สถานะ'] !== 'ซ่อมเสร็จ').length;
 
   const catMap = {};
   if (d.byCategory && Object.keys(d.byCategory).length) Object.entries(d.byCategory).forEach(([k, v]) => catMap[k] = Number(v) || 0);
