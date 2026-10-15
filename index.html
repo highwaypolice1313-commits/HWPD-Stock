@@ -12328,19 +12328,19 @@ function drawMemoList() {
 
   const all = state.memos || [];
   const list = memoFiltered();
-  const { terms } = { terms: srchTerms(state.memoSearch) };
+  const terms = srchTerms(state.memoSearch);
   const isGrid = state.memosView === 'grid';
   const groups = memoGroupsOf(list);
   if (state.memoOpenGroups === undefined) state.memoOpenGroups = new Set();
 
-  const countEl = document.getElementById('memoCountLabel');
-  if (countEl) countEl.innerHTML = 'แสดง ' + list.length + ' จาก ' + all.length + ' ฉบับ' +
+  const cnt = document.getElementById('memoCountLabel');
+  if (cnt) cnt.innerHTML = 'พบ ' + list.length + ' รายการ' +
     (terms.length ? ' <span style="color:var(--gold-deep);">· ค้นหา "' + escapeHtml(state.memoSearch.trim()) + '"</span>' : '');
 
   if (drawMemoList._io) { drawMemoList._io.disconnect(); drawMemoList._io = null; }
   if (drawMemoList._ro) { drawMemoList._ro.disconnect(); drawMemoList._ro = null; }
 
-  const q = terms.length ? terms[0] : '';
+  const q = terms.length ? terms[0][0] : '';
 
   host.innerHTML = list.length ? groups.map(([key, items]) => {
     const open = state.memoOpenGroups.has(key) || state.memoMonth !== 'all' || terms.length > 0 || groups.length === 1;
@@ -12420,7 +12420,6 @@ function wireMemoListEvents(isGrid) {
   }
 }
    
-
 function drawMemos() {
   const el = document.getElementById('view-memos');
   ensureSrchStyles();
@@ -12435,7 +12434,7 @@ function drawMemos() {
 
   el.innerHTML = `
     <div class="section-title">
-      เอกสารใบเบิก-ยืม <small id="memoCountLabel"></small>
+      เอกสารใบเบิก-ยืม
       <span class="section-actions">${viewToggleHtml('memos', state.memosView)}</span>
     </div>
 
@@ -12457,7 +12456,7 @@ function drawMemos() {
       ${months.map(k => `<button type="button" class="memo-month-chip ${state.memoMonth === k ? 'on' : ''}" data-mm="${k}">${memoMonthChipLabel(k)}<b>${monthCount[k] || 0}</b></button>`).join('')}
     </div>
 
-    <div class="ax-count" id="memoCountWrap"></div>
+    <div class="ax-count" id="memoCountLabel"></div>
     <div id="memoGridHost"></div>
   `;
 
