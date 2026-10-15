@@ -12182,6 +12182,7 @@ function memoSigTone(html) {
   return 'warn';
 }   
 
+/* จัดกลุ่มตามเดือน (ลำดับตามที่ memoFiltered คืนมา) */
 function memoGroupsOf(list) {
   const map = new Map();
   list.forEach(m => {
@@ -12189,8 +12190,9 @@ function memoGroupsOf(list) {
     if (!map.has(k)) map.set(k, []);
     map.get(k).push(m);
   });
-  return Array.from(map.entries()); // ลำดับตามลำดับการเรียงของ list อยู่แล้ว
-}   
+  return Array.from(map.entries());
+}
+  
 
 function memoKpiHtml(all) {
   const nowKey = (() => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); })();
@@ -12245,7 +12247,22 @@ function memoPrintDirect(m, asPdf) {
     triggerPrint(() => { pa.innerHTML = ''; }, { filename: safeFileName('บันทึกข้อความ-' + name) });
   }
 }
-   
+
+/* ข้อความทั้งหมดที่ค้นได้ของเอกสาร 1 ฉบับ (รวมเนื้อหา HTML ที่เป็นตัวอักษรล้วน) */
+function memoSearchText(m) {
+  const html = String(m['เนื้อหาเอกสาร(HTML)'] || '');
+  const plain = html.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ');
+  const sig = memoSigStatus(html).txt;
+  const d = toDate(m['วันที่สร้าง']);
+  const dateParts = isNaN(d) ? [] : [
+    isoDate(d), thaiDate(d), thaiDateLong(d), systemDate(d),
+    String(d.getFullYear()), String(d.getFullYear() + 543)
+  ];
+  return [
+    m['เรื่อง'], m['ผู้ขอเบิก'], memoDocNo(m), m['เลขที่หนังสือ'],
+    m['รหัสใบเบิก'], m['รหัสรายการยืม'], sig, plain, ...dateParts
+  ].join(' | ');
+}      
    
 /* ---------- รายการเอกสาร (การ์ดตัวอย่างกระดาษจริง) ---------- */
 const MEMO_STEP = 24; // [ปรับตรงนี้] จำนวนเอกสารที่แสดงต่อครั้ง
@@ -12257,25 +12274,22 @@ async function renderMemos() {
   if (state.memoLimit === undefined) state.memoLimit = MEMO_STEP;
   const el = document.getElementById('view-memos');
   el.innerHTML = memoSkeletonHtml();
-  try { state.memos = await apiGet('getMemos', { token: state.sessionToken }); } catch (e) {
+  try {
+    state.memos = await apiGet('getMemos', { token: state.sessionToken });
+  } catch (e) {
     toast('โหลดเอกสารไม่สำเร็จ: ' + (e.message || ''));
   }
   drawMemos();
 }
 
+/* กรองตามคำค้น + เดือนที่เลือก แล้วเรียงตามที่ผู้ใช้เลือก */
 function memoFiltered() {
-  const q = (state.memoSearch || '').trim().toLowerCase();
-  const norm = s => thaiToArabic(String(s || '')).toLowerCase();
+  const terms = srchTerms(state.memoSearch);
+  const monthKey = state.memoMonth;
 
-  let list = (state.memos || []).filter(m => {
-    if (state.memoMonth !== 'all') {
-      const d = toDate(m['วันที่สร้าง']);
-      const key = isNaN(d) ? '' : d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-      if (key !== state.memoMonth) return false;
-    }
-    if (!q) return true;
-    return [m['เรื่อง'], m['ผู้ขอเบิก'], memoDocNo(m), m['รหัสใบเบิก']]
-      .map(norm).join(' | ').includes(norm(q));
+  const list = (state.memos || []).filter(m => {
+    if (monthKey !== 'all' && memoMonthKey(m) !== monthKey) return false;
+    return srchMatch(memoSearchText(m), terms);
   });
 
   const [field, dir] = state.memoSort.split('_');
@@ -12307,26 +12321,29 @@ function memoDocNo(m) {
   return txt;
 }   
 
-   /* วาดเฉพาะส่วนรายการเอกสาร (ไม่วาดหัวหน้าใหม่) — ใช้ตอนพิมพ์ค้นหาเพื่อไม่ให้คีย์บอร์ดมือถือหลุด */
+/* วาดเฉพาะรายการเอกสาร ไม่วาดหัวหน้าใหม่ จึงไม่กระทบช่องค้นหา */
 function drawMemoList() {
   const host = document.getElementById('memoGridHost');
   if (!host) { drawMemos(); return; }
 
   const all = state.memos || [];
   const list = memoFiltered();
-  const q = (state.memoSearch || '').trim().toLowerCase();
+  const { terms } = { terms: srchTerms(state.memoSearch) };
   const isGrid = state.memosView === 'grid';
   const groups = memoGroupsOf(list);
   if (state.memoOpenGroups === undefined) state.memoOpenGroups = new Set();
 
   const countEl = document.getElementById('memoCountLabel');
-  if (countEl) countEl.textContent = list.length + ' / ' + all.length + ' ฉบับ';
+  if (countEl) countEl.innerHTML = 'แสดง ' + list.length + ' จาก ' + all.length + ' ฉบับ' +
+    (terms.length ? ' <span style="color:var(--gold-deep);">· ค้นหา "' + escapeHtml(state.memoSearch.trim()) + '"</span>' : '');
 
-  if (drawMemos._io) { drawMemos._io.disconnect(); drawMemos._io = null; }
-  if (drawMemos._ro) { drawMemos._ro.disconnect(); drawMemos._ro = null; }
+  if (drawMemoList._io) { drawMemoList._io.disconnect(); drawMemoList._io = null; }
+  if (drawMemoList._ro) { drawMemoList._ro.disconnect(); drawMemoList._ro = null; }
+
+  const q = terms.length ? terms[0] : '';
 
   host.innerHTML = list.length ? groups.map(([key, items]) => {
-    const open = state.memoOpenGroups.has(key) || state.memoMonth !== 'all' || !!q || groups.length === 1;
+    const open = state.memoOpenGroups.has(key) || state.memoMonth !== 'all' || terms.length > 0 || groups.length === 1;
     const signed = items.filter(x => memoSigTone(x['เนื้อหาเอกสาร(HTML)']) === 'ok').length;
     return `<div class="ap-group memo-group ${open ? 'open' : ''}" data-mkey="${key}">
       <div class="memo-group-head">
@@ -12339,7 +12356,9 @@ function drawMemoList() {
         ${items.map(m => isGrid ? memoCard(m, q) : memoRow(m, q)).join('')}
       </div>
     </div>`;
-  }).join('') : emptyState(all.length ? 'ไม่พบเอกสารที่ตรงกับการค้นหา' : 'ยังไม่มีเอกสารที่บันทึกไว้ — กดปุ่ม + เพื่อสร้างเอกสารใหม่');
+  }).join('') : (terms.length
+      ? `<div class="glass empty-state">ไม่พบเอกสารที่ตรงกับ "${escapeHtml(state.memoSearch.trim())}"</div>`
+      : emptyState(all.length ? 'ไม่พบเอกสารตามตัวกรองที่เลือก' : 'ยังไม่มีเอกสารที่บันทึกไว้ — กดปุ่ม + เพื่อสร้างเอกสารใหม่'));
 
   wireMemoListEvents(isGrid);
 }
@@ -12401,17 +12420,17 @@ function wireMemoListEvents(isGrid) {
   }
 }
    
+
 function drawMemos() {
   const el = document.getElementById('view-memos');
+  ensureSrchStyles();
   const all = state.memos || [];
-  const isGrid = state.memosView === 'grid';
   const months = memoMonthOptions();
   if (state.memoOpenGroups === undefined) state.memoOpenGroups = new Set();
 
   const monthCount = {};
   all.forEach(m => { const k = memoMonthKey(m); monthCount[k] = (monthCount[k] || 0) + 1; });
 
-  const searchSvg = '<svg viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.8" stroke="currentColor" stroke-width="1.6"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
   const sortLabel = MEMO_SORT_LABEL[state.memoSort] || '';
 
   el.innerHTML = `
@@ -12422,13 +12441,12 @@ function drawMemos() {
 
     ${memoKpiHtml(all)}
 
-    <div class="hint" style="margin-top:0;">${isAdmin() ? 'แตะที่เอกสารเพื่อเปิดดู/แก้ไข · ปุ่มลัดมุมการ์ดใช้พิมพ์หรือคัดลอกได้เลย' : 'แตะที่เอกสารเพื่อเปิดดูหรือพิมพ์ได้เท่านั้น'}</div>
+    <div class="hint" style="margin-top:0;">${isAdmin()
+      ? 'แตะที่เอกสารเพื่อเปิดดู/แก้ไข · ปุ่มลัดมุมการ์ดใช้พิมพ์หรือคัดลอกได้เลย'
+      : 'แตะที่เอกสารเพื่อเปิดดูหรือพิมพ์ได้เท่านั้น'}</div>
 
-    <div class="memo-toolbar">
-      <div class="memo-search">
-        ${searchSvg}
-        <input class="input" id="memoSearchInput" type="search" inputmode="search" enterkeyhint="search" placeholder="ค้นหาเรื่อง / ผู้ขอเบิก / เลขที่หนังสือ..." value="${escapeHtml(state.memoSearch || '')}" autocomplete="off">
-      </div>
+    <div class="ax-top">
+      ${srchBoxHtml('memoSearchInput', state.memoSearch, 'ค้นหาเรื่อง / ผู้ขอเบิก / เลขที่หนังสือ / วันที่')}
       <button type="button" class="memo-sort-chip" id="memoSortBtn" aria-label="เรียงลำดับ: ${sortLabel}">
         <span class="memo-sort-k">เรียง</span>${sortLabel}<span class="memo-sort-caret">▾</span>
       </button>
@@ -12439,25 +12457,25 @@ function drawMemos() {
       ${months.map(k => `<button type="button" class="memo-month-chip ${state.memoMonth === k ? 'on' : ''}" data-mm="${k}">${memoMonthChipLabel(k)}<b>${monthCount[k] || 0}</b></button>`).join('')}
     </div>
 
+    <div class="ax-count" id="memoCountWrap"></div>
     <div id="memoGridHost"></div>
   `;
 
-  // ค้นหา: วาดเฉพาะรายการ ช่องค้นหาไม่ถูกทำลาย คีย์บอร์ดมือถือจึงไม่หลุด
-  const searchEl = document.getElementById('memoSearchInput');
-  searchEl.oninput = debounce(() => {
-    state.memoSearch = searchEl.value;
+  srchBoxWire('memoSearchInput', v => {
+    state.memoSearch = v;
     drawMemoList();
-  }, 220);
+  });
 
-  // เรียงลำดับ / ชิปเดือน
   document.getElementById('memoSortBtn').onclick = openMemoSortSheet;
-  el.querySelectorAll('[data-mm]').forEach(b => b.onclick = () => { state.memoMonth = b.dataset.mm; drawMemos(); });
+  el.querySelectorAll('[data-mm]').forEach(b => b.onclick = () => {
+    state.memoMonth = b.dataset.mm;
+    drawMemos();
+  });
 
   const monthRow = document.getElementById('memoMonthRow');
   const activeChip = monthRow && monthRow.querySelector('.on');
   if (activeChip) monthRow.scrollLeft = activeChip.offsetLeft - monthRow.clientWidth / 2 + activeChip.clientWidth / 2;
 
-  // เติมรายการครั้งแรก + ผูก event รายการ + สลับมุมมอง
   drawMemoList();
   wireViewToggle(drawMemos, '#view-memos', 'memosView');
 }
