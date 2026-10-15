@@ -6457,6 +6457,15 @@ html, body{
 .memo-skel-line.short{width:55%;margin-bottom:12px}
 .memo-skel-pill{flex:0 0 150px;height:82px;border-radius:18px}
 @media (max-width:520px){ .memo-skel-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px} }
+
+.sort-chip-row{
+  flex:0 0 auto;
+  height:46px;
+  border-radius:99px;
+  padding:0 16px;
+  white-space:nowrap;
+}
+.ax-top .srch-box{ flex:1 1 auto; }   
 </style>   
    
 </head>
@@ -10164,6 +10173,7 @@ function renderBorrow() {
     .concat(catOrder.filter(c => catCounts[c]).map(c => ({ v: c, label: c, n: catCounts[c], icon: catIcon(c) })));
 
   const isGrid = state.borrowView === 'grid';
+  const sortLabel = (BORROW_SORT_OPTIONS.find(([v]) => v === state.borrowSort) || [])[1] || '';
 
   el.innerHTML = `
     <div class="section-title">
@@ -10183,10 +10193,7 @@ function renderBorrow() {
 
     <div class="ax-top">
       ${srchBoxHtml('borrowSearchInput', state.borrowSearch, 'ค้นหาผู้ยืม / ครุภัณฑ์ / S/N / ทะเบียน / วันที่')}
-    </div>
-
-    <div class="memo-toolbar" style="margin-bottom:10px;">
-      ${sortChipHtml('borrowSortBtn', borrowSortLabel())}
+      ${sortChipInRowHtml('borrowSortBtn', sortLabel)}
     </div>
 
     <div class="ax-pills">
@@ -10229,6 +10236,12 @@ function renderBorrow() {
   wireViewToggle(renderBorrow, '#view-borrow', 'borrowView');
   drawBorrowList();
   requestAnimationFrame(() => applyPremiumMotion(el));
+}
+
+function sortChipInRowHtml(id, label) {
+  return `<button type="button" class="memo-sort-chip sort-chip-row" id="${id}" aria-label="เรียงลำดับ: ${escapeHtml(label)}">
+    <span class="memo-sort-k">เรียง</span>${escapeHtml(label)}<span class="memo-sort-caret">▾</span>
+  </button>`;
 }
    
 function borrowCard(b) {
@@ -11094,6 +11107,7 @@ function renderMaint() {
 
   const bk = maintBuckets();
   const totalCost = (state.maint || []).reduce((s, m) => s + (Number(m['ค่าใช้จ่าย(บาท)']) || 0), 0);
+  const sortLabel = (MAINT_SORT_OPTIONS.find(([v]) => v === state.maintSort) || [])[1] || '';
 
   const TABS = [
     { id: 'pending', label: 'รอซ่อม', count: bk.pending.length },
@@ -11118,10 +11132,7 @@ function renderMaint() {
 
     <div class="ax-top">
       ${srchBoxHtml('maintSearchInput', state.maintSearch, 'ค้นหาชื่อครุภัณฑ์ / อาการ / ผู้แจ้ง / S/N / ทะเบียน')}
-    </div>
-
-    <div class="memo-toolbar" style="margin-bottom:10px;">
-      ${sortChipHtml('maintSortBtn', maintSortLabel())}
+      ${sortChipInRowHtml('maintSortBtn', sortLabel)}
     </div>
 
     <div class="chip-row">
