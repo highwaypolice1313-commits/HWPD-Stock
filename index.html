@@ -8454,7 +8454,7 @@ const USER_SWIPE = {
 };
 
 async function deleteMemoItem(m) {
-  if (!await confirmSheet('ยืนยันการลบเอกสาร "' + (m['เรื่อง'] || '') + '" ?', { title: 'ลบเอกสาร', okText: 'ลบเอกสาร', tone: 'bad' })) return;
+  if (!await confirmSheet('ย้ายเอกสาร "' + (m['เรื่อง'] || '') + '" ไปถังขยะ? กู้คืนได้ภายใน 30 วันที่ตั้งค่า > ถังขยะ', { title: 'ลบเอกสาร', okText: 'ย้ายไปถังขยะ', tone: 'bad' })) return;
   setLoading(true, 'กำลังลบเอกสาร...');
   try {
     await apiPost('deleteMemo', { id: m['รหัสใบเบิก'] });
@@ -8468,9 +8468,9 @@ async function deleteBorrowItem(b) {
   const eff = effectiveBorrowStatus(b);
   const stillActive = eff === 'กำลังยืม' || eff === 'เกินกำหนด';
   const msg = stillActive
-    ? 'รายการนี้ยังไม่ได้คืน หากลบ ครุภัณฑ์ "' + (b['ชื่อครุภัณฑ์'] || '') + '" จะถูกปรับสถานะกลับเป็น "พร้อมใช้งาน" ทันที ยืนยันการลบ?'
-    : 'ยืนยันการลบรายการยืม-คืนนี้? (ไม่สามารถกู้คืนได้)';
-  if (!await confirmSheet(msg, { title: 'ลบรายการยืม-คืน', okText: 'ลบรายการ', tone: 'bad' })) return;
+    ? 'รายการนี้ยังไม่ได้คืน หากย้ายไปถังขยะ ครุภัณฑ์ "' + (b['ชื่อครุภัณฑ์'] || '') + '" จะถูกปรับสถานะกลับเป็น "พร้อมใช้งาน" ทันที ยืนยันหรือไม่? (กู้คืนได้ภายใน 30 วัน)'
+    : 'ย้ายรายการยืม-คืนนี้ไปถังขยะ? กู้คืนได้ภายใน 30 วันที่ตั้งค่า > ถังขยะ';
+  if (!await confirmSheet(msg, { title: 'ลบรายการยืม-คืน', okText: 'ย้ายไปถังขยะ', tone: 'bad' })) return;
   setLoading(true, 'กำลังลบรายการ...');
   try {
     await apiPost('deleteBorrow', { id: b['รหัสรายการ'] });
@@ -8481,7 +8481,7 @@ async function deleteBorrowItem(b) {
 }
 
 async function deleteUserItem(u) {
-  if (!await confirmSheet('ยืนยันการลบรายชื่อ "' + officerFullName(u) + '" ?', { title: 'ลบรายชื่อเจ้าหน้าที่', okText: 'ลบรายชื่อ', tone: 'bad' })) return;
+  if (!await confirmSheet('ย้ายรายชื่อ "' + officerFullName(u) + '" ไปถังขยะ? กู้คืนได้ภายใน 30 วันที่ตั้งค่า > ถังขยะ', { title: 'ลบรายชื่อเจ้าหน้าที่', okText: 'ย้ายไปถังขยะ', tone: 'bad' })) return;
   const oid = officerId(u);
   const identifier = u['LINEUserId'] || u['ชื่อผู้ใช้'] || u['ชื่อ-สกุล'];
   setLoading(true, 'กำลังลบรายชื่อ จนท....');
@@ -9141,7 +9141,7 @@ function openAssetDetail(id, opts = {}) {
     on('btnQuickStatus', () => openQuickStatusForm(a));
     on('btnEditAsset', () => openAssetForm(a));
     on('btnDeleteAsset', async () => {
-      if (!await confirmSheet('ยืนยันการลบครุภัณฑ์นี้?', {title:'ลบครุภัณฑ์', okText:'ลบรายการ', tone:'bad'})) return;
+if (!await confirmSheet('ย้ายครุภัณฑ์ "' + (a['ชื่อครุภัณฑ์'] || '') + '" ไปถังขยะ? กู้คืนได้ภายใน 30 วันที่ตั้งค่า > ถังขยะ', {title:'ลบครุภัณฑ์', okText:'ย้ายไปถังขยะ', tone:'bad'})) return;
       try { await apiPost('deleteAsset', { id }); closeAllSheets(); toast('ลบรายการแล้ว'); await reloadThen(renderAssets); }
       catch (err) { toast(err.message || 'ลบไม่สำเร็จ'); }
     });
@@ -9932,7 +9932,7 @@ function openComponentForm(parentId, c) {
   };
   if (editing) {
     document.getElementById('btnDeleteComp').onclick = async () => {
-      if (!await confirmSheet('ยืนยันการลบส่วนควบนี้?', {title:'ลบส่วนควบ', okText:'ลบรายการ', tone:'bad'})) return;
+if (!await confirmSheet('ย้ายส่วนควบนี้ไปถังขยะ? กู้คืนได้ภายใน 30 วันที่ตั้งค่า > ถังขยะ', {title:'ลบส่วนควบ', okText:'ย้ายไปถังขยะ', tone:'bad'})) return;
       try { await apiPost('deleteComponent', { id: c['รหัสส่วนควบ'] }); closeSheet(); toast('ลบส่วนควบแล้ว'); await reloadThen(() => openAssetDetail(parentId)); }
       catch (err) { toast(err.message || 'ลบส่วนควบไม่สำเร็จ'); }
     };
@@ -10272,9 +10272,9 @@ function openBorrowDetail(id) {
       // เตือนเป็นพิเศษถ้ารายการนี้ยังไม่คืน เพราะลบแล้วครุภัณฑ์จะถูกปรับกลับเป็น "พร้อมใช้งาน" ทันที
       const stillActive = (eff === 'กำลังยืม' || eff === 'เกินกำหนด');
       const confirmMsg = stillActive
-        ? 'รายการนี้ยังไม่ได้คืน หากลบ ครุภัณฑ์ "' + (b['ชื่อครุภัณฑ์'] || '') + '" จะถูกปรับสถานะกลับเป็น "พร้อมใช้งาน" ทันที ยืนยันการลบ?'
-        : 'ยืนยันการลบรายการยืม-คืนนี้? (ไม่สามารถกู้คืนได้)';
-      if (!await confirmSheet(confirmMsg, {title:'ลบรายการยืม-คืน', okText:'ลบรายการ', tone:'bad'})) return;
+        ? 'รายการนี้ยังไม่ได้คืน หากย้ายไปถังขยะ ครุภัณฑ์ "' + (b['ชื่อครุภัณฑ์'] || '') + '" จะถูกปรับสถานะกลับเป็น "พร้อมใช้งาน" ทันที ยืนยันหรือไม่? (กู้คืนได้ภายใน 30 วัน)'
+        : 'ย้ายรายการยืม-คืนนี้ไปถังขยะ? กู้คืนได้ภายใน 30 วันที่ตั้งค่า > ถังขยะ';
+      if (!await confirmSheet(confirmMsg, {title:'ลบรายการยืม-คืน', okText:'ย้ายไปถังขยะ', tone:'bad'})) return;
       const btn = deleteBorrowBtn;
       if (btn.disabled) return;
       setButtonBusy(btn, true, 'กำลังลบ...'); setLoading(true, 'กำลังลบรายการ...');
@@ -10973,9 +10973,9 @@ function openMaintDetail(id) {
 
    async function deleteMaintItem(m) {
   const stillOpen = m['สถานะ'] !== 'ซ่อมเสร็จ';
-  const msg = 'ยืนยันลบรายการซ่อม "' + (m['ชื่อครุภัณฑ์'] || '') + '"?' +
-    (stillOpen ? '\nหากไม่มีงานซ่อมค้างอื่น สถานะครุภัณฑ์จะกลับเป็น "พร้อมใช้งาน"' : '');
-  if (!await confirmSheet(msg, { title: 'ลบรายการซ่อม', okText: 'ลบรายการ', tone: 'bad' })) return;
+  const msg = 'ย้ายรายการซ่อม "' + (m['ชื่อครุภัณฑ์'] || '') + '" ไปถังขยะ?' +
+    (stillOpen ? '\nหากไม่มีงานซ่อมค้างอื่น สถานะครุภัณฑ์จะกลับเป็น "พร้อมใช้งาน" (กู้คืนได้ภายใน 30 วัน)' : ' (กู้คืนได้ภายใน 30 วัน)');
+  if (!await confirmSheet(msg, { title: 'ลบรายการซ่อม', okText: 'ย้ายไปถังขยะ', tone: 'bad' })) return;
   setLoading(true, 'กำลังลบรายการซ่อม...');
   try {
     await apiPost('deleteMaint', { id: m['รหัสรายการ'] });
@@ -11569,7 +11569,7 @@ function openUserForm(u) {
   // ---------- ลบรายชื่อ (เฉพาะโหมดแก้ไข) ----------
   if (editing) {
     document.getElementById('btnDeleteUser').onclick = async () => {
-      if (!await confirmSheet('ยืนยันการลบรายชื่อนี้?', {title:'ลบรายชื่อเจ้าหน้าที่', okText:'ลบรายชื่อ', tone:'bad'})) return;
+      if (!await confirmSheet('ย้ายรายชื่อนี้ไปถังขยะ? กู้คืนได้ภายใน 30 วันที่ตั้งค่า > ถังขยะ', {title:'ลบรายชื่อเจ้าหน้าที่', okText:'ย้ายไปถังขยะ', tone:'bad'})) return;
       const oid = officerId(u);
       const identifier = u['LINEUserId'] || u['ชื่อผู้ใช้'] || u['ชื่อ-สกุล'];
       const deleteBtn = document.getElementById('btnDeleteUser');
@@ -12480,7 +12480,7 @@ document.getElementById('btnMemoPrint').onclick = () => {
   };
   if (!isNew && isAdmin()) {
     document.getElementById('btnMemoDelete').onclick = async () => {
-      if (!await confirmSheet('ยืนยันการลบเอกสารนี้?', {title:'ลบเอกสาร', okText:'ลบเอกสาร', tone:'bad'})) return;
+      if (!await confirmSheet('ย้ายเอกสารนี้ไปถังขยะ? กู้คืนได้ภายใน 30 วันที่ตั้งค่า > ถังขยะ', {title:'ลบเอกสาร', okText:'ย้ายไปถังขยะ', tone:'bad'})) return;
       try { await apiPost('deleteMemo', { id: opts.id }); closeSheet(); toast('ลบเอกสารแล้ว'); await reloadThen(() => { if (state.tab === 'memos') renderMemos(); }); }
       catch (err) { toast(err.message || 'ลบไม่สำเร็จ'); }
     };
@@ -15572,6 +15572,61 @@ function cuInit() {
   const save = document.getElementById('btnSaveCategoryUnits');
   if (save) save.onclick = cuSaveAll;
 }
+
+const TRASH_LABEL = { assets:'ครุภัณฑ์', borrow:'ยืม-คืน', maint:'ซ่อมบำรุง', memos:'เอกสารใบเบิก', users:'รายชื่อ จนท.', components:'ส่วนควบ' };
+
+async function loadTrashPanel() {
+  const box = document.getElementById('trashList');
+  if (!box) return;
+  box.innerHTML = emptyState('กำลังโหลดถังขยะ...');
+  let list = [];
+  try {
+    list = await apiGet('listTrash', { token: state.sessionToken });
+  } catch (e) {
+    toast('โหลดถังขยะไม่สำเร็จ: ' + (e.message || ''));
+  }
+  const again = document.getElementById('trashList');
+  if (!again) return;
+  if (!list || !list.length) { again.innerHTML = emptyState('ถังขยะว่างเปล่า'); return; }
+
+  again.innerHTML = list.map((t, i) => `
+    <div class="glass list-item" style="cursor:default; flex-wrap:wrap; gap:8px;">
+      <div class="li-icon">${ICONS.trash}</div>
+      <div class="li-body" style="min-width:0; flex:1 1 160px;">
+        <div class="li-title">${escapeHtml(t.title)}</div>
+        <div class="li-sub">${escapeHtml(TRASH_LABEL[t.sheet] || t.sheet)} · ลบเมื่อ ${systemDateTime(t.deletedAt)} โดย ${escapeHtml(t.deletedBy)} · เหลือ ${t.daysLeft} วัน</div>
+      </div>
+      <div style="display:flex; gap:6px; flex:none;">
+        <button type="button" class="btn btn-ok trash-restore" data-i="${i}" style="min-height:38px; padding:0 14px;">กู้คืน</button>
+        <button type="button" class="btn btn-danger trash-purge" data-i="${i}" style="min-height:38px; padding:0 14px;">ลบถาวร</button>
+      </div>
+    </div>`).join('');
+
+  again.querySelectorAll('.trash-restore').forEach(b => b.onclick = () => trashRestore(list[Number(b.dataset.i)], b));
+  again.querySelectorAll('.trash-purge').forEach(b => b.onclick = () => trashPurge(list[Number(b.dataset.i)], b));
+}
+
+async function trashRestore(t, btn) {
+  if (!await confirmSheet('กู้คืน "' + t.title + '" กลับมาในระบบ?', { title: 'กู้คืนรายการ', okText: 'กู้คืน' })) return;
+  setButtonBusy(btn, true, 'กำลังกู้คืน...'); setLoading(true, 'กำลังกู้คืนรายการ...');
+  try {
+    await apiPost('restoreItem', { sheet: t.sheet, id: t.id });
+    toast('กู้คืนรายการแล้ว');
+    await reloadThen(() => { loadTrashPanel(); });
+  } catch (err) { toast(err.message || 'กู้คืนไม่สำเร็จ'); }
+  finally { setLoading(false); setButtonBusy(btn, false, 'กู้คืน'); }
+}
+
+async function trashPurge(t, btn) {
+  if (!await confirmSheet('ลบ "' + t.title + '" ถาวร? รวมถึงรูปภาพบน Drive และกู้คืนไม่ได้', { title: 'ลบถาวร', okText: 'ลบถาวร', tone: 'bad' })) return;
+  setButtonBusy(btn, true, 'กำลังลบ...'); setLoading(true, 'กำลังลบถาวร...');
+  try {
+    await apiPost('purgeItem', { sheet: t.sheet, id: t.id });
+    toast('ลบถาวรแล้ว');
+    loadTrashPanel();
+  } catch (err) { toast(err.message || 'ลบถาวรไม่สำเร็จ'); }
+  finally { setLoading(false); setButtonBusy(btn, false, 'ลบถาวร'); }
+}   
    
 /* ---- (ข) แก้ renderSettings() ให้เป็นแบบนี้ทั้งฟังก์ชัน (แทนที่ของเดิมทั้งหมด) ---- */
 function renderSettings() {
@@ -15593,6 +15648,7 @@ function renderSettings() {
     { id: 'org',       label: 'หน่วยงาน & เอกสาร' },
     { id: 'security',  label: 'รหัสผ่าน' },
     { id: 'activity',  label: 'บันทึกกิจกรรม' },
+    { id: 'trash',     label: 'ถังขยะ' },
     { id: 'data',      label: 'ข้อมูล & สำรอง' }
   ];
 
@@ -15726,6 +15782,13 @@ function renderSettings() {
         <div class="hint" style="margin-top:0;">ดาวน์โหลดข้อมูลทั้งหมดในระบบเป็นไฟล์ JSON ไว้สำรองหรือย้ายระบบ</div>
         <div class="btn-row" style="margin-top:10px;"><button class="btn btn-ghost" id="btnExportAll">ดาวน์โหลดข้อมูลทั้งหมด (JSON)</button></div>
       </div>
+
+       <div class="settings-panel" data-panel="trash" style="display:${state.settingsTab==='trash'?'block':'none'};">
+      <div class="section-title" style="margin-top:6px; font-size:14px;">ถังขยะ <small>กู้คืนได้ภายใน 30 วัน</small></div>
+      <div class="hint" style="margin-top:0;">รายการจะถูกลบถาวรอัตโนมัติหลังครบ 30 วัน (กดลบถาวรเองได้ทันที)</div>
+      <div id="trashList" style="margin-top:10px;"></div>
+    </div>
+      
     </div>
   `;
 
@@ -15737,6 +15800,7 @@ function renderSettings() {
       document.querySelectorAll('.settings-panel').forEach(p => { p.style.display = (p.dataset.panel === state.settingsTab) ? 'block' : 'none'; });
       window.scrollTo({ top: 0, behavior: 'smooth' });
       if (state.settingsTab === 'activity') loadActivityPanel();
+            if (state.settingsTab === 'trash') loadTrashPanel(); 
     };
   });
 
@@ -15871,6 +15935,7 @@ updDocPreview();
   wireAuditCommitteeSettingsHandlers();
     cuInit();
   if (state.settingsTab === 'activity') loadActivityPanel();   // กรณีรีเฟรชแล้วค้างอยู่แท็บนี้
+     if (state.settingsTab === 'trash') loadTrashPanel();
 
    // ใส่ท้าย renderSettings() และ renderViewerSettings()
 const pm = document.getElementById('st_pdfmode');
