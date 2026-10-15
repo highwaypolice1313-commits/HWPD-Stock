@@ -11454,15 +11454,6 @@ function drawUsers() {
   const el = document.getElementById('view-users');
   ensureSrchStyles();
   if (state.userSearch === undefined) state.userSearch = '';
-  const isGrid = state.usersView === 'grid';
-  const terms = srchTerms(state.userSearch);
-
-  const shown = state.users
-    .filter(u => srchMatch(userSearchText(u), terms))
-    .slice()
-    .sort(comparePoliceOfficers);
-
-  const searching = terms.length > 0;
 
   el.innerHTML = `
     <div class="section-title">
@@ -11486,11 +11477,37 @@ function drawUsers() {
     <div id="userList"></div>
   `;
 
+  const addUserBtn = document.getElementById('btnAddUser');
+  if (addUserBtn) addUserBtn.onclick = () => openUserForm();
+  document.getElementById('btnPrintAllUsers').onclick = printAllOfficers;
+
+  srchBoxWire('userSearchInput', v => {
+    state.userSearch = v;
+    drawUserList();
+  });
+
+  wireViewToggle(drawUsers, '#view-users', 'usersView');
+  drawUserList();
+}
+
+/* วาดเฉพาะส่วนรายการ ไม่แตะช่องค้นหา จึงไม่ทำให้คีย์บอร์ดหลุด */
+function drawUserList() {
+  const listEl = document.getElementById('userList');
   const cnt = document.getElementById('userCount');
+  if (!listEl) return;
+
+  const isGrid = state.usersView === 'grid';
+  const terms = srchTerms(state.userSearch);
+  const searching = terms.length > 0;
+
+  const shown = state.users
+    .filter(u => srchMatch(userSearchText(u), terms))
+    .slice()
+    .sort(comparePoliceOfficers);
+
   if (cnt) cnt.innerHTML = 'พบ ' + shown.length + ' จาก ' + state.users.length + ' คน' +
     (searching ? ' <span style="color:var(--gold-deep);">· ค้นหา "' + escapeHtml(state.userSearch.trim()) + '"</span>' : '');
 
-  const listEl = document.getElementById('userList');
   listEl.className = isGrid ? 'asset-grid' : '';
   if (shown.length) {
     listEl.innerHTML = shown.map(isGrid ? userCard : userRow).join('');
@@ -11500,22 +11517,12 @@ function drawUsers() {
     listEl.innerHTML = emptyState('ยังไม่มีรายชื่อ จนท.ในสังกัด');
   }
 
-  const addUserBtn = document.getElementById('btnAddUser');
-  if (addUserBtn) addUserBtn.onclick = () => openUserForm();
-  document.getElementById('btnPrintAllUsers').onclick = printAllOfficers;
-
-  srchBoxWire('userSearchInput', v => {
-    state.userSearch = v;
-    drawUsers();
-  });
-
   listEl.querySelectorAll('.user-item').forEach(it => it.onclick = () => {
     const u = state.users.find(x => officerId(x) === it.dataset.id ||
       (!officerId(x) && (x['LINEUserId'] || x['ชื่อผู้ใช้'] || x['ชื่อ-สกุล']) === it.dataset.id));
     if (u) openOfficerProfile(u);
   });
 
-  wireViewToggle(drawUsers, '#view-users', 'usersView');
   if (isAdmin() && !isGrid) wireSwipeRows(listEl, USER_SWIPE);
 }
    
