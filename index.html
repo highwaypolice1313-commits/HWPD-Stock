@@ -7024,15 +7024,18 @@ function committeeOneBlock(m, sigMm, fs, sigUrl, sigH, widthMm, align, labelMm) 
 
 /* ---------- ส่วนลายเซ็นท้ายรายงาน ---------- */   
 
-
 function committeeSignBlockHtml(compact) {
   const list = committeeOrdered().map(x => x.m);
   if (!list.length) return '';
   const signs = auditSignCurrent || [];
  
   const S = compact
-    ? { headSig: 36, headLabel: 40, headW: 150, headFs: '10pt', memSig: 16, memLabel: 24, memW: 93, memFs: '8.5pt', sigH: '6mm', gap: '2mm', cellPad: '0.5mm 0' }
-    : { headSig: 46, headLabel: 44, headW: 170, headFs: '13pt', memSig: 18, memLabel: 25, memW: 93, memFs: '9.5pt', sigH: '9mm', gap: '5mm', cellPad: '2mm 0' };
+    ? { headSig: 36, headSigH: '7mm', headLabel: 40, headW: 150, headFs: '10pt',
+        memSig: 20, memSigH: '8mm', memLabel: 24, memW: 93, memFs: '8.5pt',
+        gap: '2mm', cellPad: '0.5mm 0' }
+    : { headSig: 42, headSigH: '11mm', headLabel: 44, headW: 170, headFs: '12.5pt',
+        memSig: 21, memSigH: '13mm', memLabel: 25, memW: 93, memFs: '9.5pt',
+        gap: '5mm', cellPad: '2mm 0' };
  
   const heads = [], mems = [], secs = [];
   list.forEach((m, k) => {
@@ -7044,14 +7047,14 @@ function committeeSignBlockHtml(compact) {
   });
  
   const fullBlock = item =>
-    `<div style="margin-top:${S.gap};">${committeeOneBlock(item.m, S.headSig, S.headFs, item.sig, S.sigH, S.headW, 'center', S.headLabel)}</div>`;
+    `<div style="margin-top:${S.gap};">${committeeOneBlock(item.m, S.headSig, S.headFs, item.sig, S.headSigH, S.headW, 'center', S.headLabel)}</div>`;
  
   let memHtml = '';
   for (let i = 0; i < mems.length; i += 2) {
     const a = mems[i], b = mems[i + 1];
     memHtml += `<tr style="break-inside:avoid; page-break-inside:avoid;">
-      <td style="padding:${S.cellPad}; width:50%; vertical-align:top;">${committeeOneBlock(a.m, S.memSig, S.memFs, a.sig, S.sigH, S.memW, 'left', S.memLabel)}</td>
-      <td style="padding:${S.cellPad}; width:50%; vertical-align:top;">${b ? committeeOneBlock(b.m, S.memSig, S.memFs, b.sig, S.sigH, S.memW, 'right', S.memLabel) : ''}</td>
+      <td style="padding:${S.cellPad}; width:50%; vertical-align:top;">${committeeOneBlock(a.m, S.memSig, S.memFs, a.sig, S.memSigH, S.memW, 'left', S.memLabel)}</td>
+      <td style="padding:${S.cellPad}; width:50%; vertical-align:top;">${b ? committeeOneBlock(b.m, S.memSig, S.memFs, b.sig, S.memSigH, S.memW, 'right', S.memLabel) : ''}</td>
     </tr>`;
   }
   const memTable = mems.length
@@ -7062,8 +7065,8 @@ function committeeSignBlockHtml(compact) {
     ${heads.map(fullBlock).join('')}
     ${memTable}
     ${secs.map(fullBlock).join('')}
-  </div>`;   
- }
+  </div>`;
+}
    
 /* ---- หน่วยนับตามหมวดหมู่ครุภัณฑ์ (ใช้ในเอกสารบันทึกข้อความ) ---- */
 // ค่าเริ่มต้น — TODO: แก้หน่วยนับเริ่มต้นตรงนี้ได้ตามต้องการ หรือไปแก้ที่หน้า "ตั้งค่าระบบ" ก็ได้
