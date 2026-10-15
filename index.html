@@ -15579,15 +15579,21 @@ async function loadTrashPanel() {
   const box = document.getElementById('trashList');
   if (!box) return;
   box.innerHTML = emptyState('กำลังโหลดถังขยะ...');
+
   let list = [];
   try {
-    list = await apiGet('listTrash', { token: state.sessionToken });
+    const res = await apiGet('listTrash', { token: state.sessionToken });
+    console.log('[listTrash] response:', res);           // ดูค่าที่ได้จริงใน Console
+    // รองรับทั้ง array ตรง ๆ และรูปแบบ { items: [...] }
+    list = Array.isArray(res) ? res : (res && Array.isArray(res.items) ? res.items : []);
   } catch (e) {
+    console.error('[listTrash] error:', e);
     toast('โหลดถังขยะไม่สำเร็จ: ' + (e.message || ''));
   }
+
   const again = document.getElementById('trashList');
   if (!again) return;
-  if (!list || !list.length) { again.innerHTML = emptyState('ถังขยะว่างเปล่า'); return; }
+  if (!list.length) { again.innerHTML = emptyState('ถังขยะว่างเปล่า'); return; }
 
   again.innerHTML = list.map((t, i) => `
     <div class="glass list-item" style="cursor:default; flex-wrap:wrap; gap:8px;">
@@ -15628,7 +15634,7 @@ async function trashPurge(t, btn) {
   finally { setLoading(false); setButtonBusy(btn, false, 'ลบถาวร'); }
 }   
    
-/* ---- (ข) แก้ renderSettings() ให้เป็นแบบนี้ทั้งฟังก์ชัน (แทนที่ของเดิมทั้งหมด) ---- */
+/* ---- (ข) renderSettings() ฉบับแก้ไข: แก้โครงสร้าง panel ซ้อนกัน และแท็บถังขยะ ---- */
 function renderSettings() {
   if (!isAdmin()) { renderViewerSettings(); return; }
   const el = document.getElementById('view-settings');
@@ -15637,8 +15643,6 @@ function renderSettings() {
   const themeFilter = state.themeFilter || 'all';
   const themeList = THEMES.filter(t => themeFilter === 'all' || (themeFilter === 'dark' ? t.mode === 'dark' : t.mode !== 'dark'));
   const curThemeName = (THEMES.find(t => t.id === active) || {}).name || '';
-  const catUnits = getCategoryUnits();
-  const cats = getCategories();
   if (!state.settingsTab) state.settingsTab = 'general';
 
   const TABS = [
@@ -15652,51 +15656,52 @@ function renderSettings() {
     { id: 'data',      label: 'ข้อมูล & สำรอง' }
   ];
 
+  const panel = (id, inner) =>
+    `<div class="settings-panel" data-panel="${id}" style="display:${state.settingsTab === id ? 'block' : 'none'};">${inner}</div>`;
+
   el.innerHTML = `
     <div class="section-title">ตั้งค่าระบบ</div>
 
     <div class="chip-row" id="settingsTabRow">
-      ${TABS.map(t => `<div class="chip ${state.settingsTab===t.id?'active':''}" data-stab="${t.id}">${t.label}</div>`).join('')}
+      ${TABS.map(t => `<div class="chip ${state.settingsTab === t.id ? 'active' : ''}" data-stab="${t.id}">${t.label}</div>`).join('')}
     </div>
 
-    <div class="settings-panel" data-panel="general" style="display:${state.settingsTab==='general'?'block':'none'};">
+    ${panel('general', `
       <div class="section-title" style="margin-top:6px; font-size:14px;">ธีมเว็บ <small id="themeCurLabel">ใช้อยู่: ${curThemeName}</small></div>
       <div class="glass" style="padding:14px; margin-bottom:16px;">
         <div class="chip-row" id="themeFilterRow" style="margin-bottom:10px;">
-          <div class="chip ${themeFilter==='all'?'active':''}" data-tf="all">ทั้งหมด (${THEMES.length})</div>
-          <div class="chip ${themeFilter==='light'?'active':''}" data-tf="light">สว่าง (${THEMES.filter(t => t.mode !== 'dark').length})</div>
-          <div class="chip ${themeFilter==='dark'?'active':''}" data-tf="dark">มืด (${THEMES.filter(t => t.mode === 'dark').length})</div>
+          <div class="chip ${themeFilter === 'all' ? 'active' : ''}" data-tf="all">ทั้งหมด (${THEMES.length})</div>
+          <div class="chip ${themeFilter === 'light' ? 'active' : ''}" data-tf="light">สว่าง (${THEMES.filter(t => t.mode !== 'dark').length})</div>
+          <div class="chip ${themeFilter === 'dark' ? 'active' : ''}" data-tf="dark">มืด (${THEMES.filter(t => t.mode === 'dark').length})</div>
         </div>
         <div id="themeSwatchRow" class="theme-grid">
           ${themeList.map(t => `
-            <div class="theme-card ${active===t.id?'active':''}" data-theme-id="${t.id}" title="${t.tag || ''}">
+            <div class="theme-card ${active === t.id ? 'active' : ''}" data-theme-id="${t.id}" title="${t.tag || ''}">
               <div class="tsw">${t.swatches.map(c => `<i style="background:${c};"></i>`).join('')}</div>
               <span class="tnm">${t.name}</span>
             </div>`).join('')}
         </div>
         <div class="hint" style="margin-top:10px;">เลื่อนในกรอบเพื่อดูธีมเพิ่มเติม · บันทึกไว้เฉพาะเครื่อง/เบราว์เซอร์นี้</div>
       </div>
-<div class="section-title" style="margin-top:6px; font-size:14px;">รูปแบบการพิมพ์</div>
-<div class="glass" style="padding:14px; margin-bottom:16px;">
-  <label class="pdf-switch-row">
-    <span class="pdf-switch-text">
-      <span class="pdf-switch-title">บันทึกเป็นไฟล์ PDF แทนการเปิดหน้าต่างพิมพ์</span>
-      <span class="hint" style="margin:2px 0 0;">เหมาะกับมือถือ/iPad ที่พิมพ์ตรงไม่ได้ หรือต้องการเก็บเป็นไฟล์</span>
-    </span>
-    <input type="checkbox" id="st_pdfmode" class="pdf-switch-input" ${isPdfMode() ? 'checked' : ''}>
-    <span class="pdf-switch-track" aria-hidden="true"><span class="pdf-switch-thumb"></span></span>
-  </label>
-</div>
-    </div>
-    
-    <div class="settings-panel" data-panel="committee" style="display:${state.settingsTab==='committee'?'block':'none'};">
-      ${auditCommitteeSettingsSectionHtml(s)}
-    </div>
+      <div class="section-title" style="margin-top:6px; font-size:14px;">รูปแบบการพิมพ์</div>
+      <div class="glass" style="padding:14px; margin-bottom:16px;">
+        <label class="pdf-switch-row">
+          <span class="pdf-switch-text">
+            <span class="pdf-switch-title">บันทึกเป็นไฟล์ PDF แทนการเปิดหน้าต่างพิมพ์</span>
+            <span class="hint" style="margin:2px 0 0;">เหมาะกับมือถือ/iPad ที่พิมพ์ตรงไม่ได้ หรือต้องการเก็บเป็นไฟล์</span>
+          </span>
+          <input type="checkbox" id="st_pdfmode" class="pdf-switch-input" ${isPdfMode() ? 'checked' : ''}>
+          <span class="pdf-switch-track" aria-hidden="true"><span class="pdf-switch-thumb"></span></span>
+        </label>
+      </div>
+    `)}
 
-    <div class="settings-panel" data-panel="units" style="display:${state.settingsTab==='units'?'block':'none'};">
+    ${panel('committee', auditCommitteeSettingsSectionHtml(s))}
+
+    ${panel('units', `
       <div class="section-title" style="margin-top:6px; font-size:14px;">หมวดหมู่ & หน่วยนับครุภัณฑ์</div>
       <div class="glass" style="padding:16px;">
-        <div class="hint" style="margin-top:0;">แตะที่หมวดหมู่เพื่อแก้ไขชื่อ หน่วยนับ และไอคอน — แก้ชื่อหมวดหมู่ตรงนี้ได้เลย ระบบจะปรับชื่อหมวดหมู่ในครุภัณฑ์ที่มีอยู่แล้วให้ตรงกันอัตโนมัติเมื่อกดบันทึก - กดค้างที่แถว (หรือไอคอน ⋮⋮) แล้วลากเพื่อสลับลำดับ</div>
+        <div class="hint" style="margin-top:0;">แตะที่หมวดหมู่เพื่อแก้ไขชื่อ หน่วยนับ และไอคอน ระบบจะปรับชื่อหมวดหมู่ในครุภัณฑ์ที่มีอยู่ให้ตรงกันอัตโนมัติเมื่อกดบันทึก · กดค้างที่แถว (หรือไอคอน ⋮⋮) แล้วลากเพื่อสลับลำดับ</div>
         <div id="cuDirty" class="cu-dirty" style="display:none;">
           <span>มีการแก้ไขที่ยังไม่ได้บันทึก</span>
           <span class="link-btn" id="cuUndo">ย้อนกลับ</span>
@@ -15705,30 +15710,29 @@ function renderSettings() {
         <button type="button" class="mf-add" id="btnAddCategory" style="margin-top:4px;">+ เพิ่มหมวดหมู่ใหม่</button>
         <div class="btn-row" style="margin-top:14px;"><button class="btn btn-primary" id="btnSaveCategoryUnits">บันทึกหมวดหมู่ & หน่วยนับ</button></div>
       </div>
-    </div>
+    `)}
 
-    <div class="settings-panel" data-panel="org" style="display:${state.settingsTab==='org'?'block':'none'};">
+    ${panel('org', `
       <div class="section-title" style="margin-top:6px; font-size:14px;">ข้อมูลหน่วยงาน &amp; เลขหนังสือ</div>
       <div class="glass" style="padding:16px; margin-bottom:16px;">
         <div class="field"><label>ส่วนราชการ (แสดงในหัวบันทึกข้อความ)</label><input class="input" id="st_org" value="${escapeHtml(s.orgName || ORG_NAME)}"></div>
         <div class="field"><label>เบอร์โทรศัพท์หน่วยงาน</label><input class="input" id="st_phone" value="${escapeHtml(s.orgPhone || '')}"></div>
         <div class="field"><label>เรียน (ผู้บังคับบัญชา) ค่าเริ่มต้นในบันทึกข้อความ</label>
-        <input class="input" id="st_addressee" placeholder="เช่น สว.ส.ทล.3 กก.1 บก.ทล." value="${escapeHtml(s.memoAddressee || '')}">
-        <div class="hint" style="margin-top:6px;">ระบบจะเติมช่อง "เรียน" ให้อัตโนมัติทุกครั้งที่สร้างบันทึกข้อความ และแก้ไขเฉพาะฉบับได้ในฟอร์ม</div>
+          <input class="input" id="st_addressee" placeholder="เช่น สว.ส.ทล.3 กก.1 บก.ทล." value="${escapeHtml(s.memoAddressee || '')}">
+          <div class="hint" style="margin-top:6px;">ระบบจะเติมช่อง "เรียน" ให้อัตโนมัติทุกครั้งที่สร้างบันทึกข้อความ และแก้ไขเฉพาะฉบับได้ในฟอร์ม</div>
         </div>
         <div class="field"><label>เลขที่หนังสือ (ส่วนคงที่)</label>
           <input class="input" id="st_docprefix" placeholder="เช่น 0026.313/" value="${escapeHtml(s.docNoPrefix || '')}">
           <div class="hint" style="margin-top:6px;">ตอนพิมพ์บันทึกข้อความแต่ละครั้ง ระบบจะให้กรอกเฉพาะเลขที่ท้ายส่วนนี้ เช่น 45, 46, ...</div>
         </div>
-      <div class="field"><label>เลขที่ถัดไป (ระบบรันต่ออัตโนมัติเมื่อใช้เลขแล้ว)</label>
-        <input class="input" type="number" min="1" id="st_docnext" placeholder="เช่น 45" value="${escapeHtml(s.docNoNext || '')}">
-        <div class="hint" id="st_docpreview" style="margin-top:6px;"></div>
-      </div>
+        <div class="field"><label>เลขที่ถัดไป (ระบบรันต่ออัตโนมัติเมื่อใช้เลขแล้ว)</label>
+          <input class="input" type="number" min="1" id="st_docnext" placeholder="เช่น 45" value="${escapeHtml(s.docNoNext || '')}">
+          <div class="hint" id="st_docpreview" style="margin-top:6px;"></div>
+        </div>
         <div class="field"><label>แจ้งเตือนล่วงหน้าก่อนครบกำหนดตรวจสภาพ/ต่อทะเบียน (วัน)</label><input class="input" type="number" id="st_renewaldays" value="${s.renewalAlertDays || 30}"></div>
         <div class="btn-row" style="margin-top:14px;"><button class="btn btn-primary" id="btnSaveSettings">บันทึกการตั้งค่า</button></div>
       </div>
 
-      <!-- [ย้ายมาจากแท็บ "ทั่วไป"] ตราครุฑ (หัวเอกสารบันทึกข้อความ) -->
       <div class="section-title" style="margin-top:6px; font-size:14px;">ตราครุฑ (หัวเอกสารบันทึกข้อความ)</div>
       <div class="glass" style="padding:16px;">
         <div class="hint" style="margin-top:0;">อัปโหลดไฟล์รูปตราครุฑ (แนะนำ PNG พื้นหลังโปร่งใส ไฟล์เล็ก ไม่เกินประมาณ 30-40KB) ใช้ร่วมกันทุกคนในระบบทั้งหน้าจอและตอนพิมพ์</div>
@@ -15745,9 +15749,9 @@ function renderSettings() {
           </div>
         </div>
       </div>
-    </div>
+    `)}
 
-    <div class="settings-panel" data-panel="security" style="display:${state.settingsTab==='security'?'block':'none'};">
+    ${panel('security', `
       <div class="section-title" style="margin-top:6px; font-size:14px;">รหัสผ่านเข้าระบบ</div>
       <div class="glass" style="padding:16px;">
         <div class="hint" style="margin-top:0;">เปลี่ยนรหัสผ่านของแต่ละระดับผู้ใช้งาน (ผู้ใช้ที่ล็อกอินค้างไว้จะไม่หลุด แต่ล็อกอินใหม่ต้องใช้รหัสผ่านใหม่)</div>
@@ -15757,24 +15761,31 @@ function renderSettings() {
         </div>
         <div class="btn-row" style="margin-top:6px;"><button class="btn btn-primary" id="btnChangePw">เปลี่ยนรหัสผ่าน</button></div>
       </div>
-    </div>
+    `)}
 
-    <div class="settings-panel" data-panel="activity" style="display:${state.settingsTab==='activity'?'block':'none'};">
+    ${panel('activity', `
       <div class="section-title" style="margin-top:6px; font-size:14px;">บันทึกกิจกรรมล่าสุด</div>
       <div id="activityPanelList"></div>
-    </div>
+    `)}
 
-    <div class="settings-panel" data-panel="data" style="display:${state.settingsTab==='data'?'block':'none'};">
+    ${panel('trash', `
+      <div class="section-title" style="margin-top:6px; font-size:14px;">ถังขยะ <small>กู้คืนได้ภายใน 30 วัน</small></div>
+      <div class="hint" style="margin-top:0;">รายการจะถูกลบถาวรอัตโนมัติหลังครบ 30 วัน (กดลบถาวรเองได้ทันที)</div>
+      <div class="btn-row" style="margin-top:8px;"><button class="btn btn-ghost" id="btnRefreshTrash">รีเฟรชถังขยะ</button></div>
+      <div id="trashList" style="margin-top:10px;"></div>
+    `)}
+
+    ${panel('data', `
       <div class="section-title" style="margin-top:6px; font-size:14px;">ย้ายรูปเก่าออกจาก Google Sheets</div>
       <div class="glass" style="padding:16px; margin-bottom:16px;">
         <div class="hint" style="margin-top:0;">ใช้ครั้งเดียวหลังอัปเดตระบบ เพื่อย้ายรูป Base64 เดิมในชีตไป Google Drive แล้วแทนที่ด้วย URL ขนาดเล็ก ช่วยลดเวลาเปิดระบบอย่างมาก</div>
         <div class="btn-row" style="margin-top:10px;"><button class="btn btn-ghost" id="btnMigrateImages">ย้ายรูปเก่าไป Drive</button></div>
       </div>
 
-   <div class="section-title" style="margin-top:6px; font-size:14px;">ล้างไฟล์รูปที่ไม่มีใครใช้</div>
+      <div class="section-title" style="margin-top:6px; font-size:14px;">ล้างไฟล์รูปที่ไม่มีใครใช้</div>
       <div class="glass" style="padding:16px; margin-bottom:16px;">
-      <div class="hint" style="margin-top:0;">สแกนโฟลเดอร์รูปบนไดร์ฟ แล้วย้ายไฟล์ที่ไม่มีรายการไหนอ้างถึงลงถังขยะ (กู้คืนได้ 30 วัน ข้ามไฟล์ที่เพิ่งอัปโหลดใน 24 ชม.)</div>
-  <div class="btn-row" style="margin-top:10px;"><button class="btn btn-ghost" id="btnCleanOrphans">สแกนและล้างไฟล์กำพร้า</button></div>
+        <div class="hint" style="margin-top:0;">สแกนโฟลเดอร์รูปบนไดร์ฟ แล้วย้ายไฟล์ที่ไม่มีรายการไหนอ้างถึงลงถังขยะ (กู้คืนได้ 30 วัน ข้ามไฟล์ที่เพิ่งอัปโหลดใน 24 ชม.)</div>
+        <div class="btn-row" style="margin-top:10px;"><button class="btn btn-ghost" id="btnCleanOrphans">สแกนและล้างไฟล์กำพร้า</button></div>
       </div>
 
       <div class="section-title" style="margin-top:6px; font-size:14px;">สำรองข้อมูล</div>
@@ -15782,14 +15793,7 @@ function renderSettings() {
         <div class="hint" style="margin-top:0;">ดาวน์โหลดข้อมูลทั้งหมดในระบบเป็นไฟล์ JSON ไว้สำรองหรือย้ายระบบ</div>
         <div class="btn-row" style="margin-top:10px;"><button class="btn btn-ghost" id="btnExportAll">ดาวน์โหลดข้อมูลทั้งหมด (JSON)</button></div>
       </div>
-
-       <div class="settings-panel" data-panel="trash" style="display:${state.settingsTab==='trash'?'block':'none'};">
-      <div class="section-title" style="margin-top:6px; font-size:14px;">ถังขยะ <small>กู้คืนได้ภายใน 30 วัน</small></div>
-      <div class="hint" style="margin-top:0;">รายการจะถูกลบถาวรอัตโนมัติหลังครบ 30 วัน (กดลบถาวรเองได้ทันที)</div>
-      <div id="trashList" style="margin-top:10px;"></div>
-    </div>
-      
-    </div>
+    `)}
   `;
 
   // ---- สลับแท็บ ----
@@ -15800,7 +15804,7 @@ function renderSettings() {
       document.querySelectorAll('.settings-panel').forEach(p => { p.style.display = (p.dataset.panel === state.settingsTab) ? 'block' : 'none'; });
       window.scrollTo({ top: 0, behavior: 'smooth' });
       if (state.settingsTab === 'activity') loadActivityPanel();
-            if (state.settingsTab === 'trash') loadTrashPanel(); 
+      if (state.settingsTab === 'trash') loadTrashPanel();
     };
   });
 
@@ -15810,7 +15814,6 @@ function renderSettings() {
   document.querySelectorAll('.theme-card').forEach(card => {
     card.onclick = () => {
       applyTheme(card.dataset.themeId);
-      // ไม่วาดหน้าใหม่ จะได้ไม่เด้งกลับบนสุดของกล่องเลื่อน
       document.querySelectorAll('.theme-card').forEach(x => x.classList.toggle('active', x === card));
       const t = THEMES.find(x => x.id === card.dataset.themeId);
       const lbl = document.getElementById('themeCurLabel');
@@ -15818,63 +15821,68 @@ function renderSettings() {
     };
   });
 
-   function prepareImageFileRaw(file) {
-  return new Promise((resolve, reject) => {
-    const r = new FileReader();
-    r.onload = () => resolve(r.result);
-    r.onerror = () => reject(new Error('อ่านไฟล์รูปไม่สำเร็จ'));
-    r.readAsDataURL(file);
-  });
-}
-   
-document.getElementById('btnUploadGaruda').onclick = async () => {
-  const inp = document.getElementById('st_garuda');
-  const file = inp.files && inp.files[0];
-  if (!file) { toast('กรุณาเลือกไฟล์รูปภาพก่อน'); return; }
-  const btn = document.getElementById('btnUploadGaruda');
-  setButtonBusy(btn, true, 'กำลังเตรียมรูป...'); setLoading(true, 'กำลังเตรียมตราครุฑ...');
-  try {
-    // ย่อให้เล็ก ไม่ต้องอัปโหลด Drive จึงไม่มีปัญหา CORS
-    const small = await compressImageDataUrl(await prepareImageFileRaw(file), 20000);
-    await apiPost('updateSystemSettings', { garudaLogo: small });
-    toast('บันทึกตราครุฑแล้ว'); await reloadThen(renderSettings);
-  } catch (err) {
-    toast(err.message || 'บันทึกไม่สำเร็จ');
-  } finally { setLoading(false); setButtonBusy(btn, false); }
-};
-   
+  function prepareImageFileRaw(file) {
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result);
+      r.onerror = () => reject(new Error('อ่านไฟล์รูปไม่สำเร็จ'));
+      r.readAsDataURL(file);
+    });
+  }
+
+  document.getElementById('btnUploadGaruda').onclick = async () => {
+    const inp = document.getElementById('st_garuda');
+    const file = inp.files && inp.files[0];
+    if (!file) { toast('กรุณาเลือกไฟล์รูปภาพก่อน'); return; }
+    const btn = document.getElementById('btnUploadGaruda');
+    setButtonBusy(btn, true, 'กำลังเตรียมรูป...'); setLoading(true, 'กำลังเตรียมตราครุฑ...');
+    try {
+      const small = await compressImageDataUrl(await prepareImageFileRaw(file), 20000);
+      await apiPost('updateSystemSettings', { garudaLogo: small });
+      toast('บันทึกตราครุฑแล้ว'); await reloadThen(renderSettings);
+    } catch (err) {
+      toast(err.message || 'บันทึกไม่สำเร็จ');
+    } finally { setLoading(false); setButtonBusy(btn, false); }
+  };
+
   const btnRemoveG = document.getElementById('btnRemoveGaruda');
   if (btnRemoveG) btnRemoveG.onclick = async () => {
-    if (!await confirmSheet('ยืนยันลบรูปตราครุฑ?', {title:'ลบตราครุฑ', okText:'ลบรูป', tone:'bad'})) return;
+    if (!await confirmSheet('ยืนยันลบรูปตราครุฑ?', { title: 'ลบตราครุฑ', okText: 'ลบรูป', tone: 'bad' })) return;
     try { await apiPost('updateSystemSettings', { garudaLogo: '' }); toast('ลบรูปตราครุฑแล้ว'); await reloadThen(renderSettings); }
     catch (err) { toast(err.message || 'ลบไม่สำเร็จ'); }
   };
 
   document.getElementById('btnSaveSettings').onclick = async () => {
-    const btn = document.getElementById('btnSaveSettings'); if (btn.disabled) return; setButtonBusy(btn, true); setLoading(true, 'กำลังบันทึกการตั้งค่า...');
+    const btn = document.getElementById('btnSaveSettings'); if (btn.disabled) return;
+    setButtonBusy(btn, true); setLoading(true, 'กำลังบันทึกการตั้งค่า...');
     try {
-   await apiPost('updateSystemSettings', {
-  orgName: val('st_org'),
-  orgPhone: val('st_phone'),
-  memoAddressee: val('st_addressee'),
-  docNoPrefix: val('st_docprefix'),
-  docNoNext: val('st_docnext'),
-  renewalAlertDays: val('st_renewaldays')
-});
+      await apiPost('updateSystemSettings', {
+        orgName: val('st_org'),
+        orgPhone: val('st_phone'),
+        memoAddressee: val('st_addressee'),
+        docNoPrefix: val('st_docprefix'),
+        docNoNext: val('st_docnext'),
+        renewalAlertDays: val('st_renewaldays')
+      });
       toast('บันทึกการตั้งค่าแล้ว'); await reloadThen(renderSettings);
-    } catch (err) { toast(err.message || 'บันทึกการตั้งค่าไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(btn, false); }
+    } catch (err) { toast(err.message || 'บันทึกการตั้งค่าไม่สำเร็จ'); }
+    finally { setLoading(false); setButtonBusy(btn, false); }
   };
+
   document.getElementById('btnChangePw').onclick = async () => {
     const role = val('st_pwrole'), pw = val('st_pwnew');
     if (!pw || pw.length < 4) { toast('กรุณากรอกรหัสผ่านใหม่อย่างน้อย 4 ตัวอักษร'); return; }
-    if (!await confirmSheet('ยืนยันเปลี่ยนรหัสผ่านระดับ "' + (role === 'admin' ? 'แอดมิน' : 'ดูอย่างเดียว') + '" ?', {title:'เปลี่ยนรหัสผ่าน', okText:'ยืนยัน'})) return;
-    const btn = document.getElementById('btnChangePw'); if (btn.disabled) return; setButtonBusy(btn, true); setLoading(true, 'กำลังเปลี่ยนรหัสผ่าน...');
+    if (!await confirmSheet('ยืนยันเปลี่ยนรหัสผ่านระดับ "' + (role === 'admin' ? 'แอดมิน' : 'ดูอย่างเดียว') + '" ?', { title: 'เปลี่ยนรหัสผ่าน', okText: 'ยืนยัน' })) return;
+    const btn = document.getElementById('btnChangePw'); if (btn.disabled) return;
+    setButtonBusy(btn, true); setLoading(true, 'กำลังเปลี่ยนรหัสผ่าน...');
     try { await apiPost('changeRolePassword', { role, newPassword: pw }); document.getElementById('st_pwnew').value = ''; toast('เปลี่ยนรหัสผ่านแล้ว'); }
-    catch (err) { toast(err.message || 'เปลี่ยนรหัสผ่านไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(btn, false); }
+    catch (err) { toast(err.message || 'เปลี่ยนรหัสผ่านไม่สำเร็จ'); }
+    finally { setLoading(false); setButtonBusy(btn, false); }
   };
+
   document.getElementById('btnMigrateImages').onclick = async () => {
     const btn = document.getElementById('btnMigrateImages');
-    if (!await confirmSheet('ระบบจะย้ายรูป Base64 เดิมทั้งหมดไป Google Drive แล้วเปลี่ยนค่าในชีตเป็น URL ต้องการดำเนินการหรือไม่?', {title:'ย้ายรูปไป Google Drive', okText:'เริ่มย้าย'})) return;
+    if (!await confirmSheet('ระบบจะย้ายรูป Base64 เดิมทั้งหมดไป Google Drive แล้วเปลี่ยนค่าในชีตเป็น URL ต้องการดำเนินการหรือไม่?', { title: 'ย้ายรูปไป Google Drive', okText: 'เริ่มย้าย' })) return;
     setButtonBusy(btn, true, 'กำลังย้ายรูป...');
     setLoading(true, 'กำลังย้ายรูปเก่าไป Google Drive...');
     try {
@@ -15886,28 +15894,28 @@ document.getElementById('btnUploadGaruda').onclick = async () => {
   };
 
   document.getElementById('btnCleanOrphans').onclick = async () => {
-  const btn = document.getElementById('btnCleanOrphans');
-  if (btn.disabled) return;
-  setButtonBusy(btn, true, 'กำลังสแกน...'); setLoading(true, 'กำลังสแกนไฟล์รูปบนไดร์ฟ...');
-  let r;
-  try { r = await apiPost('scanOrphanImages', {}); }
-  catch (err) { toast(err.message || 'สแกนไม่สำเร็จ'); return; }
-  finally { setLoading(false); setButtonBusy(btn, false); }
+    const btn = document.getElementById('btnCleanOrphans');
+    if (btn.disabled) return;
+    setButtonBusy(btn, true, 'กำลังสแกน...'); setLoading(true, 'กำลังสแกนไฟล์รูปบนไดร์ฟ...');
+    let r;
+    try { r = await apiPost('scanOrphanImages', {}); }
+    catch (err) { toast(err.message || 'สแกนไม่สำเร็จ'); return; }
+    finally { setLoading(false); setButtonBusy(btn, false); }
 
-  if (!r.orphanCount) { toast('ไม่พบไฟล์กำพร้า (ไฟล์ทั้งหมด ' + r.totalFiles + ' ใช้งานอยู่)'); return; }
-  const mb = (r.orphanBytes / 1048576).toFixed(2);
-  if (!await confirmSheet(
-    'พบไฟล์ที่ไม่มีใครใช้ ' + r.orphanCount + ' ไฟล์ (' + mb + ' MB) จากทั้งหมด ' + r.totalFiles + ' ไฟล์\nต้องการย้ายลงถังขยะไดร์ฟหรือไม่? (กู้คืนได้ 30 วัน)',
-    { title: 'ล้างไฟล์กำพร้า', okText: 'ย้ายลงถังขยะ', tone: 'bad' })) return;
+    if (!r.orphanCount) { toast('ไม่พบไฟล์กำพร้า (ไฟล์ทั้งหมด ' + r.totalFiles + ' ใช้งานอยู่)'); return; }
+    const mb = (r.orphanBytes / 1048576).toFixed(2);
+    if (!await confirmSheet(
+      'พบไฟล์ที่ไม่มีใครใช้ ' + r.orphanCount + ' ไฟล์ (' + mb + ' MB) จากทั้งหมด ' + r.totalFiles + ' ไฟล์\nต้องการย้ายลงถังขยะไดร์ฟหรือไม่? (กู้คืนได้ 30 วัน)',
+      { title: 'ล้างไฟล์กำพร้า', okText: 'ย้ายลงถังขยะ', tone: 'bad' })) return;
 
-  setButtonBusy(btn, true, 'กำลังล้าง...'); setLoading(true, 'กำลังย้ายไฟล์ลงถังขยะ...');
-  try {
-    const d = await apiPost('trashOrphanImages', { ids: r.ids });
-    toast('ย้ายลงถังขยะแล้ว ' + d.trashed + ' ไฟล์' + (d.skipped ? ' / ข้าม ' + d.skipped : ''));
-  } catch (err) { toast(err.message || 'ล้างไม่สำเร็จ'); }
-  finally { setLoading(false); setButtonBusy(btn, false); }
-}; 
-   
+    setButtonBusy(btn, true, 'กำลังล้าง...'); setLoading(true, 'กำลังย้ายไฟล์ลงถังขยะ...');
+    try {
+      const d = await apiPost('trashOrphanImages', { ids: r.ids });
+      toast('ย้ายลงถังขยะแล้ว ' + d.trashed + ' ไฟล์' + (d.skipped ? ' / ข้าม ' + d.skipped : ''));
+    } catch (err) { toast(err.message || 'ล้างไม่สำเร็จ'); }
+    finally { setLoading(false); setButtonBusy(btn, false); }
+  };
+
   document.getElementById('btnExportAll').onclick = () => {
     const data = {
       assets: state.assets, borrow: state.borrow, maint: state.maint, components: state.components,
@@ -15923,24 +15931,28 @@ document.getElementById('btnUploadGaruda').onclick = async () => {
     toast('ดาวน์โหลดไฟล์สำรองข้อมูลแล้ว');
   };
 
+  const btnRefreshTrash = document.getElementById('btnRefreshTrash');
+  if (btnRefreshTrash) btnRefreshTrash.onclick = () => loadTrashPanel();
+
   const updDocPreview = () => {
-  const p = document.getElementById('st_docpreview');
-  if (!p) return;
-  const n = val('st_docnext');
-  p.textContent = n ? 'เลขที่หนังสือฉบับถัดไป: ' + (val('st_docprefix') + n) : 'ยังไม่ได้ตั้งเลขถัดไป (ระบบจะเริ่มนับให้เมื่อใช้เลขครั้งแรก)';
-};
-['st_docprefix', 'st_docnext'].forEach(id => { const e = document.getElementById(id); if (e) e.oninput = updDocPreview; });
-updDocPreview();
+    const p = document.getElementById('st_docpreview');
+    if (!p) return;
+    const n = val('st_docnext');
+    p.textContent = n
+      ? 'เลขที่หนังสือฉบับถัดไป: ' + (val('st_docprefix') + n)
+      : 'ยังไม่ได้ตั้งเลขถัดไป (ระบบจะเริ่มนับให้เมื่อใช้เลขครั้งแรก)';
+  };
+  ['st_docprefix', 'st_docnext'].forEach(id => { const e = document.getElementById(id); if (e) e.oninput = updDocPreview; });
+  updDocPreview();
 
   wireAuditCommitteeSettingsHandlers();
-    cuInit();
-  if (state.settingsTab === 'activity') loadActivityPanel();   // กรณีรีเฟรชแล้วค้างอยู่แท็บนี้
-     if (state.settingsTab === 'trash') loadTrashPanel();
+  cuInit();
+  const pm = document.getElementById('st_pdfmode');
+  if (pm) pm.onchange = () => { setPdfMode(pm.checked); toast(pm.checked ? 'เปลี่ยนเป็นบันทึก PDF' : 'เปลี่ยนเป็นพิมพ์ปกติ'); };
 
-   // ใส่ท้าย renderSettings() และ renderViewerSettings()
-const pm = document.getElementById('st_pdfmode');
-if (pm) pm.onchange = () => { setPdfMode(pm.checked); toast(pm.checked ? 'เปลี่ยนเป็นบันทึก PDF' : 'เปลี่ยนเป็นพิมพ์ปกติ'); };
-   
+  // โหลดข้อมูลของแท็บที่เปิดค้างอยู่ (กรณีรีเฟรช/วาดซ้ำ)
+  if (state.settingsTab === 'activity') loadActivityPanel();
+  if (state.settingsTab === 'trash') loadTrashPanel();
 }
 
    /* ===== [แก้ไขพิมพ์เปล่า] ย้าย #printArea ให้เป็นลูกตรงของ <body> =====
