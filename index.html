@@ -8304,6 +8304,81 @@ function sparklineSvg(dataObj) {
   return `<div class="hero-sparkline" aria-hidden="true"><svg viewBox="0 0 ${w} ${h}"><path d="${d}"/><circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="2.5"/></svg></div>`;
 }
 
+   /* ===== DASHBOARD v3 + TOPBAR/NOTIFICATION HELPERS ===== */
+const DB3_ICON = {
+  home:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M3.5 9.5L10 4l6.5 5.5V16a1 1 0 01-1 1h-3.2v-5h-4.6v5H4.5a1 1 0 01-1-1V9.5z"/></svg>',
+  cal:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="4.5" width="14" height="12.5" rx="2"/><path d="M3 8.5h14M7 3v3M13 3v3"/></svg>',
+  chart:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 16.5V11M10 16.5V6M16 16.5v-8"/></svg>',
+  plus:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 4v12M4 10h12"/></svg>'
+};
+
+/* รายการที่ต้องดำเนินการ (ใช้ทั้ง popup และการ์ดบน dashboard) */
+function buildAlerts() {
+  const A = state.assets || [], B = state.borrow || [], M = state.maint || [];
+  const list = [];
+  const overdue = B.filter(b => effectiveBorrowStatus(b) === 'เกินกำหนด');
+  if (overdue.length) {
+    const maxDays = Math.max(...overdue.map(b => -(daysUntil(b['กำหนดคืน']) || 0)));
+    list.push({ tone:'bad', title:'เกินกำหนดคืน ' + overdue.length + ' รายการ', sub:'ค้างนานที่สุด ' + maxDays + ' วัน', tab:'borrow', st:{ borrowTab:'active' } });
+  }
+  const pending = B.filter(b => b['สถานะ'] === 'รออนุมัติ');
+  if (isAdmin() && pending.length) {
+    list.push({ tone:'info', title:'คำขอยืมรออนุมัติ ' + pending.length + ' รายการ', sub:'รอแอดมินตรวจสอบ', tab:'borrow', st:{ borrowTab:'pending' } });
+  }
+  const win = renewalWindowDays();
+  const renew = A.filter(a => { const d = daysUntil(a['วันครบกำหนดตรวจสภาพ/ต่อทะเบียน']); return d !== null && d <= win && a['สถานะ'] !== 'จำหน่ายแล้ว'; });
+  if (renew.length) {
+    list.push({ tone:'warn', title:'ใกล้ครบต่อทะเบียน ' + renew.length + ' รายการ', sub:'ภายใน ' + win + ' วัน', tab:'assets', st:{} });
+  }
+  const openM = M.filter(m => m['สถานะ'] !== 'ซ่อมเสร็จ');
+  if (openM.length) {
+    const late = openM.filter(m => -(daysUntil(m['วันที่แจ้ง']) || 0) >= 7).length;
+    list.push({ tone:'bad', title:'งานซ่อมค้าง ' + openM.length + ' รายการ', sub: late ? 'รอซ่อมนานเกิน 7 วัน ' + late + ' รายการ' : 'ยังไม่เกิน 7 วัน', tab:'maint', st:{} });
+  }
+  return list;
+}
+function notifSignature(list) { return list.map(a => a.title).join('|'); }
+function refreshNotifBadge() {
+  const badge = document.getElementById('notifCount');
+  if (!badge) return;
+  const list = buildAlerts();
+  let seen = null;
+  try { seen = localStorage.getItem('hpNotifSeen'); } catch (e) {}
+  const show = list.length > 0 && seen !== notifSignature(list);
+  badge.textContent = list.length > 99 ? '99+' : String(list.length);
+  badge.style.display = show ? 'inline-flex' : 'none';
+}
+function goAlert(a) {
+  if (!a) return;
+  Object.assign(state, a.st || {});
+  renderTab(a.tab);
+}
+function openNotifications() {
+  const list = buildAlerts();
+  showSheet(`
+    <div class="sheet-title" style="margin-bottom:0;">การแจ้งเตือน</div>
+    <div class="notif-sub">${list.length} รายการที่ต้องดำเนินการ</div>
+    <div class="notif-list">
+      ${list.length ? list.map((a, i) => `
+        <div class="notif-item tone-${a.tone}">
+          <span class="notif-dot"></span>
+          <div class="notif-body">
+            <div class="notif-title">${escapeHtml(a.title)}</div>
+            <div class="notif-subt">${escapeHtml(a.sub)}</div>
+          </div>
+          <button class="notif-go" data-nt="${i}" type="button">ดูงาน</button>
+        </div>`).join('') : emptyState('ไม่มีรายการที่ต้องดำเนินการ')}
+    </div>
+    <button class="notif-readall" id="notifReadAll" type="button">ทำเครื่องหมายว่าอ่านแล้วทั้งหมด</button>
+  `, 'notif-sheet');
+  document.querySelectorAll('#modalRoot [data-nt]').forEach(b => b.onclick = () => { const a = list[+b.dataset.nt]; closeSheet(); goAlert(a); });
+  document.getElementById('notifReadAll').onclick = () => {
+    try { localStorage.setItem('hpNotifSeen', notifSignature(list)); } catch (e) {}
+    refreshNotifBadge();
+    closeSheet();
+  };
+}
+   
 function renderDashboard() {
   const el = document.getElementById('view-dashboard');
   const d = state.dashboard;
@@ -8478,7 +8553,6 @@ function renderDashboard() {
   drawLine('trendChart', d.monthTrend || {});
   refreshNotifBadge();
 }
-
 let chartRefs = {};
 function chartAxisOpts(size) {
   const tick = cssVar('--ink-dim', '#6c7b83');
