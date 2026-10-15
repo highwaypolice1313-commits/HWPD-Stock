@@ -7024,6 +7024,7 @@ function committeeOneBlock(m, sigMm, fs, sigUrl, sigH, widthMm, align, labelMm) 
 
 /* ---------- ส่วนลายเซ็นท้ายรายงาน ---------- */   
 
+
 function committeeSignBlockHtml(compact) {
   const list = committeeOrdered().map(x => x.m);
   if (!list.length) return '';
@@ -7032,10 +7033,10 @@ function committeeSignBlockHtml(compact) {
   const S = compact
     ? { headSig: 36, headSigH: '7mm', headLabel: 40, headW: 150, headFs: '10pt',
         memSig: 20, memSigH: '8mm', memLabel: 24, memW: 93, memFs: '8.5pt',
-        gap: '2mm', cellPad: '0.5mm 0' }
+        gap: '2mm', cellPad: '0.5mm 0', pairW: '186mm' }
     : { headSig: 42, headSigH: '11mm', headLabel: 44, headW: 170, headFs: '12.5pt',
         memSig: 21, memSigH: '13mm', memLabel: 25, memW: 93, memFs: '9.5pt',
-        gap: '5mm', cellPad: '2mm 0' };
+        gap: '5mm', cellPad: '2mm 0', pairW: '186mm' };
  
   const heads = [], mems = [], secs = [];
   list.forEach((m, k) => {
@@ -7058,7 +7059,7 @@ function committeeSignBlockHtml(compact) {
     </tr>`;
   }
   const memTable = mems.length
-    ? `<table style="width:100%; border-collapse:collapse; margin-top:${S.gap}; table-layout:fixed;">${memHtml}</table>`
+    ? `<table style="width:${S.pairW}; max-width:100%; margin:${S.gap} auto 0; border-collapse:collapse; table-layout:fixed;">${memHtml}</table>`
     : '';
  
   return `<div style="break-inside:avoid; page-break-inside:avoid;">
@@ -7067,7 +7068,6 @@ function committeeSignBlockHtml(compact) {
     ${secs.map(fullBlock).join('')}
   </div>`;
 }
-   
 /* ---- หน่วยนับตามหมวดหมู่ครุภัณฑ์ (ใช้ในเอกสารบันทึกข้อความ) ---- */
 // ค่าเริ่มต้น — TODO: แก้หน่วยนับเริ่มต้นตรงนี้ได้ตามต้องการ หรือไปแก้ที่หน้า "ตั้งค่าระบบ" ก็ได้
 const DEFAULT_CATEGORY_UNITS = {
