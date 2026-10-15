@@ -1,32 +1,35 @@
 /**
- * supabase-helpers.js
+ * supabase-helpers.js  (ฉบับแก้ไข: ใช้ view สำหรับอ่าน / soft delete / ถังขยะ / ลบรูปตอน purge)
  * ---------------------------------------------------------
  * ตัวกลางแทน Google Apps Script backend เดิม — คุยกับ Supabase (Postgres)
  * โดยตรงจากเบราว์เซอร์ ใช้คู่กับ schema ที่ตั้งไว้แล้วใน Supabase SQL Editor
  *
- * รูปภาพทั้งหมด (ครุภัณฑ์ / จนท. / ตราครุฑ / สภาพพัสดุตอนยืม-คืน / อาการซ่อม) ยัง
- * อัปโหลดขึ้น Google Drive ผ่าน Apps Script ตัวเดิม (GAS_UPLOAD_URL ด้านล่าง) เหมือนระบบเดิม
- * ทุกประการ — ไม่ได้ขึ้น Supabase Storage เพื่อไม่ให้กินโควตาพื้นที่ฝั่ง Supabase
- * ตาราง Supabase เก็บแค่ "URL ของรูปบน Drive" เป็น text เท่านั้น
+ * รูปภาพทั้งหมด (ครุภัณฑ์ / จนท. / ตราครุฑ / สภาพพัสดุตอนยืม-คืน / อาการซ่อม) ยังคง
+ * อัปโหลดขึ้น Google Drive ผ่าน Apps Script ตัวเดิม (GAS_UPLOAD_URL) ตาราง Supabase
+ * เก็บแค่ "URL ของรูปบน Drive" เป็น text เท่านั้น
+ *
+ * การเปลี่ยนแปลงจากเวอร์ชันก่อนหน้า:
+ *  - การอ่านข้อมูลใช้ view (v_assets, v_borrow, v_maint, v_components, v_users, v_memos)
+ *  - การเขียนข้อมูลยังใช้ตารางจริงเหมือนเดิม
+ *  - การลบทุกอย่างเปลี่ยนเป็น soft delete ผ่าน RPC (ย้ายไปถังขยะ กู้คืนได้ 30 วัน)
+ *  - เพิ่มฟังก์ชันถังขยะ: กู้คืน (restoreItem), ลบถาวร (purgeItem), รายการในถังขยะ (listTrash)
+ *  - รูปบน Drive จะถูกลบเฉพาะตอน purge ถาวรเท่านั้น
+ *  - listTrash อ่าน role จาก token ฝั่งเซิร์ฟเวอร์ ไม่รับ role จาก client
  *
  * วิธีใช้:
- *  1. ใส่ SUPABASE_URL / SUPABASE_ANON_KEY ของโปรเจกต์ตัวเองด้านล่าง
- *  2. GAS_UPLOAD_URL ด้านล่างใช้ URL เดิมจาก index.html (สคริปต์ที่มี action 'uploadImage' อยู่แล้ว)
- *  3. โหลดไฟล์นี้ "ก่อน" สคริปต์หลักของ index.html เสมอ
- *  4. ในสคริปต์หลัก แก้ apiGet/apiPost ให้เรียก supaApiGet/supaApiPost แทน
- *
- * แนวคิดการแปลงข้อมูล: ตาราง Supabase ใช้ชื่อคอลัมน์ภาษาอังกฤษ แต่โค้ดหน้าเว็บเดิม
- * ใช้ key เป็นภาษาไทย (ตามหัวคอลัมน์ Google Sheets เดิม) ฟังก์ชัน xxxToThai() ด้านล่าง
- * มีหน้าที่แปลงกลับไปมา เพื่อให้ไม่ต้องแก้โค้ดหน้าเว็บอีกหลายพันบรรทัด
+ *  1. ตรวจว่า SUPABASE_URL / SUPABASE_ANON_KEY ตรงกับโปรเจกต์ของคุณ (ตรงจุด ⚠️ CONFIG)
+ *  2. ตรวจว่ามี view v_* และ RPC soft_delete_item / restore_item / purge_item ใน Supabase แล้ว
+ *  3. โหลดไฟล์นี้ "หลัง" <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+ *     และ "ก่อน" สคริปต์หลักของ index.html
  * ---------------------------------------------------------
  */
 
-// ==================== CONFIG — แก้ตรงนี้ ====================
+// ==================== ⚠️ CONFIG — แก้ตรงนี้ ====================
 const SUPABASE_URL = 'https://fuwuwboakywjlrtqwcjh.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1d3V3Ym9ha3l3amxydHF3Y2poIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxMjM1NzksImV4cCI6MjEwNTY5OTU3OX0.BLQAGxm4s9g-w0fMR952cfZNK7KbuBXvGdImvKEi-PE';
 
-// สคริปต์ Google Apps Script ตัวเดิม (มี action 'uploadImage' อัปโหลดขึ้น Drive อยู่แล้ว)
-// ใช้ค่าเดียวกับ API_URL ใน index.html เดิม — ถ้า deploy ใหม่ให้แก้ URL นี้เท่านั้น
+// สคริปต์ Google Apps Script ตัวเดิม (มี action 'uploadImage' / 'deleteImage' / 'listImages' / 'trashFiles')
+// ถ้า deploy ใหม่ให้แก้ URL นี้เท่านั้น
 const GAS_UPLOAD_URL = 'https://script.google.com/macros/s/AKfycbyT5Vwy1LrUt8tJmTEZ4wbYnUy2A80TMxb-is5E5SHp2ZTU1rHall6VZM_uL_7wnSr0/exec';
 const GAS_UPLOAD_KEY = 'k8Xp2mQvR9tLw4NzY7bHc3Fd';
 
@@ -50,9 +53,7 @@ async function gasUploadImageToDrive(dataUrl, fileName) {
   return { url: j.data && j.data.url ? j.data.url : '' };
 }
 
-
-// ต้องโหลด <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-// ไว้ก่อนไฟล์นี้ ไม่งั้น window.supabase จะยังไม่มี
+// ต้องโหลด supabase-js ไว้ก่อนไฟล์นี้ ไม่งั้น window.supabase จะยังไม่มี
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 function todayStr() {
@@ -146,7 +147,6 @@ const memoToThai = r => ({
   'เนื้อหาเอกสาร(HTML)': r.html, 'รหัสรายการยืม': r.borrow_id, 'สถานะ': r.status, 'ผู้สร้าง': r.created_by,
   'วันที่สร้าง': r.created_at, 'แก้ไขล่าสุด': r.updated_at
 });
-
 const monthlyToThai = r => ({
   'รหัสตรวจ': r.id, 'ปี': r.year, 'เดือน': r.month, 'รหัสจนท.': r.officer_id,
   'ชื่อผู้ถูกตรวจ': r.officer_name, 'ผล': r.result, 'หมายเหตุ': r.note,
@@ -219,6 +219,7 @@ async function sGetSystemSettings() {
   return s;
 }
 
+// ดึงข้อมูลทีละ 1000 แถว (ใช้ได้ทั้งตารางจริงและ view)
 async function fetchAll(table, columns = '*', orderCol) {
   const size = 1000; let from = 0, out = [];
   while (true) {
@@ -234,12 +235,13 @@ async function fetchAll(table, columns = '*', orderCol) {
 }
 
 async function sGetAll() {
+  // อ่านจาก view ทั้งหมด (view จะกรองรายการที่อยู่ในถังขยะออกให้แล้ว)
   const [assetsD, borrowD, maintD, componentsD, usersD] = await Promise.all([
-    fetchAll('assets', '*', 'created_at'),
-    fetchAll('borrow', '*', 'created_at'),
-    fetchAll('maint', '*', 'created_at'),
-    fetchAll('components', '*', 'created_at'),
-    fetchAll('users', 'id,line_user_id,name,position,unit,role,rank,memo_role,photo,username,created_at,signature', 'created_at')
+    fetchAll('v_assets', '*', 'created_at'),
+    fetchAll('v_borrow', '*', 'created_at'),
+    fetchAll('v_maint', '*', 'created_at'),
+    fetchAll('v_components', '*', 'created_at'),
+    fetchAll('v_users', 'id,line_user_id,name,position,unit,role,rank,memo_role,photo,username,created_at,signature', 'created_at')
   ]);
   const settings = await sGetSystemSettings();
   const assets = assetsD.map(assetToThai);
@@ -248,18 +250,20 @@ async function sGetAll() {
   const components = componentsD.map(componentToThai);
   const users = usersD.map(userToThai);
   markOverdue(borrow);
-  return { assets, borrow, maint, components, users, settings,
-    dashboard: buildDashboardJS(assets, borrow, maint, settings.renewalAlertDays) };
+  return {
+    assets, borrow, maint, components, users, settings,
+    dashboard: buildDashboardJS(assets, borrow, maint, settings.renewalAlertDays)
+  };
 }
 
 async function sGetUsers() {
-  const { data, error } = await sb.from('users')
+  const { data, error } = await sb.from('v_users')
     .select('id,line_user_id,name,position,unit,role,rank,memo_role,photo,username,created_at,signature');
   if (error) throw new Error(error.message);
   return data.map(u => { const t = userToThai(u); t['มีรหัสผ่านแล้ว'] = false; return t; });
 }
 async function sGetMemos() {
-  const { data, error } = await sb.from('memos').select('*').order('created_at', { ascending: false });
+  const { data, error } = await sb.from('v_memos').select('*').order('created_at', { ascending: false });
   if (error) throw new Error(error.message);
   return data.map(memoToThai);
 }
@@ -274,13 +278,38 @@ async function sGetAuditRecords(year) {
   if (error) throw new Error(error.message);
   return data.map(auditToThai);
 }
-
 async function sGetMonthlyChecks(year, month) {
   const y = Number(year) || new Date().getFullYear();
   const m = Number(month) || (new Date().getMonth() + 1);
   const { data, error } = await sb.from('monthly_checks').select('*').eq('year', y).eq('month', m);
   if (error) throw new Error(error.message);
   return data.map(monthlyToThai);
+}
+
+// ==================== ถังขยะ (อ่าน) ====================
+const TRASH_TABLES = ['assets', 'borrow', 'maint', 'memos', 'users', 'components'];
+const TRASH_RETENTION_DAYS = 30;
+
+async function sListTrash(role) {
+  if (role !== 'admin') throw new Error('ไม่มีสิทธิ์');
+  const out = [];
+  for (const t of TRASH_TABLES) {
+    // อ่านจากตารางจริง เพราะ view กรองรายการที่ลบแล้วออกไป
+    const { data, error } = await sb.from(t).select('*').not('deleted_at', 'is', null);
+    if (error) throw new Error(t + ': ' + error.message);
+    (data || []).forEach(r => {
+      const at = new Date(r.deleted_at).getTime();
+      out.push({
+        sheet: t,
+        id: r.id,
+        title: r.name || r.asset_name || r.borrower || r.subject || r.id,
+        deletedAt: r.deleted_at,
+        deletedBy: r.deleted_by || '-',
+        daysLeft: Math.max(0, Math.ceil((at + TRASH_RETENTION_DAYS * 86400000 - Date.now()) / 86400000))
+      });
+    });
+  }
+  return out.sort((a, b) => new Date(b.deletedAt) - new Date(a.deletedAt));
 }
 
 async function supaApiGet(action, params) {
@@ -294,11 +323,16 @@ async function supaApiGet(action, params) {
     case 'getSystemSettings': return await sGetSystemSettings();
     case 'validateSession': return { valid: !!verifyLocalToken(params.token) };
     case 'getMonthlyChecks': return await sGetMonthlyChecks(params.year, params.month);
+    case 'listTrash': {
+      // อ่าน role จาก token ฝั่งเซิร์ฟเวอร์ ไม่รับจาก client
+      const role = verifyLocalToken(params.token);
+      return await sListTrash(role);
+    }
     default: throw new Error('ไม่รู้จัก action: ' + action);
   }
 }
 
-// ==================== POST-side actions ====================
+// ==================== POST-side helpers ====================
 // "CMP-123:2,CMP-456" -> [{id:'CMP-123', n:2}, {id:'CMP-456', n:1}]
 function parseCompRefs(str) {
   return String(str || '').split(',').map(s => s.trim()).filter(Boolean).map(s => {
@@ -318,24 +352,40 @@ async function adjustComponentsSb(refs, sign) {
   }
 }
 
+// เรียก RPC soft_delete_item (ย้ายรายการลงถังขยะ)
+async function softDeleteSb(table, id, actor, role) {
+  const { data, error } = await sb.rpc('soft_delete_item', {
+    p_table: table, p_id: id, p_actor: actor, p_role: role
+  });
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+// ==================== ASSETS ====================
 async function sAddAsset(p, actor) {
   const id = p.id || genId('AST');
   const row = {
-  id, name: p.name, category: p.category, brand: p.brand || '', serial: p.serial || '',
-  received_date: p.receivedDate || null, value: (p.value !== undefined && p.value !== '') ? Number(p.value) : null,
-  status: p.status || 'พร้อมใช้งาน', holder: p.holder || '', unit: p.unit || '',
-  note: p.note || '', image_url: p.imageUrl || '', renewal_due: p.renewalDue || null,
-  license_plate: p.licensePlate || '', chassis_no: p.chassisNo || '' , license_plate: p.licensePlate || '', chassis_no: p.chassisNo || '', engine_no: p.engineNo || '',  tire_size: p.tireSize || ''  // เพิ่มบรรทัดนี้
-};
+    id, name: p.name, category: p.category, brand: p.brand || '', serial: p.serial || '',
+    received_date: p.receivedDate || null,
+    value: (p.value !== undefined && p.value !== '') ? Number(p.value) : null,
+    status: p.status || 'พร้อมใช้งาน', holder: p.holder || '', unit: p.unit || '',
+    note: p.note || '', image_url: p.imageUrl || '', renewal_due: p.renewalDue || null,
+    license_plate: p.licensePlate || '', chassis_no: p.chassisNo || '',
+    engine_no: p.engineNo || '', tire_size: p.tireSize || ''
+  };
   const { error } = await sb.from('assets').insert(row);
   if (error) throw new Error('เพิ่มครุภัณฑ์ไม่สำเร็จ: ' + error.message);
   await logActivitySb(actor, 'เพิ่มครุภัณฑ์', p.name);
   return { id };
 }
+
 async function sUpdateAsset(p, actor) {
-const map = { name: 'name', category: 'category', brand: 'brand', serial: 'serial', receivedDate: 'received_date',
-  value: 'value', status: 'status', holder: 'holder', unit: 'unit', note: 'note', imageUrl: 'image_url', renewalDue: 'renewal_due',
-  licensePlate: 'license_plate', chassisNo: 'chassis_no', engineNo: 'engine_no', tireSize: 'tire_size' };
+  const map = {
+    name: 'name', category: 'category', brand: 'brand', serial: 'serial', receivedDate: 'received_date',
+    value: 'value', status: 'status', holder: 'holder', unit: 'unit', note: 'note', imageUrl: 'image_url',
+    renewalDue: 'renewal_due', licensePlate: 'license_plate', chassisNo: 'chassis_no',
+    engineNo: 'engine_no', tireSize: 'tire_size'
+  };
   const upd = {};
   Object.keys(map).forEach(k => {
     if (p[k] === undefined) return;
@@ -348,15 +398,15 @@ const map = { name: 'name', category: 'category', brand: 'brand', serial: 'seria
   await logActivitySb(actor, 'แก้ไขครุภัณฑ์', p.id);
   return { updated: true };
 }
-async function sDeleteAsset(id, actor) {
-  const { data: old } = await sb.from('assets').select('image_url').eq('id', id).maybeSingle();
-  const { error } = await sb.from('assets').delete().eq('id', id);
-  if (error) throw new Error('ลบครุภัณฑ์ไม่สำเร็จ: ' + error.message);
-  if (old) await gasDeleteImage(old.image_url);
-  await logActivitySb(actor, 'ลบครุภัณฑ์', id);
+
+// ลบครุภัณฑ์ = ย้ายไปถังขยะ (ยังไม่ลบรูปบน Drive จนกว่าจะ purge ถาวร)
+async function sDeleteAsset(id, actor, role) {
+  await softDeleteSb('assets', id, actor, role);
+  await logActivitySb(actor, 'ลบครุภัณฑ์ (ไปถังขยะ)', id);
   return { deleted: true };
 }
 
+// ==================== BORROW ====================
 async function sBorrowAsset(p, actor, directApprove) {
   const id = genId('BRW');
   const componentIds = Array.isArray(p.componentIds) ? p.componentIds : [];
@@ -378,28 +428,31 @@ async function sBorrowAsset(p, actor, directApprove) {
   await logActivitySb(actor, directApprove ? 'บันทึกการยืม (โดยแอดมิน)' : 'ขอยืมครุภัณฑ์', (p.assetName || '') + ' → ' + p.borrower);
   return { id, status };
 }
+
 async function sApproveBorrow(p, actor) {
   const { data: b, error: e1 } = await sb.from('borrow').select('*').eq('id', p.borrowId).single();
   if (e1 || !b) throw new Error('ไม่พบคำขอยืมรหัส ' + p.borrowId);
-const upd = { status: 'กำลังยืม', approver: p.approverName || actor };
-if (p.sigApprover) upd.sig_approver = p.sigApprover;
-const { error } = await sb.from('borrow').update(upd).eq('id', p.borrowId);
-if (error) throw new Error(error.message);
-await sb.from('assets').update({ status: 'กำลังยืม', holder: b.borrower }).eq('id', b.asset_id);
+  const upd = { status: 'กำลังยืม', approver: p.approverName || actor };
+  if (p.sigApprover) upd.sig_approver = p.sigApprover;
+  const { error } = await sb.from('borrow').update(upd).eq('id', p.borrowId);
+  if (error) throw new Error(error.message);
+  await sb.from('assets').update({ status: 'กำลังยืม', holder: b.borrower }).eq('id', b.asset_id);
   await adjustComponentsSb(parseCompRefs(b.component_ids), +1);
   await logActivitySb(actor, 'อนุมัติการยืม', p.borrowId);
   return { approved: true };
 }
+
 async function sRejectBorrow(p, actor) {
   const { error } = await sb.from('borrow').update({ status: 'ถูกปฏิเสธ' }).eq('id', p.borrowId);
   if (error) throw new Error(error.message);
   await logActivitySb(actor, 'ปฏิเสธคำขอยืม', p.borrowId);
   return { rejected: true };
 }
+
 async function sReturnAsset(p, actor) {
   const { data: b, error: e1 } = await sb.from('borrow').select('*').eq('id', p.borrowId).single();
   if (e1 || !b) throw new Error('ไม่พบรายการยืมรหัส ' + p.borrowId);
-  const upd = { return_date: p.returnDate || todayStr() , status: 'คืนแล้ว' };
+  const upd = { return_date: p.returnDate || todayStr(), status: 'คืนแล้ว' };
   if (p.conditionPhotoReturn) upd.photo_in = p.conditionPhotoReturn;
   const { error } = await sb.from('borrow').update(upd).eq('id', p.borrowId);
   if (error) throw new Error(error.message);
@@ -414,7 +467,7 @@ async function sUpdateBorrow(p, actor) {
   const { data: b, error: e1 } = await sb.from('borrow').select('*').eq('id', p.id).single();
   if (e1 || !b) throw new Error('ไม่พบรายการยืมรหัส ' + p.id);
 
-  // เตรียมข้อมูลที่จะอัปเดต — อัปเดตเฉพาะฟิลด์ที่ส่งมาเท่านั้น
+  // อัปเดตเฉพาะฟิลด์ที่ส่งมาเท่านั้น
   const upd = {};
   if (p.borrower !== undefined) upd.borrower = p.borrower;
   if (p.borrowDate !== undefined) upd.borrow_date = p.borrowDate || null;
@@ -425,8 +478,7 @@ async function sUpdateBorrow(p, actor) {
   const { error } = await sb.from('borrow').update(upd).eq('id', p.id);
   if (error) throw new Error('แก้ไขข้อมูลการยืมไม่สำเร็จ: ' + error.message);
 
-  // ถ้าเปลี่ยนชื่อผู้ยืม และครุภัณฑ์ตัวนี้ยังอยู่ในสถานะ "กำลังยืม" อยู่
-  // ให้อัปเดตชื่อผู้ครอบครองในตารางครุภัณฑ์ (assets) ให้ตรงกันไปด้วย
+  // ถ้าเปลี่ยนชื่อผู้ยืมขณะยังอยู่ในสถานะ "กำลังยืม" ให้อัปเดตผู้ครอบครองในทะเบียนครุภัณฑ์ด้วย
   if (p.borrower !== undefined && b.status === 'กำลังยืม') {
     await sb.from('assets').update({ holder: p.borrower }).eq('id', b.asset_id);
   }
@@ -435,43 +487,40 @@ async function sUpdateBorrow(p, actor) {
   return { updated: true };
 }
 
-async function sDeleteBorrow(p, actor) {
-  // ตรวจสอบก่อนว่ามีรายการยืมรหัสนี้อยู่จริงหรือไม่
+// ลบรายการยืม = ย้ายไปถังขยะ (ถ้ายังไม่คืน ต้องคืนสถานะครุภัณฑ์/ส่วนควบก่อน)
+async function sDeleteBorrow(p, actor, role) {
   const { data: b, error: e1 } = await sb.from('borrow').select('*').eq('id', p.id).single();
   if (e1 || !b) throw new Error('ไม่พบรายการยืมรหัส ' + p.id);
 
-  // ถ้ารายการนี้ยังไม่ได้คืน (สถานะ "กำลังยืม") ต้องคืนสถานะครุภัณฑ์และส่วนควบกลับเป็น "พร้อมใช้งาน" ก่อนลบ
-  // ไม่งั้นครุภัณฑ์จะค้างสถานะ "กำลังยืม" ตลอดไปทั้งที่ไม่มีรายการยืมอ้างอิงอยู่แล้ว
-  if (b.status === 'กำลังยืม') {
+  if (b.status === 'กำลังยืม' || b.status === 'เกินกำหนด') {
     await sb.from('assets').update({ status: 'พร้อมใช้งาน', holder: '' }).eq('id', b.asset_id);
     await adjustComponentsSb(parseCompRefs(b.component_ids), -1);
   }
-
-  const { error } = await sb.from('borrow').delete().eq('id', p.id);
-  if (error) throw new Error('ลบรายการไม่สำเร็จ: ' + error.message);
-
-  await logActivitySb(actor, 'ลบรายการยืม-คืน', p.id);
+  await softDeleteSb('borrow', p.id, actor, role);
+  await logActivitySb(actor, 'ลบรายการยืม-คืน (ไปถังขยะ)', p.id);
   return { deleted: true };
 }
+
 async function sRenewBorrow(p, actor) {
   // ตรวจสอบก่อนว่ามีรายการยืมเดิมอยู่จริง และยังไม่ได้คืน
   const { data: b, error: e1 } = await sb.from('borrow').select('*').eq('id', p.borrowId).single();
   if (e1 || !b) throw new Error('ไม่พบรายการยืมรหัส ' + p.borrowId);
   if (b.status !== 'กำลังยืม') throw new Error('ยืมต่อได้เฉพาะรายการที่ยังไม่คืนเท่านั้น');
 
-  const today = todayStr()
+  const today = todayStr();
 
   // ปิดรายการเดิมเป็น "คืนแล้ว" ณ วันนี้
   const { error: e2 } = await sb.from('borrow').update({ status: 'คืนแล้ว', return_date: today }).eq('id', p.borrowId);
   if (e2) throw new Error('ปิดรายการเดิมไม่สำเร็จ: ' + e2.message);
 
-  // เปิดรายการยืมใหม่ให้ผู้ยืมคนเดิมทันที — ครุภัณฑ์ยังอยู่ในสถานะ "กำลังยืม" อยู่แล้ว ไม่ต้องแก้ไขอะไรเพิ่ม
+  // เปิดรายการยืมใหม่ให้ผู้ยืมคนเดิม (ครุภัณฑ์ยังอยู่ในสถานะ "กำลังยืม" อยู่แล้ว)
   const newId = genId('BRW');
   const row = {
     id: newId, asset_id: b.asset_id, asset_name: b.asset_name, borrower: b.borrower,
     borrower_line_id: b.borrower_line_id || '', borrow_date: today, due_date: p.dueDate || null,
     status: 'กำลังยืม', approver: actor, note: p.note !== undefined ? p.note : (b.note || ''),
-    component_ids: b.component_ids || '', photo_out: b.photo_out || '' ,sig_borrower: b.sig_borrower || '',sig_approver: b.sig_approver || '',
+    component_ids: b.component_ids || '', photo_out: b.photo_out || '',
+    sig_borrower: b.sig_borrower || '', sig_approver: b.sig_approver || ''
   };
   const { error: e3 } = await sb.from('borrow').insert(row);
   if (e3) throw new Error('เปิดรายการยืมใหม่ไม่สำเร็จ: ' + e3.message);
@@ -488,6 +537,7 @@ function markOverdue(borrow) {
   });
 }
 
+// ==================== MAINTENANCE ====================
 async function sAddMaint(p, actor) {
   const id = genId('MNT');
   const row = {
@@ -498,7 +548,7 @@ async function sAddMaint(p, actor) {
   const { error } = await sb.from('maint').insert(row);
   if (error) throw new Error('แจ้งซ่อมไม่สำเร็จ: ' + error.message);
   const assetUpd = { status: 'ซ่อมบำรุง' };
-  if (p.tireSize) assetUpd.tire_size = p.tireSize;   // เปลี่ยนยางแล้วอัปเดตขนาดยางในทะเบียนครุภัณฑ์
+  if (p.tireSize) assetUpd.tire_size = p.tireSize; // เปลี่ยนยางแล้วอัปเดตขนาดยางในทะเบียน
   await sb.from('assets').update(assetUpd).eq('id', p.assetId);
   await logActivitySb(actor, 'แจ้งซ่อมบำรุง', p.assetName);
   return { id };
@@ -524,28 +574,35 @@ async function sUpdateMaint(p, actor) {
   await logActivitySb(actor, 'อัปเดตงานซ่อม', p.id);
   return { updated: true };
 }
-async function sDeleteMaint(p, actor) {
-  const { data: m } = await sb.from('maint').select('asset_id,photo').eq('id', p.id).maybeSingle();
+
+// ลบงานซ่อม = ย้ายไปถังขยะ
+async function sDeleteMaint(p, actor, role) {
+  const { data: m } = await sb.from('maint').select('asset_id').eq('id', p.id).maybeSingle();
   if (!m) throw new Error('ไม่พบรายการซ่อมรหัส ' + p.id);
-  const { error } = await sb.from('maint').delete().eq('id', p.id);
-  if (error) throw new Error('ลบรายการซ่อมไม่สำเร็จ: ' + error.message);
-  const { data: others } = await sb.from('maint').select('id').eq('asset_id', m.asset_id).neq('status', 'ซ่อมเสร็จ');
+  await softDeleteSb('maint', p.id, actor, role);
+  // ถ้าไม่มีงานซ่อมที่ยังค้างเหลืออยู่ ให้คืนสถานะครุภัณฑ์เป็นพร้อมใช้งาน
+  const { data: others } = await sb.from('maint').select('id')
+    .eq('asset_id', m.asset_id).neq('status', 'ซ่อมเสร็จ').is('deleted_at', null);
   if (!others || !others.length) {
     await sb.from('assets').update({ status: 'พร้อมใช้งาน' }).eq('id', m.asset_id).eq('status', 'ซ่อมบำรุง');
   }
-  await gasDeleteImage(m.photo);
-  await logActivitySb(actor, 'ลบงานซ่อม', p.id);
+  await logActivitySb(actor, 'ลบงานซ่อม (ไปถังขยะ)', p.id);
   return { deleted: true };
 }
 
+// ==================== COMPONENTS ====================
 async function sAddComponent(p, actor) {
   const id = genId('CMP');
   const qty = Math.max(1, parseInt(p.qty, 10) || 1);
-  const { error } = await sb.from('components').insert({ id, parent_id: p.parentId, name: p.name, type: p.type || '', serial: p.serial || '', status: 'พร้อมใช้งาน', note: p.note || '', qty, qty_out: 0 });
+  const { error } = await sb.from('components').insert({
+    id, parent_id: p.parentId, name: p.name, type: p.type || '', serial: p.serial || '',
+    status: 'พร้อมใช้งาน', note: p.note || '', qty, qty_out: 0
+  });
   if (error) throw new Error(error.message);
   await logActivitySb(actor, 'เพิ่มส่วนควบ', p.name + ' x' + qty);
   return { id };
 }
+
 async function sUpdateComponent(p, actor) {
   const upd = {};
   ['name', 'type', 'serial', 'status', 'note'].forEach(k => { if (p[k] !== undefined) upd[k] = p[k]; });
@@ -556,20 +613,22 @@ async function sUpdateComponent(p, actor) {
     const out = Math.min(qty, (cur && cur.qty_out) || 0);
     upd.qty_out = out;
     if (out >= qty) upd.status = 'กำลังยืม';
-    else if (out < qty && upd.status === undefined) upd.status = 'พร้อมใช้งาน';
+    else if (upd.status === undefined) upd.status = 'พร้อมใช้งาน';
   }
   const { error } = await sb.from('components').update(upd).eq('id', p.id);
   if (error) throw new Error(error.message);
   await logActivitySb(actor, 'แก้ไขส่วนควบ', p.id);
   return { updated: true };
 }
-async function sDeleteComponent(id, actor) {
-  const { error } = await sb.from('components').delete().eq('id', id);
-  if (error) throw new Error(error.message);
-  await logActivitySb(actor, 'ลบส่วนควบ', id);
+
+// ลบส่วนควบ = ย้ายไปถังขยะ
+async function sDeleteComponent(id, actor, role) {
+  await softDeleteSb('components', id, actor, role);
+  await logActivitySb(actor, 'ลบส่วนควบ (ไปถังขยะ)', id);
   return { deleted: true };
 }
 
+// ==================== USERS ====================
 async function sAddUser(p, actor) {
   const id = genId('OFC');
   let photoUrl = '';
@@ -578,13 +637,14 @@ async function sAddUser(p, actor) {
   const row = {
     id, line_user_id: p.lineUserId || '', name: p.name, position: p.position || '', unit: p.unit || '',
     role: p.role || 'viewer', rank: p.rank || '', memo_role: p.memoRole || 'ไม่ระบุ (เลือกเองตอนพิมพ์)',
-    photo: photoUrl, username: p.username || '' , signature: p.signature || ''
+    photo: photoUrl, username: p.username || '', signature: p.signature || ''
   };
   const { error } = await sb.from('users').insert(row);
   if (error) throw new Error('เพิ่มรายชื่อไม่สำเร็จ: ' + error.message);
   await logActivitySb(actor, 'เพิ่มรายชื่อ จนท.ในสังกัด', p.name);
   return { added: true, id };
 }
+
 async function sUpdateUserRole(p, actor) {
   let col = 'id', val = p.officerId;
   if (!val && p.lineUserId) { col = 'line_user_id'; val = p.lineUserId; }
@@ -605,32 +665,37 @@ async function sUpdateUserRole(p, actor) {
   await logActivitySb(actor, 'แก้ไขข้อมูล จนท.', p.name || val);
   return { updated: true, photoUrl: upd.photo };
 }
-async function sDeleteUser(p, actor) {
+
+// ลบผู้ใช้ = ย้ายไปถังขยะ
+async function sDeleteUser(p, actor, role) {
   let id = p.officerId;
   if (!id) {
     if (!p.identifier) throw new Error('ไม่พบตัวระบุผู้ใช้สำหรับลบ');
     for (const col of ['line_user_id', 'username', 'name']) {
-      const { data } = await sb.from('users').select('id').eq(col, p.identifier);
+      const { data } = await sb.from('v_users').select('id').eq(col, p.identifier);
       if (data && data.length === 1) { id = data[0].id; break; }
       if (data && data.length > 1) throw new Error('พบรายชื่อซ้ำหลายรายการ ลบอัตโนมัติไม่ได้');
     }
     if (!id) throw new Error('ไม่พบผู้ใช้ที่ต้องการลบ');
   }
-  const { error } = await sb.from('users').delete().eq('id', id);
-  if (error) throw new Error('ลบไม่สำเร็จ: ' + error.message);
-  await logActivitySb(actor, 'ลบรายชื่อ จนท.', id);
+  await softDeleteSb('users', id, actor, role);
+  await logActivitySb(actor, 'ลบรายชื่อ จนท. (ไปถังขยะ)', id);
   return { deleted: true };
 }
 
+// ==================== MEMOS ====================
 async function sAddMemo(p, actor) {
   const id = genId('MEMO');
-  const row = { id, subject: p.subject || 'ไม่ระบุเรื่อง', requester_name: p.requesterName || '', doc_date: p.docDate || '',
-    html: p.html || '', borrow_id: p.borrowId || '', status: p.status || 'บันทึกแล้ว', created_by: actor || '' };
+  const row = {
+    id, subject: p.subject || 'ไม่ระบุเรื่อง', requester_name: p.requesterName || '', doc_date: p.docDate || '',
+    html: p.html || '', borrow_id: p.borrowId || '', status: p.status || 'บันทึกแล้ว', created_by: actor || ''
+  };
   const { error } = await sb.from('memos').insert(row);
   if (error) throw new Error(error.message);
   await logActivitySb(actor, 'บันทึกเอกสารใบเบิก', p.subject);
   return { id };
 }
+
 async function sUpdateMemo(p, actor) {
   const upd = { updated_at: new Date().toISOString() };
   if (p.subject !== undefined) upd.subject = p.subject;
@@ -643,13 +708,15 @@ async function sUpdateMemo(p, actor) {
   await logActivitySb(actor, 'แก้ไขเอกสารใบเบิก', p.subject || p.id);
   return { updated: true };
 }
-async function sDeleteMemo(id, actor) {
-  const { error } = await sb.from('memos').delete().eq('id', id);
-  if (error) throw new Error(error.message);
-  await logActivitySb(actor, 'ลบเอกสารใบเบิก', id);
+
+// ลบเอกสารใบเบิก = ย้ายไปถังขยะ
+async function sDeleteMemo(id, actor, role) {
+  await softDeleteSb('memos', id, actor, role);
+  await logActivitySb(actor, 'ลบเอกสารใบเบิก (ไปถังขยะ)', id);
   return { deleted: true };
 }
 
+// ==================== SYSTEM SETTINGS ====================
 async function sUpdateSystemSettings(p, actor) {
   const updates = {};
   if (p.orgName !== undefined) updates.orgName = String(p.orgName || '').trim();
@@ -668,12 +735,12 @@ async function sUpdateSystemSettings(p, actor) {
     else if (/^data:image\//i.test(logo)) updates.garudaLogo = (await gasUploadImageToDrive(logo, 'garuda')).url;
     else updates.garudaLogo = logo;
   }
-if (p.auditCommittee !== undefined) updates.auditCommittee = String(p.auditCommittee || '');
-if (p.auditPeriodStart !== undefined) updates.auditPeriodStart = String(p.auditPeriodStart || '').trim();
-if (p.auditPeriodEnd !== undefined) updates.auditPeriodEnd = String(p.auditPeriodEnd || '').trim();
-if (p.categoryUnits !== undefined) updates.categoryUnits = String(p.categoryUnits || '');
-if (p.assetCategories !== undefined) updates.assetCategories = String(p.assetCategories || '');
-if (p.categoryIcons !== undefined) updates.categoryIcons = String(p.categoryIcons || '');
+  if (p.auditCommittee !== undefined) updates.auditCommittee = String(p.auditCommittee || '');
+  if (p.auditPeriodStart !== undefined) updates.auditPeriodStart = String(p.auditPeriodStart || '').trim();
+  if (p.auditPeriodEnd !== undefined) updates.auditPeriodEnd = String(p.auditPeriodEnd || '').trim();
+  if (p.categoryUnits !== undefined) updates.categoryUnits = String(p.categoryUnits || '');
+  if (p.assetCategories !== undefined) updates.assetCategories = String(p.assetCategories || '');
+  if (p.categoryIcons !== undefined) updates.categoryIcons = String(p.categoryIcons || '');
 
   // เปลี่ยนชื่อหมวดหมู่ในครุภัณฑ์ที่มีอยู่แล้วให้ตรงกับชื่อใหม่ (ทำก่อนบันทึกการตั้งค่า)
   if (p.categoryRenames !== undefined) {
@@ -685,7 +752,7 @@ if (p.categoryIcons !== undefined) updates.categoryIcons = String(p.categoryIcon
       if (renameErr) throw new Error('เปลี่ยนชื่อหมวดหมู่ "' + r.old + '" ไม่สำเร็จ: ' + renameErr.message);
     }
   }
-  
+
   for (const key of Object.keys(updates)) {
     const { error } = await sb.from('system_settings').upsert({ key, value: String(updates[key]), updated_at: new Date().toISOString() });
     if (error) throw new Error(error.message);
@@ -694,15 +761,18 @@ if (p.categoryIcons !== undefined) updates.categoryIcons = String(p.categoryIcon
   return { updated: true, settings: await sGetSystemSettings() };
 }
 
+// ==================== AUDIT / MONTHLY CHECK ====================
 async function sSaveAuditRecord(p, actor) {
   const year = Number(p.year) || new Date().getFullYear();
-  const { data: existing, error: e0 } = await sb.from('audit_records').select('id').eq('asset_id', p.assetId).eq('year', year).maybeSingle();
+  const { data: existing, error: e0 } = await sb.from('audit_records').select('id')
+    .eq('asset_id', p.assetId).eq('year', year).maybeSingle();
   if (e0) throw new Error('ตรวจสอบข้อมูลเดิมไม่สำเร็จ: ' + e0.message);
 
   const payload = {
     result: p.status || 'ยังไม่ตรวจ', inspector: actor || '', note: p.note || '',
     inspected_at: new Date().toISOString(),
-    found_status: p.foundStatus || '', condition_score: p.conditionScore !== undefined && p.conditionScore !== '' ? Number(p.conditionScore) : null,
+    found_status: p.foundStatus || '',
+    condition_score: p.conditionScore !== undefined && p.conditionScore !== '' ? Number(p.conditionScore) : null,
     last_used_date: p.lastUsedDate || null, committee_decision: p.committeeDecision || ''
   };
 
@@ -710,7 +780,8 @@ async function sSaveAuditRecord(p, actor) {
     const { error } = await sb.from('audit_records').update(payload).eq('id', existing.id);
     if (error) throw new Error('บันทึกผลตรวจไม่สำเร็จ: ' + error.message);
   } else {
-    const { error } = await sb.from('audit_records').insert({ id: genId('AUD'), asset_id: p.assetId, asset_name: p.assetName || '', year, ...payload });
+    const { error } = await sb.from('audit_records')
+      .insert({ id: genId('AUD'), asset_id: p.assetId, asset_name: p.assetName || '', year, ...payload });
     if (error) throw new Error('บันทึกผลตรวจไม่สำเร็จ: ' + error.message);
   }
 
@@ -741,6 +812,7 @@ async function sSaveMonthlyCheck(p, actor) {
   await logActivitySb(actor, 'ตรวจประจำเดือน', (p.officerName || p.officerId) + ' → ' + payload.result);
   return { saved: true, inspectedAt: payload.inspected_at };
 }
+
 async function sClearMonthlyCheck(p, actor) {
   const { error } = await sb.from('monthly_checks').delete()
     .eq('year', Number(p.year)).eq('month', Number(p.month)).eq('officer_id', p.officerId);
@@ -755,17 +827,31 @@ async function sChangeRolePassword(p) {
   return { updated: !!data };
 }
 
-async function gasCall(action, payload) {
-  const res = await fetch(GAS_UPLOAD_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ action, uploadKey: GAS_UPLOAD_KEY, payload })
-  });
-  const j = JSON.parse(await res.text());
-  if (!j.ok) throw new Error(j.error || 'เซิร์ฟเวอร์รูปภาพผิดพลาด');
-  return j.data;
+// ==================== TRASH: กู้คืน / ลบถาวร ====================
+async function restoreSb(table, id, actor, role) {
+  const { data, error } = await sb.rpc('restore_item', { p_table: table, p_id: id, p_actor: actor, p_role: role });
+  if (error) throw new Error(error.message);
+  // กู้ครุภัณฑ์แล้ว ถ้าสถานะเป็น "จำหน่ายแล้ว" ให้ตั้งกลับเป็นพร้อมใช้งาน
+  if (table === 'assets') await sb.from('assets').update({ status: 'พร้อมใช้งาน' }).eq('id', id).eq('status', 'จำหน่ายแล้ว');
+  await logActivitySb(actor, 'กู้คืนรายการจากถังขยะ', table + ' / ' + id);
+  return data;
 }
 
+// ลบถาวร + ลบรูปบน Drive (DB ไม่รู้จัก Drive จึงต้องทำใน JS)
+async function purgeWithImagesSb(table, id, actor, role) {
+  const { data: row } = await sb.from(table).select('*').eq('id', id).maybeSingle();
+  const urls = row
+    ? ['image_url', 'photo', 'photo_out', 'photo_in', 'signature', 'sig_borrower', 'sig_approver']
+        .map(k => row[k]).filter(Boolean)
+    : [];
+  const { data, error } = await sb.rpc('purge_item', { p_table: table, p_id: id, p_actor: actor, p_role: role });
+  if (error) throw new Error(error.message);
+  for (const u of urls) await gasDeleteImage(u);
+  await logActivitySb(actor, 'ลบถาวรจากถังขยะ', table + ' / ' + id);
+  return data;
+}
+
+// ==================== IMAGE MAINTENANCE ====================
 // ดึงรหัสไฟล์ไดร์ฟจากข้อความ (รองรับ lh3.../d/ID, drive.google.com/file/d/ID, uc?id=ID)
 function collectDriveIds(text, set) {
   const re = /(?:\/d\/|[?&]id=)([\w-]{20,})/g;
@@ -773,10 +859,11 @@ function collectDriveIds(text, set) {
   while ((m = re.exec(text))) set.add(m[1]);
 }
 
-const ORPHAN_GRACE_MS = 24 * 60 * 60 * 1000;   // ไม่แตะไฟล์ที่อัปโหลดภายใน 24 ชม.
+const ORPHAN_GRACE_MS = 24 * 60 * 60 * 1000; // ไม่แตะไฟล์ที่อัปโหลดภายใน 24 ชม.
 
 async function sScanOrphanImages() {
   const refs = new Set();
+  // ใช้ "ตารางจริง" ไม่ใช่ view เพราะรายการในถังขยะยังต้องถือว่าอ้างอิงรูปอยู่
   const cols = [
     ['assets', 'image_url'], ['users', 'photo'], ['users', 'signature'],
     ['borrow', 'photo_out'], ['borrow', 'photo_in'],
@@ -823,56 +910,7 @@ async function sTrashOrphanImages(p, actor) {
   return { trashed, skipped };
 }
 
-const ADMIN_ACTIONS = ['addAsset', 'updateAsset', 'deleteAsset', 'borrowAsset', 'returnAsset', 'updateBorrow', 'deleteBorrow', 'renewBorrow',
-  'approveBorrowRequest', 'rejectBorrowRequest', 'addMaint', 'updateMaint', 'addUser', 'updateUserRole',
-  'deleteUser', 'addComponent', 'updateComponent', 'deleteComponent', 'deleteMemo', 'updateSystemSettings',
-  'saveAuditRecord', 'migrateImagesToDrive', 'changeRolePassword','saveMonthlyCheck', 'clearMonthlyCheck' , 'scanOrphanImages', 'trashOrphanImages'];
-const AUTH_ACTIONS = ['requestBorrow', 'addMemo', 'updateMemo', 'uploadImage','deleteMaint'];
-
-async function supaApiPost(action, payload, role, actorName) {
-  role = role || 'guest';
-  payload = payload || {};
-  if (ADMIN_ACTIONS.indexOf(action) !== -1 && role !== 'admin') throw new Error('ไม่มีสิทธิ์ทำรายการนี้ (ต้องเป็นแอดมิน)');
-  if (AUTH_ACTIONS.indexOf(action) !== -1 && role === 'guest') throw new Error('กรุณาเข้าสู่ระบบก่อนทำรายการนี้');
-  actorName = actorName || (role === 'admin' ? 'แอดมิน' : (role === 'viewer' ? 'ผู้ดูอย่างเดียว' : 'ไม่ทราบผู้ใช้'));
-
-  switch (action) {
-    case 'uploadImage': return await gasUploadImageToDrive(payload.dataUrl, payload.fileName);
-    case 'addAsset': return await sAddAsset(payload, actorName);
-    case 'updateAsset': return await sUpdateAsset(payload, actorName);
-    case 'deleteAsset': return await sDeleteAsset(payload.id, actorName);
-    case 'borrowAsset': return await sBorrowAsset(payload, actorName, true);
-    case 'requestBorrow': return await sBorrowAsset(payload, actorName, false);
-    case 'approveBorrowRequest': return await sApproveBorrow(payload, actorName);
-    case 'rejectBorrowRequest': return await sRejectBorrow(payload, actorName);
-    case 'returnAsset': return await sReturnAsset(payload, actorName);
-    case 'updateBorrow': return await sUpdateBorrow(payload, actorName);
-    case 'deleteBorrow': return await sDeleteBorrow(payload, actorName);
-    case 'renewBorrow': return await sRenewBorrow(payload, actorName);
-    case 'addMaint': return await sAddMaint(payload, actorName);
-    case 'updateMaint': return await sUpdateMaint(payload, actorName);
-    case 'addComponent': return await sAddComponent(payload, actorName);
-    case 'updateComponent': return await sUpdateComponent(payload, actorName);
-    case 'deleteComponent': return await sDeleteComponent(payload.id, actorName);
-    case 'addUser': return await sAddUser(payload, actorName);
-    case 'updateUserRole': return await sUpdateUserRole(payload, actorName);
-    case 'deleteUser': return await sDeleteUser(payload, actorName);
-    case 'addMemo': return await sAddMemo(payload, actorName);
-    case 'updateMemo': return await sUpdateMemo(payload, actorName);
-    case 'deleteMemo': return await sDeleteMemo(payload.id, actorName);
-    case 'updateSystemSettings': return await sUpdateSystemSettings(payload, actorName);
-    case 'saveAuditRecord': return await sSaveAuditRecord(payload, actorName);
-    case 'migrateImagesToDrive': return await sMigrateImagesToDrive(actorName);
-    case 'changeRolePassword': return await sChangeRolePassword(payload);
-    case 'saveMonthlyCheck': return await sSaveMonthlyCheck(payload, actorName);
-    case 'clearMonthlyCheck': return await sClearMonthlyCheck(payload, actorName);
-    case 'scanOrphanImages': return await sScanOrphanImages();
-    case 'trashOrphanImages': return await sTrashOrphanImages(payload, actorName);
-    case 'deleteMaint': return await sDeleteMaint(payload, actorName);
-    default: throw new Error('ไม่รู้จัก action: ' + action);
-  }
-}
-
+// ย้ายรูปเก่า (base64) ขึ้น Drive
 async function sMigrateImagesToDrive(actor) {
   const targets = [
     ['assets', 'image_url'], ['users', 'photo'], ['users', 'signature'],
@@ -906,6 +944,17 @@ async function sMigrateImagesToDrive(actor) {
   return { migrated, failed };
 }
 
+async function gasCall(action, payload) {
+  const res = await fetch(GAS_UPLOAD_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action, uploadKey: GAS_UPLOAD_KEY, payload })
+  });
+  const j = JSON.parse(await res.text());
+  if (!j.ok) throw new Error(j.error || 'เซิร์ฟเวอร์รูปภาพผิดพลาด');
+  return j.data;
+}
+
 async function gasDeleteImage(url) {
   if (!url || !/googleusercontent\.com\/d\//.test(url)) return;
   try {
@@ -915,4 +964,61 @@ async function gasDeleteImage(url) {
       body: JSON.stringify({ action: 'deleteImage', uploadKey: GAS_UPLOAD_KEY, payload: { url } })
     });
   } catch (e) { /* ลบรูปไม่สำเร็จไม่ควรทำให้งานหลักล้ม */ }
+}
+
+// ==================== POST DISPATCHER ====================
+const ADMIN_ACTIONS = [
+  'addAsset', 'updateAsset', 'deleteAsset', 'borrowAsset', 'returnAsset', 'updateBorrow', 'deleteBorrow', 'renewBorrow',
+  'approveBorrowRequest', 'rejectBorrowRequest', 'addMaint', 'updateMaint', 'addUser', 'updateUserRole',
+  'deleteUser', 'addComponent', 'updateComponent', 'deleteComponent', 'deleteMemo', 'updateSystemSettings',
+  'saveAuditRecord', 'migrateImagesToDrive', 'changeRolePassword', 'saveMonthlyCheck', 'clearMonthlyCheck',
+  'scanOrphanImages', 'trashOrphanImages',
+  'restoreItem', 'purgeItem' // เพิ่มใหม่: ถังขยะ ทำได้เฉพาะแอดมิน
+];
+const AUTH_ACTIONS = ['requestBorrow', 'addMemo', 'updateMemo', 'uploadImage', 'deleteMaint'];
+
+async function supaApiPost(action, payload, role, actorName) {
+  role = role || 'guest';
+  payload = payload || {};
+  if (ADMIN_ACTIONS.indexOf(action) !== -1 && role !== 'admin') throw new Error('ไม่มีสิทธิ์ทำรายการนี้ (ต้องเป็นแอดมิน)');
+  if (AUTH_ACTIONS.indexOf(action) !== -1 && role === 'guest') throw new Error('กรุณาเข้าสู่ระบบก่อนทำรายการนี้');
+  actorName = actorName || (role === 'admin' ? 'แอดมิน' : (role === 'viewer' ? 'ผู้ดูอย่างเดียว' : 'ไม่ทราบผู้ใช้'));
+
+  switch (action) {
+    case 'uploadImage': return await gasUploadImageToDrive(payload.dataUrl, payload.fileName);
+    case 'addAsset': return await sAddAsset(payload, actorName);
+    case 'updateAsset': return await sUpdateAsset(payload, actorName);
+    case 'deleteAsset': return await sDeleteAsset(payload.id, actorName, role);
+    case 'borrowAsset': return await sBorrowAsset(payload, actorName, true);
+    case 'requestBorrow': return await sBorrowAsset(payload, actorName, false);
+    case 'approveBorrowRequest': return await sApproveBorrow(payload, actorName);
+    case 'rejectBorrowRequest': return await sRejectBorrow(payload, actorName);
+    case 'returnAsset': return await sReturnAsset(payload, actorName);
+    case 'updateBorrow': return await sUpdateBorrow(payload, actorName);
+    case 'deleteBorrow': return await sDeleteBorrow(payload, actorName, role);
+    case 'renewBorrow': return await sRenewBorrow(payload, actorName);
+    case 'addMaint': return await sAddMaint(payload, actorName);
+    case 'updateMaint': return await sUpdateMaint(payload, actorName);
+    case 'deleteMaint': return await sDeleteMaint(payload, actorName, role);
+    case 'addComponent': return await sAddComponent(payload, actorName);
+    case 'updateComponent': return await sUpdateComponent(payload, actorName);
+    case 'deleteComponent': return await sDeleteComponent(payload.id, actorName, role);
+    case 'addUser': return await sAddUser(payload, actorName);
+    case 'updateUserRole': return await sUpdateUserRole(payload, actorName);
+    case 'deleteUser': return await sDeleteUser(payload, actorName, role);
+    case 'addMemo': return await sAddMemo(payload, actorName);
+    case 'updateMemo': return await sUpdateMemo(payload, actorName);
+    case 'deleteMemo': return await sDeleteMemo(payload.id, actorName, role);
+    case 'updateSystemSettings': return await sUpdateSystemSettings(payload, actorName);
+    case 'saveAuditRecord': return await sSaveAuditRecord(payload, actorName);
+    case 'migrateImagesToDrive': return await sMigrateImagesToDrive(actorName);
+    case 'changeRolePassword': return await sChangeRolePassword(payload);
+    case 'saveMonthlyCheck': return await sSaveMonthlyCheck(payload, actorName);
+    case 'clearMonthlyCheck': return await sClearMonthlyCheck(payload, actorName);
+    case 'scanOrphanImages': return await sScanOrphanImages();
+    case 'trashOrphanImages': return await sTrashOrphanImages(payload, actorName);
+    case 'restoreItem': return await restoreSb(payload.sheet, payload.id, actorName, role);
+    case 'purgeItem': return await purgeWithImagesSb(payload.sheet, payload.id, actorName, role);
+    default: throw new Error('ไม่รู้จัก action: ' + action);
+  }
 }
