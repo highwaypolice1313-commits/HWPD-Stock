@@ -6993,24 +6993,25 @@ function committeeOrdered() {
 
 /* ---------- บล็อกลายเซ็นหนึ่งคน ----------
    ชื่อ/บทบาท/ตำแหน่งใช้สองคอลัมน์ (colspan) และตัดบรรทัดได้ ไม่ดันทะลุขอบกระดาษ */
-function committeeOneBlock(m, sigW, fs, sigUrl, sigH, tblWidth) {
+function committeeOneBlock(m, sigW, fs, sigUrl, sigH, blockW) {
   const rank = toThaiNumber(escapeHtml(m.rank)) || '........';
   const name = toThaiNumber(escapeHtml(m.name)) || '..........................';
   const position = toThaiNumber(escapeHtml(m.position)) || '&nbsp;';
   const role = toThaiNumber(escapeHtml(m.role));
-  const sigCell = sigUrl
-    ? `<img src="${escapeHtml(sigUrl)}" alt="" style="display:block; width:${sigW}; height:${sigH}; object-fit:contain; margin:0 auto;">`
-    : '&nbsp;';
-  return `<table style="${tblWidth}; margin:0 auto; border-collapse:collapse; font-size:${fs}; color:#000; break-inside:avoid; page-break-inside:avoid;">
-    <tr>
-      <td style="white-space:nowrap; text-align:right; vertical-align:bottom; padding:0 1.5mm 0 0;">ลงชื่อ ${rank}</td>
-      <td style="width:${sigW}; height:${sigH}; border-bottom:1px dotted #000; padding:0; text-align:center; vertical-align:bottom;">${sigCell}</td>
-    </tr>
-    <tr><td colspan="2" style="text-align:center; padding-top:1mm;">( ${name} )</td></tr>
-    <tr><td colspan="2" style="text-align:center;">เป็น${role}</td></tr>
-    <tr><td colspan="2" style="text-align:center;">${position}</td></tr>
-  </table>`;
+  const img = sigUrl
+    ? `<img src="${escapeHtml(sigUrl)}" alt="" style="position:absolute; left:0; bottom:0; width:100%; height:100%; object-fit:contain;">`
+    : '';
+  return `<div style="width:${blockW}; margin:0 auto; font-size:${fs}; line-height:1.35; color:#000; text-align:center; break-inside:avoid; page-break-inside:avoid;">
+    <div style="display:flex; align-items:flex-end; justify-content:center; gap:1.5mm;">
+      <span style="white-space:nowrap;">ลงชื่อ ${rank}</span>
+      <span style="position:relative; display:inline-block; width:${sigW}; height:${sigH}; border-bottom:1px dotted #000;">${img}</span>
+    </div>
+    <div style="margin-top:1mm;">( ${name} )</div>
+    <div>เป็น${role}</div>
+    <div>${position}</div>
+  </div>`;
 }
+ 
    
 /* ---- หน่วยนับตามหมวดหมู่ครุภัณฑ์ (ใช้ในเอกสารบันทึกข้อความ) ---- */
 // ค่าเริ่มต้น — TODO: แก้หน่วยนับเริ่มต้นตรงนี้ได้ตามต้องการ หรือไปแก้ที่หน้า "ตั้งค่าระบบ" ก็ได้
@@ -7197,6 +7198,7 @@ async function printWithSign(printFn) {
 
  
 /* ---------- ส่วนลายเซ็นท้ายรายงาน ---------- */
+ 
 function committeeSignBlockHtml(compact) {
   const list = committeeOrdered().map(x => x.m);
   if (!list.length) return '';
@@ -7215,22 +7217,22 @@ function committeeSignBlockHtml(compact) {
     else mems.push(item);
   });
  
-  const fullBlock = item => `<div style="margin-top:${S.gap};">${committeeOneBlock(item.m, S.headSig, S.headFs, item.sig, S.sigH, 'width:110mm')}</div>`;
+  const fullBlock = item =>
+    `<div style="margin-top:${S.gap};">${committeeOneBlock(item.m, S.headSig, S.headFs, item.sig, S.sigH, '110mm')}</div>`;
  
-  // กรรมการ: จัดเป็นแถวละ 2 คน ตารางคงที่ ไม่ล้นคอลัมน์
+  // กรรมการ: แถวละ 2 คน ใช้ตารางคงที่ 50/50 และให้แต่ละช่องกว้างเต็มช่อง
   let memHtml = '';
   for (let i = 0; i < mems.length; i += 2) {
     const a = mems[i], b = mems[i + 1];
     memHtml += `<tr style="break-inside:avoid; page-break-inside:avoid;">
-      <td style="padding:${S.cellPad}; width:50%; vertical-align:top;">${committeeOneBlock(a.m, S.memSig, S.memFs, a.sig, S.sigH, 'width:100%')}</td>
-      <td style="padding:${S.cellPad}; width:50%; vertical-align:top;">${b ? committeeOneBlock(b.m, S.memSig, S.memFs, b.sig, S.sigH, 'width:100%') : ''}</td>
+      <td style="padding:${S.cellPad}; width:50%; vertical-align:top;">${committeeOneBlock(a.m, S.memSig, S.memFs, a.sig, S.sigH, '100%')}</td>
+      <td style="padding:${S.cellPad}; width:50%; vertical-align:top;">${b ? committeeOneBlock(b.m, S.memSig, S.memFs, b.sig, S.sigH, '100%') : ''}</td>
     </tr>`;
   }
   const memTable = mems.length
     ? `<table style="width:100%; border-collapse:collapse; margin-top:${S.gap}; table-layout:fixed;">${memHtml}</table>`
     : '';
  
-  // ครอบทั้งส่วนไว้ไม่ให้ขาดกลางหน้ากระดาษ (ถ้าเกินหน้าเดียวจริง เบราว์เซอร์จะตัดให้เอง)
   return `<div style="break-inside:avoid; page-break-inside:avoid;">
     ${heads.map(fullBlock).join('')}
     ${memTable}
