@@ -8308,14 +8308,20 @@ function assetWarnHtml(a) {
 }
 
 /* กรองตามหมวดหมู่ + สถานะ + คำค้น แล้วเรียงลำดับ */
+function assetSearchText(a) {
+  return [
+    a['ชื่อครุภัณฑ์'], a['รหัสครุภัณฑ์'], a['หมายเลขเครื่อง'], a['ทะเบียนรถ'],
+    a['หมายเลขตัวถัง'], a['หมายเลขเครื่องยนต์'], a['ยี่ห้อ/รุ่น'], a['หมวดหมู่'],
+    a['สถานะ'], a['ผู้ครอบครอง/หน่วยงาน'], a['หน่วยงาน'], a['หมายเหตุ']
+  ].join(' | ');
+}
+
 function assetFiltered() {
-  const q = (state.assetSearch || '').trim().toLowerCase();
+  const terms = srchTerms(state.assetSearch);
   const list = state.assets.filter(a => {
     if (state.assetFilter !== 'all' && a['หมวดหมู่'] !== state.assetFilter) return false;
     if (state.assetStatusFilter !== 'all' && a['สถานะ'] !== state.assetStatusFilter) return false;
-    if (!q) return true;
-   return [m['เรื่อง'], m['ผู้ขอเบิก'], memoDocNo(m), m['รหัสใบเบิก']]
-  .map(x => String(x || '').toLowerCase()).join(' | ').includes(q);
+    return srchMatch(assetSearchText(a), terms);
   });
   return sortAssets(list);
 }
@@ -8359,15 +8365,18 @@ function drawAssetList() {
   const all = assetFiltered();
   const limit = state.assetLimit || ASSET_STEP;
   const shown = all.slice(0, limit);
+  const hasSearch = srchTerms(state.assetSearch).length > 0;
 
   const cnt = document.getElementById('assetCount');
-  if (cnt) cnt.textContent = 'พบ ' + all.length + ' รายการ';
+  if (cnt) cnt.innerHTML = 'พบ ' + all.length + ' รายการ' +
+    (hasSearch ? ' <span style="color:var(--gold-deep);">· ค้นหา "' + escapeHtml(state.assetSearch.trim()) + '"</span>' : '');
 
-  // รายการ = แถวเรียงต่อกัน / การ์ด = กริดการ์ด
   listEl.className = isGrid ? 'asset-grid' : '';
   listEl.innerHTML = shown.length
     ? shown.map(isGrid ? assetCardHtml : assetRowHtml).join('')
-    : `<div class="glass empty-state">ไม่พบครุภัณฑ์ที่ค้นหา</div>`;
+    : `<div class="glass empty-state">${hasSearch
+        ? 'ไม่พบครุภัณฑ์ที่ตรงกับ "' + escapeHtml(state.assetSearch.trim()) + '"'
+        : 'ไม่พบครุภัณฑ์ตามตัวกรองที่เลือก'}</div>`;
 
   const moreEl = document.getElementById('assetMoreWrap');
   if (moreEl) {
@@ -8378,7 +8387,7 @@ function drawAssetList() {
   }
 
   listEl.querySelectorAll('.asset-item').forEach(it => it.onclick = () => openAssetDetail(it.dataset.id));
-   if (!isGrid) wireSwipeRows(listEl);
+  if (!isGrid) wireSwipeRows(listEl);
 }
 
 /* ========== ปัดแถวครุภัณฑ์: ปัดซ้ายเพื่อเลือกคำสั่ง ========== */
@@ -8627,19 +8636,87 @@ function openAssetFilterSheet() {
   };
 }
 
+/* =========================================================
+   ตัวช่วยค้นหากลาง: ใช้ร่วมกันทั้งทะเบียนครุภัณฑ์และยืม-คืน
+   - รองรับหลายคำ (ทุกคำต้องเจอ) / เลขไทย-อารบิก / ไม่สนตัวพิมพ์
+   ========================================================= */
+function srchTerms(q) {
+  return thaiToArabic(String(q == null ? '' : q)).toLowerCase().trim().split(/\s+/).filter(Boolean);
+}
+function srchMatch(text, terms) {
+  if (!terms.length) return true;
+  const hay = thaiToArabic(String(text || '')).toLowerCase();
+  return terms.every(t => hay.includes(t));
+}
+
+let srchStyleInjected = false;
+function ensureSrchStyles() {
+  if (srchStyleInjected || document.getElementById('srch-style')) { srchStyleInjected = true; return; }
+  const st = document.createElement('style');
+  st.id = 'srch-style';
+  st.textContent = `
+    .srch-box{position:relative;display:flex;align-items:center;flex:1 1 220px;min-width:0;}
+    .srch-box > svg{position:absolute;left:16px;width:18px;height:18px;color:var(--ink-faint);pointer-events:none;}
+    .srch-box .input{height:46px;padding:0 44px 0 46px;border-radius:99px;background:var(--panel);box-shadow:var(--shadow-sm);}
+    .srch-box input::-webkit-search-cancel-button{-webkit-appearance:none;display:none;}
+    .srch-clear{position:absolute;right:8px;width:30px;height:30px;border-radius:50%;border:0;padding:0;
+      background:var(--off-wash);color:var(--ink-dim);display:none;align-items:center;justify-content:center;cursor:pointer;}
+    .srch-clear svg{width:14px;height:14px;}
+    .srch-box.has-val .srch-clear{display:flex;}
+    .srch-count{font-size:12px;color:var(--ink-dim);margin:0 4px 10px;}
+  `;
+  document.head.appendChild(st);
+  srchStyleInjected = true;
+}
+
+function srchBoxHtml(id, value, placeholder) {
+  return `<div class="srch-box">
+    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="9" cy="9" r="5.8" stroke="currentColor" stroke-width="1.6"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    <input class="input" id="${id}" type="text" autocomplete="off" enterkeyhint="search"
+           placeholder="${escapeHtml(placeholder)}" value="${escapeHtml(value || '')}">
+    <button type="button" class="srch-clear" aria-label="ล้างการค้นหา">${ICONS.close}</button>
+  </div>`;
+}
+
+/* ผูก event ให้ช่องค้นหา: พิมพ์แล้วหน่วง 150ms, ปุ่ม ✕ และปุ่ม Esc ล้างคำค้น */
+function srchBoxWire(id, onChange) {
+  const input = document.getElementById(id);
+  const wrap = input && input.closest('.srch-box');
+  if (!input || !wrap) return;
+  const clr = wrap.querySelector('.srch-clear');
+  const sync = () => wrap.classList.toggle('has-val', !!input.value);
+  const run = debounce(() => onChange(input.value), 150);
+
+  input.oninput = () => { sync(); run(); };
+  input.onkeydown = e => {
+    if (e.key === 'Escape' && input.value) {
+      e.preventDefault();
+      input.value = '';
+      sync();
+      onChange('');
+    }
+  };
+  clr.onclick = () => {
+    input.value = '';
+    sync();
+    onChange('');
+    input.focus();
+  };
+  sync();
+}   
+
 function renderAssets() {
   const el = document.getElementById('view-assets');
+  ensureSrchStyles();
   if (!state.assetLimit) state.assetLimit = ASSET_STEP;
   if (state.assetView === undefined) state.assetView = getAssetView();
   const isGrid = state.assetView === 'grid';
 
-  // ปุ่มหมวดหมู่ใหญ่ — นับจำนวนตามสถานะที่กรองอยู่ เพื่อให้ตัวเลขตรงกับผลลัพธ์
   const baseList = state.assets.filter(a => state.assetStatusFilter === 'all' || a['สถานะ'] === state.assetStatusFilter);
   const catPills = [{ v: 'all', label: 'ทั้งหมด', n: baseList.length, icon: ICONS.other }]
     .concat(getCategories().map(c => ({ v: c, label: c, n: baseList.filter(a => a['หมวดหมู่'] === c).length, icon: catIcon(c) })))
-    .filter(p => p.v === 'all' || p.n > 0 || p.v === state.assetFilter); // ซ่อนหมวดที่ว่าง (ยกเว้นหมวดที่เลือกอยู่)
+    .filter(p => p.v === 'all' || p.n > 0 || p.v === state.assetFilter);
 
-  // ป้ายตัวเลขบนปุ่มตัวกรอง: นับเฉพาะสถานะ/การเรียง (หมวดหมู่เห็นจากปุ่มบนหน้าอยู่แล้ว)
   const activeFilters = (state.assetStatusFilter !== 'all' ? 1 : 0) + (state.assetSort !== 'name_asc' ? 1 : 0);
 
   el.innerHTML = `
@@ -8656,10 +8733,7 @@ function renderAssets() {
     </div>
 
     <div class="ax-top">
-      <div class="ax-search">
-        <svg viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.8" stroke="currentColor" stroke-width="1.6"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-        <input class="input" id="assetSearchInput" placeholder="ค้นหาชื่อ / หมายเลขเครื่อง / ทะเบียน" value="${escapeHtml(state.assetSearch)}" autocomplete="off">
-      </div>
+      ${srchBoxHtml('assetSearchInput', state.assetSearch, 'ค้นหาชื่อ / รหัส / S/N / ทะเบียน / ยี่ห้อ')}
       <button class="ax-round" id="btnAssetFilter" title="ตัวกรอง" aria-label="ตัวกรอง">
         <svg viewBox="0 0 20 20" fill="none"><path d="M3 5h14M6 10h8M9 15h2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
         ${activeFilters ? `<span class="ax-badge">${activeFilters}</span>` : ''}
@@ -8675,18 +8749,23 @@ function renderAssets() {
     <div id="assetMoreWrap"></div>
   `;
 
-  document.getElementById('assetSearchInput').oninput = (e) => {
-    state.assetSearch = e.target.value; state.assetLimit = ASSET_STEP; drawAssetList();
-  };
+  srchBoxWire('assetSearchInput', v => {
+    state.assetSearch = v;
+    state.assetLimit = ASSET_STEP;
+    drawAssetList();
+  });
+
   document.getElementById('btnAssetFilter').onclick = openAssetFilterSheet;
   document.getElementById('btnScanQr').onclick = openScannerSheet;
   document.getElementById('btnPrintQrBatch').onclick = () => printQrBatch(assetFiltered());
   document.getElementById('btnViewList').onclick = () => { state.assetView = 'list'; setAssetView('list'); renderAssets(); };
   document.getElementById('btnViewGrid').onclick = () => { state.assetView = 'grid'; setAssetView('grid'); renderAssets(); };
-  // กดปุ่มหมวดหมู่ -> กรองทันที
   el.querySelectorAll('.ax-pill').forEach(p => p.onclick = () => {
-    state.assetFilter = p.dataset.cat; state.assetLimit = ASSET_STEP; renderAssets();
+    state.assetFilter = p.dataset.cat;
+    state.assetLimit = ASSET_STEP;
+    renderAssets();
   });
+
   drawAssetList();
   requestAnimationFrame(() => applyPremiumMotion(el));
 }
@@ -9955,102 +10034,164 @@ function borrowCategoryOf(b) {
   return a ? (a['หมวดหมู่'] || 'อื่นๆ') : 'อื่นๆ';
 }
    
+function borrowBuckets() {
+  const all = state.borrow || [];
+  return {
+    pending: all.filter(b => b['สถานะ'] === 'รออนุมัติ'),
+    active: all.filter(b => b['สถานะ'] !== 'คืนแล้ว' && b['สถานะ'] !== 'รออนุมัติ' && b['สถานะ'] !== 'ถูกปฏิเสธ'),
+    history: all.filter(b => b['สถานะ'] === 'คืนแล้ว' || b['สถานะ'] === 'ถูกปฏิเสธ')
+  };
+}
+
+function borrowSearchText(b) {
+  const a = state.assets.find(x => x['รหัสครุภัณฑ์'] === b['รหัสครุภัณฑ์']) || {};
+  return [
+    b['ผู้ยืม'], b['ชื่อครุภัณฑ์'], b['รหัสครุภัณฑ์'],
+    a['หมายเลขเครื่อง'], a['ทะเบียนรถ'], a['หมวดหมู่'],
+    b['ผู้อนุมัติ'], b['หมายเหตุ'], b['สถานะ'], effectiveBorrowStatus(b),
+    isoDate(b['วันที่ยืม']), isoDate(b['กำหนดคืน']),
+    thaiDate(b['วันที่ยืม']), thaiDate(b['กำหนดคืน'])
+  ].join(' | ');
+}
+
+function sortBorrowList(list) {
+  const [sField, sDir] = state.borrowSort.split('_');
+  const sMul = sDir === 'desc' ? -1 : 1;
+  return [...list].sort((a, b) => {
+    if (sField === 'due') return sMul * (toDate(a['กำหนดคืน'] || 0) - toDate(b['กำหนดคืน'] || 0));
+    if (sField === 'name') return sMul * String(a['ผู้ยืม'] || '').localeCompare(String(b['ผู้ยืม'] || ''), 'th');
+    return 0;
+  });
+}
+
+/* รายการที่แสดงจริง = ตามแท็บ + หมวดหมู่ + คำค้น + การเรียง */
+function borrowVisibleList() {
+  const base = borrowBuckets()[state.borrowTab] || [];
+  const terms = srchTerms(state.borrowSearch);
+  const list = base
+    .filter(b => state.borrowCat === 'all' || borrowCategoryOf(b) === state.borrowCat)
+    .filter(b => srchMatch(borrowSearchText(b), terms));
+  return { base, list: sortBorrowList(list), terms };
+}
+
+function drawBorrowList() {
+  const listEl = document.getElementById('borrowList');
+  if (!listEl) return;
+  const { base, list, terms } = borrowVisibleList();
+  const isGrid = state.borrowView === 'grid';
+
+  const cnt = document.getElementById('borrowCount');
+  if (cnt) cnt.innerHTML = 'แสดง ' + list.length + ' จาก ' + base.length + ' รายการ' +
+    (terms.length ? ' <span style="color:var(--gold-deep);">· ค้นหา "' + escapeHtml(state.borrowSearch.trim()) + '"</span>' : '');
+
+  const emptyMsg = terms.length
+    ? 'ไม่พบรายการที่ตรงกับ "' + escapeHtml(state.borrowSearch.trim()) + '"'
+    : (state.borrowTab === 'pending' ? 'ไม่มีคำขอรออนุมัติ'
+      : state.borrowTab === 'active' ? 'ไม่มีรายการค้างคืน' : 'ยังไม่มีประวัติ');
+
+  listEl.className = isGrid ? 'asset-grid' : '';
+  listEl.innerHTML = list.length
+    ? list.map(isGrid ? borrowCard : borrowRow).join('')
+    : (terms.length ? `<div class="glass empty-state">${emptyMsg}</div>` : emptyState(emptyMsg));
+
+  listEl.querySelectorAll('.borrow-item').forEach(it => it.onclick = () => openBorrowDetail(it.dataset.id));
+  if (isAdmin() && !isGrid) wireSwipeRows(listEl, BORROW_SWIPE);
+}
+
 function renderBorrow() {
   const el = document.getElementById('view-borrow');
+  ensureSrchStyles();
   if (state.borrowTab === undefined) state.borrowTab = 'active';
   if (state.borrowSearch === undefined) state.borrowSearch = '';
   if (state.borrowSort === undefined) state.borrowSort = 'due_asc';
   if (state.borrowCat === undefined) state.borrowCat = 'all';
   if (state.borrowView === undefined) state.borrowView = getViewMode('borrow');
-
-  const pending = state.borrow.filter(b => b['สถานะ'] === 'รออนุมัติ');
-  const active = state.borrow.filter(b => b['สถานะ'] !== 'คืนแล้ว' && b['สถานะ'] !== 'รออนุมัติ' && b['สถานะ'] !== 'ถูกปฏิเสธ');
-  const history = state.borrow.filter(b => b['สถานะ'] === 'คืนแล้ว' || b['สถานะ'] === 'ถูกปฏิเสธ');
-  const overdueCount = active.filter(b => effectiveBorrowStatus(b) === 'เกินกำหนด').length;
-
   if (state.borrowTab === 'pending' && !isAdmin()) state.borrowTab = 'active';
 
+  const bk = borrowBuckets();
+  const overdueCount = bk.active.filter(b => effectiveBorrowStatus(b) === 'เกินกำหนด').length;
+
   const TABS = [
-    { id: 'pending', label: 'รออนุมัติ', count: pending.length, show: isAdmin() },
-    { id: 'active',  label: 'ค้างคืน',   count: active.length,  show: true },
-    { id: 'history', label: 'ประวัติ',   count: history.length, show: true }
+    { id: 'pending', label: 'รออนุมัติ', count: bk.pending.length, show: isAdmin() },
+    { id: 'active',  label: 'ค้างคืน',   count: bk.active.length,  show: true },
+    { id: 'history', label: 'ประวัติ',   count: bk.history.length, show: true }
   ].filter(t => t.show);
 
-  let list = { pending, active, history }[state.borrowTab] || [];
-  const q = state.borrowSearch.toLowerCase();
-  if (q) list = list.filter(b => String(b['ผู้ยืม']||'').toLowerCase().includes(q) || String(b['ชื่อครุภัณฑ์']||'').toLowerCase().includes(q));
-  if (state.borrowCat !== 'all') list = list.filter(b => borrowCategoryOf(b) === state.borrowCat);
-   
-  const [sField, sDir] = state.borrowSort.split('_');
-  const sMul = sDir === 'desc' ? -1 : 1;
-  list = [...list].sort((a, b) => {
-    if (sField === 'due') return sMul * (toDate(a['กำหนดคืน']||0) - toDate(b['กำหนดคืน']||0));
-    if (sField === 'name') return sMul * String(a['ผู้ยืม']||'').localeCompare(String(b['ผู้ยืม']||''), 'th');
-    return 0;
-  });
-
-  const baseForCat = { pending, active, history }[state.borrowTab] || [];
+  // หมวดหมู่ของแท็บที่เลือก (นับจากทั้งแท็บ ไม่รวมคำค้น)
+  const baseForCat = bk[state.borrowTab] || [];
   const catCounts = {};
   baseForCat.forEach(b => { const c = borrowCategoryOf(b); catCounts[c] = (catCounts[c] || 0) + 1; });
   const catOrder = Array.from(new Set(getCategories().concat(['อื่นๆ'])));
-   const catPills = [{ v: 'all', label: 'ทั้งหมด', n: baseForCat.length, icon: ICONS.other }]
-    .concat(catOrder
-      .filter(c => catCounts[c])
-      .map(c => ({ v: c, label: c, n: catCounts[c], icon: catIcon(c) })));
+  const catPills = [{ v: 'all', label: 'ทั้งหมด', n: baseForCat.length, icon: ICONS.other }]
+    .concat(catOrder.filter(c => catCounts[c]).map(c => ({ v: c, label: c, n: catCounts[c], icon: catIcon(c) })));
 
   const isGrid = state.borrowView === 'grid';
 
   el.innerHTML = `
     <div class="section-title">
-      รายการยืม-คืน <small>${active.length} รายการค้างคืน${overdueCount ? ' · เกินกำหนด ' + overdueCount : ''}</small>
+      รายการยืม-คืน <small>${bk.active.length} รายการค้างคืน${overdueCount ? ' · เกินกำหนด ' + overdueCount : ''}</small>
       <span class="section-actions">
         ${viewToggleHtml('borrow', state.borrowView)}
         <button class="icon-btn" id="btnPrintAllBorrow" title="พิมพ์รายการยืม-คืนทั้งหมด" aria-label="พิมพ์รายการยืม-คืนทั้งหมด">${ICONS.print}</button>
-        <button class="icon-btn" id="btnExportBorrow" title="ส่งออก CSV">${ICONS.download}</button>
+        <button class="icon-btn" id="btnExportBorrow" title="ส่งออก CSV" aria-label="ส่งออก CSV">${ICONS.download}</button>
       </span>
     </div>
+
     <div class="stat-grid" style="margin-bottom:14px;">
-      <div class="stat-card warn"><div class="stat-num">${pending.length}</div><div class="stat-label">รออนุมัติ</div></div>
-      <div class="stat-card ok"><div class="stat-num">${active.length}</div><div class="stat-label">ค้างคืน</div></div>
+      <div class="stat-card warn"><div class="stat-num">${bk.pending.length}</div><div class="stat-label">รออนุมัติ</div></div>
+      <div class="stat-card ok"><div class="stat-num">${bk.active.length}</div><div class="stat-label">ค้างคืน</div></div>
       <div class="stat-card bad"><div class="stat-num">${overdueCount}</div><div class="stat-label">เกินกำหนด</div></div>
     </div>
-    <div class="search-row">
-    <div class="ax-pills">
-            ${catPills.map(p => `<div class="ax-pill ${state.borrowCat === p.v ? 'active' : ''}" data-bcat="${escapeHtml(p.v)}">${p.icon}${escapeHtml(p.label)} <b>${p.n}</b></div>`).join('')}
-    </div> 
-      <input class="input" id="borrowSearchInput" placeholder="ค้นหาชื่อผู้ยืมหรือครุภัณฑ์..." value="${escapeHtml(state.borrowSearch)}">
-      <select class="input sort-select" id="borrowSortSelect">
-        <option value="due_asc" ${state.borrowSort==='due_asc'?'selected':''}>กำหนดคืนใกล้สุด</option>
-        <option value="due_desc" ${state.borrowSort==='due_desc'?'selected':''}>กำหนดคืนไกลสุด</option>
-        <option value="name_asc" ${state.borrowSort==='name_asc'?'selected':''}>ชื่อผู้ยืม ก-ฮ</option>
+
+    <div class="ax-top">
+      ${srchBoxHtml('borrowSearchInput', state.borrowSearch, 'ค้นหาผู้ยืม / ครุภัณฑ์ / S/N / ทะเบียน / วันที่')}
+      <select class="input sort-select" id="borrowSortSelect" style="flex:0 1 190px; min-width:150px; height:46px; border-radius:99px;">
+        <option value="due_asc" ${state.borrowSort === 'due_asc' ? 'selected' : ''}>กำหนดคืนใกล้สุด</option>
+        <option value="due_desc" ${state.borrowSort === 'due_desc' ? 'selected' : ''}>กำหนดคืนไกลสุด</option>
+        <option value="name_asc" ${state.borrowSort === 'name_asc' ? 'selected' : ''}>ชื่อผู้ยืม ก-ฮ</option>
       </select>
     </div>
-    <div class="chip-row">
-      ${TABS.map(t => `<div class="chip ${state.borrowTab===t.id?'active':''}" data-btab="${t.id}">${t.label} (${t.count})</div>`).join('')}
+
+    <div class="ax-pills">
+      ${catPills.map(p => `<div class="ax-pill ${state.borrowCat === p.v ? 'active' : ''}" data-bcat="${escapeHtml(p.v)}">${p.icon}${escapeHtml(p.label)} <b>${p.n}</b></div>`).join('')}
     </div>
-    <div id="borrowList" class="${isGrid ? 'asset-grid' : ''}">${list.length ? list.map(isGrid ? borrowCard : borrowRow).join('') : emptyState(
-      state.borrowTab==='pending' ? 'ไม่มีคำขอรออนุมัติ' :
-      state.borrowTab==='active'  ? 'ไม่มีรายการค้างคืน' : 'ยังไม่มีประวัติ'
-    )}</div>
+
+    <div class="chip-row">
+      ${TABS.map(t => `<div class="chip ${state.borrowTab === t.id ? 'active' : ''}" data-btab="${t.id}">${t.label} (${t.count})</div>`).join('')}
+    </div>
+
+    <div class="ax-count" id="borrowCount"></div>
+    <div id="borrowList"></div>
   `;
-  document.querySelectorAll('.borrow-item').forEach(it => it.onclick = () => openBorrowDetail(it.dataset.id));
-  document.getElementById('btnExportBorrow').onclick = () => exportCsv('ยืมคืน.csv', ['รหัสรายการ','รหัสครุภัณฑ์','ชื่อครุภัณฑ์','ผู้ยืม','วันที่ยืม','กำหนดคืน','วันที่คืนจริง','สถานะ','ผู้อนุมัติ','หมายเหตุ'], state.borrow);
+
+  document.getElementById('btnExportBorrow').onclick = () => exportCsv('ยืมคืน.csv',
+    ['รหัสรายการ','รหัสครุภัณฑ์','ชื่อครุภัณฑ์','ผู้ยืม','วันที่ยืม','กำหนดคืน','วันที่คืนจริง','สถานะ','ผู้อนุมัติ','หมายเหตุ'], state.borrow);
   document.getElementById('btnPrintAllBorrow').onclick = printAllBorrow;
-  document.querySelectorAll('[data-btab]').forEach(c => c.onclick = () => { state.borrowTab = c.dataset.btab; state.borrowCat = 'all'; renderBorrow(); });
-  document.querySelectorAll('[data-bcat]').forEach(p => p.onclick = () => { state.borrowCat = p.dataset.bcat; renderBorrow(); });
-  const searchInput = document.getElementById('borrowSearchInput');
-  searchInput.oninput = (e) => {
-    state.borrowSearch = e.target.value;
-    const pos = e.target.selectionStart;
+
+  el.querySelectorAll('[data-btab]').forEach(c => c.onclick = () => {
+    state.borrowTab = c.dataset.btab;
+    state.borrowCat = 'all';
     renderBorrow();
-    const again = document.getElementById('borrowSearchInput');
-    if (again) { again.focus(); try { again.setSelectionRange(pos, pos); } catch (err) {} }
+  });
+  el.querySelectorAll('[data-bcat]').forEach(p => p.onclick = () => {
+    state.borrowCat = p.dataset.bcat;
+    renderBorrow();
+  });
+
+  srchBoxWire('borrowSearchInput', v => {
+    state.borrowSearch = v;
+    drawBorrowList();
+  });
+  document.getElementById('borrowSortSelect').onchange = e => {
+    state.borrowSort = e.target.value;
+    drawBorrowList();
   };
-  document.getElementById('borrowSortSelect').onchange = (e) => { state.borrowSort = e.target.value; renderBorrow(); };
+
   wireViewToggle(renderBorrow, '#view-borrow', 'borrowView');
-  if (isAdmin() && !isGrid) wireSwipeRows(document.getElementById('borrowList'), BORROW_SWIPE);
+  drawBorrowList();
   requestAnimationFrame(() => applyPremiumMotion(el));
 }
+   
 function borrowCard(b) {
   const eff = effectiveBorrowStatus(b);
   const info = borrowDaysInfo(b);
