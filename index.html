@@ -7935,7 +7935,7 @@ layoutNav();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
   const fab = document.getElementById('fabBtn');
-  fab.style.display = (['assets','borrow','maint','memos'].includes(name) && (isAdmin() || name === 'borrow')) ? 'flex' : 'none';
+  fab.style.display = (['assets','borrow','maint','memos','users'].includes(name) && (isAdmin() || name === 'borrow')) ? 'flex' : 'none';
   fab.onclick = () => {
     if (name === 'assets' && isAdmin()) openAssetForm();
     if (name === 'borrow') openBorrowForm();
@@ -11522,7 +11522,6 @@ function drawUsers() {
       <span class="section-actions">
         ${viewToggleHtml('users', state.usersView)}
         <button class="icon-btn" id="btnPrintAllUsers" title="พิมพ์รายชื่อทั้งหมด" aria-label="พิมพ์รายชื่อทั้งหมด">${ICONS.print}</button>
-        ${isAdmin() ? `<button class="icon-btn" id="btnAddUser" title="เพิ่มรายชื่อ" aria-label="เพิ่มรายชื่อ"><svg viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>` : ''}
       </span>
     </div>
 
@@ -11538,9 +11537,14 @@ function drawUsers() {
     <div id="userList"></div>
   `;
 
-  const addUserBtn = document.getElementById('btnAddUser');
-  if (addUserBtn) addUserBtn.onclick = () => openUserForm();
   document.getElementById('btnPrintAllUsers').onclick = printAllOfficers;
+
+  // ปุ่มเพิ่ม = FAB มุมขวาล่าง เหมือนหน้าอื่น (แสดงเฉพาะแอดมิน)
+  const fab = document.getElementById('fabBtn');
+  if (fab) {
+    fab.style.display = isAdmin() ? 'flex' : 'none';
+    fab.onclick = () => { if (isAdmin()) openUserForm(); };
+  }
 
   srchBoxWire('userSearchInput', v => {
     state.userSearch = v;
