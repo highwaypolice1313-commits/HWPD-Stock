@@ -6584,6 +6584,13 @@ html, body{
   #view-dashboard .dbx-stat-num{font-size:20px}
 }
 </style>
+
+<style id="dbx-fix-2">
+#view-dashboard .dbx-mob-head{margin:4px 2px 14px}
+#view-dashboard .dbx-mob-head .dbx-date{font-size:12.5px;color:var(--ink-dim)}
+#view-dashboard .dbx-mob-head .dbx-h1{font-size:24px;margin-top:2px}
+#view-dashboard .dbx-mob .dbx-tile-ico svg{width:20px;height:20px}
+</style>
    
 </head>
    
@@ -8379,6 +8386,12 @@ function openNotifications() {
   };
 }
    
+/* ดึงไอคอนจากแถบเมนูจริง เพื่อให้ตรงกับเมนูทุกตัว */
+function dbxTabIcon(tab) {
+  const el = document.querySelector('.tabbar .tab[data-tab="' + tab + '"] .ico');
+  return el ? el.innerHTML : ICONS.box;
+}
+
 function renderDashboard() {
   const el = document.getElementById('view-dashboard');
   const d = state.dashboard;
@@ -8408,13 +8421,14 @@ function renderDashboard() {
   const wd = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'][new Date().getDay()];
   const dateLine = 'วัน' + wd + 'ที่ ' + thaiDateLong();
   const valueMil = (value / 1000000).toFixed(1);
+  const isDeskNow = window.matchMedia('(min-width:900px)').matches;
 
   const heroHtml = (desk) => `
     <div class="dbx-hero ${desk ? 'dbx-hero-d' : ''}">
       <div class="dbx-hero-row">
         <div>
           <div class="dbx-lbl">ครุภัณฑ์ทั้งหมด</div>
-          <div class="dbx-num" style="font-size:${desk ? '' : ''}">${total.toLocaleString('en-US')}<small>รายการ</small></div>
+          <div class="dbx-num">${total.toLocaleString('en-US')}<small>รายการ</small></div>
         </div>
         <div>
           <div class="dbx-lbl">มูลค่ารวม</div>
@@ -8442,16 +8456,17 @@ function renderDashboard() {
       </div>
     </div>`;
 
+  // เมนูมือถือ: ไอคอนดึงจากแถบเมนูจริง ชื่อและลำดับตรงกับเมนูจริง
   const menu = [
-    ['dashboard', 'หน้าหลัก', ICONS.home || ICONS.box, ''],
-    ['assets', 'ครุภัณฑ์', ICONS.box, ''],
-    ['borrow', 'ยืม-คืน', ICONS.swap, 'is-gold'],
-    ['users', 'จนท.ในสังกัด', ICONS.user, ''],
-    ['maint', 'ซ่อมบำรุง', ICONS.wrench, 'is-bad'],
-    ['memos', 'เอกสารใบเบิก', ICONS.log, ''],
-    ['reports', 'รายงาน', ICONS.listView, ''],
-    ...(isAdmin() ? [['audit', 'ตรวจนับประจำปี', ICONS.checklist, ''], ['monthly', 'ตรวจประจำเดือน', ICONS.calendar || ICONS.checklist, '']] : []),
-    ['settings', 'ตั้งค่า', ICONS.gear, '']
+    ['dashboard', 'หน้าหลัก', ''],
+    ['assets', 'ครุภัณฑ์', ''],
+    ['borrow', 'ยืม-คืน', 'is-gold'],
+    ['users', 'จนท.ในสังกัด', ''],
+    ['maint', 'ซ่อมบำรุง', 'is-bad'],
+    ['memos', 'เอกสารใบเบิก', ''],
+    ['reports', 'รายงาน', ''],
+    ...(isAdmin() ? [['audit', 'ตรวจนับประจำปี', ''], ['monthly', 'ตรวจประจำเดือน', '']] : []),
+    ['settings', 'ตั้งค่า', '']
   ];
 
   const reqHtml = recent.length ? recent.map(b => {
@@ -8464,7 +8479,7 @@ function renderDashboard() {
         <div class="dbx-rs">${escapeHtml(b['ผู้ยืม'] || '-')} · ${escapeHtml(eff)}</div>
       </div>
     </div>`;
-  }).join('') : '<div class="dbx-empty">ยังไม่มีรายการยืม</div>';
+  }).join('') : `<div class="dbx-empty">${borrowed > 0 ? 'มีรายการยืมอยู่ แต่ยังโหลดรายละเอียดไม่ได้ ลองกดรีเฟรช' : 'ยังไม่มีรายการยืม'}</div>`;
 
   const catHtml = cats.length ? cats.map(([k, v], i) => `
     <div class="dbx-bar">
@@ -8478,16 +8493,17 @@ function renderDashboard() {
       <span><b>${escapeHtml(a.title)}</b><small>${escapeHtml(a.sub)}</small></span>
     </button>`).join('') : '<div class="dbx-empty">ไม่มีรายการที่ต้องดำเนินการ</div>';
 
-  const trendCard = (cls) => `
-    <div class="dbx-card ${cls}">
+  // id แยกกันระหว่างเดสก์ท็อปกับมือถือ เพื่อไม่ให้ getElementById ไปเจอตัวที่ซ่อนอยู่
+  const trendCard = (id) => `
+    <div class="dbx-card">
       <div class="dbx-head"><div class="dbx-title">การยืมย้อนหลัง 6 เดือน</div><div class="dbx-sub">จำนวนรายการยืม</div></div>
-      <div class="dbx-chart"><canvas id="trendChart"></canvas></div>
+      <div class="dbx-chart"><canvas id="${id}"></canvas></div>
     </div>`;
 
   el.innerHTML = `
     <div class="dbx">
 
-      <!-- ===== เดสก์ท็อป / iPad ===== -->
+      <!-- ===== เดสก์ท็อป / iPad (≥900px) ===== -->
       <div class="dbx-desk">
         <div class="dbx-desk-head">
           <div class="dbx-date">${escapeHtml(dateLine)}</div>
@@ -8500,7 +8516,7 @@ function renderDashboard() {
         </div>
 
         <div class="dbx-row2">
-          ${trendCard('')}
+          ${trendCard('trendChartD')}
           <div class="dbx-card">
             <div class="dbx-head"><div class="dbx-title">สัดส่วนตามหมวดหมู่</div></div>
             ${catHtml}
@@ -8516,16 +8532,21 @@ function renderDashboard() {
         </div>
       </div>
 
-      <!-- ===== มือถือ ===== -->
+      <!-- ===== มือถือ (<900px) ===== -->
       <div class="dbx-mob">
+        <div class="dbx-mob-head">
+          <div class="dbx-date">${escapeHtml(dateLine)}</div>
+          <h1 class="dbx-h1">ภาพรวมระบบพัสดุ</h1>
+        </div>
+
         ${heroHtml(false)}
         ${statsHtml(false)}
 
         <div class="dbx-sec">เมนู</div>
         <div class="dbx-menu">
           ${menu.map(m => `
-            <button class="dbx-tile ${m[3]}" data-go="${m[0]}" type="button">
-              <span class="dbx-tile-ico">${m[2]}</span><span>${escapeHtml(m[1])}</span>
+            <button class="dbx-tile ${m[2]}" data-go="${m[0]}" type="button">
+              <span class="dbx-tile-ico">${dbxTabIcon(m[0])}</span><span>${escapeHtml(m[1])}</span>
             </button>`).join('')}
         </div>
 
@@ -8537,11 +8558,19 @@ function renderDashboard() {
           ${reqHtml}
         </div>
 
-        <div style="margin-top:16px;">${trendCard('')}</div>
+        <div style="margin-top:16px;">${trendCard('trendChartM')}</div>
 
         <div class="dbx-card" style="margin-top:16px;">
           <div class="dbx-head"><div class="dbx-title">ครุภัณฑ์แยกหมวด</div></div>
           ${catHtml}
+        </div>
+
+        <div class="dbx-card" style="margin-top:16px;">
+          <div class="dbx-head">
+            <div class="dbx-title">ต้องดำเนินการ</div>
+            <button class="dbx-link" data-open-notif type="button">ดูทั้งหมด</button>
+          </div>
+          <div class="dbx-acts" style="grid-template-columns:1fr;">${alertHtml}</div>
         </div>
       </div>
     </div>`;
@@ -8550,9 +8579,17 @@ function renderDashboard() {
   el.querySelectorAll('[data-alert]').forEach(b => b.onclick = () => goAlert(alerts[+b.dataset.alert]));
   el.querySelectorAll('[data-open-notif]').forEach(b => b.onclick = openNotifications);
 
-  drawLine('trendChart', d.monthTrend || {});
+  // วาดกราฟเฉพาะตัวที่แสดงอยู่
+  drawLine(isDeskNow ? 'trendChartD' : 'trendChartM', d.monthTrend || {});
   refreshNotifBadge();
 }
+
+/* เมื่อหมุนจอหรือย่อ/ขยายหน้าต่าม ให้วาดใหม่ตามขนาดที่เปลี่ยน */
+if (!window.__dbxMq) {
+  window.__dbxMq = window.matchMedia('(min-width:900px)');
+  window.__dbxMq.addEventListener('change', () => { if (state.tab === 'dashboard') renderDashboard(); });
+}
+   
 let chartRefs = {};
 function chartAxisOpts(size) {
   const tick = cssVar('--ink-dim', '#6c7b83');
