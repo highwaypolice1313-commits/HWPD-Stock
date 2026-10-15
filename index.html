@@ -11744,188 +11744,9 @@ async function renderUsers() {
   drawUsers();
 }
 
-function drawUsers() {
-  ensureSrchStyles();
-  initOfficerState();
-  const el = document.getElementById('view-users');
-  const rows = offBuildRows();
-  const f = state.offFilter;
-
-  const stats = {
-    total: rows.length,
-    off: rows.filter(r => r.rank === 'สัญญาบัตร').length,
-    pol: rows.filter(r => r.rank === 'ประทวน').length,
-    hold: rows.filter(r => r.hold.length > 0).length,
-    issue: rows.filter(r => r.issues.some(x => x.lv !== 'info')).length,
-    roled: rows.filter(r => r.role !== 'none').length
-  };
-  const countRole = v => v === 'all' ? rows.length
-    : (v === 'none' ? rows.filter(r => r.role === 'none').length : rows.filter(r => r.role === v).length);
-  const countRank = v => v === 'all' ? rows.length : rows.filter(r => r.rank === v).length;
-  const countFlag = v => {
-    if (v === 'all') return rows.length;
-    if (v === 'issue') return rows.filter(r => r.issues.some(x => x.lv !== 'info')).length;
-    if (v === 'hold') return rows.filter(r => r.hold.length > 0).length;
-    return rows.filter(r => !r.hold.length).length;
-  };
-
-  el.innerHTML = `
-    <div class="section-title">
-      รายชื่อข้าราชการตำรวจในสังกัด
-      <span class="section-actions">
-        ${viewToggleHtml('users', state.usersView)}
-        <button class="icon-btn" id="btnOffExport" title="ส่งออก CSV ตามตัวกรอง" aria-label="ส่งออก CSV">${ICONS.download}</button>
-        <button class="icon-btn" id="btnPrintAllUsers" title="พิมพ์รายชื่อตามตัวกรอง" aria-label="พิมพ์รายชื่อ">${ICONS.print}</button>
-      </span>
-    </div>
-
-    <div class="rp-kpis">
-      ${rpKpi(stats.total, 'ทั้งหมด (คน)', '')}
-      ${rpKpi(stats.off, 'สัญญาบัตร', 'info')}
-      ${rpKpi(stats.pol, 'ประทวน', '')}
-      ${rpKpi(stats.hold, 'กำลังถือพัสดุ', 'warn')}
-      ${rpKpi(stats.issue, 'ข้อมูลต้องตรวจ', stats.issue ? 'bad' : 'ok')}
-      ${rpKpi(stats.roled, 'มีบทบาทเบิก-ยืม', 'gold')}
-    </div>
-
-    <div class="ax-top">
-      ${srchBoxHtml('userSearchInput', state.userSearch, 'ค้นหายศ / ชื่อ / ตำแหน่ง / หน่วยงาน / บทบาท')}
-      <button class="ax-round" id="btnOffSelMode" title="เลือกหลายคน" aria-label="เลือกหลายคน"
-        style="${state.offSelectMode ? 'background:var(--navy);color:#fff;' : ''}">${ICONS.checklist}</button>
-    </div>
-
-    <div class="hint" style="margin:0 0 6px;">บทบาทเบิก-ยืม</div>
-    <div class="chip-row">
-      ${OFF_ROLE_CHIPS.map(([v, t]) => `<div class="chip ${f.role === v ? 'active' : ''}" data-orole="${escapeHtml(v)}">${escapeHtml(t)} (${countRole(v)})</div>`).join('')}
-    </div>
-
-    <div class="hint" style="margin:0 0 6px;">ยศ</div>
-    <div class="chip-row">
-      ${OFF_RANK_CHIPS.map(([v, t]) => `<div class="chip ${f.rank === v ? 'active' : ''}" data-orank="${escapeHtml(v)}">${escapeHtml(t)} (${countRank(v)})</div>`).join('')}
-    </div>
-
-    <div class="hint" style="margin:0 0 6px;">สถานะ</div>
-    <div class="chip-row">
-      ${OFF_FLAG_CHIPS.map(([v, t]) => `<div class="chip ${f.flag === v ? 'active' : ''}" data-oflag="${escapeHtml(v)}">${escapeHtml(t)} (${countFlag(v)})</div>`).join('')}
-    </div>
-
-    <div class="ax-top" style="margin-bottom:10px;">
-      <select class="input sort-select" id="offGroupSel" style="flex:0 0 auto;min-width:210px;">
-        ${OFF_GROUP_OPTIONS.map(([v, t]) => `<option value="${v}" ${state.offGroup === v ? 'selected' : ''}>${t}</option>`).join('')}
-      </select>
-      <span class="hint" style="margin:0;">เรียงลำดับ: ยศ → ตำแหน่ง → ชื่อ</span>
-    </div>
-
-    <div id="offBulk"></div>
-    <div class="ax-count" id="userCount"></div>
-    <div id="userList"></div>
-
-    <div class="hint" style="margin-top:12px;">"ระดับอ้างอิง" ใช้ดูเป็นข้อมูลประกอบเท่านั้น ไม่ได้ผูกกับรหัสผ่านเข้าระบบ · การปัดแถวซ้ายเพื่อแก้ไข/ลบ ใช้ได้เมื่อไม่ได้อยู่ในโหมดเลือกหลายคน</div>
-  `;
-
-  srchBoxWire('userSearchInput', v => {
-    state.userSearch = v;
-    drawUserList();
-  });
-
-  el.querySelectorAll('[data-orole]').forEach(c => c.onclick = () => { state.offFilter.role = c.dataset.orole; drawUsers(); });
-  el.querySelectorAll('[data-orank]').forEach(c => c.onclick = () => { state.offFilter.rank = c.dataset.orank; drawUsers(); });
-  el.querySelectorAll('[data-oflag]').forEach(c => c.onclick = () => { state.offFilter.flag = c.dataset.oflag; drawUsers(); });
-
-  document.getElementById('offGroupSel').onchange = e => {
-    state.offGroup = e.target.value;
-    state.offGroupClosed = new Set();
-    drawUserList();
-  };
-
-  document.getElementById('btnOffSelMode').onclick = () => {
-    state.offSelectMode = !state.offSelectMode;
-    if (!state.offSelectMode) state.offSel.clear();
-    drawUsers();
-  };
-
-  document.getElementById('btnOffExport').onclick = () => {
-    const list = offCurrentRows();
-    if (!list.length) { toast('ไม่มีรายการให้ส่งออก'); return; }
-    exportCsv('รายชื่อจนท.ในสังกัด.csv',
-      ['รหัสจนท.', 'ยศ', 'ชื่อ-สกุล', 'ตำแหน่ง', 'หน่วยงาน', 'บทบาทเบิก-ยืม', 'ระดับอ้างอิง', 'จำนวนพัสดุที่ถือ', 'พัสดุที่ถือ', 'ข้อมูลที่ต้องตรวจ', 'มีลายเซ็น', 'มีรูปถ่าย'],
-      list.map(r => ({
-        'รหัสจนท.': officerId(r.u),
-        'ยศ': r.u['ยศ'] || '',
-        'ชื่อ-สกุล': r.u['ชื่อ-สกุล'] || '',
-        'ตำแหน่ง': r.u['ตำแหน่ง'] || '',
-        'หน่วยงาน': r.u['หน่วยงาน'] || '',
-        'บทบาทเบิก-ยืม': r.role === 'none' ? '' : r.role,
-        'ระดับอ้างอิง': r.u['สิทธิ์'] === 'admin' ? 'แอดมิน' : 'ดูอย่างเดียว',
-        'จำนวนพัสดุที่ถือ': r.hold.length,
-        'พัสดุที่ถือ': r.hold.map(b => b['ชื่อครุภัณฑ์']).join(' | '),
-        'ข้อมูลที่ต้องตรวจ': r.issues.filter(x => x.lv !== 'info').map(x => x.t).join(' | '),
-        'มีลายเซ็น': r.u['ลายเซ็น'] ? 'มี' : 'ไม่มี',
-        'มีรูปถ่าย': r.u['รูปถ่าย'] ? 'มี' : 'ไม่มี'
-      }))
-    );
-  };
-
-  document.getElementById('btnPrintAllUsers').onclick = () =>
-    printOfficerRoster(offCurrentRows(), 'รายชื่อข้าราชการตำรวจในสังกัด', state.offGroup);
-
-  wireViewToggle(drawUsers, '#view-users', 'usersView');
-
-  const fab = document.getElementById('fabBtn');
-  if (fab) {
-    fab.style.display = isAdmin() ? 'flex' : 'none';
-    fab.onclick = () => { if (isAdmin()) openUserForm(); };
-  }
-
-  drawUserList();
-}
 
 /* ---------- รายการ / การ์ด ---------- */
-function offItemHtml(r, isGrid) {
-  const u = r.u;
-  const key = escapeHtml(r.key);
-  const sel = state.offSelectMode && state.offSel.has(r.key);
-  const roleTxt = r.role === 'none' ? '' : `<span class="tag tag-brass">${escapeHtml(r.role)}</span>`;
-  const holdTxt = r.hold.length
-    ? `<span class="tag" style="background:var(--navy-wash);color:var(--navy);">ถือ ${r.hold.length} รายการ</span>`
-    : `<span class="tag tag-off">ไม่ถือพัสดุ</span>`;
-  const issueList = r.issues.filter(x => x.lv !== 'info');
-  const issueTxt = issueList.length
-    ? `<span class="status-badge ${issueList.some(x => x.lv === 'bad') ? 'status-repair' : 'status-borrowed'}">${escapeHtml(issueList[0].t)}${issueList.length > 1 ? ' +' + (issueList.length - 1) : ''}</span>`
-    : '';
-  const sub = [u['ตำแหน่ง'] || 'ไม่ระบุตำแหน่ง', u['หน่วยงาน']].filter(Boolean).map(escapeHtml).join(' · ');
-  const chk = state.offSelectMode
-    ? `<input type="checkbox" tabindex="-1" ${sel ? 'checked' : ''} style="width:18px;height:18px;flex:none;pointer-events:none;">`
-    : '';
-  const outline = sel ? 'outline:2px solid var(--gold);' : '';
-  const sysRole = `<span class="tag tag-off" title="ระดับอ้างอิง ไม่ใช่รหัสเข้าระบบ">อ้างอิง: ${u['สิทธิ์'] === 'admin' ? 'แอดมิน' : 'ดูอย่างเดียว'}</span>`;
 
-  if (isGrid) {
-    return `<div class="glass asset-card user-item" data-id="${key}" style="cursor:pointer;${outline}">
-      <div class="asset-card-top">
-        <div class="asset-card-icon" style="overflow:hidden;">${u['รูปถ่าย'] ? `<img src="${u['รูปถ่าย']}" style="width:100%;height:100%;object-fit:cover;border-radius:13px;">` : ICONS.user}</div>
-        ${chk}
-      </div>
-      <div>
-        <div class="asset-card-title">${escapeHtml(officerFullName(u))}</div>
-        <div class="asset-card-sub">${sub}</div>
-      </div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;">${roleTxt}${holdTxt}</div>
-      ${issueTxt ? `<div>${issueTxt}</div>` : ''}
-    </div>`;
-  }
-
-  return `<div class="glass list-item user-item" data-id="${key}" style="cursor:pointer;${outline}">
-    ${chk}
-    ${u['รูปถ่าย'] ? `<img class="li-avatar" src="${u['รูปถ่าย']}" alt="">` : `<div class="li-icon">${ICONS.user}</div>`}
-    <div class="li-body">
-      <div class="li-title">${escapeHtml(officerFullName(u))}</div>
-      <div class="li-sub">${sub}</div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:5px;">${roleTxt}${holdTxt}${issueTxt}</div>
-    </div>
-    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">${sysRole}</div>
-  </div>`;
-}
 
 function drawUserList() {
   const listEl = document.getElementById('userList');
@@ -12014,23 +11835,235 @@ function offTargets() {
   return (state.users || []).filter(u => state.offSel.has(offKey(u)));
 }
 
+/* =========================================================
+   จนท.ในสังกัด v3 — ปรับหน้าให้โล่งขึ้น
+   แทนที่: ensureOffCss (ใหม่), offItemHtml, drawUsers, drawOffBulk
+   drawUserList, offFiltered, offBuildRows และฟังก์ชันอื่นคงเดิม
+   ========================================================= */
+
+const OFF_CSS = `
+#view-users .off-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin:0 0 12px}
+#view-users .off-stat{padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.72);border:1px solid rgba(0,0,0,.06)}
+#view-users .off-stat b{display:block;font-size:20px;line-height:1.15;color:var(--navy)}
+#view-users .off-stat span{font-size:12px;opacity:.7}
+#view-users .off-stat.warn b{color:var(--warn)}
+#view-users .off-filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin:0 0 10px}
+#view-users .off-filters .input{margin:0;width:100%}
+#view-users .off-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+#view-users .user-item{cursor:pointer}
+#view-users .user-item.off-selected{outline:2px solid var(--gold)}
+#view-users .off-chk{width:18px;height:18px;flex:none;pointer-events:none}
+#view-users .off-selmode.on{background:var(--navy);color:#fff}
+#view-users .off-bulk{padding:12px 14px;margin-bottom:12px;display:flex;flex-direction:column;gap:10px}
+#view-users .off-bulk-top{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+#view-users .off-bulk-actions{display:flex;gap:8px;flex-wrap:wrap}
+#view-users .off-bulk-actions .btn{flex:1 1 auto;min-height:40px}
+`;
+
+function ensureOffCss() {
+  if (document.getElementById('offCss')) return;
+  const s = document.createElement('style');
+  s.id = 'offCss';
+  s.textContent = OFF_CSS;
+  document.head.appendChild(s);
+}
+
+/* ---------- รายการ / การ์ด: แสดงเฉพาะข้อมูลที่จำเป็น ---------- */
+function offItemHtml(r, isGrid) {
+  const u = r.u;
+  const key = escapeHtml(r.key);
+  const sel = state.offSelectMode && state.offSel.has(r.key);
+  const issues = r.issues.filter(x => x.lv !== 'info');
+
+  // ป้ายแสดงเฉพาะเมื่อมีข้อมูล: บทบาท / จำนวนพัสดุที่ถือ / ปัญหา (ไม่มีป้าย "ไม่ถือพัสดุ" ซ้ำทุกแถว)
+  const meta = [
+    r.role !== 'none' ? `<span class="tag tag-brass">${escapeHtml(r.role)}</span>` : '',
+    r.hold.length ? `<span class="tag" style="background:var(--navy-wash);color:var(--navy);">ถือ ${r.hold.length} รายการ</span>` : '',
+    issues.length ? `<span class="status-badge ${issues.some(x => x.lv === 'bad') ? 'status-repair' : 'status-borrowed'}">${escapeHtml(issues[0].t)}${issues.length > 1 ? ' +' + (issues.length - 1) : ''}</span>` : ''
+  ].filter(Boolean).join('');
+
+  const sub = [u['ตำแหน่ง'] || 'ไม่ระบุตำแหน่ง', u['หน่วยงาน']].filter(Boolean).map(escapeHtml).join(' · ');
+  const chk = state.offSelectMode ? `<input class="off-chk" type="checkbox" tabindex="-1" ${sel ? 'checked' : ''}>` : '';
+  const selCls = sel ? ' off-selected' : '';
+  const metaHtml = meta ? `<div class="off-meta">${meta}</div>` : '';
+
+  if (isGrid) {
+    return `<div class="glass asset-card user-item${selCls}" data-id="${key}">
+      <div class="asset-card-top">
+        <div class="asset-card-icon" style="overflow:hidden;">${u['รูปถ่าย'] ? `<img src="${u['รูปถ่าย']}" style="width:100%;height:100%;object-fit:cover;border-radius:13px;">` : ICONS.user}</div>
+        ${chk}
+      </div>
+      <div>
+        <div class="asset-card-title">${escapeHtml(officerFullName(u))}</div>
+        <div class="asset-card-sub">${sub}</div>
+      </div>
+      ${metaHtml}
+    </div>`;
+  }
+
+  return `<div class="glass list-item user-item${selCls}" data-id="${key}">
+    ${chk}
+    ${u['รูปถ่าย'] ? `<img class="li-avatar" src="${u['รูปถ่าย']}" alt="">` : `<div class="li-icon">${ICONS.user}</div>`}
+    <div class="li-body">
+      <div class="li-title">${escapeHtml(officerFullName(u))}</div>
+      <div class="li-sub">${sub}</div>
+      ${metaHtml}
+    </div>
+  </div>`;
+}
+
+/* ---------- หน้าหลัก ---------- */
+function drawUsers() {
+  ensureSrchStyles();
+  ensureOffCss();
+  initOfficerState();
+  const el = document.getElementById('view-users');
+  const rows = offBuildRows();
+  const f = state.offFilter;
+
+  const offCount = rows.filter(r => r.rank === 'สัญญาบัตร').length;
+  const polCount = rows.filter(r => r.rank === 'ประทวน').length;
+  const holdCount = rows.filter(r => r.hold.length > 0).length;
+  const flagCount = rows.filter(r => r.issues.some(x => x.lv !== 'info')).length;
+
+  const countRole = v => v === 'all' ? rows.length : rows.filter(r => r.role === v).length;
+  const countRank = v => v === 'all' ? rows.length : rows.filter(r => r.rank === v).length;
+  const countFlag = v => v === 'all' ? rows.length
+    : v === 'issue' ? flagCount
+    : v === 'hold' ? holdCount
+    : rows.length - holdCount;
+
+  const opt = (v, label, n, cur) =>
+    `<option value="${escapeHtml(v)}" ${v === cur ? 'selected' : ''}>${escapeHtml(label)}${n === null ? '' : ' (' + n + ')'}</option>`;
+  const stat = (n, t, cls) => `<div class="off-stat ${cls || ''}"><b>${n}</b><span>${t}</span></div>`;
+
+  el.innerHTML = `
+    <div class="section-title">
+      รายชื่อข้าราชการตำรวจในสังกัด
+      <span class="section-actions">
+        ${viewToggleHtml('users', state.usersView)}
+        <button class="icon-btn" id="btnOffExport" title="ส่งออก CSV ตามตัวกรอง" aria-label="ส่งออก CSV">${ICONS.download}</button>
+        <button class="icon-btn" id="btnPrintAllUsers" title="พิมพ์รายชื่อตามตัวกรอง" aria-label="พิมพ์รายชื่อ">${ICONS.print}</button>
+      </span>
+    </div>
+
+    <div class="off-stats">
+      ${stat(rows.length, 'ทั้งหมด (คน)')}
+      ${stat(offCount, 'สัญญาบัตร')}
+      ${stat(polCount, 'ประทวน')}
+      ${stat(holdCount, 'กำลังถือพัสดุ')}
+      ${stat(flagCount, 'ต้องตรวจข้อมูล', flagCount ? 'warn' : '')}
+    </div>
+
+    <div class="ax-top">
+      ${srchBoxHtml('userSearchInput', state.userSearch, 'ค้นหาชื่อ ตำแหน่ง หน่วยงาน')}
+      <button class="ax-round off-selmode ${state.offSelectMode ? 'on' : ''}" id="btnOffSelMode" title="เลือกหลายคน" aria-label="เลือกหลายคน">${ICONS.checklist}</button>
+    </div>
+
+    <div class="off-filters">
+      <select class="input" id="offRoleSel" aria-label="กรองตามบทบาท">
+        ${OFF_ROLE_CHIPS.map(([v, t]) => opt(v, 'บทบาท: ' + t, countRole(v), f.role)).join('')}
+      </select>
+      <select class="input" id="offRankSel" aria-label="กรองตามยศ">
+        ${OFF_RANK_CHIPS.map(([v, t]) => opt(v, 'ยศ: ' + t, countRank(v), f.rank)).join('')}
+      </select>
+      <select class="input" id="offFlagSel" aria-label="กรองตามสถานะ">
+        ${OFF_FLAG_CHIPS.map(([v, t]) => opt(v, 'สถานะ: ' + t, countFlag(v), f.flag)).join('')}
+      </select>
+      <select class="input" id="offGroupSel" aria-label="จัดกลุ่ม">
+        ${OFF_GROUP_OPTIONS.map(([v, t]) => opt(v, t, null, state.offGroup)).join('')}
+      </select>
+    </div>
+
+    <div id="offBulk"></div>
+    <div class="ax-count" id="userCount"></div>
+    <div id="userList"></div>
+    ${isAdmin() ? '<div class="hint" style="margin-top:14px;">ปัดแถวไปทางซ้ายเพื่อแก้ไขหรือลบ (มุมมองรายการ)</div>' : ''}
+  `;
+
+  srchBoxWire('userSearchInput', v => {
+    state.userSearch = v;
+    drawUserList();
+  });
+
+  const bind = (id, fn) => {
+    const s = document.getElementById(id);
+    if (s) s.onchange = e => fn(e.target.value);
+  };
+  bind('offRoleSel', v => { state.offFilter.role = v; drawUsers(); });
+  bind('offRankSel', v => { state.offFilter.rank = v; drawUsers(); });
+  bind('offFlagSel', v => { state.offFilter.flag = v; drawUsers(); });
+  bind('offGroupSel', v => {
+    state.offGroup = v;
+    state.offGroupClosed = new Set();
+    drawUserList();
+  });
+
+  document.getElementById('btnOffSelMode').onclick = () => {
+    state.offSelectMode = !state.offSelectMode;
+    if (!state.offSelectMode) state.offSel.clear();
+    drawUsers();
+  };
+
+  document.getElementById('btnOffExport').onclick = () => {
+    const list = offCurrentRows();
+    if (!list.length) { toast('ไม่มีรายการให้ส่งออก'); return; }
+    exportCsv('รายชื่อจนท.ในสังกัด.csv',
+      ['รหัสจนท.', 'ยศ', 'ชื่อ-สกุล', 'ตำแหน่ง', 'หน่วยงาน', 'บทบาทเบิก-ยืม', 'ระดับอ้างอิง', 'จำนวนพัสดุที่ถือ', 'พัสดุที่ถือ', 'ข้อมูลที่ต้องตรวจ', 'มีลายเซ็น', 'มีรูปถ่าย'],
+      list.map(r => ({
+        'รหัสจนท.': officerId(r.u),
+        'ยศ': r.u['ยศ'] || '',
+        'ชื่อ-สกุล': r.u['ชื่อ-สกุล'] || '',
+        'ตำแหน่ง': r.u['ตำแหน่ง'] || '',
+        'หน่วยงาน': r.u['หน่วยงาน'] || '',
+        'บทบาทเบิก-ยืม': r.role === 'none' ? '' : r.role,
+        'ระดับอ้างอิง': r.u['สิทธิ์'] === 'admin' ? 'แอดมิน' : 'ดูอย่างเดียว',
+        'จำนวนพัสดุที่ถือ': r.hold.length,
+        'พัสดุที่ถือ': r.hold.map(b => b['ชื่อครุภัณฑ์']).join(' | '),
+        'ข้อมูลที่ต้องตรวจ': r.issues.filter(x => x.lv !== 'info').map(x => x.t).join(' | '),
+        'มีลายเซ็น': r.u['ลายเซ็น'] ? 'มี' : 'ไม่มี',
+        'มีรูปถ่าย': r.u['รูปถ่าย'] ? 'มี' : 'ไม่มี'
+      }))
+    );
+  };
+
+  document.getElementById('btnPrintAllUsers').onclick = () =>
+    printOfficerRoster(offCurrentRows(), 'รายชื่อข้าราชการตำรวจในสังกัด', state.offGroup);
+
+  wireViewToggle(drawUsers, '#view-users', 'usersView');
+
+  const fab = document.getElementById('fabBtn');
+  if (fab) {
+    fab.style.display = isAdmin() ? 'flex' : 'none';
+    fab.onclick = () => { if (isAdmin()) openUserForm(); };
+  }
+
+  drawUserList();
+}
+
+/* ---------- แถบคำสั่งเมื่อเลือกหลายคน: จัดเป็นสองแถวให้อ่านง่าย ---------- */
 function drawOffBulk() {
   const host = document.getElementById('offBulk');
   if (!host) return;
   if (!state.offSelectMode) { host.innerHTML = ''; return; }
 
   const n = state.offSel.size;
+  const dis = n ? '' : 'disabled';
   host.innerHTML = `
-    <div class="glass" style="padding:12px 14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
-      <b>เลือกแล้ว ${n} คน</b>
-      <span class="link-btn" id="offSelAll">เลือกทั้งหมดที่แสดง</span>
-      <span class="link-btn" id="offSelNone">ล้างการเลือก</span>
-      <span style="flex:1 1 0;"></span>
-      ${isAdmin() ? `
-        <button class="btn btn-ghost" id="offBulkRole" ${n ? '' : 'disabled'} style="flex:none;min-height:40px;">กำหนดบทบาท</button>
-        <button class="btn btn-ghost" id="offBulkUnit" ${n ? '' : 'disabled'} style="flex:none;min-height:40px;">ปรับหน่วยงาน</button>` : ''}
-      <button class="btn btn-primary" id="offBulkPrint" ${n ? '' : 'disabled'} style="flex:none;min-height:40px;">พิมพ์ที่เลือก</button>
-      <button class="btn btn-ghost" id="offSelExit" style="flex:none;min-height:40px;">ปิดโหมดเลือก</button>
+    <div class="glass off-bulk">
+      <div class="off-bulk-top">
+        <b>เลือกแล้ว ${n} คน</b>
+        <span class="link-btn" id="offSelAll">เลือกทั้งหมดที่แสดง</span>
+        <span class="link-btn" id="offSelNone">ล้าง</span>
+        <span style="flex:1 1 0;"></span>
+        <span class="link-btn" id="offSelExit">ปิดโหมดเลือก</span>
+      </div>
+      <div class="off-bulk-actions">
+        ${isAdmin() ? `
+          <button class="btn btn-ghost" id="offBulkRole" ${dis}>กำหนดบทบาท</button>
+          <button class="btn btn-ghost" id="offBulkUnit" ${dis}>ปรับหน่วยงาน</button>` : ''}
+        <button class="btn btn-primary" id="offBulkPrint" ${dis}>พิมพ์ที่เลือก</button>
+      </div>
     </div>`;
 
   document.getElementById('offSelAll').onclick = () => {
