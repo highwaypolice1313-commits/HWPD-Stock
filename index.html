@@ -6467,6 +6467,123 @@ html, body{
 }
 .ax-top .srch-box{ flex:1 1 auto; }   
 </style>   
+
+   <style id="dbx-dashboard">
+/* ===== DASHBOARD (dbx) — เฉพาะหน้าแดชบอร์ด ===== */
+#view-dashboard .dbx{display:block}
+#view-dashboard .dbx-desk{display:none}
+#view-dashboard .dbx-mob{display:block}
+
+/* ---------- ฮีโร่ ---------- */
+#view-dashboard .dbx-hero{
+  position:relative;overflow:hidden;border-radius:26px;color:#fff;
+  padding:26px 28px;
+  background:radial-gradient(360px 220px at 88% -10%,var(--gold-wash),transparent 62%),
+             linear-gradient(150deg,var(--navy) 0%,var(--navy-deep) 100%);
+  box-shadow:0 18px 48px color-mix(in srgb,var(--navy-deep) 22%,transparent);
+}
+#view-dashboard .dbx-hero-row{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+#view-dashboard .dbx-hero-row > div:last-child{text-align:right}
+#view-dashboard .dbx-lbl{font-size:13px;color:rgba(255,255,255,.7)}
+#view-dashboard .dbx-num{font-family:var(--font-num);font-weight:700;font-variant-numeric:tabular-nums;line-height:1.05;margin-top:6px;color:#fff}
+#view-dashboard .dbx-num small{font-family:var(--font-th);font-size:15px;font-weight:400;color:rgba(255,255,255,.7);margin-left:6px}
+#view-dashboard .dbx-gold{color:#f0c97a}
+#view-dashboard .dbx-bar-head{display:flex;justify-content:space-between;margin-top:30px;font-size:14px;color:rgba(255,255,255,.85)}
+#view-dashboard .dbx-track{height:8px;border-radius:99px;background:rgba(255,255,255,.14);margin-top:10px;overflow:hidden}
+#view-dashboard .dbx-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--gold),var(--gold-deep))}
+#view-dashboard .dbx-cap{font-size:12.5px;color:rgba(255,255,255,.65);margin-top:10px}
+
+/* ---------- สถิติ 3 ช่อง ---------- */
+#view-dashboard .dbx-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px}
+#view-dashboard .dbx-stat{padding:16px 14px;border-radius:20px;background:var(--panel);border:1px solid var(--panel-line);box-shadow:var(--shadow-sm)}
+#view-dashboard .dbx-stat-lbl{font-size:12px;color:var(--ink-dim)}
+#view-dashboard .dbx-stat-num{font-family:var(--font-num);font-size:24px;font-weight:700;line-height:1;margin-top:8px;font-variant-numeric:tabular-nums}
+#view-dashboard .dbx-stat.is-out .dbx-stat-num{color:var(--gold-deep)}
+#view-dashboard .dbx-stat.is-bad .dbx-stat-num{color:var(--bad)}
+#view-dashboard .dbx-stat.is-ok .dbx-stat-num{color:var(--ok)}
+
+/* ---------- การ์ดทั่วไป ---------- */
+#view-dashboard .dbx-card{background:var(--panel);border:1px solid var(--panel-line);border-radius:24px;padding:20px 22px;box-shadow:var(--shadow-sm);min-width:0}
+#view-dashboard .dbx-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:14px}
+#view-dashboard .dbx-title{font-family:var(--font-disp);font-size:17px;font-weight:600;color:var(--navy-deep)}
+#view-dashboard .dbx-sub{font-size:12.5px;color:var(--ink-dim)}
+#view-dashboard .dbx-link{font-size:13px;color:var(--gold-deep);font-weight:500;background:none;border:none;cursor:pointer;font-family:inherit;padding:0}
+#view-dashboard .dbx-chart{position:relative;height:200px}
+#view-dashboard .dbx-sec{font-family:var(--font-disp);font-size:16px;font-weight:600;color:var(--navy-deep);margin:22px 2px 10px}
+
+/* ---------- เมนูเลื่อน (มือถือ) ---------- */
+#view-dashboard .dbx-menu{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;margin:0 -13px;padding:2px 13px 6px;scroll-snap-type:x proximity}
+#view-dashboard .dbx-menu::-webkit-scrollbar{display:none}
+#view-dashboard .dbx-tile{flex:0 0 92px;scroll-snap-align:start;display:flex;flex-direction:column;align-items:center;gap:10px;padding:14px 6px 12px;border-radius:20px;background:var(--panel);border:1px solid var(--panel-line);box-shadow:var(--shadow-sm);color:var(--ink);font:inherit;font-size:12.5px;cursor:pointer}
+#view-dashboard .dbx-tile-ico{width:44px;height:44px;border-radius:15px;display:grid;place-items:center;background:var(--navy-wash);color:var(--navy)}
+#view-dashboard .dbx-tile-ico svg{width:20px;height:20px}
+#view-dashboard .dbx-tile.is-gold .dbx-tile-ico{background:var(--gold-wash);color:var(--gold-deep)}
+#view-dashboard .dbx-tile.is-bad .dbx-tile-ico{background:var(--bad-wash);color:var(--bad)}
+
+/* ---------- รายการ (คำขอ / หมวดหมู่ / ต้องดำเนินการ) ---------- */
+#view-dashboard .dbx-row{display:flex;gap:12px;align-items:flex-start;padding:13px 0;border-top:1px solid var(--panel-line)}
+#view-dashboard .dbx-row:first-of-type{border-top:none;padding-top:2px}
+#view-dashboard .dbx-dot{width:9px;height:9px;border-radius:50%;flex:none;margin-top:7px;background:var(--tc,var(--gold))}
+#view-dashboard .dbx-rt{font-size:15px;font-weight:600;color:var(--ink)}
+#view-dashboard .dbx-rs{font-size:12.5px;color:var(--ink-dim);margin-top:3px}
+#view-dashboard .dbx-bar{margin-bottom:14px}
+#view-dashboard .dbx-bar-h{display:flex;justify-content:space-between;font-size:14px;color:var(--ink);margin-bottom:6px}
+#view-dashboard .dbx-bar-h b{font-family:var(--font-num);font-weight:600}
+#view-dashboard .dbx-bar-t{height:7px;border-radius:99px;background:var(--panel-line);overflow:hidden}
+#view-dashboard .dbx-bar-f{height:100%;border-radius:99px}
+#view-dashboard .dbx-empty{font-size:13px;color:var(--ink-dim);padding:10px 0}
+
+/* ---------- ต้องดำเนินการ (เดสก์ท็อป: 3 ช่อง) ---------- */
+#view-dashboard .dbx-acts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+#view-dashboard .dbx-act{display:flex;gap:12px;align-items:flex-start;text-align:left;cursor:pointer;padding:16px 18px;border-radius:18px;background:var(--panel-soft);border:1px solid var(--panel-line);font:inherit;color:var(--ink)}
+#view-dashboard .dbx-act b{display:block;font-size:14.5px;font-weight:600}
+#view-dashboard .dbx-act small{display:block;font-size:12.5px;color:var(--ink-dim);margin-top:3px}
+
+/* =============== เดสก์ท็อป / iPad (≥900px) =============== */
+@media (min-width:900px){
+  #view-dashboard .dbx-mob{display:none}
+  #view-dashboard .dbx-desk{display:block}
+  #view-dashboard .dbx-desk-head{margin-bottom:18px}
+  #view-dashboard .dbx-date{font-size:13px;color:var(--ink-dim)}
+  #view-dashboard .dbx-h1{font-family:var(--font-disp);font-size:30px;font-weight:600;color:var(--navy-deep);margin:4px 0 0}
+  #view-dashboard .dbx-grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(300px,1fr);gap:18px;align-items:stretch}
+  #view-dashboard .dbx-hero-d{padding:30px 32px;border-radius:26px;display:flex;flex-direction:column}
+  #view-dashboard .dbx-hero-d .dbx-hero-row{grid-template-columns:1fr 1fr}
+  #view-dashboard .dbx-hero-d .dbx-num{font-size:52px}
+  #view-dashboard .dbx-hero-d .dbx-lbl{font-size:14px}
+  #view-dashboard .dbx-hero-d .dbx-bar-head{margin-top:auto;padding-top:34px}
+  #view-dashboard .dbx-side{display:flex;flex-direction:column;gap:12px}
+  #view-dashboard .dbx-side .dbx-stat{flex:1;display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-radius:22px}
+  #view-dashboard .dbx-side .dbx-stat-num{font-size:30px;margin-top:6px}
+  #view-dashboard .dbx-side .dbx-stat-lbl{font-size:13.5px}
+  #view-dashboard .dbx-ico{width:46px;height:46px;border-radius:15px;display:grid;place-items:center;flex:none}
+  #view-dashboard .dbx-ico svg{width:20px;height:20px}
+  #view-dashboard .dbx-side .dbx-stat.is-out .dbx-ico{background:var(--gold-wash);color:var(--gold-deep)}
+  #view-dashboard .dbx-side .dbx-stat.is-bad .dbx-ico{background:var(--bad-wash);color:var(--bad)}
+  #view-dashboard .dbx-side .dbx-stat.is-ok .dbx-ico{background:var(--ok-wash);color:var(--ok)}
+  #view-dashboard .dbx-row2{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(300px,1fr);gap:18px;margin-top:18px}
+  #view-dashboard .dbx-chart{height:260px}
+  #view-dashboard .dbx-bottom{margin-top:18px}
+}
+
+/* =============== มือถือ (<900px) =============== */
+@media (max-width:899px){
+  #view-dashboard .dbx-desk{display:none}
+  #view-dashboard .dbx-mob{display:block}
+  #view-dashboard .dbx-hero{padding:20px;border-radius:22px}
+  #view-dashboard .dbx-hero-row .dbx-num{font-size:34px}
+  #view-dashboard .dbx-hero-row .dbx-lbl{font-size:12px}
+  #view-dashboard .dbx-hero-row > div:last-child .dbx-num{font-size:22px}
+  #view-dashboard .dbx-bar-head{margin-top:22px}
+  #view-dashboard .dbx-cap{display:none}
+  #view-dashboard .dbx-card{padding:16px;border-radius:22px}
+  #view-dashboard .dbx-chart{height:170px}
+}
+@media (max-width:380px){
+  #view-dashboard .dbx-hero-row .dbx-num{font-size:30px}
+  #view-dashboard .dbx-stat-num{font-size:20px}
+}
+</style>
    
 </head>
    
@@ -8188,74 +8305,178 @@ function sparklineSvg(dataObj) {
 }
 
 function renderDashboard() {
-  const d = state.dashboard;
   const el = document.getElementById('view-dashboard');
+  const d = state.dashboard;
   if (!d) { el.innerHTML = emptyState('ยังไม่มีข้อมูลแดชบอร์ด — กดปุ่มรีเฟรชด้านบน'); return; }
 
-  // ใช้ค่าจาก Dashboard API ก่อน และ fallback จากข้อมูลรายการจริงใน state
-  // ป้องกันกรณี aggregate จาก backend ไม่มา/เป็น 0 แต่หน้า Assets มีข้อมูลอยู่แล้ว
-  const assetList = Array.isArray(state.assets) ? state.assets : [];
-  const borrowList = Array.isArray(state.borrow) ? state.borrow : [];
-  const assetCount = Number(d.totalAssets) > 0 ? Number(d.totalAssets) : assetList.length;
-  const totalValue = Number(d.totalValue) > 0
-    ? Number(d.totalValue)
-    : assetList.reduce((sum, a) => sum + (Number(String(a['มูลค่า(บาท)'] ?? '').replace(/,/g, '')) || 0), 0);
-  const borrowedFallback = assetList.filter(a => ['กำลังยืม','เกินกำหนด'].includes(String(a['สถานะ'] || ''))).length;
-  const overdueFallback = borrowList.filter(b => effectiveBorrowStatus(b) === 'เกินกำหนด').length;
-  const repairFallback = assetList.filter(a => ['ซ่อมบำรุง','กำลังซ่อม','รอซ่อม'].includes(String(a['สถานะ'] || ''))).length;
-  const borrowedCount = Number(d.borrowedCount) || borrowedFallback;
-  const overdueCount = Number(d.overdueCount) || overdueFallback;
-  const repairCount = Number(d.repairCount) || repairFallback;
+  const A = Array.isArray(state.assets) ? state.assets : [];
+  const B = Array.isArray(state.borrow) ? state.borrow : [];
+  const total = A.length || Number(d.totalAssets) || 0;
+  const value = Number(d.totalValue) > 0 ? Number(d.totalValue)
+    : A.reduce((s, a) => s + (Number(String(a['มูลค่า(บาท)'] ?? '').replace(/,/g, '')) || 0), 0);
+  const ready = A.filter(a => a['สถานะ'] === 'พร้อมใช้งาน').length;
+  const readyPct = total ? Math.round(ready / total * 100) : 0;
+  const borrowed = Number(d.borrowedCount) || A.filter(a => ['กำลังยืม', 'เกินกำหนด'].includes(a['สถานะ'])).length;
+  const overdue = Number(d.overdueCount) || B.filter(b => effectiveBorrowStatus(b) === 'เกินกำหนด').length;
+  const repair = Number(d.repairCount) || A.filter(a => ['ซ่อมบำรุง', 'กำลังซ่อม', 'รอซ่อม'].includes(a['สถานะ'])).length;
 
-  let banners = '';
-  if (overdueCount > 0) {
-    banners += `<div class="alert-banner bad">${ICONS.warn}<span>มีครุภัณฑ์เกินกำหนดคืน ${overdueCount} รายการ</span><span class="alert-link" onclick="renderTab('borrow')">ดูรายการ</span></div>`;
-  }
-  if (isAdmin() && Number(d.pendingCount) > 0) {
-    banners += `<div class="alert-banner warn">${ICONS.clock}<span>มีคำขอยืมรออนุมัติ ${d.pendingCount} รายการ</span><span class="alert-link" onclick="renderTab('borrow')">ตรวจสอบ</span></div>`;
-  }
-  if (Number(d.dueRenewalCount) > 0) {
-    banners += `<div class="alert-banner warn">${ICONS.warn}<span>มีครุภัณฑ์ใกล้ครบกำหนดตรวจสภาพ/ต่อทะเบียน ${d.dueRenewalCount} รายการ (ภายใน ${renewalWindowDays()} วัน หรือเลยกำหนดแล้ว)</span><span class="alert-link" onclick="renderTab('assets')">ดูรายการ</span></div>`;
-  }
+  const catMap = {};
+  if (d.byCategory && Object.keys(d.byCategory).length) Object.entries(d.byCategory).forEach(([k, v]) => catMap[k] = Number(v) || 0);
+  else A.forEach(a => { const c = a['หมวดหมู่'] || 'อื่นๆ'; catMap[c] = (catMap[c] || 0) + 1; });
+  const cats = Object.entries(catMap).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const catMax = cats.length ? cats[0][1] : 1;
+  const catColors = ['var(--navy)', 'var(--ok)', 'var(--info)', 'var(--gold)', 'var(--ink-faint)'];
+
+  const recent = B.slice().sort((x, y) => toDate(y['วันที่ยืม'] || 0) - toDate(x['วันที่ยืม'] || 0)).slice(0, 3);
+  const alerts = buildAlerts();
+
+  const wd = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'][new Date().getDay()];
+  const dateLine = 'วัน' + wd + 'ที่ ' + thaiDateLong();
+  const valueMil = (value / 1000000).toFixed(1);
+
+  const heroHtml = (desk) => `
+    <div class="dbx-hero ${desk ? 'dbx-hero-d' : ''}">
+      <div class="dbx-hero-row">
+        <div>
+          <div class="dbx-lbl">ครุภัณฑ์ทั้งหมด</div>
+          <div class="dbx-num" style="font-size:${desk ? '' : ''}">${total.toLocaleString('en-US')}<small>รายการ</small></div>
+        </div>
+        <div>
+          <div class="dbx-lbl">มูลค่ารวม</div>
+          <div class="dbx-num dbx-gold">${valueMil}<small>ล้านบาท</small></div>
+        </div>
+      </div>
+      <div class="dbx-bar-head"><span>พร้อมใช้งาน</span><b>${readyPct}%</b></div>
+      <div class="dbx-track"><div class="dbx-fill" style="width:${readyPct}%"></div></div>
+      ${desk ? `<div class="dbx-cap">${ready.toLocaleString('en-US')} จาก ${total.toLocaleString('en-US')} รายการ</div>` : ''}
+    </div>`;
+
+  const statsHtml = (desk) => `
+    <div class="${desk ? 'dbx-side' : 'dbx-stats'}">
+      <div class="dbx-stat is-out">
+        <div><div class="dbx-stat-lbl">${desk ? 'กำลังถูกยืม' : 'กำลังยืม'}</div><div class="dbx-stat-num" data-count="${borrowed}">0</div></div>
+        ${desk ? `<div class="dbx-ico">${ICONS.swap}</div>` : ''}
+      </div>
+      <div class="dbx-stat is-bad">
+        <div><div class="dbx-stat-lbl">${desk ? 'เกินกำหนดคืน' : 'เกินกำหนด'}</div><div class="dbx-stat-num" data-count="${overdue}">0</div></div>
+        ${desk ? `<div class="dbx-ico">${ICONS.warn}</div>` : ''}
+      </div>
+      <div class="dbx-stat is-ok">
+        <div><div class="dbx-stat-lbl">${desk ? 'อยู่ระหว่างซ่อม' : 'กำลังซ่อม'}</div><div class="dbx-stat-num" data-count="${repair}">0</div></div>
+        ${desk ? `<div class="dbx-ico">${ICONS.wrench}</div>` : ''}
+      </div>
+    </div>`;
+
+  const menu = [
+    ['dashboard', 'หน้าหลัก', ICONS.home || ICONS.box, ''],
+    ['assets', 'ครุภัณฑ์', ICONS.box, ''],
+    ['borrow', 'ยืม-คืน', ICONS.swap, 'is-gold'],
+    ['users', 'จนท.ในสังกัด', ICONS.user, ''],
+    ['maint', 'ซ่อมบำรุง', ICONS.wrench, 'is-bad'],
+    ['memos', 'เอกสารใบเบิก', ICONS.log, ''],
+    ['reports', 'รายงาน', ICONS.listView, ''],
+    ...(isAdmin() ? [['audit', 'ตรวจนับประจำปี', ICONS.checklist, ''], ['monthly', 'ตรวจประจำเดือน', ICONS.calendar || ICONS.checklist, '']] : []),
+    ['settings', 'ตั้งค่า', ICONS.gear, '']
+  ];
+
+  const reqHtml = recent.length ? recent.map(b => {
+    const eff = effectiveBorrowStatus(b);
+    const c = eff === 'เกินกำหนด' ? 'var(--bad)' : 'var(--gold)';
+    return `<div class="dbx-row">
+      <span class="dbx-dot" style="--tc:${c}"></span>
+      <div style="min-width:0">
+        <div class="dbx-rt">${escapeHtml(b['ชื่อครุภัณฑ์'] || '-')}</div>
+        <div class="dbx-rs">${escapeHtml(b['ผู้ยืม'] || '-')} · ${escapeHtml(eff)}</div>
+      </div>
+    </div>`;
+  }).join('') : '<div class="dbx-empty">ยังไม่มีรายการยืม</div>';
+
+  const catHtml = cats.length ? cats.map(([k, v], i) => `
+    <div class="dbx-bar">
+      <div class="dbx-bar-h"><span>${escapeHtml(k)}</span><b>${Number(v).toLocaleString('en-US')}</b></div>
+      <div class="dbx-bar-t"><div class="dbx-bar-f" style="width:${Math.round(v / catMax * 100)}%;background:${catColors[i]}"></div></div>
+    </div>`).join('') : '<div class="dbx-empty">ยังไม่มีข้อมูลหมวดหมู่</div>';
+
+  const alertHtml = alerts.length ? alerts.slice(0, 3).map((a, i) => `
+    <button class="dbx-act" data-alert="${i}" type="button">
+      <span class="dbx-dot" style="--tc:${a.tone === 'bad' ? 'var(--bad)' : a.tone === 'info' ? 'var(--info)' : 'var(--gold)'}"></span>
+      <span><b>${escapeHtml(a.title)}</b><small>${escapeHtml(a.sub)}</small></span>
+    </button>`).join('') : '<div class="dbx-empty">ไม่มีรายการที่ต้องดำเนินการ</div>';
+
+  const trendCard = (cls) => `
+    <div class="dbx-card ${cls}">
+      <div class="dbx-head"><div class="dbx-title">การยืมย้อนหลัง 6 เดือน</div><div class="dbx-sub">จำนวนรายการยืม</div></div>
+      <div class="dbx-chart"><canvas id="trendChart"></canvas></div>
+    </div>`;
+
   el.innerHTML = `
-    <div class="section-title">ภาพรวมระบบ <small>อัปเดตล่าสุดวันนี้</small></div>
-    ${banners}
-    
-    <div class="dashboard-left">
-      <div class="glass hero-card">
-        <div class="hero-row">
-          <div><div class="hero-label">ครุภัณฑ์ทั้งหมด</div><div class="hero-num" data-count="${assetCount}">0<span class="hero-unit">รายการ</span></div></div>
-          <div class="hero-divider"></div>
-          <div><div class="hero-label">มูลค่ารวม</div><div class="hero-num hero-num--sm" data-count="${totalValue}">0<span class="hero-unit">บาท</span></div></div>
+    <div class="dbx">
+
+      <!-- ===== เดสก์ท็อป / iPad ===== -->
+      <div class="dbx-desk">
+        <div class="dbx-desk-head">
+          <div class="dbx-date">${escapeHtml(dateLine)}</div>
+          <h1 class="dbx-h1">ภาพรวมระบบพัสดุ</h1>
+        </div>
+
+        <div class="dbx-grid">
+          ${heroHtml(true)}
+          ${statsHtml(true)}
+        </div>
+
+        <div class="dbx-row2">
+          ${trendCard('')}
+          <div class="dbx-card">
+            <div class="dbx-head"><div class="dbx-title">สัดส่วนตามหมวดหมู่</div></div>
+            ${catHtml}
+          </div>
+        </div>
+
+        <div class="dbx-card dbx-bottom">
+          <div class="dbx-head">
+            <div class="dbx-title">ต้องดำเนินการ</div>
+            <button class="dbx-link" data-open-notif type="button">ดูทั้งหมด</button>
+          </div>
+          <div class="dbx-acts">${alertHtml}</div>
         </div>
       </div>
-      
-      <div class="section-title" style="margin:4px 0 10px;">แนวโน้มการยืมย้อนหลัง 6 เดือน</div>
-      <div class="glass chart-card trend-card"><div class="chart-wrap"><canvas id="trendChart"></canvas></div></div>
-    </div>
 
-    <div class="dashboard-right">
-      <div class="stat-grid">
-        <div class="stat-card warn">
-          <div><div class="stat-num" data-count="${borrowedCount}">0</div><div class="stat-label">กำลังถูกยืม</div></div>
-          <div style="color:var(--warn);">${ICONS.clock}</div>
+      <!-- ===== มือถือ ===== -->
+      <div class="dbx-mob">
+        ${heroHtml(false)}
+        ${statsHtml(false)}
+
+        <div class="dbx-sec">เมนู</div>
+        <div class="dbx-menu">
+          ${menu.map(m => `
+            <button class="dbx-tile ${m[3]}" data-go="${m[0]}" type="button">
+              <span class="dbx-tile-ico">${m[2]}</span><span>${escapeHtml(m[1])}</span>
+            </button>`).join('')}
         </div>
-        <div class="stat-card bad">
-          <div><div class="stat-num" data-count="${overdueCount}">0</div><div class="stat-label">เกินกำหนดคืน</div></div>
-          <div style="color:var(--bad);">${ICONS.warn}</div>
+
+        <div class="dbx-card" style="margin-top:16px;">
+          <div class="dbx-head">
+            <div class="dbx-title">คำขอล่าสุด</div>
+            <button class="dbx-link" data-go="borrow" type="button">ดูทั้งหมด</button>
+          </div>
+          ${reqHtml}
         </div>
-        <div class="stat-card ok">
-          <div><div class="stat-num" data-count="${repairCount}">0</div><div class="stat-label">อยู่ระหว่างซ่อม</div></div>
-          <div style="color:var(--ok);">${ICONS.wrench}</div>
+
+        <div style="margin-top:16px;">${trendCard('')}</div>
+
+        <div class="dbx-card" style="margin-top:16px;">
+          <div class="dbx-head"><div class="dbx-title">ครุภัณฑ์แยกหมวด</div></div>
+          ${catHtml}
         </div>
       </div>
+    </div>`;
 
-      <div class="section-title" style="margin:4px 0 10px;">สัดส่วนตามหมวดหมู่</div>
-      <div class="glass chart-card cat-card"><div class="chart-wrap"><canvas id="catChart"></canvas></div></div>
-    </div>
-  `;
-  drawDoughnut('catChart', d.byCategory || {});
+  el.querySelectorAll('[data-go]').forEach(b => b.onclick = () => renderTab(b.dataset.go));
+  el.querySelectorAll('[data-alert]').forEach(b => b.onclick = () => goAlert(alerts[+b.dataset.alert]));
+  el.querySelectorAll('[data-open-notif]').forEach(b => b.onclick = openNotifications);
+
   drawLine('trendChart', d.monthTrend || {});
+  refreshNotifBadge();
 }
 
 let chartRefs = {};
