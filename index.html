@@ -6993,24 +6993,76 @@ function committeeOrdered() {
 
 /* ---------- บล็อกลายเซ็นหนึ่งคน ----------
    ชื่อ/บทบาท/ตำแหน่งใช้สองคอลัมน์ (colspan) และตัดบรรทัดได้ ไม่ดันทะลุขอบกระดาษ */
-function committeeOneBlock(m, sigW, fs, sigUrl, sigH, blockW) {
-  const rank = toThaiNumber(escapeHtml(m.rank)) || '........';
+
+function committeeOneBlock(m, sigMm, fs, sigUrl, sigH, widthMm, align, labelMm) {
+  const rank = toThaiNumber(escapeHtml(m.rank));
   const name = toThaiNumber(escapeHtml(m.name)) || '..........................';
   const position = toThaiNumber(escapeHtml(m.position)) || '&nbsp;';
   const role = toThaiNumber(escapeHtml(m.role));
+  const fullName = (rank ? rank + ' ' : '') + name;
   const img = sigUrl
     ? `<img src="${escapeHtml(sigUrl)}" alt="" style="position:absolute; left:0; bottom:0; width:100%; height:100%; object-fit:contain;">`
     : '';
-  return `<div style="width:${blockW}; margin:0 auto; font-size:${fs}; line-height:1.35; color:#000; text-align:center; break-inside:avoid; page-break-inside:avoid;">
-    <div style="position:relative; width:${sigW}; height:${sigH}; margin:0 auto;">
-      <span style="position:absolute; right:100%; bottom:1px; margin-right:1.5mm; white-space:nowrap;">ลงชื่อ ${rank}</span>
-      <div style="position:absolute; left:0; right:0; top:0; bottom:0; border-bottom:1px dotted #000;">${img}</div>
+ 
+  const gap = 1.5;
+  const center = labelMm + gap + sigMm / 2;
+  const padL = Math.max(0, 2 * center - widthMm).toFixed(2);
+  const padR = Math.max(0, widthMm - 2 * center).toFixed(2);
+  const margin = align === 'left' ? '0 auto 0 0' : align === 'right' ? '0 0 0 auto' : '0 auto';
+  const centered = `grid-column:1 / -1; text-align:center; padding-left:${padL}mm; padding-right:${padR}mm;`;
+ 
+  return `<div style="width:${widthMm}mm; margin:${margin}; font-size:${fs}; line-height:1.35; color:#000; break-inside:avoid; page-break-inside:avoid;">
+    <div style="display:grid; grid-template-columns:${labelMm}mm ${sigMm}mm minmax(0,1fr); column-gap:${gap}mm; align-items:end;">
+      <span style="white-space:nowrap; text-align:right;">ลงชื่อ ${rank}</span>
+      <div style="position:relative; height:${sigH}; border-bottom:1px dotted #000;">${img}</div>
+      <span style="white-space:nowrap; text-align:left; padding-left:1mm; overflow:hidden;">เป็น${role}</span>
+      <span style="${centered} margin-top:1mm;">( ${fullName} )</span>
+      <span style="${centered}">${position}</span>
     </div>
-    <div style="margin-top:1mm;">( ${name} )</div>
-    <div>เป็น${role}</div>
-    <div>${position}</div>
   </div>`;
 }
+
+/* ---------- ส่วนลายเซ็นท้ายรายงาน ---------- */   
+
+
+function committeeSignBlockHtml(compact) {
+  const list = committeeOrdered().map(x => x.m);
+  if (!list.length) return '';
+  const signs = auditSignCurrent || [];
+ 
+  const S = compact
+    ? { headSig: 36, headLabel: 40, headW: 150, headFs: '10pt', memSig: 16, memLabel: 24, memW: 93, memFs: '8.5pt', sigH: '6mm', gap: '2mm', cellPad: '0.5mm 0' }
+    : { headSig: 46, headLabel: 44, headW: 170, headFs: '13pt', memSig: 18, memLabel: 25, memW: 93, memFs: '9.5pt', sigH: '9mm', gap: '5mm', cellPad: '2mm 0' };
+ 
+  const heads = [], mems = [], secs = [];
+  list.forEach((m, k) => {
+    const item = { m, sig: signs[k] };
+    const kind = auditRoleKind(m.role);
+    if (kind === 'head') heads.push(item);
+    else if (kind === 'sec') secs.push(item);
+    else mems.push(item);
+  });
+ 
+  const fullBlock = item =>
+    `<div style="margin-top:${S.gap};">${committeeOneBlock(item.m, S.headSig, S.headFs, item.sig, S.sigH, S.headW, 'center', S.headLabel)}</div>`;
+ 
+  let memHtml = '';
+  for (let i = 0; i < mems.length; i += 2) {
+    const a = mems[i], b = mems[i + 1];
+    memHtml += `<tr style="break-inside:avoid; page-break-inside:avoid;">
+      <td style="padding:${S.cellPad}; width:50%; vertical-align:top;">${committeeOneBlock(a.m, S.memSig, S.memFs, a.sig, S.sigH, S.memW, 'left', S.memLabel)}</td>
+      <td style="padding:${S.cellPad}; width:50%; vertical-align:top;">${b ? committeeOneBlock(b.m, S.memSig, S.memFs, b.sig, S.sigH, S.memW, 'right', S.memLabel) : ''}</td>
+    </tr>`;
+  }
+  const memTable = mems.length
+    ? `<table style="width:100%; border-collapse:collapse; margin-top:${S.gap}; table-layout:fixed;">${memHtml}</table>`
+    : '';
+ 
+  return `<div style="break-inside:avoid; page-break-inside:avoid;">
+    ${heads.map(fullBlock).join('')}
+    ${memTable}
+    ${secs.map(fullBlock).join('')}
+  </div>`;   
    
 /* ---- หน่วยนับตามหมวดหมู่ครุภัณฑ์ (ใช้ในเอกสารบันทึกข้อความ) ---- */
 // ค่าเริ่มต้น — TODO: แก้หน่วยนับเริ่มต้นตรงนี้ได้ตามต้องการ หรือไปแก้ที่หน้า "ตั้งค่าระบบ" ก็ได้
@@ -7193,50 +7245,6 @@ async function printWithSign(printFn) {
   if (!signs) return;
   auditSignCurrent = signs;
   try { printFn(); } finally { auditSignCurrent = []; }
-}
-
- 
-/* ---------- ส่วนลายเซ็นท้ายรายงาน ---------- */
- 
-function committeeSignBlockHtml(compact) {
-  const list = committeeOrdered().map(x => x.m);
-  if (!list.length) return '';
-  const signs = auditSignCurrent || [];
- 
-  const S = compact
-    ? { headSig: '38mm', memSig: '28mm', sigH: '6mm', headFs: '10.5pt', memFs: '9.5pt', gap: '2mm', cellPad: '0.5mm 1mm' }
-    : { headSig: '50mm', memSig: '30mm', sigH: '9mm', headFs: '14pt', memFs: '12pt', gap: '5mm', cellPad: '2mm 1mm' };
- 
-  const heads = [], mems = [], secs = [];
-  list.forEach((m, k) => {
-    const item = { m, sig: signs[k] };
-    const kind = auditRoleKind(m.role);
-    if (kind === 'head') heads.push(item);
-    else if (kind === 'sec') secs.push(item);
-    else mems.push(item);
-  });
- 
-  const fullBlock = item =>
-    `<div style="margin-top:${S.gap};">${committeeOneBlock(item.m, S.headSig, S.headFs, item.sig, S.sigH, '110mm')}</div>`;
- 
-  // กรรมการ: แถวละ 2 คน ใช้ตารางคงที่ 50/50 และให้แต่ละช่องกว้างเต็มช่อง
-  let memHtml = '';
-  for (let i = 0; i < mems.length; i += 2) {
-    const a = mems[i], b = mems[i + 1];
-    memHtml += `<tr style="break-inside:avoid; page-break-inside:avoid;">
-      <td style="padding:${S.cellPad}; width:50%; vertical-align:top;">${committeeOneBlock(a.m, S.memSig, S.memFs, a.sig, S.sigH, '100%')}</td>
-      <td style="padding:${S.cellPad}; width:50%; vertical-align:top;">${b ? committeeOneBlock(b.m, S.memSig, S.memFs, b.sig, S.sigH, '100%') : ''}</td>
-    </tr>`;
-  }
-  const memTable = mems.length
-    ? `<table style="width:100%; border-collapse:collapse; margin-top:${S.gap}; table-layout:fixed;">${memHtml}</table>`
-    : '';
- 
-  return `<div style="break-inside:avoid; page-break-inside:avoid;">
-    ${heads.map(fullBlock).join('')}
-    ${memTable}
-    ${secs.map(fullBlock).join('')}
-  </div>`;
 }
    
 /* ---------- หน้าตั้งค่า: แก้ไขรายชื่อแบบร่าง แล้วค่อยกดบันทึก ---------- */
