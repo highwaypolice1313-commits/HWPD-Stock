@@ -11484,131 +11484,8 @@ function openMaintForm(presetId) {
 }
 
 /* ========================================================= USERS / OFFICERS */
-/* =========================================================
-   จนท.ในสังกัด: ค้นหาแบบเดียวกับทะเบียนครุภัณฑ์
-   ค้นได้จาก ยศ ชื่อ-สกุล ตำแหน่ง หน่วยงาน บทบาทเบิก-ยืม
-   รหัสจนท. และสิทธิ์การใช้งาน
-   ========================================================= */
-function userSearchText(u) {
-  return [
-    u['ยศ'], u['ชื่อ-สกุล'], officerFullName(u), u['ตำแหน่ง'], u['หน่วยงาน'],
-    u['บทบาทเบิก-ยืม'], u['รหัสจนท.'], u['สิทธิ์'] === 'admin' ? 'แอดมิน admin' : 'ดูอย่างเดียว viewer'
-  ].join(' | ');
-}
 
-async function renderUsers() {
-  ensureSrchStyles();
-  if (state.usersView === undefined) state.usersView = getViewMode('users');
-  if (state.userSearch === undefined) state.userSearch = '';
-  const el = document.getElementById('view-users');
-  el.innerHTML = emptyState('กำลังโหลดรายชื่อเจ้าหน้าที่...');
-  try {
-    if (!state.users.length) state.users = await apiGet('getUsers', { token: state.sessionToken });
-    state.users = (state.users || []).slice().sort(comparePoliceOfficers);
-  } catch (e) {
-    toast('โหลดข้อมูลเจ้าหน้าที่ไม่สำเร็จ: ' + (e.message || ''));
-  }
-  drawUsers();
-}
-
-function drawUsers() {
-  const el = document.getElementById('view-users');
-  ensureSrchStyles();
-  if (state.userSearch === undefined) state.userSearch = '';
-
-  el.innerHTML = `
-    <div class="section-title">
-      รายชื่อข้าราชการตำรวจในสังกัด
-      <span class="section-actions">
-        ${viewToggleHtml('users', state.usersView)}
-        <button class="icon-btn" id="btnPrintAllUsers" title="พิมพ์รายชื่อทั้งหมด" aria-label="พิมพ์รายชื่อทั้งหมด">${ICONS.print}</button>
-      </span>
-    </div>
-
-    <div class="ax-top">
-      ${srchBoxHtml('userSearchInput', state.userSearch, 'ค้นหายศ / ชื่อ / ตำแหน่ง / หน่วยงาน / บทบาท')}
-    </div>
-
-    <div class="hint" style="margin-top:0;">${isAdmin()
-      ? 'ทำเนียบนี้ใช้สำหรับเลือกชื่อแบบดรอปดาวน์ในหน้าเบิก-ยืม และบันทึกขอเบิกพัสดุ ไม่ได้ผูกกับการเข้าสู่ระบบ — กำหนด "บทบาทในบันทึกเบิก-ยืม" ให้แต่ละคนเพื่อให้ระบบเลือกผู้อนุมัติ/ผู้จ่ายพัสดุอัตโนมัติตอนพิมพ์บันทึกข้อความ'
-      : 'แตะที่รายชื่อเพื่อดูโปรไฟล์และพิมพ์รายงานได้ (ผู้ดูอย่างเดียวไม่สามารถแก้ไขข้อมูลได้)'}</div>
-
-    <div class="ax-count" id="userCount"></div>
-    <div id="userList"></div>
-  `;
-
-  document.getElementById('btnPrintAllUsers').onclick = printAllOfficers;
-
-  // ปุ่มเพิ่ม = FAB มุมขวาล่าง เหมือนหน้าอื่น (แสดงเฉพาะแอดมิน)
-  const fab = document.getElementById('fabBtn');
-  if (fab) {
-    fab.style.display = isAdmin() ? 'flex' : 'none';
-    fab.onclick = () => { if (isAdmin()) openUserForm(); };
-  }
-
-  srchBoxWire('userSearchInput', v => {
-    state.userSearch = v;
-    drawUserList();
-  });
-
-  wireViewToggle(drawUsers, '#view-users', 'usersView');
-  drawUserList();
-}
-
-/* วาดเฉพาะส่วนรายการ ไม่แตะช่องค้นหา จึงไม่ทำให้คีย์บอร์ดหลุด */
-function drawUserList() {
-  const listEl = document.getElementById('userList');
-  const cnt = document.getElementById('userCount');
-  if (!listEl) return;
-
-  const isGrid = state.usersView === 'grid';
-  const terms = srchTerms(state.userSearch);
-  const searching = terms.length > 0;
-
-  const shown = state.users
-    .filter(u => srchMatch(userSearchText(u), terms))
-    .slice()
-    .sort(comparePoliceOfficers);
-
-  if (cnt) cnt.innerHTML = 'พบ ' + shown.length + ' จาก ' + state.users.length + ' คน' +
-    (searching ? ' <span style="color:var(--gold-deep);">· ค้นหา "' + escapeHtml(state.userSearch.trim()) + '"</span>' : '');
-
-  listEl.className = isGrid ? 'asset-grid' : '';
-  if (shown.length) {
-    listEl.innerHTML = shown.map(isGrid ? userCard : userRow).join('');
-  } else if (searching) {
-    listEl.innerHTML = `<div class="glass empty-state">ไม่พบรายชื่อที่ตรงกับ "${escapeHtml(state.userSearch.trim())}"</div>`;
-  } else {
-    listEl.innerHTML = emptyState('ยังไม่มีรายชื่อ จนท.ในสังกัด');
-  }
-
-  listEl.querySelectorAll('.user-item').forEach(it => it.onclick = () => {
-    const u = state.users.find(x => officerId(x) === it.dataset.id ||
-      (!officerId(x) && (x['LINEUserId'] || x['ชื่อผู้ใช้'] || x['ชื่อ-สกุล']) === it.dataset.id));
-    if (u) openOfficerProfile(u);
-  });
-
-  if (isAdmin() && !isGrid) wireSwipeRows(listEl, USER_SWIPE);
-}
    
-function userCard(u) {
-  const idf = officerId(u) || u['LINEUserId'] || u['ชื่อผู้ใช้'] || u['ชื่อ-สกุล'] || '';
-  const memoRole = u['บทบาทเบิก-ยืม'];
-  const roleTag = memoRole && memoRole !== 'ไม่ระบุ (เลือกเองตอนพิมพ์)' ? `<div class="tag tag-brass" style="margin-top:6px;">${escapeHtml(memoRole)}</div>` : '';
-  const avatarHtml = u['รูปถ่าย'] ? `<img src="${u['รูปถ่าย']}" style="width:100%;height:100%;object-fit:cover;border-radius:13px;">` : ICONS.user;
-  return `<div class="glass asset-card user-item" data-id="${escapeHtml(idf)}">
-    <div class="asset-card-top">
-      <div class="asset-card-icon" style="overflow:hidden;">${avatarHtml}</div>
-      <span class="role-pill ${u['สิทธิ์']==='admin'?'':'viewer'}">${u['สิทธิ์']==='admin'?'แอดมิน':'ดูอย่างเดียว'}</span>
-    </div>
-    <div>
-      <div class="asset-card-title">${escapeHtml(officerFullName(u))}</div>
-      <div class="asset-card-sub">${escapeHtml(u['ตำแหน่ง']) || 'ไม่ระบุตำแหน่ง'}</div>
-    </div>
-    ${roleTag}
-  </div>`;
-}
-
    /* ========================= ฟีเจอร์ ๑+๒: โปรไฟล์ + พัสดุที่ถือครอง ========================= */
 
    /* ---- ตัวช่วย: แปลงรายการส่วนควบที่ยืมไปกับรายการยืมหนึ่งรายการ ให้เป็นข้อความ เช่น ["แม็กกาซีน ×2", "สายสะพาย"] ---- */
@@ -11716,77 +11593,619 @@ triggerPrint(
 );
    }
 
-   function printAllOfficers() {
-  const users = (state.users || []).slice().sort(comparePoliceOfficers);
-  if (!users.length) { toast('ยังไม่มีรายชื่อให้พิมพ์'); return; }
-  const orgName = (state.settings && state.settings.orgName) || ORG_NAME;
-  const cell = 'border:1px solid #000; padding:5px 7px; vertical-align:top;';
+/* =========================================================
+   จนท.ในสังกัด v2 — แทนที่บล็อกเดิมทั้งหมด
+   1) ตัวกรองตามบทบาทเบิก-ยืม   2) ตรวจความครบถ้วนของข้อมูล
+   3) ตัวเลขสรุปด้านบน            4) ป้ายจำนวนพัสดุที่ถือ
+   5) จัดกลุ่มตามหน่วยงาน/ตำแหน่ง/ยศ (พับได้)
+   6) ส่งออก CSV                   7) เลือกหลายคนพร้อมกัน
+   8) แก้ป้ายระดับให้ชัด + แก้ชื่อไฟล์พิมพ์ที่คัดลอกผิด
+   ========================================================= */
 
-  const rows = users.map((u, i) => {
-    const fullName = officerFullName(u);
-    const holdings = state.borrow.filter(b => eqCiJs_(b['ผู้ยืม'], fullName) &&
-      (effectiveBorrowStatus(b) === 'กำลังยืม' || effectiveBorrowStatus(b) === 'เกินกำหนด'));
-    const holdHtml = holdings.length
-      ? holdings.map(b => {
-          const comps = borrowCompLabels(b);
-          return '• ' + escapeHtml(b['ชื่อครุภัณฑ์']) + (comps.length ? ' (' + comps.map(escapeHtml).join(', ') + ')' : '');
-        }).join('<br>')
-      : '-';
-    const memoRole = (u['บทบาทเบิก-ยืม'] && u['บทบาทเบิก-ยืม'] !== 'ไม่ระบุ (เลือกเองตอนพิมพ์)') ? u['บทบาทเบิก-ยืม'] : '-';
-    return `<tr>
-      <td style="${cell} text-align:center;">${toThaiNumber(i + 1)}</td>
-      <td style="${cell}">${escapeHtml(fullName)}</td>
-      <td style="${cell}">${toThaiNumber(escapeHtml(u['ตำแหน่ง'] || '-'))}</td>
-      <td style="${cell}">${toThaiNumber(escapeHtml(u['หน่วยงาน'] || '-'))}</td>
-      <td style="${cell}">${escapeHtml(memoRole)}</td>
-      <td style="${cell}">${toThaiNumber(holdHtml)}</td>
-    </tr>`;
+/* ---------- ค่าคงที่ ---------- */
+const OFF_NO_ROLE = 'ไม่ระบุ (เลือกเองตอนพิมพ์)';
+const OFF_SINGLE_ROLES = ['ผู้อนุมัติ ลำดับที่ 1', 'ผู้อนุมัติ ลำดับที่ 2', 'ผู้อนุมัติ ลำดับที่ 3', 'ผู้จ่ายพัสดุ'];
+const OFF_SIGN_ROLES = OFF_SINGLE_ROLES;   // บทบาทที่ต้องมีลายเซ็นในเอกสาร
+const OFF_ROLE_CHIPS = [
+  ['all', 'ทุกบทบาท'],
+  ['ผู้อนุมัติ ลำดับที่ 1', 'อนุมัติ 1'],
+  ['ผู้อนุมัติ ลำดับที่ 2', 'อนุมัติ 2'],
+  ['ผู้อนุมัติ ลำดับที่ 3', 'อนุมัติ 3'],
+  ['ผู้จ่ายพัสดุ', 'ผู้จ่ายพัสดุ'],
+  ['ผู้ขอเบิก/ยืม (ค่าเริ่มต้น)', 'ผู้ขอเบิก'],
+  ['none', 'ยังไม่กำหนด']
+];
+const OFF_RANK_CHIPS = [['all', 'ทุกยศ'], ['สัญญาบัตร', 'สัญญาบัตร'], ['ประทวน', 'ประทวน'], ['ไม่ระบุ', 'ไม่ระบุ']];
+const OFF_FLAG_CHIPS = [['all', 'ทั้งหมด'], ['issue', 'ข้อมูลต้องตรวจ'], ['hold', 'ถือพัสดุ'], ['free', 'ไม่ถือพัสดุ']];
+const OFF_GROUP_OPTIONS = [
+  ['none', 'ไม่จัดกลุ่ม'],
+  ['unit', 'จัดกลุ่มตามหน่วยงาน'],
+  ['position', 'จัดกลุ่มตามตำแหน่งหลัก'],
+  ['rank', 'จัดกลุ่มตามยศ']
+];
+
+/* ---------- สถานะหน้า ---------- */
+function initOfficerState() {
+  if (state.userSearch === undefined) state.userSearch = '';
+  if (state.usersView === undefined) state.usersView = getViewMode('users');
+  if (!state.offFilter) state.offFilter = { role: 'all', rank: 'all', flag: 'all' };
+  if (!state.offGroup) state.offGroup = 'none';
+  if (!state.offGroupClosed) state.offGroupClosed = new Set();
+  if (!state.offSel) state.offSel = new Set();
+  if (state.offSelectMode === undefined) state.offSelectMode = false;
+}
+
+/* ---------- ตัวช่วยข้อมูล ---------- */
+function offRoleOf(u) {
+  const r = String(u['บทบาทเบิก-ยืม'] || '').trim();
+  return (!r || r === OFF_NO_ROLE) ? 'none' : r;
+}
+function offKey(u) {
+  return officerId(u) || u['LINEUserId'] || u['ชื่อผู้ใช้'] || u['ชื่อ-สกุล'] || '';
+}
+function offRankGroup(u) {
+  const r = normalizePoliceRank(u['ยศ']);
+  if (!r) return 'ไม่ระบุ';
+  if (/^(พล|พ\.ต|ร\.ต)/.test(r)) return 'สัญญาบัตร';
+  if (/^(ด\.ต|จ\.ส\.ต|ส\.ต)/.test(r)) return 'ประทวน';
+  return 'ไม่ระบุ';
+}
+function offHoldings(u) {
+  const full = officerFullName(u), nm = u['ชื่อ-สกุล'];
+  return (state.borrow || []).filter(b => {
+    const st = effectiveBorrowStatus(b);
+    if (st !== 'กำลังยืม' && st !== 'เกินกำหนด') return false;
+    return eqCiJs_(b['ผู้ยืม'], full) || eqCiJs_(b['ผู้ยืม'], nm);
+  });
+}
+function offDupRoles(users) {
+  const count = {};
+  users.forEach(u => {
+    const r = offRoleOf(u);
+    if (OFF_SINGLE_ROLES.includes(r)) count[r] = (count[r] || 0) + 1;
+  });
+  return new Set(Object.keys(count).filter(r => count[r] > 1));
+}
+function offIssues(u, dup) {
+  const out = [];
+  const role = offRoleOf(u);
+  if (!String(u['ชื่อ-สกุล'] || '').trim()) out.push({ lv: 'bad', t: 'ไม่ระบุชื่อ' });
+  if (!String(u['ยศ'] || '').trim()) out.push({ lv: 'bad', t: 'ไม่ระบุยศ' });
+  if (OFF_SIGN_ROLES.includes(role) && !u['ลายเซ็น']) out.push({ lv: 'bad', t: 'ยังไม่มีลายเซ็น (' + role + ')' });
+  if (!String(u['ตำแหน่ง'] || '').trim()) out.push({ lv: 'warn', t: 'ไม่มีตำแหน่ง' });
+  if (!String(u['หน่วยงาน'] || '').trim()) out.push({ lv: 'warn', t: 'ไม่มีหน่วยงาน' });
+  if (dup.has(role)) out.push({ lv: 'warn', t: 'บทบาทซ้ำกับคนอื่น' });
+  if (!u['รูปถ่าย']) out.push({ lv: 'info', t: 'ยังไม่มีรูปถ่าย' });
+  return out;
+}
+function offBuildRows() {
+  const users = state.users || [];
+  const dup = offDupRoles(users);
+  return users.map(u => ({
+    u,
+    key: offKey(u),
+    role: offRoleOf(u),
+    rank: offRankGroup(u),
+    hold: offHoldings(u),
+    issues: offIssues(u, dup)
+  }));
+}
+function userSearchText(u) {
+  return [
+    u['ยศ'], u['ชื่อ-สกุล'], officerFullName(u), u['ตำแหน่ง'], u['หน่วยงาน'],
+    u['บทบาทเบิก-ยืม'], u['รหัสจนท.'], u['สิทธิ์'] === 'admin' ? 'แอดมิน admin' : 'ดูอย่างเดียว viewer'
+  ].join(' | ');
+}
+function offFiltered(rows, terms) {
+  const f = state.offFilter;
+  return rows.filter(r => {
+    if (f.role !== 'all' && r.role !== f.role) return false;
+    if (f.rank !== 'all' && r.rank !== f.rank) return false;
+    if (f.flag === 'issue' && !r.issues.some(x => x.lv !== 'info')) return false;
+    if (f.flag === 'hold' && !r.hold.length) return false;
+    if (f.flag === 'free' && r.hold.length) return false;
+    return srchMatch(userSearchText(r.u), terms);
+  });
+}
+function offCurrentRows() {
+  return offFiltered(offBuildRows(), srchTerms(state.userSearch));
+}
+
+/* ---------- การจัดกลุ่ม ---------- */
+function offGroupKey(u, mode) {
+  if (mode === 'unit') return String(u['หน่วยงาน'] || '').trim() || 'ไม่ระบุหน่วยงาน';
+  if (mode === 'position') {
+    const p = parsePolicePosition(u['ตำแหน่ง']);
+    if (!p.base) return 'ไม่ระบุตำแหน่ง';
+    return p.base + (p.variant ? ' (ป.)' : '');
+  }
+  if (mode === 'rank') return normalizePoliceRank(u['ยศ']) || 'ไม่ระบุยศ';
+  return '';
+}
+function offKeyCmp(a, b, mode) {
+  if (mode === 'position') return comparePolicePositions(a, b);
+  if (mode === 'rank') return policeRankIndex(a) - policeRankIndex(b);
+  if (mode === 'unit') return a.localeCompare(b, 'th');
+  return 0;
+}
+
+/* ---------- ส่วนแสดงผลหลัก ---------- */
+async function renderUsers() {
+  ensureSrchStyles();
+  initOfficerState();
+  const el = document.getElementById('view-users');
+  el.innerHTML = emptyState('กำลังโหลดรายชื่อเจ้าหน้าที่...');
+  try {
+    if (!state.users.length) state.users = await apiGet('getUsers', { token: state.sessionToken });
+    state.users = (state.users || []).slice().sort(comparePoliceOfficers);
+  } catch (e) {
+    toast('โหลดข้อมูลเจ้าหน้าที่ไม่สำเร็จ: ' + (e.message || ''));
+  }
+  drawUsers();
+}
+
+function drawUsers() {
+  ensureSrchStyles();
+  initOfficerState();
+  const el = document.getElementById('view-users');
+  const rows = offBuildRows();
+  const f = state.offFilter;
+
+  const stats = {
+    total: rows.length,
+    off: rows.filter(r => r.rank === 'สัญญาบัตร').length,
+    pol: rows.filter(r => r.rank === 'ประทวน').length,
+    hold: rows.filter(r => r.hold.length > 0).length,
+    issue: rows.filter(r => r.issues.some(x => x.lv !== 'info')).length,
+    roled: rows.filter(r => r.role !== 'none').length
+  };
+  const countRole = v => v === 'all' ? rows.length
+    : (v === 'none' ? rows.filter(r => r.role === 'none').length : rows.filter(r => r.role === v).length);
+  const countRank = v => v === 'all' ? rows.length : rows.filter(r => r.rank === v).length;
+  const countFlag = v => {
+    if (v === 'all') return rows.length;
+    if (v === 'issue') return rows.filter(r => r.issues.some(x => x.lv !== 'info')).length;
+    if (v === 'hold') return rows.filter(r => r.hold.length > 0).length;
+    return rows.filter(r => !r.hold.length).length;
+  };
+
+  el.innerHTML = `
+    <div class="section-title">
+      รายชื่อข้าราชการตำรวจในสังกัด
+      <span class="section-actions">
+        ${viewToggleHtml('users', state.usersView)}
+        <button class="icon-btn" id="btnOffExport" title="ส่งออก CSV ตามตัวกรอง" aria-label="ส่งออก CSV">${ICONS.download}</button>
+        <button class="icon-btn" id="btnPrintAllUsers" title="พิมพ์รายชื่อตามตัวกรอง" aria-label="พิมพ์รายชื่อ">${ICONS.print}</button>
+      </span>
+    </div>
+
+    <div class="rp-kpis">
+      ${rpKpi(stats.total, 'ทั้งหมด (คน)', '')}
+      ${rpKpi(stats.off, 'สัญญาบัตร', 'info')}
+      ${rpKpi(stats.pol, 'ประทวน', '')}
+      ${rpKpi(stats.hold, 'กำลังถือพัสดุ', 'warn')}
+      ${rpKpi(stats.issue, 'ข้อมูลต้องตรวจ', stats.issue ? 'bad' : 'ok')}
+      ${rpKpi(stats.roled, 'มีบทบาทเบิก-ยืม', 'gold')}
+    </div>
+
+    <div class="ax-top">
+      ${srchBoxHtml('userSearchInput', state.userSearch, 'ค้นหายศ / ชื่อ / ตำแหน่ง / หน่วยงาน / บทบาท')}
+      <button class="ax-round" id="btnOffSelMode" title="เลือกหลายคน" aria-label="เลือกหลายคน"
+        style="${state.offSelectMode ? 'background:var(--navy);color:#fff;' : ''}">${ICONS.checklist}</button>
+    </div>
+
+    <div class="hint" style="margin:0 0 6px;">บทบาทเบิก-ยืม</div>
+    <div class="chip-row">
+      ${OFF_ROLE_CHIPS.map(([v, t]) => `<div class="chip ${f.role === v ? 'active' : ''}" data-orole="${escapeHtml(v)}">${escapeHtml(t)} (${countRole(v)})</div>`).join('')}
+    </div>
+
+    <div class="hint" style="margin:0 0 6px;">ยศ</div>
+    <div class="chip-row">
+      ${OFF_RANK_CHIPS.map(([v, t]) => `<div class="chip ${f.rank === v ? 'active' : ''}" data-orank="${escapeHtml(v)}">${escapeHtml(t)} (${countRank(v)})</div>`).join('')}
+    </div>
+
+    <div class="hint" style="margin:0 0 6px;">สถานะ</div>
+    <div class="chip-row">
+      ${OFF_FLAG_CHIPS.map(([v, t]) => `<div class="chip ${f.flag === v ? 'active' : ''}" data-oflag="${escapeHtml(v)}">${escapeHtml(t)} (${countFlag(v)})</div>`).join('')}
+    </div>
+
+    <div class="ax-top" style="margin-bottom:10px;">
+      <select class="input sort-select" id="offGroupSel" style="flex:0 0 auto;min-width:210px;">
+        ${OFF_GROUP_OPTIONS.map(([v, t]) => `<option value="${v}" ${state.offGroup === v ? 'selected' : ''}>${t}</option>`).join('')}
+      </select>
+      <span class="hint" style="margin:0;">เรียงลำดับ: ยศ → ตำแหน่ง → ชื่อ</span>
+    </div>
+
+    <div id="offBulk"></div>
+    <div class="ax-count" id="userCount"></div>
+    <div id="userList"></div>
+
+    <div class="hint" style="margin-top:12px;">"ระดับอ้างอิง" ใช้ดูเป็นข้อมูลประกอบเท่านั้น ไม่ได้ผูกกับรหัสผ่านเข้าระบบ · การปัดแถวซ้ายเพื่อแก้ไข/ลบ ใช้ได้เมื่อไม่ได้อยู่ในโหมดเลือกหลายคน</div>
+  `;
+
+  srchBoxWire('userSearchInput', v => {
+    state.userSearch = v;
+    drawUserList();
+  });
+
+  el.querySelectorAll('[data-orole]').forEach(c => c.onclick = () => { state.offFilter.role = c.dataset.orole; drawUsers(); });
+  el.querySelectorAll('[data-orank]').forEach(c => c.onclick = () => { state.offFilter.rank = c.dataset.orank; drawUsers(); });
+  el.querySelectorAll('[data-oflag]').forEach(c => c.onclick = () => { state.offFilter.flag = c.dataset.oflag; drawUsers(); });
+
+  document.getElementById('offGroupSel').onchange = e => {
+    state.offGroup = e.target.value;
+    state.offGroupClosed = new Set();
+    drawUserList();
+  };
+
+  document.getElementById('btnOffSelMode').onclick = () => {
+    state.offSelectMode = !state.offSelectMode;
+    if (!state.offSelectMode) state.offSel.clear();
+    drawUsers();
+  };
+
+  document.getElementById('btnOffExport').onclick = () => {
+    const list = offCurrentRows();
+    if (!list.length) { toast('ไม่มีรายการให้ส่งออก'); return; }
+    exportCsv('รายชื่อจนท.ในสังกัด.csv',
+      ['รหัสจนท.', 'ยศ', 'ชื่อ-สกุล', 'ตำแหน่ง', 'หน่วยงาน', 'บทบาทเบิก-ยืม', 'ระดับอ้างอิง', 'จำนวนพัสดุที่ถือ', 'พัสดุที่ถือ', 'ข้อมูลที่ต้องตรวจ', 'มีลายเซ็น', 'มีรูปถ่าย'],
+      list.map(r => ({
+        'รหัสจนท.': officerId(r.u),
+        'ยศ': r.u['ยศ'] || '',
+        'ชื่อ-สกุล': r.u['ชื่อ-สกุล'] || '',
+        'ตำแหน่ง': r.u['ตำแหน่ง'] || '',
+        'หน่วยงาน': r.u['หน่วยงาน'] || '',
+        'บทบาทเบิก-ยืม': r.role === 'none' ? '' : r.role,
+        'ระดับอ้างอิง': r.u['สิทธิ์'] === 'admin' ? 'แอดมิน' : 'ดูอย่างเดียว',
+        'จำนวนพัสดุที่ถือ': r.hold.length,
+        'พัสดุที่ถือ': r.hold.map(b => b['ชื่อครุภัณฑ์']).join(' | '),
+        'ข้อมูลที่ต้องตรวจ': r.issues.filter(x => x.lv !== 'info').map(x => x.t).join(' | '),
+        'มีลายเซ็น': r.u['ลายเซ็น'] ? 'มี' : 'ไม่มี',
+        'มีรูปถ่าย': r.u['รูปถ่าย'] ? 'มี' : 'ไม่มี'
+      }))
+    );
+  };
+
+  document.getElementById('btnPrintAllUsers').onclick = () =>
+    printOfficerRoster(offCurrentRows(), 'รายชื่อข้าราชการตำรวจในสังกัด', state.offGroup);
+
+  wireViewToggle(drawUsers, '#view-users', 'usersView');
+
+  const fab = document.getElementById('fabBtn');
+  if (fab) {
+    fab.style.display = isAdmin() ? 'flex' : 'none';
+    fab.onclick = () => { if (isAdmin()) openUserForm(); };
+  }
+
+  drawUserList();
+}
+
+/* ---------- รายการ / การ์ด ---------- */
+function offItemHtml(r, isGrid) {
+  const u = r.u;
+  const key = escapeHtml(r.key);
+  const sel = state.offSelectMode && state.offSel.has(r.key);
+  const roleTxt = r.role === 'none' ? '' : `<span class="tag tag-brass">${escapeHtml(r.role)}</span>`;
+  const holdTxt = r.hold.length
+    ? `<span class="tag" style="background:var(--navy-wash);color:var(--navy);">ถือ ${r.hold.length} รายการ</span>`
+    : `<span class="tag tag-off">ไม่ถือพัสดุ</span>`;
+  const issueList = r.issues.filter(x => x.lv !== 'info');
+  const issueTxt = issueList.length
+    ? `<span class="status-badge ${issueList.some(x => x.lv === 'bad') ? 'status-repair' : 'status-borrowed'}">${escapeHtml(issueList[0].t)}${issueList.length > 1 ? ' +' + (issueList.length - 1) : ''}</span>`
+    : '';
+  const sub = [u['ตำแหน่ง'] || 'ไม่ระบุตำแหน่ง', u['หน่วยงาน']].filter(Boolean).map(escapeHtml).join(' · ');
+  const chk = state.offSelectMode
+    ? `<input type="checkbox" tabindex="-1" ${sel ? 'checked' : ''} style="width:18px;height:18px;flex:none;pointer-events:none;">`
+    : '';
+  const outline = sel ? 'outline:2px solid var(--gold);' : '';
+  const sysRole = `<span class="tag tag-off" title="ระดับอ้างอิง ไม่ใช่รหัสเข้าระบบ">อ้างอิง: ${u['สิทธิ์'] === 'admin' ? 'แอดมิน' : 'ดูอย่างเดียว'}</span>`;
+
+  if (isGrid) {
+    return `<div class="glass asset-card user-item" data-id="${key}" style="cursor:pointer;${outline}">
+      <div class="asset-card-top">
+        <div class="asset-card-icon" style="overflow:hidden;">${u['รูปถ่าย'] ? `<img src="${u['รูปถ่าย']}" style="width:100%;height:100%;object-fit:cover;border-radius:13px;">` : ICONS.user}</div>
+        ${chk}
+      </div>
+      <div>
+        <div class="asset-card-title">${escapeHtml(officerFullName(u))}</div>
+        <div class="asset-card-sub">${sub}</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">${roleTxt}${holdTxt}</div>
+      ${issueTxt ? `<div>${issueTxt}</div>` : ''}
+    </div>`;
+  }
+
+  return `<div class="glass list-item user-item" data-id="${key}" style="cursor:pointer;${outline}">
+    ${chk}
+    ${u['รูปถ่าย'] ? `<img class="li-avatar" src="${u['รูปถ่าย']}" alt="">` : `<div class="li-icon">${ICONS.user}</div>`}
+    <div class="li-body">
+      <div class="li-title">${escapeHtml(officerFullName(u))}</div>
+      <div class="li-sub">${sub}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:5px;">${roleTxt}${holdTxt}${issueTxt}</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">${sysRole}</div>
+  </div>`;
+}
+
+function drawUserList() {
+  const listEl = document.getElementById('userList');
+  const cnt = document.getElementById('userCount');
+  if (!listEl) return;
+
+  const rows = offBuildRows();
+  const terms = srchTerms(state.userSearch);
+  const shown = offFiltered(rows, terms);
+  state.offVisible = shown;
+
+  const isGrid = state.usersView === 'grid';
+  const mode = state.offGroup || 'none';
+
+  if (cnt) {
+    cnt.innerHTML = 'แสดง ' + shown.length + ' จาก ' + rows.length + ' คน' +
+      (terms.length ? ' <span style="color:var(--gold-deep);">· ค้นหา "' + escapeHtml(state.userSearch.trim()) + '"</span>' : '');
+  }
+
+  // คลิกเดียวจัดการทุกกรณี: พับกลุ่ม / เลือกคน / เปิดโปรไฟล์
+  listEl.onclick = e => {
+    const head = e.target.closest('[data-ghead]');
+    if (head) {
+      const k = head.dataset.ghead;
+      if (state.offGroupClosed.has(k)) state.offGroupClosed.delete(k);
+      else state.offGroupClosed.add(k);
+      drawUserList();
+      return;
+    }
+    const row = e.target.closest('[data-id]');
+    if (!row) return;
+    const k = row.dataset.id;
+    if (state.offSelectMode) {
+      if (state.offSel.has(k)) state.offSel.delete(k); else state.offSel.add(k);
+      drawUserList();
+      return;
+    }
+    const u = (state.users || []).find(x => offKey(x) === k);
+    if (u) openOfficerProfile(u);
+  };
+
+  if (!shown.length) {
+    listEl.className = '';
+    listEl.innerHTML = terms.length
+      ? `<div class="glass empty-state">ไม่พบรายชื่อที่ตรงกับ "${escapeHtml(state.userSearch.trim())}"</div>`
+      : emptyState('ไม่มีรายชื่อตามตัวกรองที่เลือก');
+    drawOffBulk();
+    return;
+  }
+
+  const groups = new Map();
+  shown.forEach(r => {
+    const k = mode === 'none' ? '' : offGroupKey(r.u, mode);
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push(r);
+  });
+  const keys = [...groups.keys()];
+  if (mode !== 'none') keys.sort((a, b) => offKeyCmp(a, b, mode));
+
+  listEl.className = '';
+  listEl.innerHTML = keys.map(k => {
+    const items = groups.get(k);
+    const open = mode === 'none' || !state.offGroupClosed.has(k);
+    const flagged = items.filter(r => r.issues.some(x => x.lv !== 'info')).length;
+    const head = mode === 'none' ? '' : `
+      <div class="memo-group-head" data-ghead="${escapeHtml(k)}" style="cursor:pointer;">
+        <svg class="ap-caret" viewBox="0 0 20 20" fill="none"><path d="M7 4l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>${escapeHtml(k)}</span>
+        ${flagged ? `<span class="memo-group-stat" style="color:var(--warn);">ต้องตรวจ ${flagged} คน</span>` : ''}
+        <span class="ap-count">${items.length} คน</span>
+      </div>`;
+    return `<div class="ap-group memo-group ${open ? 'open' : ''}">
+      ${head}
+      <div class="memo-group-body ${isGrid ? 'asset-grid' : ''}">
+        ${items.map(r => offItemHtml(r, isGrid)).join('')}
+      </div>
+    </div>`;
   }).join('');
 
+  if (isAdmin() && !isGrid && !state.offSelectMode) wireSwipeRows(listEl, USER_SWIPE);
+  drawOffBulk();
+}
+
+/* ---------- แถบคำสั่งเมื่อเลือกหลายคน ---------- */
+function offTargets() {
+  return (state.users || []).filter(u => state.offSel.has(offKey(u)));
+}
+
+function drawOffBulk() {
+  const host = document.getElementById('offBulk');
+  if (!host) return;
+  if (!state.offSelectMode) { host.innerHTML = ''; return; }
+
+  const n = state.offSel.size;
+  host.innerHTML = `
+    <div class="glass" style="padding:12px 14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
+      <b>เลือกแล้ว ${n} คน</b>
+      <span class="link-btn" id="offSelAll">เลือกทั้งหมดที่แสดง</span>
+      <span class="link-btn" id="offSelNone">ล้างการเลือก</span>
+      <span style="flex:1 1 0;"></span>
+      ${isAdmin() ? `
+        <button class="btn btn-ghost" id="offBulkRole" ${n ? '' : 'disabled'} style="flex:none;min-height:40px;">กำหนดบทบาท</button>
+        <button class="btn btn-ghost" id="offBulkUnit" ${n ? '' : 'disabled'} style="flex:none;min-height:40px;">ปรับหน่วยงาน</button>` : ''}
+      <button class="btn btn-primary" id="offBulkPrint" ${n ? '' : 'disabled'} style="flex:none;min-height:40px;">พิมพ์ที่เลือก</button>
+      <button class="btn btn-ghost" id="offSelExit" style="flex:none;min-height:40px;">ปิดโหมดเลือก</button>
+    </div>`;
+
+  document.getElementById('offSelAll').onclick = () => {
+    (state.offVisible || []).forEach(r => state.offSel.add(r.key));
+    drawUserList();
+  };
+  document.getElementById('offSelNone').onclick = () => { state.offSel.clear(); drawUserList(); };
+  document.getElementById('offSelExit').onclick = () => {
+    state.offSelectMode = false;
+    state.offSel.clear();
+    drawUsers();
+  };
+  document.getElementById('offBulkPrint').onclick = () => {
+    const rows = offBuildRows().filter(r => state.offSel.has(r.key));
+    printOfficerRoster(rows, 'รายชื่อข้าราชการตำรวจที่เลือก', state.offGroup);
+  };
+  const br = document.getElementById('offBulkRole');
+  if (br) br.onclick = offOpenBulkRole;
+  const bu = document.getElementById('offBulkUnit');
+  if (bu) bu.onclick = offOpenBulkUnit;
+}
+
+/* ---------- แก้ไขหลายคนพร้อมกัน ---------- */
+function offPayload(u, patch) {
+  const oid = officerId(u);
+  return Object.assign({
+    officerId: oid || undefined,
+    lineUserId: (!oid && u['LINEUserId']) || undefined,
+    username: (!oid && u['ชื่อผู้ใช้']) || undefined,
+    name: u['ชื่อ-สกุล'] || '',
+    rank: u['ยศ'] || '',
+    position: u['ตำแหน่ง'] || '',
+    unit: u['หน่วยงาน'] || '',
+    role: u['สิทธิ์'] || 'viewer',
+    memoRole: offRoleOf(u) === 'none' ? OFF_NO_ROLE : u['บทบาทเบิก-ยืม'],
+    photo: u['รูปถ่าย'] || '',
+    signature: u['ลายเซ็น'] || ''
+  }, patch);
+}
+
+async function offBulkApply(targets, patch, label) {
+  if (!targets.length) return;
+  if (!await confirmSheet('ยืนยันเปลี่ยน ' + label + ' ให้ ' + targets.length + ' คน?', { title: 'แก้ไขหลายรายการ', okText: 'ยืนยัน' })) return;
+
+  setLoading(true, 'กำลังบันทึก 0/' + targets.length + ' ...');
+  const txt = document.getElementById('loadingText');
+  const failed = [];
+  for (let i = 0; i < targets.length; i++) {
+    try { await apiPost('updateUserRole', offPayload(targets[i], patch)); }
+    catch (e) { failed.push(officerFullName(targets[i])); }
+    if (txt) txt.textContent = 'กำลังบันทึก ' + (i + 1) + '/' + targets.length + ' ...';
+  }
+  setLoading(false);
+
+  state.offSel.clear();
+  state.offSelectMode = false;
+  toast('บันทึกแล้ว ' + (targets.length - failed.length) + '/' + targets.length + ' คน' +
+    (failed.length ? ' (ล้มเหลว: ' + failed.join(', ') + ')' : ''));
+  await reloadThen(renderUsers);
+}
+
+function offOpenBulkRole() {
+  const targets = offTargets();
+  if (!targets.length) { toast('เลือกรายชื่อก่อน'); return; }
+  showSheet(`
+    <div class="sheet-title">กำหนดบทบาทเบิก-ยืม (${targets.length} คน)</div>
+    <div class="hint" style="margin-top:0;">บทบาทนี้จะถูกใช้ตอนดึงผู้อนุมัติ/ผู้จ่ายพัสดุอัตโนมัติในเอกสารบันทึกข้อความ</div>
+    <div class="field"><label>บทบาทใหม่</label>
+      <select class="input" id="offBrole">${MEMO_ROLES.map(r => `<option>${escapeHtml(r)}</option>`).join('')}</select>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="offBroleCancel">ยกเลิก</button>
+      <button class="btn btn-primary" id="offBroleOk">บันทึก</button>
+    </div>`);
+  document.getElementById('offBroleCancel').onclick = closeSheet;
+  document.getElementById('offBroleOk').onclick = async () => {
+    const v = val('offBrole');
+    closeSheet();
+    await offBulkApply(targets, { memoRole: v }, 'บทบาทเป็น "' + v + '"');
+  };
+}
+
+function offOpenBulkUnit() {
+  const targets = offTargets();
+  if (!targets.length) { toast('เลือกรายชื่อก่อน'); return; }
+  showSheet(`
+    <div class="sheet-title">ปรับหน่วยงาน (${targets.length} คน)</div>
+    <div class="field"><label>หน่วยงานใหม่</label>
+      <input class="input" id="offUnit" placeholder="เช่น ส.ทล.3 กก.1 บก.ทล.">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="offUnitCancel">ยกเลิก</button>
+      <button class="btn btn-primary" id="offUnitOk">บันทึก</button>
+    </div>`);
+  document.getElementById('offUnitCancel').onclick = closeSheet;
+  document.getElementById('offUnitOk').onclick = async () => {
+    const v = val('offUnit').trim();
+    if (!v) { toast('กรุณากรอกหน่วยงาน'); return; }
+    closeSheet();
+    await offBulkApply(targets, { unit: v }, 'หน่วยงานเป็น "' + v + '"');
+  };
+}
+
+/* ---------- พิมพ์รายชื่อ (ใช้ได้ทั้งทั้งหมด/ตัวกรอง/ที่เลือก) ---------- */
+function printOfficerRoster(rows, title, mode) {
+  if (!rows || !rows.length) { toast('ไม่มีรายชื่อให้พิมพ์'); return; }
+  const orgName = (state.settings && state.settings.orgName) || ORG_NAME;
+  const g = mode || 'none';
+
+  const list = rows.slice().sort((a, b) => {
+    if (g !== 'none') {
+      const ka = offGroupKey(a.u, g), kb = offGroupKey(b.u, g);
+      if (ka !== kb) return offKeyCmp(ka, kb, g);
+    }
+    return comparePoliceOfficers(a.u, b.u);
+  });
+
+  const counts = {};
+  if (g !== 'none') list.forEach(r => { const k = offGroupKey(r.u, g); counts[k] = (counts[k] || 0) + 1; });
+
+  const cell = 'border:1px solid #000;padding:4px 6px;vertical-align:top;';
+  let body = '', prev = null, no = 0;
+  list.forEach(r => {
+    const u = r.u;
+    if (g !== 'none') {
+      const k = offGroupKey(u, g);
+      if (k !== prev) {
+        body += `<tr><td colspan="6" style="${cell}background:#eef2f5;font-weight:700;">${toThaiNumber(escapeHtml(k))} (${toThaiNumber(counts[k])} นาย)</td></tr>`;
+        prev = k;
+      }
+    }
+    no++;
+    const holdText = r.hold.length ? r.hold.map(b => escapeHtml(b['ชื่อครุภัณฑ์'])).join('<br>') : '-';
+    const role = r.role === 'none' ? '-' : r.role;
+    body += `<tr>
+      <td style="${cell}text-align:center;">${toThaiNumber(no)}</td>
+      <td style="${cell}">${escapeHtml(officerFullName(u))}</td>
+      <td style="${cell}">${toThaiNumber(escapeHtml(u['ตำแหน่ง'] || '-'))}</td>
+      <td style="${cell}">${toThaiNumber(escapeHtml(u['หน่วยงาน'] || '-'))}</td>
+      <td style="${cell}">${escapeHtml(role)}</td>
+      <td style="${cell}">${holdText === '-' ? '-' : toThaiNumber(holdText)}</td>
+    </tr>`;
+  });
+
+  const holders = list.filter(r => r.hold.length).length;
   const html = `
-    <style>@page{ size:A4; margin:12mm; } table{ page-break-inside:auto; } tr{ page-break-inside:avoid; }</style>
-    <div style="font-family:'TH Sarabun New','Sarabun','Kanit',sans-serif; font-size:14pt; color:#000;">
-      <div style="text-align:center; font-weight:700; font-size:18pt;">รายชื่อข้าราชการตำรวจในสังกัด</div>
-      <div style="text-align:center; margin-bottom:6mm;">${toThaiNumber(escapeHtml(orgName))} · จำนวน ${toThaiNumber(users.length)} นาย</div>
-      <table style="width:100%; border-collapse:collapse; table-layout:fixed; font-size:12.5pt;">
+    <style>@page{size:A4;margin:12mm;} table{page-break-inside:auto;} tr{page-break-inside:avoid;} thead{display:table-header-group;}</style>
+    <div style="font-family:'TH Sarabun New','Sarabun','Kanit',sans-serif;font-size:14pt;color:#000;">
+      <div style="text-align:center;font-weight:700;font-size:18pt;">${escapeHtml(title)}</div>
+      <div style="text-align:center;margin-bottom:5mm;">${toThaiNumber(escapeHtml(orgName))}</div>
+      <table style="width:100%;border-collapse:collapse;table-layout:fixed;font-size:12.5pt;">
         <thead>
-          <tr style="background:#f2f2f2; text-align:center; font-weight:700;">
-            <th style="border:1px solid #000; padding:5px; width:5%;">ที่</th>
-            <th style="border:1px solid #000; padding:5px; width:22%;">ยศ ชื่อ-สกุล</th>
-            <th style="border:1px solid #000; padding:5px; width:20%;">ตำแหน่ง</th>
-            <th style="border:1px solid #000; padding:5px; width:15%;">หน่วยงาน</th>
-            <th style="border:1px solid #000; padding:5px; width:13%;">บทบาทเบิก-ยืม</th>
-            <th style="border:1px solid #000; padding:5px; width:25%;">พัสดุในความครอบครอง</th>
+          <tr style="background:#f2f2f2;text-align:center;font-weight:700;">
+            <th style="border:1px solid #000;padding:5px;width:5%;">ที่</th>
+            <th style="border:1px solid #000;padding:5px;width:22%;">ยศ ชื่อ-สกุล</th>
+            <th style="border:1px solid #000;padding:5px;width:22%;">ตำแหน่ง</th>
+            <th style="border:1px solid #000;padding:5px;width:16%;">หน่วยงาน</th>
+            <th style="border:1px solid #000;padding:5px;width:14%;">บทบาทเบิก-ยืม</th>
+            <th style="border:1px solid #000;padding:5px;width:21%;">พัสดุที่ถือ</th>
           </tr>
         </thead>
-        <tbody>${rows}</tbody>
+        <tbody>${body}</tbody>
       </table>
-      <div style="margin-top:6mm; font-size:11pt; text-align:right;">วันที่พิมพ์รายงาน: ${escapeHtml(thaiDateLong())}</div>
+      <div style="margin-top:5mm;font-size:12pt;">
+        รวม ${toThaiNumber(list.length)} นาย · ถือพัสดุ ${toThaiNumber(holders)} นาย · วันที่พิมพ์รายงาน: ${escapeHtml(thaiDateLong())}
+      </div>
     </div>`;
 
   const pa = document.getElementById('printArea');
   pa.classList.add('report-print-area');
   pa.innerHTML = html;
-  triggerPrint(
-  () => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; },
-  { immediate: true, filename: 'ป้าย QR ครุภัณฑ์' }
-);
+  triggerPrint(() => { pa.classList.remove('report-print-area'); pa.innerHTML = ''; },
+    { filename: safeFileName(title) });
 }
    
-function userRow(u) {
-  const idf = officerId(u) || u['LINEUserId'] || u['ชื่อผู้ใช้'] || u['ชื่อ-สกุล'] || '';
-  const memoRole = u['บทบาทเบิก-ยืม'];
-  const roleTag = memoRole && memoRole !== 'ไม่ระบุ (เลือกเองตอนพิมพ์)' ? `<span class="tag tag-brass" style="margin-top:4px;">${escapeHtml(memoRole)}</span>` : '';
-  const avatarHtml = u['รูปถ่าย'] ? `<img class="li-avatar" src="${u['รูปถ่าย']}" alt="">` : `<div class="li-icon">${ICONS.user}</div>`;
-  return `<div class="glass list-item user-item" data-id="${escapeHtml(idf)}">
-    ${avatarHtml}
-    <div class="li-body"><div class="li-title">${escapeHtml(officerFullName(u))}</div><div class="li-sub">${escapeHtml(u['ตำแหน่ง']) || 'ไม่ระบุตำแหน่ง'}${u['หน่วยงาน'] ? ' · ' + escapeHtml(u['หน่วยงาน']) : ''}</div></div>
-    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
-      <span class="role-pill ${u['สิทธิ์']==='admin'?'':'viewer'}">${u['สิทธิ์']==='admin'?'แอดมิน':'ดูอย่างเดียว'}</span>
-      ${roleTag}
-    </div>
-  </div>`;
-}
 function activityRow(a) {
   return `<div class="glass list-item" style="cursor:default;">
     <div class="li-icon">${ICONS.log}</div>
