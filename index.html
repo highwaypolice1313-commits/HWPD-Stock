@@ -10959,85 +10959,153 @@ function openBorrowForm(presetId) {
   };
 }
 /* ========================================================= MAINTENANCE */
+/* =========================================================
+   ซ่อมบำรุง: ค้นหาแบบเดียวกับทะเบียนครุภัณฑ์
+   ค้นได้จาก ชื่อครุภัณฑ์ อาการ/ปัญหา ผู้แจ้ง ผู้รับผิดชอบ
+   รหัสครุภัณฑ์ S/N ทะเบียน หมายเหตุ สถานะ และวันที่ (ค.ศ./พ.ศ.)
+   ========================================================= */
+function maintSearchText(m) {
+  const a = state.assets.find(x => x['รหัสครุภัณฑ์'] === m['รหัสครุภัณฑ์']) || {};
+  const d1 = toDate(m['วันที่แจ้ง']);
+  const d2 = toDate(m['วันที่ซ่อมเสร็จ']);
+  const dates = [];
+  [d1, d2].forEach(d => {
+    if (isNaN(d)) return;
+    dates.push(isoDate(d), thaiDate(d), systemDate(d), String(d.getFullYear()), String(d.getFullYear() + 543));
+  });
+  return [
+    m['ชื่อครุภัณฑ์'], m['อาการ/ปัญหา'], m['ผู้แจ้ง'], m['ผู้รับผิดชอบ'],
+    m['รหัสครุภัณฑ์'], m['รหัสรายการ'], m['หมายเหตุ'], m['สถานะ'],
+    a['หมายเลขเครื่อง'], a['ทะเบียนรถ'], a['ยี่ห้อ/รุ่น'], a['หมวดหมู่'],
+    ...dates
+  ].join(' | ');
+}
+
+function maintBuckets() {
+  const all = state.maint || [];
+  return {
+    pending: all.filter(m => m['สถานะ'] === 'รอซ่อม'),
+    active: all.filter(m => m['สถานะ'] !== 'ซ่อมเสร็จ'),
+    history: all.filter(m => m['สถานะ'] === 'ซ่อมเสร็จ')
+  };
+}
+
+function maintSortList(list) {
+  const [field, dir] = state.maintSort.split('_');
+  const mul = dir === 'desc' ? -1 : 1;
+  return [...list].sort((a, b) => {
+    if (field === 'date') return mul * (toDate(a['วันที่แจ้ง'] || 0) - toDate(b['วันที่แจ้ง'] || 0));
+    if (field === 'name') return mul * String(a['ชื่อครุภัณฑ์'] || '').localeCompare(String(b['ชื่อครุภัณฑ์'] || ''), 'th');
+    if (field === 'cost') return mul * ((Number(a['ค่าใช้จ่าย(บาท)']) || 0) - (Number(b['ค่าใช้จ่าย(บาท)']) || 0));
+    return 0;
+  });
+}
+
+function maintVisibleList() {
+  const base = maintBuckets()[state.maintTab] || [];
+  const terms = srchTerms(state.maintSearch);
+  const list = base.filter(m => srchMatch(maintSearchText(m), terms));
+  return { base, list: maintSortList(list), terms };
+}
+
+function drawMaintList() {
+  const listEl = document.getElementById('maintList');
+  if (!listEl) return;
+  const { base, list, terms } = maintVisibleList();
+  const isGrid = state.maintView === 'grid';
+
+  const cnt = document.getElementById('maintCount');
+  if (cnt) cnt.innerHTML = 'พบ ' + list.length + ' จาก ' + base.length + ' รายการ' +
+    (terms.length ? ' <span style="color:var(--gold-deep);">· ค้นหา "' + escapeHtml(state.maintSearch.trim()) + '"</span>' : '');
+
+  listEl.className = isGrid ? 'asset-grid' : '';
+  if (list.length) {
+    listEl.innerHTML = list.map(isGrid ? maintCard : maintRow).join('');
+  } else if (terms.length) {
+    listEl.innerHTML = `<div class="glass empty-state">ไม่พบงานซ่อมที่ตรงกับ "${escapeHtml(state.maintSearch.trim())}"</div>`;
+  } else {
+    listEl.innerHTML = emptyState(
+      state.maintTab === 'pending' ? 'ไม่มีงานรอซ่อม' :
+      state.maintTab === 'active' ? 'ไม่มีงานซ่อมค้าง' : 'ยังไม่มีประวัติ');
+  }
+
+  listEl.querySelectorAll('.maint-item').forEach(it => it.onclick = () => openMaintDetail(it.dataset.id));
+  if (isAdmin() && !isGrid) wireSwipeRows(listEl, MAINT_SWIPE);
+}
+
 function renderMaint() {
   const el = document.getElementById('view-maint');
+  ensureSrchStyles();
   if (state.maintTab === undefined) state.maintTab = 'active';
   if (state.maintSearch === undefined) state.maintSearch = '';
   if (state.maintSort === undefined) state.maintSort = 'date_desc';
   if (state.maintView === undefined) state.maintView = getViewMode('maint');
 
-  const pending = state.maint.filter(m => m['สถานะ'] === 'รอซ่อม');
-  const active = state.maint.filter(m => m['สถานะ'] !== 'ซ่อมเสร็จ');
-  const history = state.maint.filter(m => m['สถานะ'] === 'ซ่อมเสร็จ');
-  const totalCost = state.maint.reduce((s, m) => s + (Number(m['ค่าใช้จ่าย(บาท)']) || 0), 0);
+  const bk = maintBuckets();
+  const totalCost = (state.maint || []).reduce((s, m) => s + (Number(m['ค่าใช้จ่าย(บาท)']) || 0), 0);
 
   const TABS = [
-    { id: 'pending', label: 'รอซ่อม', count: pending.length },
-    { id: 'active',  label: 'ค้างซ่อม', count: active.length },
-    { id: 'history', label: 'ซ่อมเสร็จแล้ว', count: history.length }
+    { id: 'pending', label: 'รอซ่อม', count: bk.pending.length },
+    { id: 'active', label: 'ค้างซ่อม', count: bk.active.length },
+    { id: 'history', label: 'ซ่อมเสร็จแล้ว', count: bk.history.length }
   ];
-
-  let list = { pending, active, history }[state.maintTab] || [];
-  const q = state.maintSearch.toLowerCase();
-  if (q) list = list.filter(m => String(m['ชื่อครุภัณฑ์']||'').toLowerCase().includes(q) || String(m['อาการ/ปัญหา']||'').toLowerCase().includes(q) || String(m['ผู้แจ้ง']||'').toLowerCase().includes(q));
-
-  const [sField, sDir] = state.maintSort.split('_');
-  const sMul = sDir === 'desc' ? -1 : 1;
-  list = [...list].sort((a, b) => {
-    if (sField === 'date') return sMul * (toDate(a['วันที่แจ้ง']||0) - toDate(b['วันที่แจ้ง']||0));
-    if (sField === 'name') return sMul * String(a['ชื่อครุภัณฑ์']||'').localeCompare(String(b['ชื่อครุภัณฑ์']||''), 'th');
-    if (sField === 'cost') return sMul * ((Number(a['ค่าใช้จ่าย(บาท)'])||0) - (Number(b['ค่าใช้จ่าย(บาท)'])||0));
-    return 0;
-  });
-
-  const isGrid = state.maintView === 'grid';
 
   el.innerHTML = `
     <div class="section-title">
-      งานซ่อมบำรุง <small>${active.length} รายการค้างซ่อม</small>
+      งานซ่อมบำรุง <small>${bk.active.length} รายการค้างซ่อม</small>
       <span class="section-actions">
         ${viewToggleHtml('maint', state.maintView)}
-        <button class="icon-btn" id="btnExportMaint" title="ส่งออก CSV">${ICONS.download}</button>
+        <button class="icon-btn" id="btnExportMaint" title="ส่งออก CSV" aria-label="ส่งออก CSV">${ICONS.download}</button>
       </span>
     </div>
+
     <div class="stat-grid" style="margin-bottom:14px;">
-      <div class="stat-card warn"><div class="stat-num">${pending.length}</div><div class="stat-label">รอซ่อม</div></div>
-      <div class="stat-card ok"><div class="stat-num">${active.length}</div><div class="stat-label">ค้างซ่อม</div></div>
+      <div class="stat-card warn"><div class="stat-num">${bk.pending.length}</div><div class="stat-label">รอซ่อม</div></div>
+      <div class="stat-card ok"><div class="stat-num">${bk.active.length}</div><div class="stat-label">ค้างซ่อม</div></div>
       <div class="stat-card info"><div class="stat-num">${Number(totalCost).toLocaleString()}</div><div class="stat-label">ค่าใช้จ่ายสะสม (บาท)</div></div>
     </div>
-    <div class="search-row">
-      <input class="input" id="maintSearchInput" placeholder="ค้นหาชื่อครุภัณฑ์ อาการ หรือผู้แจ้ง..." value="${escapeHtml(state.maintSearch)}">
-      <select class="input sort-select" id="maintSortSelect">
-        <option value="date_desc" ${state.maintSort==='date_desc'?'selected':''}>แจ้งล่าสุดก่อน</option>
-        <option value="date_asc" ${state.maintSort==='date_asc'?'selected':''}>แจ้งเก่าสุดก่อน</option>
-        <option value="name_asc" ${state.maintSort==='name_asc'?'selected':''}>ชื่อครุภัณฑ์ ก-ฮ</option>
-        <option value="cost_desc" ${state.maintSort==='cost_desc'?'selected':''}>ค่าใช้จ่ายมาก-น้อย</option>
+
+    <div class="ax-top">
+      ${srchBoxHtml('maintSearchInput', state.maintSearch, 'ค้นหาชื่อครุภัณฑ์ / อาการ / ผู้แจ้ง / S/N / ทะเบียน')}
+      <select class="input sort-select" id="maintSortSelect" style="flex:0 1 190px; min-width:150px; height:46px; border-radius:99px;">
+        <option value="date_desc" ${state.maintSort === 'date_desc' ? 'selected' : ''}>แจ้งล่าสุดก่อน</option>
+        <option value="date_asc" ${state.maintSort === 'date_asc' ? 'selected' : ''}>แจ้งเก่าสุดก่อน</option>
+        <option value="name_asc" ${state.maintSort === 'name_asc' ? 'selected' : ''}>ชื่อครุภัณฑ์ ก-ฮ</option>
+        <option value="cost_desc" ${state.maintSort === 'cost_desc' ? 'selected' : ''}>ค่าใช้จ่ายมาก-น้อย</option>
       </select>
     </div>
+
     <div class="chip-row">
-      ${TABS.map(t => `<div class="chip ${state.maintTab===t.id?'active':''}" data-mtab="${t.id}">${t.label} (${t.count})</div>`).join('')}
+      ${TABS.map(t => `<div class="chip ${state.maintTab === t.id ? 'active' : ''}" data-mtab="${t.id}">${t.label} (${t.count})</div>`).join('')}
     </div>
-    <div id="maintList" class="${isGrid ? 'asset-grid' : ''}">${list.length ? list.map(isGrid ? maintCard : maintRow).join('') : emptyState(
-      state.maintTab==='pending' ? 'ไม่มีงานรอซ่อม' :
-      state.maintTab==='active'  ? 'ไม่มีงานซ่อมค้าง' : 'ยังไม่มีประวัติ'
-    )}</div>
+
+    <div class="ax-count" id="maintCount"></div>
+    <div id="maintList"></div>
   `;
-  document.querySelectorAll('.maint-item').forEach(it => it.onclick = () => openMaintDetail(it.dataset.id));
-  document.getElementById('btnExportMaint').onclick = () => exportCsv('ซ่อมบำรุง.csv', ['รหัสรายการ','รหัสครุภัณฑ์','ชื่อครุภัณฑ์','วันที่แจ้ง','อาการ/ปัญหา','ผู้แจ้ง','สถานะ','วันที่ซ่อมเสร็จ','ค่าใช้จ่าย(บาท)','ผู้รับผิดชอบ','หมายเหตุ'], state.maint);
-  document.querySelectorAll('[data-mtab]').forEach(c => c.onclick = () => { state.maintTab = c.dataset.mtab; renderMaint(); });
-  const searchInput = document.getElementById('maintSearchInput');
-  searchInput.oninput = (e) => {
-    state.maintSearch = e.target.value;
-    const pos = e.target.selectionStart;
+
+  document.getElementById('btnExportMaint').onclick = () => exportCsv('ซ่อมบำรุง.csv',
+    ['รหัสรายการ','รหัสครุภัณฑ์','ชื่อครุภัณฑ์','วันที่แจ้ง','อาการ/ปัญหา','ผู้แจ้ง','สถานะ','วันที่ซ่อมเสร็จ','ค่าใช้จ่าย(บาท)','ผู้รับผิดชอบ','หมายเหตุ'], state.maint);
+
+  el.querySelectorAll('[data-mtab]').forEach(c => c.onclick = () => {
+    state.maintTab = c.dataset.mtab;
     renderMaint();
-    const again = document.getElementById('maintSearchInput');
-    if (again) { again.focus(); try { again.setSelectionRange(pos, pos); } catch (err) {} }
+  });
+
+  document.getElementById('maintSortSelect').onchange = e => {
+    state.maintSort = e.target.value;
+    drawMaintList();
   };
-  document.getElementById('maintSortSelect').onchange = (e) => { state.maintSort = e.target.value; renderMaint(); };
-    wireViewToggle(renderMaint, '#view-maint', 'maintView');
-   if (isAdmin() && !isGrid) wireSwipeRows(document.getElementById('maintList'), MAINT_SWIPE);
+
+  srchBoxWire('maintSearchInput', v => {
+    state.maintSearch = v;
+    drawMaintList();
+  });
+
+  wireViewToggle(renderMaint, '#view-maint', 'maintView');
+  drawMaintList();
   requestAnimationFrame(() => applyPremiumMotion(el));
 }
+   
 function maintRow(m) {
   return `<div class="glass list-item maint-item" data-id="${escapeHtml(m['รหัสรายการ'])}">
     <div class="li-icon">${ICONS.wrench}</div>
@@ -11355,8 +11423,22 @@ function openMaintForm(presetId) {
 }
 
 /* ========================================================= USERS / OFFICERS */
+/* =========================================================
+   จนท.ในสังกัด: ค้นหาแบบเดียวกับทะเบียนครุภัณฑ์
+   ค้นได้จาก ยศ ชื่อ-สกุล ตำแหน่ง หน่วยงาน บทบาทเบิก-ยืม
+   รหัสจนท. และสิทธิ์การใช้งาน
+   ========================================================= */
+function userSearchText(u) {
+  return [
+    u['ยศ'], u['ชื่อ-สกุล'], officerFullName(u), u['ตำแหน่ง'], u['หน่วยงาน'],
+    u['บทบาทเบิก-ยืม'], u['รหัสจนท.'], u['สิทธิ์'] === 'admin' ? 'แอดมิน admin' : 'ดูอย่างเดียว viewer'
+  ].join(' | ');
+}
+
 async function renderUsers() {
+  ensureSrchStyles();
   if (state.usersView === undefined) state.usersView = getViewMode('users');
+  if (state.userSearch === undefined) state.userSearch = '';
   const el = document.getElementById('view-users');
   el.innerHTML = emptyState('กำลังโหลดรายชื่อเจ้าหน้าที่...');
   try {
@@ -11367,46 +11449,76 @@ async function renderUsers() {
   }
   drawUsers();
 }
+
 function drawUsers() {
   const el = document.getElementById('view-users');
+  ensureSrchStyles();
   if (state.userSearch === undefined) state.userSearch = '';
   const isGrid = state.usersView === 'grid';
-  const q = state.userSearch.toLowerCase();
-  const shown = state.users.filter(u => !q ||
-    officerFullName(u).toLowerCase().includes(q) || String(u['ตำแหน่ง'] || '').toLowerCase().includes(q))
-    .slice().sort(comparePoliceOfficers);
+  const terms = srchTerms(state.userSearch);
+
+  const shown = state.users
+    .filter(u => srchMatch(userSearchText(u), terms))
+    .slice()
+    .sort(comparePoliceOfficers);
+
+  const searching = terms.length > 0;
+
   el.innerHTML = `
     <div class="section-title">
-      รายชื่อข้าราชการตำรวจในสังกัด <small>${shown.length} / ${state.users.length} คน</small>
+      รายชื่อข้าราชการตำรวจในสังกัด
       <span class="section-actions">
         ${viewToggleHtml('users', state.usersView)}
         <button class="icon-btn" id="btnPrintAllUsers" title="พิมพ์รายชื่อทั้งหมด" aria-label="พิมพ์รายชื่อทั้งหมด">${ICONS.print}</button>
-        ${isAdmin() ? `<button class="icon-btn" id="btnAddUser" title="เพิ่มรายชื่อ"><svg viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>` : ''}      </span>
+        ${isAdmin() ? `<button class="icon-btn" id="btnAddUser" title="เพิ่มรายชื่อ" aria-label="เพิ่มรายชื่อ"><svg viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>` : ''}
+      </span>
     </div>
-    <div class="search-row"><input class="input" id="userSearchInput" placeholder="ค้นหาชื่อหรือตำแหน่ง..." value="${escapeHtml(state.userSearch)}"></div>
-       <div class="hint" style="margin-top:0;">${isAdmin()
+
+    <div class="ax-top">
+      ${srchBoxHtml('userSearchInput', state.userSearch, 'ค้นหายศ / ชื่อ / ตำแหน่ง / หน่วยงาน / บทบาท')}
+    </div>
+
+    <div class="hint" style="margin-top:0;">${isAdmin()
       ? 'ทำเนียบนี้ใช้สำหรับเลือกชื่อแบบดรอปดาวน์ในหน้าเบิก-ยืม และบันทึกขอเบิกพัสดุ ไม่ได้ผูกกับการเข้าสู่ระบบ — กำหนด "บทบาทในบันทึกเบิก-ยืม" ให้แต่ละคนเพื่อให้ระบบเลือกผู้อนุมัติ/ผู้จ่ายพัสดุอัตโนมัติตอนพิมพ์บันทึกข้อความ'
       : 'แตะที่รายชื่อเพื่อดูโปรไฟล์และพิมพ์รายงานได้ (ผู้ดูอย่างเดียวไม่สามารถแก้ไขข้อมูลได้)'}</div>
-    <div id="userList" class="${isGrid ? 'asset-grid' : ''}">${shown.length ? shown.map(isGrid ? userCard : userRow).join('') : emptyState(state.users.length ? 'ไม่พบรายชื่อที่ค้นหา' : 'ยังไม่มีรายชื่อ จนท.ในสังกัด')}</div>
-    
+
+    <div class="ax-count" id="userCount"></div>
+    <div id="userList"></div>
   `;
+
+  const cnt = document.getElementById('userCount');
+  if (cnt) cnt.innerHTML = 'พบ ' + shown.length + ' จาก ' + state.users.length + ' คน' +
+    (searching ? ' <span style="color:var(--gold-deep);">· ค้นหา "' + escapeHtml(state.userSearch.trim()) + '"</span>' : '');
+
+  const listEl = document.getElementById('userList');
+  listEl.className = isGrid ? 'asset-grid' : '';
+  if (shown.length) {
+    listEl.innerHTML = shown.map(isGrid ? userCard : userRow).join('');
+  } else if (searching) {
+    listEl.innerHTML = `<div class="glass empty-state">ไม่พบรายชื่อที่ตรงกับ "${escapeHtml(state.userSearch.trim())}"</div>`;
+  } else {
+    listEl.innerHTML = emptyState('ยังไม่มีรายชื่อ จนท.ในสังกัด');
+  }
+
   const addUserBtn = document.getElementById('btnAddUser');
   if (addUserBtn) addUserBtn.onclick = () => openUserForm();
   document.getElementById('btnPrintAllUsers').onclick = printAllOfficers;
-  document.getElementById('userSearchInput').oninput = (e) => {
-    state.userSearch = e.target.value;
-    const pos = e.target.selectionStart;
+
+  srchBoxWire('userSearchInput', v => {
+    state.userSearch = v;
     drawUsers();
-    const again = document.getElementById('userSearchInput');
-    if (again) { again.focus(); try { again.setSelectionRange(pos, pos); } catch (err) {} }
-  };
-  document.querySelectorAll('.user-item').forEach(it => it.onclick = () => {
-    const u = state.users.find(u => officerId(u) === it.dataset.id || (!officerId(u) && (u['LINEUserId'] || u['ชื่อผู้ใช้'] || u['ชื่อ-สกุล']) === it.dataset.id));
+  });
+
+  listEl.querySelectorAll('.user-item').forEach(it => it.onclick = () => {
+    const u = state.users.find(x => officerId(x) === it.dataset.id ||
+      (!officerId(x) && (x['LINEUserId'] || x['ชื่อผู้ใช้'] || x['ชื่อ-สกุล']) === it.dataset.id));
     if (u) openOfficerProfile(u);
   });
+
   wireViewToggle(drawUsers, '#view-users', 'usersView');
-  if (isAdmin() && !isGrid) wireSwipeRows(document.getElementById('userList'), USER_SWIPE);
+  if (isAdmin() && !isGrid) wireSwipeRows(listEl, USER_SWIPE);
 }
+   
 function userCard(u) {
   const idf = officerId(u) || u['LINEUserId'] || u['ชื่อผู้ใช้'] || u['ชื่อ-สกุล'] || '';
   const memoRole = u['บทบาทเบิก-ยืม'];
