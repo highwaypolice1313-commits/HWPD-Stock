@@ -6466,223 +6466,6 @@ html, body{
   white-space:nowrap;
 }
 .ax-top .srch-box{ flex:1 1 auto; }   
-</style> 
-
-<style id="tb3-dash3">
-/* ================= TOPBAR v3 ================= */
-#app .topbar.tb3{
-  display:grid !important;
-  grid-template-columns:minmax(0,1fr) auto;
-  grid-template-areas:"left tools" "search search";
-  align-items:center !important;
-  gap:12px 14px !important;
-  padding:calc(var(--sat,0px) + 14px) 16px 12px !important;
-  min-height:0 !important;
-  width:100% !important;
-  flex-wrap:nowrap !important;
-  background:color-mix(in srgb,var(--bg-1) 86%,transparent) !important;
-  border:none !important;
-  box-shadow:none !important;
-  backdrop-filter:blur(18px) saturate(140%);
-  -webkit-backdrop-filter:blur(18px) saturate(140%);
-  position:sticky !important; top:0 !important; z-index:60 !important;
-}
-#app .tb3-left{grid-area:left;display:flex;align-items:center;gap:12px;min-width:0}
-#app .tb3-avatar{
-  width:46px;height:46px;border-radius:50%;flex:none;display:grid;place-items:center;
-  background:linear-gradient(145deg,var(--gold),var(--gold-deep));color:#fff;
-  font-size:18px;font-weight:600;box-shadow:0 6px 16px var(--gold-wash);
-}
-#app .tb3-txt{min-width:0}
-#app .tb3-hello{font-size:12px;color:var(--ink-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#app .tb3-name{font-size:17px;font-weight:600;color:var(--navy-deep);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#app .tb3-search{
-  grid-area:search;width:100%;height:48px;min-width:0;border-radius:99px;
-  border:1px solid var(--panel-line);background:var(--panel);box-shadow:var(--shadow-sm);
-  display:flex;align-items:center;gap:10px;padding:0 18px;color:var(--ink-faint);
-  font:inherit;font-size:14px;text-align:left;cursor:pointer;
-}
-#app .tb3-search svg{width:18px;height:18px;flex:none;color:var(--ink-dim)}
-#app .tb3-search span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#app .tb3-tools{grid-area:tools;display:flex !important;align-items:center;gap:8px;flex:none;visibility:visible !important}
-#app .tb3-btn{
-  position:relative;width:44px;height:44px;border-radius:15px;padding:0;flex:none;
-  display:inline-grid;place-items:center;cursor:pointer;
-  border:1px solid var(--panel-line) !important;background:var(--panel) !important;
-  color:var(--ink) !important;box-shadow:var(--shadow-sm) !important;
-}
-#app .tb3-btn svg{width:19px;height:19px}
-#app .tb3-btn:hover{border-color:var(--gold-line) !important}
-#app .tb3-bell{color:var(--navy) !important}
-#app .tb3-badge{
-  position:absolute;top:-6px;right:-6px;min-width:22px;height:22px;padding:0 6px;border-radius:99px;
-  background:var(--bad);color:#fff;font-size:12px;font-weight:700;font-family:var(--font-num);
-  align-items:center;justify-content:center;border:2px solid var(--bg-1);
-}
-#app .tb3 #rolePill,#app .tb3 #profileName{display:none !important}
-#app .tb3 .refresh-btn{display:inline-grid !important}
-
-@media (min-width:900px){
-  #app .topbar.tb3{
-    grid-template-columns:minmax(0,1fr) minmax(240px,380px) auto;
-    grid-template-areas:"left search tools";
-    padding:18px 28px 16px !important;
-    gap:16px !important;
-  }
-  #app .tb3 .last-sync{display:inline}
-}
-@media (max-width:899px){
-  #app .tb3 .last-sync{display:none}
-  #app .tb3 .connection-dot{display:none}
-  #app .tb3-name{font-size:16px}
-}
-
-/* ================= NOTIFICATIONS ================= */
-.notif-sub{font-size:13px;color:var(--ink-dim);margin-top:4px}
-.notif-list{display:flex;flex-direction:column;gap:12px;margin-top:16px}
-.notif-item{
-  --tc:var(--gold);
-  display:flex;align-items:center;gap:14px;padding:16px 18px;border-radius:20px;
-  background:var(--panel-soft);border:1px solid var(--panel-line);
-}
-.notif-item.tone-bad{--tc:var(--bad);border-color:color-mix(in srgb,var(--bad) 35%,var(--panel-line))}
-.notif-item.tone-info{--tc:var(--info)}
-.notif-item.tone-warn{--tc:var(--gold)}
-.notif-dot{width:12px;height:12px;border-radius:50%;flex:none;background:var(--tc)}
-.notif-body{flex:1;min-width:0}
-.notif-title{font-size:16px;font-weight:600;color:var(--ink)}
-.notif-subt{font-size:13px;color:var(--ink-dim);margin-top:3px}
-.notif-go{
-  flex:none;height:44px;padding:0 22px;border-radius:14px;border:none;cursor:pointer;
-  background:linear-gradient(135deg,var(--navy),var(--navy-deep));color:#fff;font:inherit;font-size:14px;font-weight:600;
-}
-.notif-readall{
-  width:100%;height:54px;margin-top:14px;border-radius:18px;cursor:pointer;
-  border:1px solid var(--panel-line);background:var(--panel);color:var(--navy-deep);font:inherit;font-size:15px;font-weight:600;
-}
-
-/* ================= DASHBOARD v3 ================= */
-#view-dashboard{display:block !important}
-#view-dashboard .db3{
-  display:grid;gap:18px;grid-template-columns:minmax(0,1.5fr) minmax(300px,1fr);
-  grid-template-areas:"head head" "hero stats" "trend cats" "alerts alerts";align-items:stretch;
-}
-#view-dashboard .db3-head{grid-area:head;display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
-#view-dashboard .db3-date{font-size:13px;color:var(--ink-dim)}
-#view-dashboard .db3-title{font-family:var(--font-disp);font-size:30px;font-weight:600;color:var(--navy-deep);margin:4px 0 0}
-#view-dashboard .db3-pill-btn{
-  height:48px;padding:0 24px;border-radius:99px;border:none;cursor:pointer;
-  background:linear-gradient(135deg,var(--navy),var(--navy-deep));color:#fff;font:inherit;font-size:14px;font-weight:500;
-  box-shadow:0 10px 22px color-mix(in srgb,var(--navy-deep) 25%,transparent);
-}
-
-#view-dashboard .db3-hero{
-  grid-area:hero;position:relative;overflow:hidden;border-radius:26px;padding:28px 30px;color:#fff;
-  background:radial-gradient(360px 220px at 88% -10%,var(--gold-wash),transparent 62%),linear-gradient(150deg,var(--navy),var(--navy-deep));
-  box-shadow:var(--premium-shadow,0 18px 48px rgba(12,30,51,.2));
-}
-#view-dashboard .db3-hero-top{display:grid;grid-template-columns:1fr 1fr;gap:20px}
-#view-dashboard .db3-hero-top > div:last-child{text-align:right}
-#view-dashboard .db3-hero-lbl{font-size:13px;color:rgba(255,255,255,.7)}
-#view-dashboard .db3-hero-num{font-family:var(--font-num);font-size:46px;font-weight:700;line-height:1.05;margin-top:6px;font-variant-numeric:tabular-nums}
-#view-dashboard .db3-hero-num small{font-family:var(--font-th);font-size:15px;font-weight:400;color:rgba(255,255,255,.7);margin-left:6px}
-#view-dashboard .db3-gold{color:#f0c97a}
-#view-dashboard .db3-hero-bar-head{display:flex;justify-content:space-between;margin-top:34px;font-size:14px;color:rgba(255,255,255,.85)}
-#view-dashboard .db3-track,#view-dashboard .db3-bar-track{height:8px;border-radius:99px;background:rgba(255,255,255,.14);margin-top:10px;overflow:hidden}
-#view-dashboard .db3-fill,#view-dashboard .db3-bar-fill{height:100%;border-radius:99px}
-#view-dashboard .db3-fill{background:linear-gradient(90deg,var(--gold),var(--gold-deep))}
-#view-dashboard .db3-hero-cap{font-size:12.5px;color:rgba(255,255,255,.65);margin-top:10px}
-
-#view-dashboard .db3-stats{grid-area:stats;display:flex;flex-direction:column;gap:12px}
-#view-dashboard .db3-stat{
-  flex:1;display:flex;align-items:center;justify-content:space-between;gap:12px;
-  padding:20px 22px;border-radius:22px;background:var(--panel);border:1px solid var(--panel-line);box-shadow:var(--shadow-sm);
-}
-#view-dashboard .db3-stat-lbl{font-size:13px;color:var(--ink-dim)}
-#view-dashboard .db3-stat .stat-num{font-family:var(--font-num);font-size:30px;font-weight:700;line-height:1;margin-top:8px;font-variant-numeric:tabular-nums}
-#view-dashboard .db3-ico{width:46px;height:46px;border-radius:15px;display:grid;place-items:center;flex:none}
-#view-dashboard .db3-ico svg{width:20px;height:20px}
-#view-dashboard .db3-stat.is-out .stat-num,#view-dashboard .db3-stat.is-out .db3-ico{color:var(--gold-deep)}
-#view-dashboard .db3-stat.is-out .db3-ico{background:var(--gold-wash)}
-#view-dashboard .db3-stat.is-bad .stat-num,#view-dashboard .db3-stat.is-bad .db3-ico{color:var(--bad)}
-#view-dashboard .db3-stat.is-bad .db3-ico{background:var(--bad-wash)}
-#view-dashboard .db3-stat.is-ok .stat-num,#view-dashboard .db3-stat.is-ok .db3-ico{color:var(--ok)}
-#view-dashboard .db3-stat.is-ok .db3-ico{background:var(--ok-wash)}
-
-#view-dashboard .db3-card{
-  min-width:0;background:var(--panel);border:1px solid var(--panel-line);border-radius:24px;padding:22px 24px;box-shadow:var(--shadow-sm);
-}
-#view-dashboard .db3-trend{grid-area:trend}
-#view-dashboard .db3-cats{grid-area:cats}
-#view-dashboard .db3-alerts{grid-area:alerts}
-#view-dashboard .db3-card-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:16px}
-#view-dashboard .db3-card-title{font-family:var(--font-disp);font-size:18px;font-weight:600;color:var(--navy-deep)}
-#view-dashboard .db3-card-sub{font-size:12.5px;color:var(--ink-dim)}
-#view-dashboard .db3-link{font-size:13px;color:var(--gold-deep);cursor:pointer;font-weight:500;background:none;border:none;font-family:inherit}
-#view-dashboard .db3-chart{position:relative;height:260px}
-#view-dashboard .db3-bar-row{margin-bottom:15px}
-#view-dashboard .db3-bar-head{display:flex;justify-content:space-between;font-size:14px;color:var(--ink);margin-bottom:6px}
-#view-dashboard .db3-bar-head b{font-family:var(--font-num);font-weight:600}
-#view-dashboard .db3-bar-fill{transition:width .6s ease}
-#view-dashboard .db3-act-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-#view-dashboard .db3-act{
-  --tc:var(--gold);display:flex;gap:12px;align-items:flex-start;text-align:left;cursor:pointer;
-  padding:16px 18px;border-radius:18px;background:var(--panel-soft);border:1px solid var(--panel-line);font:inherit;color:var(--ink);
-}
-#view-dashboard .db3-act.tone-bad{--tc:var(--bad)}
-#view-dashboard .db3-act.tone-info{--tc:var(--info)}
-#view-dashboard .db3-act b{display:block;font-size:14.5px;font-weight:600}
-#view-dashboard .db3-act small{display:block;font-size:12.5px;color:var(--ink-dim);margin-top:3px}
-#view-dashboard .db3-dot{width:9px;height:9px;border-radius:50%;flex:none;margin-top:6px;background:var(--tc,var(--gold))}
-#view-dashboard .db3-empty{font-size:13px;color:var(--ink-dim);padding:12px 0}
-
-/* desktop: ซ่อนส่วนที่เป็นมือถือ */
-#view-dashboard .db3-menu,#view-dashboard .db3-req{display:none}
-
-/* ---- มือถือ / แท็บเล็ตแนวตั้ง ---- */
-@media (max-width:899px){
-  #view-dashboard .db3{grid-template-columns:1fr;grid-template-areas:"hero" "stats" "menu" "req" "trend" "cats";gap:14px}
-  #view-dashboard .db3-head,#view-dashboard .db3-alerts{display:none}
-  #view-dashboard .db3-menu{display:block;grid-area:menu}
-  #view-dashboard .db3-req{display:block;grid-area:req}
-  #view-dashboard .db3-hero{padding:22px 20px;border-radius:24px}
-  #view-dashboard .db3-hero-num{font-size:38px}
-  #view-dashboard .db3-hero-num small,#view-dashboard .db3-hero-cap{display:none}
-  #view-dashboard .db3-hero-bar-head{margin-top:24px}
-  #view-dashboard .db3-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-  #view-dashboard .db3-stat{flex-direction:column;align-items:flex-start;padding:14px 12px;border-radius:18px}
-  #view-dashboard .db3-ico{display:none}
-  #view-dashboard .db3-stat .stat-num{font-size:22px;margin-top:6px}
-  #view-dashboard .db3-stat-lbl{font-size:11.5px}
-  #view-dashboard .db3-trend .db3-chart{height:200px}
-  #view-dashboard .db3-card{padding:18px;border-radius:22px}
-  #view-dashboard .db3-sec-title{font-family:var(--font-disp);font-size:16px;font-weight:600;color:var(--navy-deep);margin:4px 2px 10px}
-  #view-dashboard .db3-menu-row{
-    display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;margin:0 -13px;padding:2px 13px 6px;scroll-snap-type:x proximity;
-  }
-  #view-dashboard .db3-menu-row::-webkit-scrollbar{display:none}
-  #view-dashboard .db3-tile{
-    flex:0 0 96px;scroll-snap-align:start;display:flex;flex-direction:column;align-items:center;gap:10px;
-    padding:14px 8px 12px;border-radius:20px;background:var(--panel);border:1px solid var(--panel-line);box-shadow:var(--shadow-sm);
-    color:var(--ink);font:inherit;font-size:12.5px;cursor:pointer;
-  }
-  #view-dashboard .db3-tile-ico{width:44px;height:44px;border-radius:15px;display:grid;place-items:center;background:var(--navy-wash);color:var(--navy)}
-  #view-dashboard .db3-tile-ico svg{width:20px;height:20px}
-  #view-dashboard .db3-tile.is-gold .db3-tile-ico{background:var(--gold-wash);color:var(--gold-deep)}
-  #view-dashboard .db3-tile.is-bad .db3-tile-ico{background:var(--bad-wash);color:var(--bad)}
-  #view-dashboard .db3-req-row{display:flex;gap:12px;align-items:flex-start;padding:14px 0;border-top:1px solid var(--panel-line)}
-  #view-dashboard .db3-req-row:first-of-type{border-top:none;padding-top:4px}
-  #view-dashboard .db3-req-t{font-size:15px;font-weight:600;color:var(--ink)}
-  #view-dashboard .db3-req-s{font-size:12.5px;color:var(--ink-dim);margin-top:3px}
-  #view-dashboard .db3-req .db3-dot{margin-top:7px}
-}
-@media (max-width:899px) and (min-width:600px){
-  #view-dashboard .db3{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:"hero hero" "stats stats" "menu menu" "req trend" "cats cats"}
-}
-@media (max-width:380px){
-  #view-dashboard .db3-hero-num{font-size:32px}
-  #view-dashboard .db3-stat .stat-num{font-size:20px}
-}
 </style>   
    
 </head>
@@ -6738,41 +6521,32 @@ html, body{
 
 <div id="app" style="display:none;">
 
-<header class="topbar tb3">
-  <div class="tb3-left">
-    <div class="tb3-avatar" id="tbAvatar">ส</div>
-    <div class="tb3-txt">
-      <div class="tb3-hello" id="tbHello">สวัสดี</div>
-      <div class="tb3-name" id="tbName">ผู้ใช้งาน</div>
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-badge">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l8 4v6c0 5-3.5 9-8 10-4.5-1-8-5-8-10V6l8-4z"/></svg>
+      </div>
+      <div>
+        <div class="brand-title">ระบบพัสดุครุภัณฑ์</div>
+        <div class="brand-sub">ตำรวจทางหลวง</div>
+      </div>
+    </div>
+    <div class="profile">
+      <div class="desktop-tools">
+        <span class="connection-dot" id="connectionDot" title="สถานะการเชื่อมต่อ"></span>
+        <span class="last-sync" id="lastSync">ยังไม่ได้อัปเดต</span>
+        <button class="icon-btn command-trigger" id="commandBtn" type="button" title="ค้นหาด่วน (Ctrl+K)" aria-label="ค้นหาด่วน (Ctrl+K)"><svg viewBox="0 0 20 20" fill="none"><circle cx="8.7" cy="8.7" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M12.5 12.5l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+        <button class="refresh-btn" id="refreshBtn" type="button" title="รีเฟรชข้อมูล" aria-label="รีเฟรชข้อมูล">
+          <svg viewBox="0 0 20 20" fill="none"><path d="M16 6.5A6.5 6.5 0 104.7 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M16 3.5v3h-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <span class="role-pill" id="rolePill">…</span>
+      <span class="profile-name" id="profileName"></span>
+      <button class="icon-btn" id="btnLogout" title="ออกจากระบบ" aria-label="ออกจากระบบ">
+        <svg viewBox="0 0 20 20" fill="none"><path d="M8 3.5H5.5a1.5 1.5 0 00-1.5 1.5v10a1.5 1.5 0 001.5 1.5H8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M12.5 13.5L16.5 10l-4-3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M16.2 10H8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      </button>
     </div>
   </div>
-
-  <button class="tb3-search" id="commandBtn" type="button" title="ค้นหาด่วน (Ctrl+K)" aria-label="ค้นหาด่วน">
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="8.7" cy="8.7" r="5.2"/><path d="M12.6 12.6l3.9 3.9"/></svg>
-    <span>ค้นหาครุภัณฑ์ รหัส หรือ S/N</span>
-  </button>
-
-  <div class="tb3-tools">
-    <span class="connection-dot" id="connectionDot" title="สถานะการเชื่อมต่อ"></span>
-    <span class="last-sync" id="lastSync">ยังไม่ได้อัปเดต</span>
-    <button class="tb3-btn" id="refreshBtn" type="button" title="รีเฟรชข้อมูล" aria-label="รีเฟรชข้อมูล">
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M16 6.5A6.5 6.5 0 104.7 16"/><path d="M16 3.5v3h-3" stroke-linejoin="round"/></svg>
-    </button>
-    <button class="tb3-btn" id="tbScan" type="button" title="สแกน QR" aria-label="สแกน QR">
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 6V4a1 1 0 011-1h2M17 6V4a1 1 0 00-1-1h-2M3 14v2a1 1 0 001 1h2M17 14v2a1 1 0 01-1 1h-2M3 10h14"/></svg>
-    </button>
-    <button class="tb3-btn tb3-bell" id="notifBtn" type="button" title="การแจ้งเตือน" aria-label="การแจ้งเตือน">
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8.5a5 5 0 0110 0V13l1.5 2h-13L5 13V8.5z"/><path d="M8.5 17a1.6 1.6 0 003 0"/></svg>
-      <span class="tb3-badge" id="notifCount" style="display:none;">0</span>
-    </button>
-    <button class="tb3-btn" id="btnLogout" type="button" title="ออกจากระบบ" aria-label="ออกจากระบบ">
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3.5H5.5a1.5 1.5 0 00-1.5 1.5v10a1.5 1.5 0 001.5 1.5H8"/><path d="M12.5 13.5L16.5 10l-4-3.5"/><path d="M16.2 10H8"/></svg>
-    </button>
-  </div>
-
-  <span class="role-pill" id="rolePill" style="display:none;">…</span>
-  <span class="profile-name" id="profileName" style="display:none;"></span>
-</header>
 
   <div class="page" id="view-dashboard"></div>
   <div class="page" id="view-assets" style="display:none;"></div>
@@ -7819,7 +7593,6 @@ async function loadAll(showLoader = false) {
     lastSyncAt = new Date();
     updateSyncLabel();
     updateBorrowDot();
-     refreshNotifBadge();
     return { successCount: 1, errors: [] };
   } catch (err) {
     // ถ้าเคยโหลดสำเร็จแล้ว ให้ใช้ข้อมูลล่าสุดในเครื่องก่อน ไม่ปล่อยหน้าเปล่า
@@ -7836,7 +7609,6 @@ async function loadAll(showLoader = false) {
         state.users = (d.users || state.users || []).slice().sort(comparePoliceOfficers);
         setConnection(false);
         updateBorrowDot();
-         refreshNotifBadge();
         toast('ใช้ข้อมูลล่าสุดที่บันทึกไว้ชั่วคราว — กำลังรอเซิร์ฟเวอร์');
         return { successCount: 0, errors: [err] };
       }
@@ -8415,251 +8187,76 @@ function sparklineSvg(dataObj) {
   return `<div class="hero-sparkline" aria-hidden="true"><svg viewBox="0 0 ${w} ${h}"><path d="${d}"/><circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="2.5"/></svg></div>`;
 }
 
-/* ===== DASHBOARD v3 + TOPBAR/NOTIFICATION HELPERS ===== */
-const DB3_ICON = {
-  home:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M3.5 9.5L10 4l6.5 5.5V16a1 1 0 01-1 1h-3.2v-5h-4.6v5H4.5a1 1 0 01-1-1V9.5z"/></svg>',
-  cal:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="4.5" width="14" height="12.5" rx="2"/><path d="M3 8.5h14M7 3v3M13 3v3"/></svg>',
-  chart:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 16.5V11M10 16.5V6M16 16.5v-8"/></svg>',
-  plus:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 4v12M4 10h12"/></svg>'
-};
-
-/* รายการที่ต้องดำเนินการ (ใช้ทั้ง popup และการ์ดบน dashboard) */
-function buildAlerts() {
-  const A = state.assets || [], B = state.borrow || [], M = state.maint || [];
-  const list = [];
-  const overdue = B.filter(b => effectiveBorrowStatus(b) === 'เกินกำหนด');
-  if (overdue.length) {
-    const maxDays = Math.max(...overdue.map(b => -(daysUntil(b['กำหนดคืน']) || 0)));
-    list.push({ tone:'bad', title:'เกินกำหนดคืน ' + overdue.length + ' รายการ', sub:'ค้างนานที่สุด ' + maxDays + ' วัน', tab:'borrow', st:{ borrowTab:'active' } });
-  }
-  const pending = B.filter(b => b['สถานะ'] === 'รออนุมัติ');
-  if (isAdmin() && pending.length) {
-    list.push({ tone:'info', title:'คำขอยืมรออนุมัติ ' + pending.length + ' รายการ', sub:'รอแอดมินตรวจสอบ', tab:'borrow', st:{ borrowTab:'pending' } });
-  }
-  const win = renewalWindowDays();
-  const renew = A.filter(a => { const d = daysUntil(a['วันครบกำหนดตรวจสภาพ/ต่อทะเบียน']); return d !== null && d <= win && a['สถานะ'] !== 'จำหน่ายแล้ว'; });
-  if (renew.length) {
-    list.push({ tone:'warn', title:'ใกล้ครบต่อทะเบียน ' + renew.length + ' รายการ', sub:'ภายใน ' + win + ' วัน', tab:'assets', st:{} });
-  }
-  const openM = M.filter(m => m['สถานะ'] !== 'ซ่อมเสร็จ');
-  if (openM.length) {
-    const late = openM.filter(m => -(daysUntil(m['วันที่แจ้ง']) || 0) >= 7).length;
-    list.push({ tone:'bad', title:'งานซ่อมค้าง ' + openM.length + ' รายการ', sub: late ? 'รอซ่อมนานเกิน 7 วัน ' + late + ' รายการ' : 'ยังไม่เกิน 7 วัน', tab:'maint', st:{} });
-  }
-  return list;
-}
-function notifSignature(list) { return list.map(a => a.title).join('|'); }
-function refreshNotifBadge() {
-  const badge = document.getElementById('notifCount');
-  if (!badge) return;
-  const list = buildAlerts();
-  let seen = null;
-  try { seen = localStorage.getItem('hpNotifSeen'); } catch (e) {}
-  const show = list.length > 0 && seen !== notifSignature(list);
-  badge.textContent = list.length > 99 ? '99+' : String(list.length);
-  badge.style.display = show ? 'inline-flex' : 'none';
-}
-function goAlert(a) {
-  if (!a) return;
-  Object.assign(state, a.st || {});
-  renderTab(a.tab);
-}
-function openNotifications() {
-  const list = buildAlerts();
-  showSheet(`
-    <div class="sheet-title" style="margin-bottom:0;">การแจ้งเตือน</div>
-    <div class="notif-sub">${list.length} รายการที่ต้องดำเนินการ</div>
-    <div class="notif-list">
-      ${list.length ? list.map((a, i) => `
-        <div class="notif-item tone-${a.tone}">
-          <span class="notif-dot"></span>
-          <div class="notif-body">
-            <div class="notif-title">${escapeHtml(a.title)}</div>
-            <div class="notif-subt">${escapeHtml(a.sub)}</div>
-          </div>
-          <button class="notif-go" data-nt="${i}" type="button">ดูงาน</button>
-        </div>`).join('') : emptyState('ไม่มีรายการที่ต้องดำเนินการ')}
-    </div>
-    <button class="notif-readall" id="notifReadAll" type="button">ทำเครื่องหมายว่าอ่านแล้วทั้งหมด</button>
-  `, 'notif-sheet');
-  document.querySelectorAll('#modalRoot [data-nt]').forEach(b => b.onclick = () => { const a = list[+b.dataset.nt]; closeSheet(); goAlert(a); });
-  document.getElementById('notifReadAll').onclick = () => {
-    try { localStorage.setItem('hpNotifSeen', notifSignature(list)); } catch (e) {}
-    refreshNotifBadge();
-    closeSheet();
-  };
-}
-
 function renderDashboard() {
-  const el = document.getElementById('view-dashboard');
   const d = state.dashboard;
+  const el = document.getElementById('view-dashboard');
   if (!d) { el.innerHTML = emptyState('ยังไม่มีข้อมูลแดชบอร์ด — กดปุ่มรีเฟรชด้านบน'); return; }
 
-  const A = Array.isArray(state.assets) ? state.assets : [];
-  const B = Array.isArray(state.borrow) ? state.borrow : [];
-  const total = A.length || Number(d.totalAssets) || 0;
-  const value = Number(d.totalValue) > 0 ? Number(d.totalValue)
-    : A.reduce((s, a) => s + (Number(String(a['มูลค่า(บาท)'] ?? '').replace(/,/g, '')) || 0), 0);
-  const ready = A.filter(a => a['สถานะ'] === 'พร้อมใช้งาน').length;
-  const readyPct = total ? Math.round(ready / total * 100) : 0;
-  const borrowed = Number(d.borrowedCount) || A.filter(a => ['กำลังยืม', 'เกินกำหนด'].includes(a['สถานะ'])).length;
-  const overdue = Number(d.overdueCount) || B.filter(b => effectiveBorrowStatus(b) === 'เกินกำหนด').length;
-  const repair = Number(d.repairCount) || A.filter(a => ['ซ่อมบำรุง', 'กำลังซ่อม', 'รอซ่อม'].includes(a['สถานะ'])).length;
+  // ใช้ค่าจาก Dashboard API ก่อน และ fallback จากข้อมูลรายการจริงใน state
+  // ป้องกันกรณี aggregate จาก backend ไม่มา/เป็น 0 แต่หน้า Assets มีข้อมูลอยู่แล้ว
+  const assetList = Array.isArray(state.assets) ? state.assets : [];
+  const borrowList = Array.isArray(state.borrow) ? state.borrow : [];
+  const assetCount = Number(d.totalAssets) > 0 ? Number(d.totalAssets) : assetList.length;
+  const totalValue = Number(d.totalValue) > 0
+    ? Number(d.totalValue)
+    : assetList.reduce((sum, a) => sum + (Number(String(a['มูลค่า(บาท)'] ?? '').replace(/,/g, '')) || 0), 0);
+  const borrowedFallback = assetList.filter(a => ['กำลังยืม','เกินกำหนด'].includes(String(a['สถานะ'] || ''))).length;
+  const overdueFallback = borrowList.filter(b => effectiveBorrowStatus(b) === 'เกินกำหนด').length;
+  const repairFallback = assetList.filter(a => ['ซ่อมบำรุง','กำลังซ่อม','รอซ่อม'].includes(String(a['สถานะ'] || ''))).length;
+  const borrowedCount = Number(d.borrowedCount) || borrowedFallback;
+  const overdueCount = Number(d.overdueCount) || overdueFallback;
+  const repairCount = Number(d.repairCount) || repairFallback;
 
-  // หมวดหมู่ (สูงสุด 5 อันดับ)
-  const catMap = {};
-  if (d.byCategory && Object.keys(d.byCategory).length) Object.entries(d.byCategory).forEach(([k, v]) => catMap[k] = Number(v) || 0);
-  else A.forEach(a => { const c = a['หมวดหมู่'] || 'อื่นๆ'; catMap[c] = (catMap[c] || 0) + 1; });
-  const cats = Object.entries(catMap).sort((a, b) => b[1] - a[1]).slice(0, 5);
-  const catMax = cats.length ? cats[0][1] : 1;
-  const catColors = ['var(--navy)', 'var(--ok)', 'var(--info)', 'var(--gold)', 'var(--ink-faint)'];
-
-  const recent = B.slice().sort((x, y) => toDate(y['วันที่ยืม'] || 0) - toDate(x['วันที่ยืม'] || 0)).slice(0, 3);
-  const alerts = buildAlerts();
-
-  const wd = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'][new Date().getDay()];
-  const dateLine = 'วัน' + wd + 'ที่ ' + thaiDateLong();
-
-  const menu = [
-    ['dashboard', 'หน้าหลัก', DB3_ICON.home, '', true],
-    ['assets', 'ครุภัณฑ์', ICONS.box, '', true],
-    ['borrow', 'ยืม-คืน', ICONS.swap, 'is-gold', true],
-    ['users', 'จนท.ในสังกัด', ICONS.user, '', true],
-    ['maint', 'ซ่อมบำรุง', ICONS.wrench, 'is-bad', true],
-    ['memos', 'เอกสารใบเบิก', ICONS.log, '', true],
-    ['reports', 'รายงาน', DB3_ICON.chart, '', true],
-    ['audit', 'ตรวจนับประจำปี', ICONS.checklist, '', isAdmin()],
-    ['monthly', 'ตรวจประจำเดือน', DB3_ICON.cal, '', isAdmin()],
-    ['settings', 'ตั้งค่า', ICONS.gear, '', true]
-  ].filter(x => x[4]);
-
+  let banners = '';
+  if (overdueCount > 0) {
+    banners += `<div class="alert-banner bad">${ICONS.warn}<span>มีครุภัณฑ์เกินกำหนดคืน ${overdueCount} รายการ</span><span class="alert-link" onclick="renderTab('borrow')">ดูรายการ</span></div>`;
+  }
+  if (isAdmin() && Number(d.pendingCount) > 0) {
+    banners += `<div class="alert-banner warn">${ICONS.clock}<span>มีคำขอยืมรออนุมัติ ${d.pendingCount} รายการ</span><span class="alert-link" onclick="renderTab('borrow')">ตรวจสอบ</span></div>`;
+  }
+  if (Number(d.dueRenewalCount) > 0) {
+    banners += `<div class="alert-banner warn">${ICONS.warn}<span>มีครุภัณฑ์ใกล้ครบกำหนดตรวจสภาพ/ต่อทะเบียน ${d.dueRenewalCount} รายการ (ภายใน ${renewalWindowDays()} วัน หรือเลยกำหนดแล้ว)</span><span class="alert-link" onclick="renderTab('assets')">ดูรายการ</span></div>`;
+  }
   el.innerHTML = `
-    <div class="db3">
-      <div class="db3-head">
-        <div>
-          <div class="db3-date">${escapeHtml(dateLine)}</div>
-          <h1 class="db3-title">ภาพรวมระบบพัสดุ</h1>
+    <div class="section-title">ภาพรวมระบบ <small>อัปเดตล่าสุดวันนี้</small></div>
+    ${banners}
+    
+    <div class="dashboard-left">
+      <div class="glass hero-card">
+        <div class="hero-row">
+          <div><div class="hero-label">ครุภัณฑ์ทั้งหมด</div><div class="hero-num" data-count="${assetCount}">0<span class="hero-unit">รายการ</span></div></div>
+          <div class="hero-divider"></div>
+          <div><div class="hero-label">มูลค่ารวม</div><div class="hero-num hero-num--sm" data-count="${totalValue}">0<span class="hero-unit">บาท</span></div></div>
         </div>
-        ${isAdmin() ? `<button class="db3-pill-btn" data-add type="button">+ เพิ่มครุภัณฑ์</button>` : ''}
       </div>
+      
+      <div class="section-title" style="margin:4px 0 10px;">แนวโน้มการยืมย้อนหลัง 6 เดือน</div>
+      <div class="glass chart-card trend-card"><div class="chart-wrap"><canvas id="trendChart"></canvas></div></div>
+    </div>
 
-      <div class="db3-hero">
-        <div class="db3-hero-top">
-          <div>
-            <div class="db3-hero-lbl">ครุภัณฑ์ทั้งหมด</div>
-            <div class="db3-hero-num">${total.toLocaleString('en-US')}<small>รายการ</small></div>
-          </div>
-          <div>
-            <div class="db3-hero-lbl">มูลค่ารวม</div>
-            <div class="db3-hero-num db3-gold">${(value / 1000000).toFixed(1)}<small>ล้านบาท</small></div>
-          </div>
+    <div class="dashboard-right">
+      <div class="stat-grid">
+        <div class="stat-card warn">
+          <div><div class="stat-num" data-count="${borrowedCount}">0</div><div class="stat-label">กำลังถูกยืม</div></div>
+          <div style="color:var(--warn);">${ICONS.clock}</div>
         </div>
-        <div class="db3-hero-bar-head"><span>พร้อมใช้งาน</span><b>${readyPct}%</b></div>
-        <div class="db3-track"><div class="db3-fill" style="width:${readyPct}%"></div></div>
-        <div class="db3-hero-cap">${ready.toLocaleString('en-US')} จาก ${total.toLocaleString('en-US')} รายการ</div>
-      </div>
-
-      <div class="db3-stats">
-        <div class="db3-stat is-out">
-          <div><div class="db3-stat-lbl">กำลังถูกยืม</div><div class="stat-num" data-count="${borrowed}">0</div></div>
-          <div class="db3-ico">${ICONS.swap}</div>
+        <div class="stat-card bad">
+          <div><div class="stat-num" data-count="${overdueCount}">0</div><div class="stat-label">เกินกำหนดคืน</div></div>
+          <div style="color:var(--bad);">${ICONS.warn}</div>
         </div>
-        <div class="db3-stat is-bad">
-          <div><div class="db3-stat-lbl">เกินกำหนดคืน</div><div class="stat-num" data-count="${overdue}">0</div></div>
-          <div class="db3-ico">${ICONS.warn}</div>
-        </div>
-        <div class="db3-stat is-ok">
-          <div><div class="db3-stat-lbl">อยู่ระหว่างซ่อม</div><div class="stat-num" data-count="${repair}">0</div></div>
-          <div class="db3-ico">${ICONS.wrench}</div>
+        <div class="stat-card ok">
+          <div><div class="stat-num" data-count="${repairCount}">0</div><div class="stat-label">อยู่ระหว่างซ่อม</div></div>
+          <div style="color:var(--ok);">${ICONS.wrench}</div>
         </div>
       </div>
 
-      <div class="db3-menu">
-        <div class="db3-sec-title">เมนู</div>
-        <div class="db3-menu-row">
-          ${menu.map(m => `
-            <button class="db3-tile ${m[3]}" data-go="${m[0]}" type="button">
-              <span class="db3-tile-ico">${m[2]}</span><span>${escapeHtml(m[1])}</span>
-            </button>`).join('')}
-        </div>
-      </div>
-
-      <div class="db3-card db3-req">
-        <div class="db3-card-head">
-          <div class="db3-card-title">คำขอล่าสุด</div>
-          <button class="db3-link" data-go="borrow" type="button">ดูทั้งหมด</button>
-        </div>
-        ${recent.length ? recent.map(b => {
-          const eff = effectiveBorrowStatus(b);
-          const c = eff === 'เกินกำหนด' ? 'var(--bad)' : (eff === 'รออนุมัติ' ? 'var(--info)' : 'var(--gold)');
-          return `<div class="db3-req-row">
-            <span class="db3-dot" style="background:${c}"></span>
-            <div style="min-width:0">
-              <div class="db3-req-t">${escapeHtml(b['ชื่อครุภัณฑ์'] || '-')}</div>
-              <div class="db3-req-s">${escapeHtml(b['ผู้ยืม'] || '-')} · ${escapeHtml(eff)}</div>
-            </div>
-          </div>`;
-        }).join('') : '<div class="db3-empty">ยังไม่มีรายการยืม</div>'}
-      </div>
-
-      <div class="db3-card db3-trend">
-        <div class="db3-card-head">
-          <div class="db3-card-title">การยืมย้อนหลัง 6 เดือน</div>
-          <div class="db3-card-sub">จำนวนรายการยืม</div>
-        </div>
-        <div class="db3-chart"><canvas id="trendChart"></canvas></div>
-      </div>
-
-      <div class="db3-card db3-cats">
-        <div class="db3-card-head">
-          <div class="db3-card-title">สัดส่วนตามหมวดหมู่</div>
-        </div>
-        ${cats.length ? cats.map(([k, v], i) => `
-          <div class="db3-bar-row">
-            <div class="db3-bar-head"><span>${escapeHtml(k)}</span><b>${Number(v).toLocaleString('en-US')}</b></div>
-            <div class="db3-bar-track"><div class="db3-bar-fill" style="width:${Math.round(v / catMax * 100)}%;background:${catColors[i]}"></div></div>
-          </div>`).join('') : '<div class="db3-empty">ยังไม่มีข้อมูลหมวดหมู่</div>'}
-      </div>
-
-      <div class="db3-card db3-alerts">
-        <div class="db3-card-head">
-          <div class="db3-card-title">ต้องดำเนินการ</div>
-          <button class="db3-link" id="db3AlertAll" type="button">ดูทั้งหมด</button>
-        </div>
-        <div class="db3-act-grid">
-          ${alerts.length ? alerts.slice(0, 3).map((a, i) => `
-            <button class="db3-act tone-${a.tone}" data-alert="${i}" type="button">
-              <span class="db3-dot"></span>
-              <span><b>${escapeHtml(a.title)}</b><small>${escapeHtml(a.sub)}</small></span>
-            </button>`).join('') : '<div class="db3-empty">ไม่มีรายการที่ต้องดำเนินการ</div>'}
-        </div>
-      </div>
-    </div>`;
-
-  el.querySelectorAll('[data-go]').forEach(b => b.onclick = () => renderTab(b.dataset.go));
-  el.querySelectorAll('[data-alert]').forEach(b => b.onclick = () => goAlert(alerts[+b.dataset.alert]));
-  const add = el.querySelector('[data-add]'); if (add) add.onclick = () => openAssetForm();
-  const all = document.getElementById('db3AlertAll'); if (all) all.onclick = openNotifications;
-
+      <div class="section-title" style="margin:4px 0 10px;">สัดส่วนตามหมวดหมู่</div>
+      <div class="glass chart-card cat-card"><div class="chart-wrap"><canvas id="catChart"></canvas></div></div>
+    </div>
+  `;
+  drawDoughnut('catChart', d.byCategory || {});
   drawLine('trendChart', d.monthTrend || {});
-  refreshNotifBadge();
 }
-
-/* ----- topbar: ชื่อ/ทักทาย + ปุ่มกระดิ่ง/สแกน ----- */
-function tb3Sync() {
-  const nameEl = document.getElementById('profileName');
-  const name = (nameEl && nameEl.textContent.trim()) || 'ผู้ใช้งาน';
-  const tn = document.getElementById('tbName'); if (tn) tn.textContent = name;
-  const av = document.getElementById('tbAvatar'); if (av) av.textContent = name.charAt(0) || 'ผ';
-  const h = new Date().getHours();
-  const hello = document.getElementById('tbHello');
-  if (hello) hello.textContent = h < 12 ? 'สวัสดีตอนเช้า' : (h < 17 ? 'สวัสดีตอนบ่าย' : 'สวัสดีตอนเย็น');
-}
-tb3Sync();
-const _pn = document.getElementById('profileName');
-if (_pn) new MutationObserver(tb3Sync).observe(_pn, { childList: true, characterData: true, subtree: true });
-const _nb = document.getElementById('notifBtn'); if (_nb) _nb.onclick = openNotifications;
-const _ts = document.getElementById('tbScan'); if (_ts) _ts.onclick = () => openScannerSheet();
 
 let chartRefs = {};
 function chartAxisOpts(size) {
