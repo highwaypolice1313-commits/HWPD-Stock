@@ -8637,6 +8637,34 @@ function openAssetFilterSheet() {
 }
 
 /* =========================================================
+   ปุ่มเรียงลำดับแบบ bottom sheet (สไตล์เดียวกับหน้าเอกสารใบเบิก)
+   ใช้ร่วมกันได้ทุกหน้า: รับรายการตัวเลือก + ค่าปัจจุบัน + callback
+   ========================================================= */
+function sortChipHtml(id, label) {
+  return `<button type="button" class="memo-sort-chip" id="${id}" aria-label="เรียงลำดับ: ${escapeHtml(label)}">
+    <span class="memo-sort-k">เรียง</span>${escapeHtml(label)}<span class="memo-sort-caret">▾</span>
+  </button>`;
+}
+
+function openSortSheet(title, options, current, onPick) {
+  showSheet(`
+    <div class="sheet-title">${escapeHtml(title)}</div>
+    <div class="ax-pills" style="flex-direction:column;align-items:stretch;gap:8px;">
+      ${options.map(([v, t]) => `
+        <button type="button" class="ax-pill ${current === v ? 'active' : ''}" data-sv="${v}" style="justify-content:space-between;width:100%;">
+          ${escapeHtml(t)}${current === v ? ' ✓' : ''}
+        </button>`).join('')}
+    </div>
+    <div class="btn-row"><button class="btn btn-ghost" id="sortSheetClose">ปิด</button></div>
+  `);
+  document.querySelectorAll('#modalRoot [data-sv]').forEach(b => b.onclick = () => {
+    closeSheet();
+    onPick(b.dataset.sv);
+  });
+  document.getElementById('sortSheetClose').onclick = closeSheet;
+}
+   
+/* =========================================================
    ตัวช่วยค้นหากลาง: ใช้ร่วมกันทั้งทะเบียนครุภัณฑ์และยืม-คืน
    - รองรับหลายคำ (ทุกคำต้องเจอ) / เลขไทย-อารบิก / ไม่สนตัวพิมพ์
    ========================================================= */
@@ -10098,6 +10126,17 @@ function drawBorrowList() {
   if (isAdmin() && !isGrid) wireSwipeRows(listEl, BORROW_SWIPE);
 }
 
+const BORROW_SORT_OPTIONS = [
+  ['due_asc', 'กำหนดคืนใกล้สุด'],
+  ['due_desc', 'กำหนดคืนไกลสุด'],
+  ['name_asc', 'ชื่อผู้ยืม ก-ฮ']
+];
+
+function borrowSortLabel() {
+  const f = BORROW_SORT_OPTIONS.find(([v]) => v === state.borrowSort);
+  return f ? f[1] : '';
+}
+
 function renderBorrow() {
   const el = document.getElementById('view-borrow');
   ensureSrchStyles();
@@ -10113,11 +10152,10 @@ function renderBorrow() {
 
   const TABS = [
     { id: 'pending', label: 'รออนุมัติ', count: bk.pending.length, show: isAdmin() },
-    { id: 'active',  label: 'ค้างคืน',   count: bk.active.length,  show: true },
-    { id: 'history', label: 'ประวัติ',   count: bk.history.length, show: true }
+    { id: 'active', label: 'ค้างคืน', count: bk.active.length, show: true },
+    { id: 'history', label: 'ประวัติ', count: bk.history.length, show: true }
   ].filter(t => t.show);
 
-  // หมวดหมู่ของแท็บที่เลือก (นับจากทั้งแท็บ ไม่รวมคำค้น)
   const baseForCat = bk[state.borrowTab] || [];
   const catCounts = {};
   baseForCat.forEach(b => { const c = borrowCategoryOf(b); catCounts[c] = (catCounts[c] || 0) + 1; });
@@ -10145,11 +10183,10 @@ function renderBorrow() {
 
     <div class="ax-top">
       ${srchBoxHtml('borrowSearchInput', state.borrowSearch, 'ค้นหาผู้ยืม / ครุภัณฑ์ / S/N / ทะเบียน / วันที่')}
-      <select class="input sort-select" id="borrowSortSelect" style="flex:0 1 190px; min-width:150px; height:46px; border-radius:99px;">
-        <option value="due_asc" ${state.borrowSort === 'due_asc' ? 'selected' : ''}>กำหนดคืนใกล้สุด</option>
-        <option value="due_desc" ${state.borrowSort === 'due_desc' ? 'selected' : ''}>กำหนดคืนไกลสุด</option>
-        <option value="name_asc" ${state.borrowSort === 'name_asc' ? 'selected' : ''}>ชื่อผู้ยืม ก-ฮ</option>
-      </select>
+    </div>
+
+    <div class="memo-toolbar" style="margin-bottom:10px;">
+      ${sortChipHtml('borrowSortBtn', borrowSortLabel())}
     </div>
 
     <div class="ax-pills">
@@ -10168,6 +10205,12 @@ function renderBorrow() {
     ['รหัสรายการ','รหัสครุภัณฑ์','ชื่อครุภัณฑ์','ผู้ยืม','วันที่ยืม','กำหนดคืน','วันที่คืนจริง','สถานะ','ผู้อนุมัติ','หมายเหตุ'], state.borrow);
   document.getElementById('btnPrintAllBorrow').onclick = printAllBorrow;
 
+  document.getElementById('borrowSortBtn').onclick = () =>
+    openSortSheet('เรียงลำดับรายการยืม-คืน', BORROW_SORT_OPTIONS, state.borrowSort, v => {
+      state.borrowSort = v;
+      renderBorrow();
+    });
+
   el.querySelectorAll('[data-btab]').forEach(c => c.onclick = () => {
     state.borrowTab = c.dataset.btab;
     state.borrowCat = 'all';
@@ -10182,10 +10225,6 @@ function renderBorrow() {
     state.borrowSearch = v;
     drawBorrowList();
   });
-  document.getElementById('borrowSortSelect').onchange = e => {
-    state.borrowSort = e.target.value;
-    drawBorrowList();
-  };
 
   wireViewToggle(renderBorrow, '#view-borrow', 'borrowView');
   drawBorrowList();
@@ -11033,6 +11072,18 @@ function drawMaintList() {
   if (isAdmin() && !isGrid) wireSwipeRows(listEl, MAINT_SWIPE);
 }
 
+const MAINT_SORT_OPTIONS = [
+  ['date_desc', 'แจ้งล่าสุดก่อน'],
+  ['date_asc', 'แจ้งเก่าสุดก่อน'],
+  ['name_asc', 'ชื่อครุภัณฑ์ ก-ฮ'],
+  ['cost_desc', 'ค่าใช้จ่ายมาก-น้อย']
+];
+
+function maintSortLabel() {
+  const f = MAINT_SORT_OPTIONS.find(([v]) => v === state.maintSort);
+  return f ? f[1] : '';
+}
+
 function renderMaint() {
   const el = document.getElementById('view-maint');
   ensureSrchStyles();
@@ -11067,12 +11118,10 @@ function renderMaint() {
 
     <div class="ax-top">
       ${srchBoxHtml('maintSearchInput', state.maintSearch, 'ค้นหาชื่อครุภัณฑ์ / อาการ / ผู้แจ้ง / S/N / ทะเบียน')}
-      <select class="input sort-select" id="maintSortSelect" style="flex:0 1 190px; min-width:150px; height:46px; border-radius:99px;">
-        <option value="date_desc" ${state.maintSort === 'date_desc' ? 'selected' : ''}>แจ้งล่าสุดก่อน</option>
-        <option value="date_asc" ${state.maintSort === 'date_asc' ? 'selected' : ''}>แจ้งเก่าสุดก่อน</option>
-        <option value="name_asc" ${state.maintSort === 'name_asc' ? 'selected' : ''}>ชื่อครุภัณฑ์ ก-ฮ</option>
-        <option value="cost_desc" ${state.maintSort === 'cost_desc' ? 'selected' : ''}>ค่าใช้จ่ายมาก-น้อย</option>
-      </select>
+    </div>
+
+    <div class="memo-toolbar" style="margin-bottom:10px;">
+      ${sortChipHtml('maintSortBtn', maintSortLabel())}
     </div>
 
     <div class="chip-row">
@@ -11086,15 +11135,16 @@ function renderMaint() {
   document.getElementById('btnExportMaint').onclick = () => exportCsv('ซ่อมบำรุง.csv',
     ['รหัสรายการ','รหัสครุภัณฑ์','ชื่อครุภัณฑ์','วันที่แจ้ง','อาการ/ปัญหา','ผู้แจ้ง','สถานะ','วันที่ซ่อมเสร็จ','ค่าใช้จ่าย(บาท)','ผู้รับผิดชอบ','หมายเหตุ'], state.maint);
 
+  document.getElementById('maintSortBtn').onclick = () =>
+    openSortSheet('เรียงลำดับงานซ่อมบำรุง', MAINT_SORT_OPTIONS, state.maintSort, v => {
+      state.maintSort = v;
+      renderMaint();
+    });
+
   el.querySelectorAll('[data-mtab]').forEach(c => c.onclick = () => {
     state.maintTab = c.dataset.mtab;
     renderMaint();
   });
-
-  document.getElementById('maintSortSelect').onchange = e => {
-    state.maintSort = e.target.value;
-    drawMaintList();
-  };
 
   srchBoxWire('maintSearchInput', v => {
     state.maintSearch = v;
