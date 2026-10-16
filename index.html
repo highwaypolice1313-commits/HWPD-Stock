@@ -20430,7 +20430,7 @@ function openAcctPop() {
     </div>
     <div class="ap-sep"></div>
     <button class="ap-item" data-act="settings" role="menuitem" type="button">${svgSettings}<span>ตั้งค่า</span></button>
-    <button class="ap-item ap-toggle${dark ? ' on' : ''}" data-act="theme" role="switch" aria-checked="${dark}" type="button">${dark ? svgSun : svgMoon}<span>โหมดมืด</span><i class="ap-switch" aria-hidden="true"><b></b></i></button>
+    <button class="ap-item ap-toggle${dark ? ' on' : ''}" data-act="theme" role="switch" aria-checked="${dark}" type="button">${dark ? svgSun : svgMoon}<span>${dark ? 'โหมดสว่าง' : 'โหมดมืด'}</span><i class="ap-switch" aria-hidden="true"><b></b></i></button>
     <div class="ap-sep"></div>
     <button class="ap-item ap-danger" data-act="logout" role="menuitem" type="button">${svgLogout}<span>ออกจากระบบ</span></button>`;
 
@@ -20490,7 +20490,9 @@ function syncAcctToggle() {
   b.classList.toggle('on', dark);
   b.setAttribute('aria-checked', String(dark));
   const ic = b.querySelector('svg');
-  if (ic) ic.outerHTML = dark ? svgSun : svgMoon;   // สลับไอคอน พระจันทร์ ⇄ พระอาทิตย์
+  if (ic) ic.outerHTML = dark ? svgSun : svgMoon;
+  const lb = b.querySelector('span');
+  if (lb) lb.textContent = dark ? 'โหมดสว่าง' : 'โหมดมืด';   // สลับไอคอน พระจันทร์ ⇄ พระอาทิตย์
 }
 
 document.getElementById('avatarBtn')?.addEventListener('click', openAcctPop);
