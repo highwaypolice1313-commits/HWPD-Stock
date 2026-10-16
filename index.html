@@ -20824,16 +20824,26 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 :root[data-theme="cibnight"] [id$="sigIcon"].li-icon svg *{ stroke:currentColor !important; stroke-width:2.2 !important; }
 </style>
 
-<style id="user-fixes-command-close">
-/* ปุ่มกากบาท ค้นหาด่วน: ธีมมืดให้ไอคอนสีขาว */
-:root[data-theme="night"] .command-close,
-:root[data-theme="cibnight"] .command-close{
-  color:#ffffff !important; background:rgba(255,255,255,.12) !important;
+<style id="user-fixes-command-icons">
+/* ไอคอนในหน้าค้นหาด่วน ธีมมืด: สีกรมเข้ม (ปุ่มกากบาทคงสีเดิม) */
+:root[data-theme="night"] .command-sheet .command-item-icon,
+:root[data-theme="cibnight"] .command-sheet .command-item-icon,
+:root[data-theme="night"] .command-sheet .command-searchbox-icon,
+:root[data-theme="cibnight"] .command-sheet .command-searchbox-icon{
+  color:#29465c !important;
 }
-:root[data-theme="night"] .command-close svg,
-:root[data-theme="cibnight"] .command-close svg{ color:#ffffff !important; }
-:root[data-theme="night"] .command-close svg *,
-:root[data-theme="cibnight"] .command-close svg *{ stroke:#ffffff !important; }
+:root[data-theme="night"] .command-sheet .command-item-icon svg,
+:root[data-theme="cibnight"] .command-sheet .command-item-icon svg,
+:root[data-theme="night"] .command-sheet .command-searchbox-icon svg,
+:root[data-theme="cibnight"] .command-sheet .command-searchbox-icon svg{
+  color:#29465c !important; opacity:1 !important;
+}
+:root[data-theme="night"] .command-sheet .command-item-icon svg *,
+:root[data-theme="cibnight"] .command-sheet .command-item-icon svg *,
+:root[data-theme="night"] .command-sheet .command-searchbox-icon svg *,
+:root[data-theme="cibnight"] .command-sheet .command-searchbox-icon svg *{
+  stroke:currentColor !important;
+}
 </style>
 
 <script id="user-notif-toggle">
