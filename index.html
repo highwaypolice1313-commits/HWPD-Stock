@@ -12229,8 +12229,8 @@ function renderBorrow() {
       รายการยืม-คืน
       <span class="section-actions">
         ${viewToggleHtml('borrow', state.borrowView)}
-        <button class="icon-btn" id="btnPrintAllBorrow" title="พิมพ์รายการยืม-คืนทั้งหมด" aria-label="พิมพ์รายการยืม-คืนทั้งหมด">${ICONS.print}</button>
-        <button class="icon-btn" id="btnExportBorrow" title="ส่งออก CSV" aria-label="ส่งออก CSV">${ICONS.download}</button>
+<button class="icon-btn" id="btnExportBorrow" title="ส่งออก CSV" aria-label="ส่งออก CSV">${ICONS.download}</button>
+<button class="icon-btn" id="btnPrintAllBorrow" title="พิมพ์รายการยืม-คืนทั้งหมด" aria-label="พิมพ์รายการยืม-คืนทั้งหมด">${ICONS.print}</button>
       </span>
     </div>
 
@@ -20715,5 +20715,42 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   document.addEventListener('scroll', function(){ up(); }, { capture: true, passive: true });
 })();
 </script>
+</body>
+   <style id="user-fixes">
+/* ===== 1) ช่องลายเซ็น: พื้นขาว ให้เห็นลายเซ็นทุกธีม ===== */
+[id$="SigIcon"].li-icon{ background:#fff !important; color:var(--navy) !important; border:1px solid var(--panel-line) !important; }
+[id$="SigIcon"].li-icon img{ width:100% !important; height:100% !important; padding:5px; border-radius:13px; background:#fff; object-fit:contain; }
+.sig-canvas{ background:#fff !important; }
+.sig-saved{ background:#fff !important; }
+
+/* ===== 2) ปุ่มเครื่องมือตรวจนับ/พิมพ์ ให้ขนาดเท่า icon-btn ของหน้าอื่น ===== */
+.audit-head-actions .audit-tools-icon{
+  width:38px !important; height:38px !important; padding:0 !important;
+  border-radius:var(--r-sm) !important; border:1px solid var(--panel-line) !important;
+  background:var(--panel) !important; color:var(--ink) !important;
+}
+.audit-head-actions .audit-tools-icon svg{ width:18px !important; height:18px !important; }
+
+/* ===== 3) ไอคอนเมนูลัด ธีม CIB มืด ===== */
+:root[data-theme="cibnight"] .more-ico{ background:rgba(255,212,0,.14) !important; color:#ffd400 !important; }
+:root[data-theme="cibnight"] .more-item.active .more-ico{ background:#002a5c !important; color:#ffd400 !important; }
+
+/* ===== 4) ตัวอักษรโหมดมืด ให้อ่านง่ายขึ้น ===== */
+:root[data-theme="cibnight"]{ --ink:#ffffff; --ink-dim:#d5e1f1; --ink-faint:#a9bcd6; }
+:root[data-theme="night"]{ --ink-dim:#c3d1de; --ink-faint:#8fa3b5; }
+:root[data-theme="cibnight"] .btn-ghost,
+:root[data-theme="cibnight"] .chip,
+:root[data-theme="cibnight"] .icon-btn,
+:root[data-theme="cibnight"] .tab,
+:root[data-theme="night"] .btn-ghost,
+:root[data-theme="night"] .chip,
+:root[data-theme="night"] .icon-btn{ color:var(--ink) !important; }
+
+/* ===== 5) อนิเมชันกดปุ่ม: ยุบน้อยลง ไม่มีเงาด้านใน ===== */
+.press-target.press-on{
+  transform:scale(.97) !important; filter:none !important; box-shadow:none !important;
+  transition:transform .12s ease-out !important;
+}
+</style>
 </body>
 </html>
