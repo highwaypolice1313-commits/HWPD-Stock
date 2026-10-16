@@ -20612,8 +20612,8 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   background:none; border:0; border-radius:0; padding:0;
 }
 .asset-grid .ba-card .ba-cell small{ font-size:12px; color:var(--ink-dim); flex:none; }
-.asset-grid .ba-card .ba-cell b{ font-size:12.5px; font-weight:600; text-align:right; min-width:0; white-space:normal; overflow-wrap:anywhere; line-height:1.35; }
-.asset-grid .ba-card .ba-cat{ font-size:12px; color:var(--ink-dim); margin-top:4px; }
+.asset-grid .ba-card .ba-cell b{ font-size:12.5px; font-weight:600; text-align:right; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.asset-grid .ba-card .ba-cat{ font-size:12px; color:var(--ink-dim); margin-top:2px; margin-bottom:8px; white-space:nowrap; }
 .asset-grid .ba-card .ba-cat small{ margin-right:6px; }
 .asset-grid .ba-card .ba-cat b{ font-weight:600; color:var(--ink); }
 
