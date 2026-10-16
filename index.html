@@ -9804,7 +9804,6 @@ function assetRowHtml(a) {
 
 /* มุมมองการ์ด: 1 การ์ด = 1 ครุภัณฑ์ */
 function assetCardHtml(a) {
-  const c = ASSET_STATUS_COLOR[a['สถานะ']] || 'var(--ink-dim)';
   const owner = a['ผู้ครอบครอง/หน่วยงาน'] || 'คลังพัสดุ';
   return `<div class="glass asset-card ba-card asset-item" data-id="${escapeHtml(a['รหัสครุภัณฑ์'])}">
     <div class="ba-head">
@@ -9814,7 +9813,7 @@ function assetCardHtml(a) {
         <div class="ba-cat"><small>หมวดหมู่</small><b>${escapeHtml(a['หมวดหมู่'] || '-')}</b></div>
         <div class="ax-sn">${assetSerialHtml(a)}</div>
       </div>
-      <div class="ax-st" style="--c:${c};">${escapeHtml(a['สถานะ'])}</div>
+      <div class="status-badge ${statusClass(a['สถานะ'])}">${escapeHtml(a['สถานะ'] || '-')}</div>
     </div>
     <div class="ba-body">
       <div class="ba-cells">
