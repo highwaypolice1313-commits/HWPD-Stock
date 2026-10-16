@@ -7090,6 +7090,51 @@ html, body{
   background:var(--navy-wash) !important;
 }
 </style>
+
+   <style id="acct-pop-v1">
+.acct-pop{
+  position:fixed; z-index:9999; width:260px; padding:8px; box-sizing:border-box;
+  border-radius:20px; background:var(--panel); border:1px solid var(--panel-line);
+  box-shadow:0 18px 40px -12px rgba(0,0,0,.35);
+  opacity:0; transform:translateY(-6px) scale(.96); transform-origin:top right;
+  pointer-events:none;
+  transition:opacity .18s ease, transform .2s cubic-bezier(.2,.8,.2,1);
+}
+.acct-pop.open{ opacity:1; transform:none; pointer-events:auto; }
+
+.ap-head{ display:flex; gap:12px; align-items:center; padding:10px 10px 12px; }
+.ap-av{
+  width:44px; height:44px; flex:none; border-radius:50%;
+  background:var(--navy); color:var(--panel);
+  display:grid; place-items:center; font-size:18px; font-weight:600;
+}
+.ap-who{ min-width:0; display:flex; flex-direction:column; gap:2px; }
+.ap-who b{ font-size:14px; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ap-role{ font-size:11.5px; font-weight:600; color:var(--gold-deep); }
+.ap-who small{ font-size:11px; color:var(--ink-dim); }
+
+.ap-sep{ height:1px; background:var(--panel-line); margin:6px 6px; }
+
+.ap-item{
+  display:flex; align-items:center; gap:12px; width:100%; box-sizing:border-box;
+  padding:10px; border:none; border-radius:12px; background:transparent;
+  color:var(--ink); font:inherit; font-size:13.5px; text-align:left; cursor:pointer;
+  transition:background .15s ease, transform .15s ease;
+}
+.ap-item:hover{ background:var(--navy-wash); }
+.ap-item:active{ transform:scale(.98); }
+.ap-item svg{
+  width:18px; height:18px; flex:none; fill:none; stroke:var(--navy);
+  stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round;
+  transition:transform .2s ease;
+}
+.ap-item:hover svg{ transform:translateX(2px); }
+.ap-item span{ flex:1; }
+
+.ap-danger{ color:var(--bad); }
+.ap-danger svg{ stroke:var(--bad); }
+.ap-danger:hover{ background:var(--bad-wash); }
+</style>
    
 </head>
    
@@ -19203,21 +19248,92 @@ const ADMIN_INITIAL = 'อ';
 })();
 
 /* กดรูปผู้ใช้ เปิดเมนูบัญชี: ชื่อ สถานะ รีเฟรช ออกจากระบบ */
-function openAccountSheet() {
+/* เมนูบัญชี: กดรูปโปรไฟล์แล้วขึ้นเมนูย่อยตรงปุ่ม */
+const svgSettings = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></svg>';
+const svgMoon = '<svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 019.5 4a8 8 0 1010.5 10.5z"/></svg>';
+const svgSun = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5"/></svg>';
+const svgLogout = '<svg viewBox="0 0 24 24"><path d="M14 4h4a2 2 0 012 2v12a2 2 0 01-2 2h-4M10 16l-4-4 4-4M6 12h10"/></svg>';
+
+function isDarkTheme() {
+  return (THEMES.find(t => t.id === currentTheme()) || {}).mode === 'dark';
+}
+
+function ensureAcctPop() {
+  let p = document.getElementById('acctPop');
+  if (!p) {
+    p = document.createElement('div');
+    p.id = 'acctPop';
+    p.className = 'acct-pop';
+    p.setAttribute('role', 'menu');
+    document.body.appendChild(p);
+    p.addEventListener('click', e => {
+      const b = e.target.closest('[data-act]');
+      if (b) acctAct(b.dataset.act);
+    });
+  }
+  return p;
+}
+
+function openAcctPop() {
+  const btn = document.getElementById('avatarBtn');
+  if (!btn) return;
+  const p = ensureAcctPop();
+  if (p.classList.contains('open')) { closeAcctPop(); return; }
+
   const name = (document.getElementById('profileName')?.textContent || '').trim() || 'ผู้ใช้งาน';
   const role = state.role === 'admin' ? 'แอดมิน' : 'ดูอย่างเดียว';
   const sync = document.getElementById('lastSync')?.textContent || '';
-  showSheet(`
-    <div class="sheet-title">${escapeHtml(name)}</div>
-    <div class="acct-meta">${escapeHtml(role)} · ${escapeHtml(sync)}</div>
-    <div class="btn-row">
-      <button class="btn btn-ghost" id="acctRefresh">รีเฟรชข้อมูล</button>
-      <button class="btn btn-primary" id="acctLogout">ออกจากระบบ</button>
-    </div>`, 'acct-sheet');
-  document.getElementById('acctRefresh').onclick = () => { closeSheet(); location.reload(); };
-  document.getElementById('acctLogout').onclick = () => { closeSheet(); document.getElementById('btnLogout')?.click(); };
+  const initial = state.role === 'admin' ? ADMIN_INITIAL : (name.charAt(0) || '?');
+  const dark = isDarkTheme();
+
+  p.innerHTML = `
+    <div class="ap-head">
+      <div class="ap-av">${escapeHtml(initial)}</div>
+      <div class="ap-who">
+        <b>${escapeHtml(name)}</b>
+        <span class="ap-role">${escapeHtml(role)}</span>
+        <small>${escapeHtml(sync)}</small>
+      </div>
+    </div>
+    <div class="ap-sep"></div>
+    <button class="ap-item" data-act="settings" role="menuitem" type="button">${svgSettings}<span>ตั้งค่า</span></button>
+    <button class="ap-item" data-act="theme" role="menuitem" type="button">${dark ? svgSun : svgMoon}<span>${dark ? 'โหมดสว่าง' : 'โหมดมืด'}</span></button>
+    <div class="ap-sep"></div>
+    <button class="ap-item ap-danger" data-act="logout" role="menuitem" type="button">${svgLogout}<span>ออกจากระบบ</span></button>`;
+
+  const r = btn.getBoundingClientRect();
+  p.style.top = (r.bottom + 8) + 'px';
+  p.style.right = Math.max(8, window.innerWidth - r.right) + 'px';
+  p.classList.add('open');
+
+  setTimeout(() => document.addEventListener('pointerdown', acctOutside, true), 0);
+  document.addEventListener('keydown', acctEsc);
+  window.addEventListener('resize', closeAcctPop);
 }
-document.getElementById('avatarBtn')?.addEventListener('click', openAccountSheet);   
+
+function closeAcctPop() {
+  document.getElementById('acctPop')?.classList.remove('open');
+  document.removeEventListener('pointerdown', acctOutside, true);
+  document.removeEventListener('keydown', acctEsc);
+  window.removeEventListener('resize', closeAcctPop);
+}
+
+function acctOutside(e) {
+  const p = document.getElementById('acctPop');
+  const b = document.getElementById('avatarBtn');
+  if (p && !p.contains(e.target) && !b.contains(e.target)) closeAcctPop();
+}
+
+function acctEsc(e) { if (e.key === 'Escape') closeAcctPop(); }
+
+function acctAct(a) {
+  closeAcctPop();
+  if (a === 'settings') renderTab('settings');
+  if (a === 'theme') applyTheme(isDarkTheme() ? 'dawn' : 'obsidian');
+  if (a === 'logout') document.getElementById('btnLogout')?.click();
+}
+
+document.getElementById('avatarBtn')?.addEventListener('click', openAcctPop);
 
 init();   // <-- ของเดิม คงไว้ตามเดิม
 /* ===== จดจำตำแหน่งเลื่อนของหน้า ===== */
