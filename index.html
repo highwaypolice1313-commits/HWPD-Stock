@@ -9987,6 +9987,12 @@ function renderAssets() {
       else state.assetSort = v;
       state.assetLimit = ASSET_STEP;
       renderAssets();
+    }, () => {
+      state.assetFilter = 'all';
+      state.assetStatusFilter = 'all';
+      state.assetSort = 'name_asc';
+      state.assetLimit = ASSET_STEP;
+      renderAssets();
     });
 
   wireViewToggle(renderAssets, '#view-assets', 'assetView');
@@ -11340,7 +11346,7 @@ function filterRoundBtnHtml(id, count) {
     <svg viewBox="0 0 20 20" fill="none"><path d="M3 5h14M6 10h8M9 15h2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
     ${count ? `<span class="ax-badge">${count}</span>` : ''}</button>`;
 }
-function openFilterSheet(title, groups, onPick) {
+function openFilterSheet(title, groups, onPick, onReset) {
   showSheet(`
     <div class="sheet-title">${escapeHtml(title)}</div>
     ${groups.map(g => `
@@ -11348,12 +11354,17 @@ function openFilterSheet(title, groups, onPick) {
       <div class="ax-pills fs-wrap">
         ${g.options.map(([v, t]) => `<button type="button" class="ax-pill ${g.current === v ? 'active' : ''}" data-fs-k="${escapeHtml(g.key)}" data-fs-v="${escapeHtml(v)}">${escapeHtml(t)}${g.current === v ? ' ✓' : ''}</button>`).join('')}
       </div>`).join('')}
-    <div class="btn-row"><button class="btn btn-ghost" id="fsClose">ปิด</button></div>`);
+    <div class="btn-row">
+      ${onReset ? '<button class="btn btn-ghost" id="fsReset">ล้างตัวกรอง</button>' : ''}
+      <button class="btn btn-ghost" id="fsClose">ปิด</button>
+    </div>`);
   document.querySelectorAll('#modalRoot [data-fs-v]').forEach(b => b.onclick = () => {
     closeSheet();
     onPick(b.dataset.fsK, b.dataset.fsV);
   });
   document.getElementById('fsClose').onclick = closeSheet;
+  const rb = document.getElementById('fsReset');
+  if (rb) rb.onclick = () => { closeSheet(); onReset(); };
 }
 
 function renderBorrow() {
@@ -11422,6 +11433,12 @@ function renderBorrow() {
         state.borrowCat = 'all';
       } else if (k === 'cat') state.borrowCat = v;
       else state.borrowSort = v;
+      renderBorrow();
+    }, () => {
+      state.borrowTab = 'active';
+      state.borrowOverdue = false;
+      state.borrowCat = 'all';
+      state.borrowSort = 'due_asc';
       renderBorrow();
     });
 
@@ -12345,6 +12362,10 @@ function renderMaint() {
     ], (k, v) => {
       if (k === 'status') state.maintTab = v; else state.maintSort = v;
       renderMaint();
+    }, () => {
+      state.maintTab = 'active';
+      state.maintSort = 'date_desc';
+      renderMaint();
     });
 
   srchBoxWire('maintSearchInput', v => {
@@ -13148,7 +13169,7 @@ function offFsBodyHtml() {
       ${group('สถานะ', OFF_FLAG_CHIPS, f.flag, countFlag, 'flag')}
       ${group('จัดกลุ่ม', OFF_GROUP_OPTIONS, state.offGroup, null, 'group')}
       <div class="btn-row">
-        <button class="btn btn-ghost" id="offFsReset">ล้างทั้งหมด</button>
+        <button class="btn btn-ghost" id="offFsReset">ล้างตัวกรอง</button>
         <button class="btn btn-primary" id="offFsDone">ดูผลลัพธ์</button>
       </div>
     </div>`;
@@ -14053,7 +14074,10 @@ function openMemoSortSheet() {
           ${t}${state.memoSort === v ? ' ✓' : ''}
         </button>`).join('')}
     </div>
-    <div class="btn-row"><button class="btn btn-ghost" id="msClose">ปิด</button></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="msReset">ล้างตัวกรอง</button>
+      <button class="btn btn-ghost" id="msClose">ปิด</button>
+    </div>
   `);
   document.querySelectorAll('[data-ms]').forEach(b => b.onclick = () => {
     state.memoSort = b.dataset.ms;
@@ -14061,6 +14085,12 @@ function openMemoSortSheet() {
     drawMemos();
   });
   document.getElementById('msClose').onclick = closeSheet;
+  document.getElementById('msReset').onclick = () => {
+    state.memoSort = 'date_desc';
+    state.memoMonth = 'all';
+    closeSheet();
+    drawMemos();
+  };
 }
 
 /* ---- ป้ายชิปเดือนแบบสั้น เช่น "มิ.ย. 69" ---- */
@@ -16131,6 +16161,7 @@ function drawAuditView() {
       ${auditActionsHtml()}
     </div>
     ${auditCatChipsHtml(all)}
+    ${state.auditCat && state.auditCat !== 'all' ? '<div class="audit-reset-row"><span class="link-btn" id="auditResetCat" role="button">ล้างตัวกรองหมวด</span></div>' : ''}
 
     <div id="auditList">
       ${list.length ? list.map(auditRow).join('') : emptyState(emptyMsg)}
@@ -16145,6 +16176,8 @@ function drawAuditView() {
     state.auditView = b.dataset.aview;
     drawAuditView();
   });
+  const auditResetCat = document.getElementById('auditResetCat');
+  if (auditResetCat) auditResetCat.onclick = () => { state.auditCat = 'all'; drawAuditView(); };
   el.querySelectorAll('[data-acat]').forEach(b => b.onclick = () => {
     state.auditCat = b.dataset.acat;
     state.auditCatTouched = true;
@@ -18958,6 +18991,8 @@ ${pages}`;
       if (search) search.oninput = e => { state.mcSearch = e.target.value; drawMonthlyBodyEnhanced(); };
       const pending = document.getElementById('mcPendingChip');
       if (pending) pending.onclick = () => { state.mcPending = !state.mcPending; paint(); };
+        const mcReset = document.getElementById('mcResetFilter');
+        if (mcReset) mcReset.onclick = () => { state.mcPending = false; state.mcSearch = ''; paint(); };
     };
 
     const paint = () => {
@@ -18975,6 +19010,7 @@ ${pages}`;
               <input class="input" id="mcSearch" placeholder="ค้นหาชื่อ / ตำแหน่ง / หมายเลขเครื่อง" value="${escapeHtml(state.mcSearch)}" autocomplete="off">
             </div>
             <div class="chip ${state.mcPending ? 'active' : ''}" id="mcPendingChip">เฉพาะที่ยังไม่ตรวจ</div>
+          ${state.mcPending || state.mcSearch ? '<span class="link-btn" id="mcResetFilter" role="button">ล้างตัวกรอง</span>' : ''}
           </div>
           <div class="hint" id="mcHiddenHint" style="margin:0 0 10px;"></div>
           <div id="mcSwipeNavWrap"></div>
