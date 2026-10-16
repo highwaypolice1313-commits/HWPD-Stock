@@ -7289,6 +7289,12 @@ html, body{
 #view-users .ax-round.on{background:var(--navy);color:#fff;border-color:var(--navy);}
 #view-assets .stat-grid > *{scroll-snap-align:start;min-width:0;}
 </style>
+<style>
+/* ตรวจประจำเดือน: หัวข้อขนาดและระยะเท่ากับหน้าอื่น */
+#view-monthly .pc-hd.section-title{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:6px 10px;margin:22px 2px 12px;padding-bottom:0;font-family:var(--font-disp);font-size:17px;font-weight:600;}
+#view-monthly .pc-hd.section-title small{font-size:11.5px;font-weight:400;color:var(--ink-dim);font-family:var(--font-th);}
+#view-monthly .pc-hd.section-title .section-actions{align-items:center;}
+</style>
 </head>
 
    
@@ -19058,18 +19064,14 @@ ${pages}`;
 window.pcHeaderHtml = function(curY, curM, years, view, sub){
   const yrs = years || [];
   return `
-    <div class="pc-hd">
-      <div class="pc-hd-txt">
-        <div class="pc-hd-ttl">ตรวจประจำเดือน</div>
-        <div class="pc-hd-sub" data-sub>${escapeHtml(sub || '')}</div>
-      </div>
-      <div class="pc-hd-tools">
-<div class="view-toggle">
-  <button type="button" class="vt-btn ${view === 'list' ? 'active' : ''}" data-pv="list" title="มุมมองรายการ" aria-label="มุมมองรายการ">${ICONS.listView}</button>
-  <button type="button" class="vt-btn ${view === 'card' ? 'active' : ''}" data-pv="card" title="มุมมองการ์ด" aria-label="มุมมองการ์ด">${ICONS.gridView}</button>
-</div>
-<button type="button" class="icon-btn" data-pp title="พิมพ์รายงาน" aria-label="พิมพ์รายงาน">${ICONS.print}</button>
-      </div>
+    <div class="section-title pc-hd">ตรวจประจำเดือน <small data-sub>${escapeHtml(sub || '')}</small>
+      <span class="section-actions pc-hd-tools">
+        <div class="view-toggle">
+          <button type="button" class="vt-btn ${view === 'list' ? 'active' : ''}" data-pv="list" title="มุมมองรายการ" aria-label="มุมมองรายการ">${ICONS.listView}</button>
+          <button type="button" class="vt-btn ${view === 'card' ? 'active' : ''}" data-pv="card" title="มุมมองการ์ด" aria-label="มุมมองการ์ด">${ICONS.gridView}</button>
+        </div>
+        <button type="button" class="icon-btn" data-pp title="พิมพ์รายงาน" aria-label="พิมพ์รายงาน">${ICONS.print}</button>
+      </span>
     </div>
     <div class="pc-period" style="margin-top:10px">
       <select data-pm aria-label="เดือน">
