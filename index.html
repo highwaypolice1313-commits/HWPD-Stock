@@ -11460,30 +11460,16 @@ function assetValueOptions(field, selCat) {
     .sort((x, y) => (y.sameCat - x.sameCat) || (y.count - x.count) || x.value.localeCompare(y.value, 'th'));
 }
 
-/* ---------- สไตล์หน้าเลือกค่า: หน้าต่างสูงเท่าพื้นที่ที่เห็นจริงเสมอ ---------- */
+/* ---------- สไตล์หน้าเลือกค่า: หน้าต่างอยู่ด้านบนของจอ รายการเลื่อนได้ ---------- */
 function ensureValuePickerCss() {
   if (document.getElementById('valuePickerCss')) return;
   const s = document.createElement('style');
   s.id = 'valuePickerCss';
   s.textContent = `
-.vp-sheet{display:flex;flex-direction:column;overflow:hidden;box-sizing:border-box}
+.vp-sheet{display:flex;flex-direction:column;overflow:hidden;box-sizing:border-box;height:72vh;height:72dvh;max-height:72dvh}
 .vp-sheet .sheet-title{flex:none}
 .vp-sheet .vp-search{flex:none}
-.vp-sheet .vp-list{flex:1 1 0;min-height:0;max-height:none;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
-`;
-  document.head.appendChild(s);
-}
-
-/* ---------- สไตล์หน้าเลือกค่า: หัวและช่องค้นหาอยู่คงที่ รายการเลื่อนได้ ---------- */
-function ensureValuePickerCss() {
-  if (document.getElementById('valuePickerCss')) return;
-  const s = document.createElement('style');
-  s.id = 'valuePickerCss';
-  s.textContent = `
-.vp-sheet{display:flex;flex-direction:column;overflow:hidden}
-.vp-sheet .sheet-title{flex:none}
-.vp-sheet .vp-search{flex:none}
-.vp-sheet .vp-list{flex:1 1 auto;min-height:120px;max-height:none;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.vp-sheet .vp-list{flex:1 1 0;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 `;
   document.head.appendChild(s);
 }
@@ -11498,32 +11484,14 @@ function openValuePicker({ title, placeholder, current, options, onPick }) {
     <div class="vp-list" id="vp_list"></div>
   `, 'vp-sheet');
 
-  const sheet = document.querySelector('#overlayEl .sheet');
+  // จัดหน้าต่างให้ชิดด้านบน เพื่อให้ช่องค้นหาอยู่เหนือแป้นพิมพ์
+  const overlay = document.getElementById('overlayEl');
+  if (overlay) overlay.style.alignItems = 'flex-start';
+
   const q = document.getElementById('vp_q');
   const list = document.getElementById('vp_list');
-  const vv = window.visualViewport;
 
-  // ปรับความสูงหน้าต่างให้เท่ากับพื้นที่ที่เห็นจริง (ไม่รวมส่วนที่แป้นพิมพ์บัง)
-  const fit = () => {
-    if (!sheet || !document.body.contains(sheet)) { cleanup(); return; }
-    const h = vv ? vv.height : window.innerHeight;
-    sheet.style.maxHeight = Math.max(280, Math.floor(h - 16)) + 'px';
-  };
-  const cleanup = () => {
-    if (vv) { vv.removeEventListener('resize', fit); vv.removeEventListener('scroll', fit); }
-    window.removeEventListener('resize', fit);
-  };
-  if (vv) { vv.addEventListener('resize', fit); vv.addEventListener('scroll', fit); }
-  window.addEventListener('resize', fit);
-  fit();
-
-  // เมื่อเริ่มพิมพ์ ให้รอให้แป้นพิมพ์ขึ้นก่อน แล้วเลื่อนช่องค้นหามาอยู่กลางจอ
-  q.onfocus = () => setTimeout(() => {
-    fit();
-    q.scrollIntoView({ block: 'center', behavior: 'smooth' });
-  }, 320);
-
-  const pick = (value) => { cleanup(); closeSheet(); onPick(value); };
+  const pick = (value) => { closeSheet(); onPick(value); };
 
   function draw() {
     const qq = q.value.trim();
