@@ -15117,15 +15117,22 @@ async function renderMemos() {
   if (state.memoSort === undefined) state.memoSort = 'date_desc';
   if (state.memoMonth === undefined) state.memoMonth = 'all';
   if (state.memoLimit === undefined) state.memoLimit = MEMO_STEP;
-  // วาดทันทีจากข้อมูลที่มี แล้วอัปเดตอีกครั้งเมื่อโหลดเสร็จ (ไม่ใช้ skeleton)
+
+  const hasCache = Array.isArray(state.memos);
+  // วาดทันที: ถ้ามีข้อมูลเดิมก็วาดจากข้อมูลนั้นเลย ไม่วาดรายการว่างก่อน
   drawMemos();
   try {
-    state.memos = await apiGet('getMemos', { token: state.sessionToken });
+    const fresh = await apiGet('getMemos', { token: state.sessionToken });
+    const changed = JSON.stringify(fresh) !== JSON.stringify(state.memos || []);
+    state.memos = fresh;
+    // วาดซ้ำเฉพาะเมื่อข้อมูลเปลี่ยนจริง จะได้ไม่กระพริบหรือเด้งแอนิเมชันซ้ำ
+    if (changed || !hasCache) {
+      drawMemos();
+      applyPremiumMotion(document.getElementById('view-memos'));
+    }
   } catch (e) {
     toast('โหลดเอกสารไม่สำเร็จ: ' + (e.message || ''));
   }
-  drawMemos();
-  applyPremiumMotion(document.getElementById('view-memos'));
 }
 
 /* กรองตามคำค้น + เดือนที่เลือก แล้วเรียงตามที่ผู้ใช้เลือก */
