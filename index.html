@@ -11349,12 +11349,116 @@ function ensureCatPickerCss() {
   document.head.appendChild(s);
 }
 
-/* ---------- หน้าต่างเลือกหมวดหมู่ด้วยไอคอน ---------- */
+/* ---------- บันทึกหมวดหมู่ใหม่ลงระบบ (ใช้ตรรกะเดียวกับหน้าตั้งค่า) ---------- */
+async function saveNewCategory(name, unit, icon) {
+  const cats = getCategories().slice();
+  if (cats.includes(name)) throw new Error('มีชื่อหมวดหมู่ซ้ำกัน: ' + name);
+
+  const units = getCategoryUnits();
+  const icons = getCategoryIcons();
+  cats.push(name);
+
+  // ส่งค่าทั้งชุดไปให้เซิร์ฟเวอร์ เหมือนที่หน้าตั้งค่าทำ
+  const unitsObj = {}, iconsObj = {};
+  cats.forEach(c => {
+    unitsObj[c] = (c === name) ? unit : (units[c] || 'เครื่อง');
+    iconsObj[c] = (c === name) ? icon : (icons[c] || 'other');
+  });
+
+  await apiPost('updateSystemSettings', {
+    assetCategories: JSON.stringify(cats),
+    categoryUnits: JSON.stringify(unitsObj),
+    categoryIcons: JSON.stringify(iconsObj),
+    categoryRenames: JSON.stringify([])
+  });
+
+  // อัปเดตค่าในหน่วยความจำทันที เพื่อให้ไอคอนและหมวดใหม่ใช้ได้ทันที
+  state.settings = state.settings || {};
+  state.settings.assetCategories = JSON.stringify(cats);
+  state.settings.categoryUnits = JSON.stringify(unitsObj);
+  state.settings.categoryIcons = JSON.stringify(iconsObj);
+}
+
+/* ---------- หน้าเพิ่มหมวดหมู่ใหม่ (รูปแบบเดียวกับ modal ในหน้าตั้งค่า) ---------- */
+function openCategoryCreate(onCreated) {
+  ensureAssetFormCss();
+  ensureValuePickerCss();
+  let icon = 'other';
+
+  const paintIcon = () => {
+    document.getElementById('cc_prevIco').innerHTML = ICONS[icon] || ICONS.other;
+    document.getElementById('cc_prevName').textContent = cuIconLabel(icon);
+  };
+
+  showSheet(`
+    <div class="sheet-title">เพิ่มหมวดหมู่ใหม่</div>
+
+    <div class="field"><label>ชื่อหมวดหมู่</label>
+      <input class="input" id="cc_name" placeholder="เช่น อาวุธปืน" autocomplete="off">
+    </div>
+
+    <div class="field"><label>หน่วยนับ (ใช้ในเอกสารบันทึกข้อความ)</label>
+      <input class="input" id="cc_unit" value="เครื่อง" placeholder="เช่น เครื่อง">
+      <div class="cu-units">${CU_UNIT_CHIPS.map(u => `<div class="chip" data-u="${escapeHtml(u)}">${escapeHtml(u)}</div>`).join('')}</div>
+    </div>
+
+    <div class="field"><label>ไอคอน</label>
+      <button type="button" class="cu-icon-trigger" id="cc_iconBtn">
+        <span class="cu-prev-ico" id="cc_prevIco"></span>
+        <span class="cu-icon-trigger-body">
+          <span class="cu-prev-name" id="cc_prevName"></span>
+          <span class="cu-prev-key">แตะเพื่อเลือกไอคอน</span>
+        </span>
+        <span class="cu-icon-chev" aria-hidden="true">›</span>
+      </button>
+    </div>
+
+    <div class="btn-row"><button class="btn btn-ghost" id="cc_cancel">ยกเลิก</button><button class="btn btn-primary" id="cc_ok">บันทึกหมวดหมู่</button></div>
+  `, 'cu-modal-sheet');
+
+  paintIcon();
+
+  document.querySelectorAll('#overlayEl .cu-units [data-u]').forEach(c => {
+    c.onclick = () => { document.getElementById('cc_unit').value = c.dataset.u; };
+  });
+  document.getElementById('cc_iconBtn').onclick = () =>
+    cuOpenIconPicker(icon, k => { icon = k; paintIcon(); });
+
+  document.getElementById('cc_cancel').onclick = closeSheet;
+
+  const okBtn = document.getElementById('cc_ok');
+  okBtn.onclick = async () => {
+    const name = val('cc_name').trim();
+    const unit = val('cc_unit').trim() || 'เครื่อง';
+    if (!name) { toast('กรุณากรอกชื่อหมวดหมู่'); return; }
+    if (okBtn.disabled) return;
+    setButtonBusy(okBtn, true); setLoading(true, 'กำลังบันทึกหมวดหมู่...');
+    try {
+      await saveNewCategory(name, unit, icon);
+      closeSheet();              // กลับไปหน้าเลือกหมวดหมู่
+      closeSheet();              // กลับไปหน้าฟอร์มครุภัณฑ์
+      toast('เพิ่มหมวดหมู่แล้ว');
+      onCreated(name);
+    } catch (err) {
+      toast(err.message || 'บันทึกไม่สำเร็จ');
+    } finally {
+      setLoading(false); setButtonBusy(okBtn, false);
+    }
+  };
+
+  if (!window.matchMedia('(pointer:coarse)').matches) {
+    setTimeout(() => document.getElementById('cc_name')?.focus(), 80);
+  }
+}
+
+/* ---------- หน้าเลือกหมวดหมู่ด้วยไอคอน (มีปุ่มเพิ่มหมวดหมู่ใหม่ด้านบน) ---------- */
 function openCategoryPicker(current, onPick) {
-  ensureCatPickerCss();
+  ensureAssetFormCss();
+  ensureValuePickerCss();
   const cats = getCategories();
   showSheet(`
     <div class="sheet-title">เลือกหมวดหมู่</div>
+    ${isAdmin() ? `<button type="button" class="vp-create" id="cat_create">${AF_ICON_PLUS}<span>เพิ่มหมวดหมู่ใหม่</span></button>` : ''}
     <div class="cat-grid">
       ${cats.map(c => `
         <button type="button" class="cat-tile${c === current ? ' active' : ''}" data-cat="${escapeHtml(c)}">
@@ -11363,13 +11467,17 @@ function openCategoryPicker(current, onPick) {
         </button>`).join('')}
     </div>
   `);
+
   document.querySelectorAll('#overlayEl .cat-tile').forEach(btn => {
     btn.onclick = () => {
       const c = btn.dataset.cat;
-      closeSheet();          // กลับไปที่ฟอร์มเดิม (ข้อมูลที่กรอกไว้ยังอยู่)
+      closeSheet();
       onPick(c);
     };
   });
+
+  const createBtn = document.getElementById('cat_create');
+  if (createBtn) createBtn.onclick = () => openCategoryCreate(onPick);
 }
 
 /* ---------- ฟอร์มเพิ่ม/แก้ไขครุภัณฑ์ ---------- */
