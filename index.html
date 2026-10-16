@@ -7195,6 +7195,40 @@ html, body{
   #view-dashboard .dbx-mob .dbx-card{ margin-top:16px !important; }
 
 </style>
+
+<style id="users-borrow-compact-v1">
+/* ---- การ์ดสถิติ: แถวเดียว เลื่อนได้บนมือถือ ---- */
+.stat-row{
+  display:flex; gap:8px; overflow-x:auto; scroll-snap-type:x proximity;
+  scrollbar-width:none; padding:2px 2px 8px; margin:0 -2px 10px;
+}
+.stat-row::-webkit-scrollbar{ display:none; }
+.stat-row .stat-card{
+  flex:0 0 116px; scroll-snap-align:start; text-align:left;
+  padding:12px 12px; border-radius:16px;
+  background:var(--panel); border:1px solid var(--panel-line); box-shadow:var(--shadow-sm);
+}
+.stat-row .stat-num{ font-size:20px; }
+.stat-row .stat-label{ font-size:11px; margin-top:4px; }
+@media (min-width:900px){
+  .stat-row{ display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); overflow:visible; padding:0; margin:0 0 12px; }
+  .stat-row .stat-card{ flex:none; }
+}
+
+/* ---- ยืม-คืน บนมือถือ: ลดความรกให้เหลือแถวเดียวต่อส่วน ---- */
+@media (max-width:899px){
+  #view-borrow .stat-grid{
+    display:flex; gap:8px; overflow-x:auto; scrollbar-width:none;
+    margin:0 0 10px !important;
+  }
+  #view-borrow .stat-grid::-webkit-scrollbar{ display:none; }
+  #view-borrow .stat-grid .stat-card{ flex:0 0 108px; padding:11px 10px; }
+  #view-borrow .stat-grid .stat-num{ font-size:19px; }
+  #view-borrow .ax-pills{ flex-wrap:nowrap !important; overflow-x:auto !important; padding:2px 0 8px; }
+  #view-borrow .ax-top{ margin-bottom:8px; }
+  #view-borrow .chip-row{ margin-bottom:8px; }
+}
+</style>
    
 </head>
    
@@ -13049,7 +13083,7 @@ function drawUsers() {
   const holdCount = rows.filter(r => r.hold.length > 0).length;
   const flagCount = rows.filter(r => r.issues.some(x => x.lv !== 'info')).length;
 
-  const stat = (n, t, cls) => `<div class="off-stat ${cls || ''}"><b>${n}</b><span>${t}</span></div>`;
+  const stat = (n, t, cls) => `<div class="stat-card ${cls || ''}"><div class="stat-num">${n}</div><div class="stat-label">${t}</div></div>`;
 
   el.innerHTML = `
     <div class="off-head">
@@ -13061,11 +13095,11 @@ function drawUsers() {
       </div>
     </div>
 
-    <div class="off-stats">
+    <div class="stat-row">
       ${stat(rows.length, 'ทั้งหมด (คน)')}
-      ${stat(offCount, 'สัญญาบัตร')}
-      ${stat(polCount, 'ประทวน')}
-      ${stat(holdCount, 'กำลังถือพัสดุ')}
+      ${stat(offCount, 'สัญญาบัตร', 'info')}
+      ${stat(polCount, 'ประทวน', 'info')}
+      ${stat(holdCount, 'กำลังถือพัสดุ', 'ok')}
       ${stat(flagCount, 'ต้องตรวจข้อมูล', flagCount ? 'warn' : '')}
     </div>
 
@@ -13088,6 +13122,7 @@ function drawUsers() {
   srchBoxWire('userSearchInput', v => {
     state.userSearch = v;
     drawUserList();
+    applyPremiumMotion(el); 
   });
 
   bindOffFilterBar();
