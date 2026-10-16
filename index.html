@@ -7253,6 +7253,15 @@ html, body{
 }
 </style>
    
+<style>
+/* การ์ดสถิติกดได้ */
+button.stat-btn{font:inherit;color:inherit;text-align:left;width:100%;cursor:pointer;-webkit-appearance:none;appearance:none;}
+button.stat-btn.on{box-shadow:0 0 0 2px var(--navy) inset;}
+button.stat-btn:focus-visible{outline:2px solid var(--navy);outline-offset:2px;}
+/* ชีตตัวกรอง */
+.fs-label{font-size:12.5px;color:var(--ink-dim);margin:14px 2px 6px;}
+.fs-wrap{flex-wrap:wrap;gap:8px;}
+</style>
 </head>
    
 <body>
@@ -11176,6 +11185,7 @@ function borrowVisibleList() {
   const base = borrowBuckets()[state.borrowTab] || [];
   const terms = srchTerms(state.borrowSearch);
   const list = base
+    .filter(b => !state.borrowOverdue || effectiveBorrowStatus(b) === 'เกินกำหนด')
     .filter(b => state.borrowCat === 'all' || borrowCategoryOf(b) === state.borrowCat)
     .filter(b => srchMatch(borrowSearchText(b), terms));
   return { base, list: sortBorrowList(list), terms };
@@ -11216,6 +11226,35 @@ function borrowSortLabel() {
   return f ? f[1] : '';
 }
 
+
+/* ===== ตัวช่วยกลาง: การ์ดสถิติกดได้ (เป็นตัวกรอง) + ปุ่มตัวกรองเดียว + ชีตตัวกรอง ===== */
+function statFilterHtml(items) {
+  return `<div class="stat-grid stat-filter-grid" style="margin-bottom:14px;">${items.map(it => `
+    <button type="button" class="stat-card ${it.tone || ''} stat-btn ${it.on ? 'on' : ''}" data-sf="${escapeHtml(it.key)}" aria-pressed="${it.on ? 'true' : 'false'}">
+      <div class="stat-num">${it.num}</div><div class="stat-label">${escapeHtml(it.label)}</div>
+    </button>`).join('')}</div>`;
+}
+function filterRoundBtnHtml(id, count) {
+  return `<button class="ax-round" id="${id}" title="ตัวกรอง" aria-label="ตัวกรอง${count ? ' (ใช้อยู่ ' + count + ')' : ''}">
+    <svg viewBox="0 0 20 20" fill="none"><path d="M3 5h14M6 10h8M9 15h2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+    ${count ? `<span class="ax-badge">${count}</span>` : ''}</button>`;
+}
+function openFilterSheet(title, groups, onPick) {
+  showSheet(`
+    <div class="sheet-title">${escapeHtml(title)}</div>
+    ${groups.map(g => `
+      <div class="fs-label">${escapeHtml(g.label)}</div>
+      <div class="ax-pills fs-wrap">
+        ${g.options.map(([v, t]) => `<button type="button" class="ax-pill ${g.current === v ? 'active' : ''}" data-fs-k="${escapeHtml(g.key)}" data-fs-v="${escapeHtml(v)}">${escapeHtml(t)}${g.current === v ? ' ✓' : ''}</button>`).join('')}
+      </div>`).join('')}
+    <div class="btn-row"><button class="btn btn-ghost" id="fsClose">ปิด</button></div>`);
+  document.querySelectorAll('#modalRoot [data-fs-v]').forEach(b => b.onclick = () => {
+    closeSheet();
+    onPick(b.dataset.fsK, b.dataset.fsV);
+  });
+  document.getElementById('fsClose').onclick = closeSheet;
+}
+
 function renderBorrow() {
   const el = document.getElementById('view-borrow');
   ensureSrchStyles();
@@ -11223,31 +11262,30 @@ function renderBorrow() {
   if (state.borrowSearch === undefined) state.borrowSearch = '';
   if (state.borrowSort === undefined) state.borrowSort = 'due_asc';
   if (state.borrowCat === undefined) state.borrowCat = 'all';
+  if (state.borrowOverdue === undefined) state.borrowOverdue = false;
   if (state.borrowView === undefined) state.borrowView = getViewMode('borrow');
   if (state.borrowTab === 'pending' && !isAdmin()) state.borrowTab = 'active';
 
   const bk = borrowBuckets();
   const overdueCount = bk.active.filter(b => effectiveBorrowStatus(b) === 'เกินกำหนด').length;
+  const cur = state.borrowOverdue ? 'overdue' : state.borrowTab;
 
-  const TABS = [
-    { id: 'pending', label: 'รออนุมัติ', count: bk.pending.length, show: isAdmin() },
-    { id: 'active', label: 'ค้างคืน', count: bk.active.length, show: true },
-    { id: 'history', label: 'ประวัติ', count: bk.history.length, show: true }
-  ].filter(t => t.show);
-
-  const baseForCat = bk[state.borrowTab] || [];
-  const catCounts = {};
-  baseForCat.forEach(b => { const c = borrowCategoryOf(b); catCounts[c] = (catCounts[c] || 0) + 1; });
   const catOrder = Array.from(new Set(getCategories().concat(['อื่นๆ'])));
-  const catPills = [{ v: 'all', label: 'ทั้งหมด', n: baseForCat.length, icon: ICONS.other }]
-    .concat(catOrder.filter(c => catCounts[c]).map(c => ({ v: c, label: c, n: catCounts[c], icon: catIcon(c) })));
+  const catCounts = {};
+  (bk[state.borrowTab] || []).forEach(b => { const c = borrowCategoryOf(b); catCounts[c] = (catCounts[c] || 0) + 1; });
+  const catOptions = [['all', 'ทั้งหมด']].concat(catOrder.filter(c => catCounts[c]).map(c => [c, c]));
+  const filterCount = (state.borrowCat !== 'all' ? 1 : 0) + (state.borrowSort !== 'due_asc' ? 1 : 0);
 
-  const isGrid = state.borrowView === 'grid';
-  const sortLabel = (BORROW_SORT_OPTIONS.find(([v]) => v === state.borrowSort) || [])[1] || '';
+  const cards = [
+    ...(isAdmin() ? [{ key: 'pending', num: bk.pending.length, label: 'รออนุมัติ', tone: 'warn' }] : []),
+    { key: 'active', num: bk.active.length, label: 'ค้างคืน', tone: 'ok' },
+    { key: 'overdue', num: overdueCount, label: 'เกินกำหนด', tone: 'bad' },
+    { key: 'history', num: bk.history.length, label: 'ประวัติ', tone: '' }
+  ].map(c => ({ ...c, on: c.key === cur }));
 
   el.innerHTML = `
     <div class="section-title">
-      รายการยืม-คืน <small>${bk.active.length} รายการค้างคืน${overdueCount ? ' · เกินกำหนด ' + overdueCount : ''}</small>
+      รายการยืม-คืน
       <span class="section-actions">
         ${viewToggleHtml('borrow', state.borrowView)}
         <button class="icon-btn" id="btnPrintAllBorrow" title="พิมพ์รายการยืม-คืนทั้งหมด" aria-label="พิมพ์รายการยืม-คืนทั้งหมด">${ICONS.print}</button>
@@ -11255,24 +11293,11 @@ function renderBorrow() {
       </span>
     </div>
 
-    <div class="stat-grid" style="margin-bottom:14px;">
-      <div class="stat-card warn"><div class="stat-num">${bk.pending.length}</div><div class="stat-label">รออนุมัติ</div></div>
-      <div class="stat-card ok"><div class="stat-num">${bk.active.length}</div><div class="stat-label">ค้างคืน</div></div>
-      <div class="stat-card bad"><div class="stat-num">${overdueCount}</div><div class="stat-label">เกินกำหนด</div></div>
-    </div>
+    ${statFilterHtml(cards)}
 
     <div class="ax-top">
       ${srchBoxHtml('borrowSearchInput', state.borrowSearch, 'ค้นหาผู้ยืม / ครุภัณฑ์ / S/N / ทะเบียน / วันที่')}
-      ${sortChipInRowHtml('borrowSortBtn', sortLabel)}
-    </div>
-
-    <div class="ax-pills">
-      ${catPills.map(p => `<div class="ax-pill ${state.borrowCat === p.v ? 'active' : ''}" data-bcat="${escapeHtml(p.v)}">${p.icon}${escapeHtml(p.label)} <b>${p.n}</b></div>`).join('')}
-    </div>
-
-    <div class="chip-row">
-      <button type="button" class="chip ax-cat-chip" id="borrowCatBtn">${escapeHtml(state.borrowCat === 'all' ? 'ทุกหมวด' : state.borrowCat)} ▾</button>
-      ${TABS.map(t => `<div class="chip ${state.borrowTab === t.id ? 'active' : ''}" data-btab="${t.id}">${t.label} (${t.count})</div>`).join('')}
+      ${filterRoundBtnHtml('borrowFilterBtn', filterCount)}
     </div>
 
     <div class="ax-count" id="borrowCount"></div>
@@ -11281,26 +11306,22 @@ function renderBorrow() {
 
   document.getElementById('btnExportBorrow').onclick = () => exportCsv('ยืมคืน.csv',
     ['รหัสรายการ','รหัสครุภัณฑ์','ชื่อครุภัณฑ์','ผู้ยืม','วันที่ยืม','กำหนดคืน','วันที่คืนจริง','สถานะ','ผู้อนุมัติ','หมายเหตุ'], state.borrow);
-    document.getElementById('borrowCatBtn').onclick = () =>
-    openSortSheet('หมวดครุภัณฑ์', catPills.map(p => [p.v, `${p.label} (${p.n})`]), state.borrowCat, v => {
-      state.borrowCat = v;
-      renderBorrow();
-    });
- document.getElementById('btnPrintAllBorrow').onclick = printAllBorrow;
+  document.getElementById('btnPrintAllBorrow').onclick = printAllBorrow;
 
-  document.getElementById('borrowSortBtn').onclick = () =>
-    openSortSheet('เรียงลำดับรายการยืม-คืน', BORROW_SORT_OPTIONS, state.borrowSort, v => {
-      state.borrowSort = v;
+  document.getElementById('borrowFilterBtn').onclick = () =>
+    openFilterSheet('ตัวกรองยืม-คืน', [
+      { key: 'cat', label: 'หมวดครุภัณฑ์', current: state.borrowCat, options: catOptions },
+      { key: 'sort', label: 'เรียงลำดับ', current: state.borrowSort, options: BORROW_SORT_OPTIONS }
+    ], (k, v) => {
+      if (k === 'cat') state.borrowCat = v; else state.borrowSort = v;
       renderBorrow();
     });
 
-  el.querySelectorAll('[data-btab]').forEach(c => c.onclick = () => {
-    state.borrowTab = c.dataset.btab;
+  el.querySelectorAll('[data-sf]').forEach(b => b.onclick = () => {
+    const k = b.dataset.sf;
+    state.borrowOverdue = k === 'overdue';
+    state.borrowTab = (k === 'overdue' || k === 'active') ? 'active' : k;
     state.borrowCat = 'all';
-    renderBorrow();
-  });
-  el.querySelectorAll('[data-bcat]').forEach(p => p.onclick = () => {
-    state.borrowCat = p.dataset.bcat;
     renderBorrow();
   });
 
@@ -12183,36 +12204,28 @@ function renderMaint() {
 
   const bk = maintBuckets();
   const totalCost = (state.maint || []).reduce((s, m) => s + (Number(m['ค่าใช้จ่าย(บาท)']) || 0), 0);
-  const sortLabel = (MAINT_SORT_OPTIONS.find(([v]) => v === state.maintSort) || [])[1] || '';
+  const filterCount = state.maintSort !== 'date_desc' ? 1 : 0;
 
-  const TABS = [
-    { id: 'pending', label: 'รอซ่อม', count: bk.pending.length },
-    { id: 'active', label: 'ค้างซ่อม', count: bk.active.length },
-    { id: 'history', label: 'ซ่อมเสร็จแล้ว', count: bk.history.length }
-  ];
+  const cards = [
+    { key: 'pending', num: bk.pending.length, label: 'รอซ่อม', tone: 'warn' },
+    { key: 'active', num: bk.active.length, label: 'ค้างซ่อม', tone: 'ok' },
+    { key: 'history', num: bk.history.length, label: 'ซ่อมเสร็จแล้ว', tone: '' }
+  ].map(c => ({ ...c, on: c.key === state.maintTab }));
 
   el.innerHTML = `
     <div class="section-title">
-      งานซ่อมบำรุง <small>${bk.active.length} รายการค้างซ่อม</small>
+      งานซ่อมบำรุง <small>ค่าใช้จ่ายสะสม ${Number(totalCost).toLocaleString()} บาท</small>
       <span class="section-actions">
         ${viewToggleHtml('maint', state.maintView)}
         <button class="icon-btn" id="btnExportMaint" title="ส่งออก CSV" aria-label="ส่งออก CSV">${ICONS.download}</button>
       </span>
     </div>
 
-    <div class="stat-grid" style="margin-bottom:14px;">
-      <div class="stat-card warn"><div class="stat-num">${bk.pending.length}</div><div class="stat-label">รอซ่อม</div></div>
-      <div class="stat-card ok"><div class="stat-num">${bk.active.length}</div><div class="stat-label">ค้างซ่อม</div></div>
-      <div class="stat-card info"><div class="stat-num">${Number(totalCost).toLocaleString()}</div><div class="stat-label">ค่าใช้จ่ายสะสม (บาท)</div></div>
-    </div>
+    ${statFilterHtml(cards)}
 
     <div class="ax-top">
       ${srchBoxHtml('maintSearchInput', state.maintSearch, 'ค้นหาชื่อครุภัณฑ์ / อาการ / ผู้แจ้ง / S/N / ทะเบียน')}
-      ${sortChipInRowHtml('maintSortBtn', sortLabel)}
-    </div>
-
-    <div class="chip-row">
-      ${TABS.map(t => `<div class="chip ${state.maintTab === t.id ? 'active' : ''}" data-mtab="${t.id}">${t.label} (${t.count})</div>`).join('')}
+      ${filterRoundBtnHtml('maintFilterBtn', filterCount)}
     </div>
 
     <div class="ax-count" id="maintCount"></div>
@@ -12222,14 +12235,16 @@ function renderMaint() {
   document.getElementById('btnExportMaint').onclick = () => exportCsv('ซ่อมบำรุง.csv',
     ['รหัสรายการ','รหัสครุภัณฑ์','ชื่อครุภัณฑ์','วันที่แจ้ง','อาการ/ปัญหา','ผู้แจ้ง','สถานะ','วันที่ซ่อมเสร็จ','ค่าใช้จ่าย(บาท)','ผู้รับผิดชอบ','หมายเหตุ'], state.maint);
 
-  document.getElementById('maintSortBtn').onclick = () =>
-    openSortSheet('เรียงลำดับงานซ่อมบำรุง', MAINT_SORT_OPTIONS, state.maintSort, v => {
+  document.getElementById('maintFilterBtn').onclick = () =>
+    openFilterSheet('ตัวกรองงานซ่อมบำรุง', [
+      { key: 'sort', label: 'เรียงลำดับ', current: state.maintSort, options: MAINT_SORT_OPTIONS }
+    ], (k, v) => {
       state.maintSort = v;
       renderMaint();
     });
 
-  el.querySelectorAll('[data-mtab]').forEach(c => c.onclick = () => {
-    state.maintTab = c.dataset.mtab;
+  el.querySelectorAll('[data-sf]').forEach(b => b.onclick = () => {
+    state.maintTab = b.dataset.sf;
     renderMaint();
   });
 
@@ -12242,7 +12257,7 @@ function renderMaint() {
   drawMaintList();
   requestAnimationFrame(() => applyPremiumMotion(el));
 }
-   
+
 function maintRow(m) {
   return `<div class="glass list-item maint-item" data-id="${escapeHtml(m['รหัสรายการ'])}">
     <div class="li-icon">${ICONS.wrench}</div>
