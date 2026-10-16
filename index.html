@@ -13251,8 +13251,41 @@ const OFF_CSS = `
 #view-users .off-bulk-top{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 #view-users .off-bulk-actions{display:flex;gap:8px;flex-wrap:wrap}
 #view-users .off-bulk-actions .btn{flex:1 1 auto;min-height:40px}
+
+/* ---------- มุมมองรายการ (สไตล์ใหม่) ---------- */
+#view-users .off-row{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:20px;background:var(--panel);border:1px solid var(--panel-line);box-shadow:var(--shadow-sm);cursor:pointer}
+#view-users .off-row.off-selected{outline:2px solid var(--gold)}
+#view-users .off-row-body{flex:1;min-width:0}
+#view-users .off-row-title{font-size:15px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#view-users .off-row-sub{font-size:12px;color:var(--ink-dim);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#view-users .off-row-side{text-align:right;flex:none}
+#view-users .off-row-num{font-family:var(--font-num);font-size:22px;font-weight:700;line-height:1;color:var(--navy)}
+#view-users .off-row-lbl{font-size:11px;color:var(--ink-dim)}
+#view-users .off-row-status{font-size:11px;font-weight:500;color:var(--ok)}
+#view-users .off-row-status.flag{color:var(--warn)}
+
+/* ---------- มุมมองการ์ด (สไตล์ใหม่) ---------- */
+#view-users .memo-group-body.asset-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+#view-users .off-card{display:flex;flex-direction:column;overflow:hidden;padding:0;border-radius:20px;background:var(--panel);border:1px solid var(--panel-line);box-shadow:var(--shadow-sm);cursor:pointer}
+#view-users .off-card.off-selected{outline:2px solid var(--gold)}
+#view-users .off-card-band{height:64px;background:linear-gradient(180deg,var(--side-1),var(--side-2))}
+#view-users .off-card-main{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:0 12px 12px;margin-top:-30px}
+#view-users .off-card-name{font-size:14px;font-weight:600;line-height:1.35;color:var(--ink);word-break:break-word}
+#view-users .off-card-sub{font-size:11px;color:var(--ink-dim)}
+#view-users .off-card-foot{margin-top:auto;border-top:1px solid var(--panel-line);padding:9px 12px;display:flex;justify-content:space-between;gap:6px;font-size:11px;color:var(--ink-dim)}
+#view-users .off-card-foot .flag{color:var(--warn);font-weight:500}
+#view-users .off-card-foot .ok{color:var(--ok);font-weight:500}
+
+/* วงกลมรูป/อักษรแรก: สีขอบตามบทบาท */
+#view-users .off-av{width:50px;height:50px;border-radius:50%;flex:none;border:2px solid var(--panel-line);background:var(--dawn-4);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:16px;color:var(--navy);overflow:hidden}
+#view-users .off-av.ring-ok{border-color:var(--ok)}
+#view-users .off-av.ring-gold{border-color:var(--gold)}
+#view-users .off-card .off-av{width:60px;height:60px;font-size:18px;border-width:3px;box-shadow:0 0 0 3px var(--panel)}
+#view-users .off-pill{display:inline-flex;align-items:center;font-size:11px;font-weight:500;padding:4px 10px;border-radius:var(--r-tag);background:var(--off-wash);color:var(--off);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+#view-users .off-pill.approve{background:var(--gold-wash);color:var(--gold-deep)}
 `;
 
+/* ใส่ CSS ของหน้านี้เข้า <head> ครั้งเดียว */
 function ensureOffCss() {
   if (document.getElementById('offCss')) return;
   const s = document.createElement('style');
@@ -13263,44 +13296,73 @@ function ensureOffCss() {
 
 /* ---------- รายการ / การ์ด: แสดงเฉพาะข้อมูลที่จำเป็น ---------- */
 function offItemHtml(r, isGrid) {
-  const u = r.u;
-  const key = escapeHtml(r.key);
+  const u = r.u;                                  // ข้อมูลเจ้าหน้าที่ 1 คน
+  const key = escapeHtml(r.key);                  // คีย์สำหรับคลิก (data-id)
   const sel = state.offSelectMode && state.offSel.has(r.key);
-  const issues = r.issues.filter(x => x.lv !== 'info');
-
-  // ป้ายแสดงเฉพาะเมื่อมีข้อมูล: บทบาท / จำนวนพัสดุที่ถือ / ปัญหา (ไม่มีป้าย "ไม่ถือพัสดุ" ซ้ำทุกแถว)
-  const meta = [
-    r.role !== 'none' ? `<span class="tag tag-brass">${escapeHtml(r.role)}</span>` : '',
-    r.hold.length ? `<span class="tag" style="background:var(--navy-wash);color:var(--navy);">ถือ ${r.hold.length} รายการ</span>` : '',
-    issues.length ? `<span class="status-badge ${issues.some(x => x.lv === 'bad') ? 'status-repair' : 'status-borrowed'}">${escapeHtml(issues[0].t)}${issues.length > 1 ? ' +' + (issues.length - 1) : ''}</span>` : ''
-  ].filter(Boolean).join('');
-
-  const sub = [u['ตำแหน่ง'] || 'ไม่ระบุตำแหน่ง', u['หน่วยงาน']].filter(Boolean).map(escapeHtml).join(' · ');
-  const chk = state.offSelectMode ? `<input class="off-chk" type="checkbox" tabindex="-1" ${sel ? 'checked' : ''}>` : '';
   const selCls = sel ? ' off-selected' : '';
-  const metaHtml = meta ? `<div class="off-meta">${meta}</div>` : '';
+  const chk = state.offSelectMode
+    ? `<input class="off-chk" type="checkbox" tabindex="-1" ${sel ? 'checked' : ''}>`
+    : '';
+
+  const name = escapeHtml(officerFullName(u));
+  const sub = [u['ตำแหน่ง'], u['หน่วยงาน']].filter(Boolean).map(escapeHtml).join(' · ')
+    || 'ไม่ระบุตำแหน่ง';
+  const initial = escapeHtml(String(u['ชื่อ-สกุล'] || '?').trim().charAt(0) || '?');
+
+  // สีขอบวงกลม: ผู้อนุมัติ = เขียว, ผู้เบิก = ทอง, อื่น ๆ = เส้นปกติ
+  const ringCls = r.role.includes('อนุมัติ') ? 'ring-ok'
+                : r.role.includes('เบิก') ? 'ring-gold' : '';
+
+  // รูปถ่าย หรือ อักษรแรกของชื่อ
+  const avatar = u['รูปถ่าย']
+    ? `<img src="${escapeHtml(u['รูปถ่าย'])}" alt="" style="width:100%;height:100%;object-fit:cover;">`
+    : initial;
+  const avatarHtml = `<div class="off-av ${ringCls}">${avatar}</div>`;
+
+  // ป้ายบทบาท: แสดงเฉพาะเมื่อมีบทบาท
+  const roleCls = r.role.includes('อนุมัติ') ? ' approve' : '';
+  const rolePill = r.role !== 'none'
+    ? `<span class="off-pill${roleCls}">${escapeHtml(r.role)}</span>`
+    : '';
+
+  // ปัญหาที่ต้องตรวจ (ไม่นับระดับ info)
+  const issues = r.issues.filter(x => x.lv !== 'info');
+  const flagged = issues.length > 0;
+  const statusTxt = flagged ? 'ต้องตรวจ' : 'ครบ';
+  const statusTip = flagged ? escapeHtml(issues.map(x => x.t).join(' · ')) : '';
+  const holdCount = r.hold.length;
 
   if (isGrid) {
-    return `<div class="glass asset-card user-item${selCls}" data-id="${key}">
-      <div class="asset-card-top">
-        <div class="asset-card-icon" style="overflow:hidden;">${u['รูปถ่าย'] ? `<img src="${u['รูปถ่าย']}" style="width:100%;height:100%;object-fit:cover;border-radius:13px;">` : ICONS.user}</div>
+    // ---------- มุมมองการ์ด ----------
+    return `<div class="off-card user-item${selCls}" data-id="${key}">
+      <div class="off-card-band"></div>
+      <div class="off-card-main">
+        ${avatarHtml}
         ${chk}
+        <div class="off-card-name">${name}</div>
+        <div class="off-card-sub">${sub}</div>
+        ${rolePill}
       </div>
-      <div>
-        <div class="asset-card-title">${escapeHtml(officerFullName(u))}</div>
-        <div class="asset-card-sub">${sub}</div>
+      <div class="off-card-foot">
+        <span>ถือ ${holdCount} รายการ</span>
+        <span class="${flagged ? 'flag' : 'ok'}" title="${statusTip}">● ${statusTxt}</span>
       </div>
-      ${metaHtml}
     </div>`;
   }
 
-  return `<div class="glass list-item user-item${selCls}" data-id="${key}">
+  // ---------- มุมมองรายการ ----------
+  return `<div class="off-row user-item${selCls}" data-id="${key}">
     ${chk}
-    ${u['รูปถ่าย'] ? `<img class="li-avatar" src="${u['รูปถ่าย']}" alt="">` : `<div class="li-icon">${ICONS.user}</div>`}
-    <div class="li-body">
-      <div class="li-title">${escapeHtml(officerFullName(u))}</div>
-      <div class="li-sub">${sub}</div>
-      ${metaHtml}
+    ${avatarHtml}
+    <div class="off-row-body">
+      <div class="off-row-title">${name}</div>
+      <div class="off-row-sub">${sub}</div>
+      ${rolePill ? `<div style="margin-top:8px">${rolePill}</div>` : ''}
+    </div>
+    <div class="off-row-side">
+      <div class="off-row-num">${holdCount}</div>
+      <div class="off-row-lbl">รายการ</div>
+      <div class="off-row-status ${flagged ? 'flag' : ''}" title="${statusTip}">${statusTxt}</div>
     </div>
   </div>`;
 }
