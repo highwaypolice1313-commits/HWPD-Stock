@@ -20884,9 +20884,14 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
     max-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 24px) !important;
     margin-top:env(safe-area-inset-top);
   }
-  .overlay .sheet-close{ position:sticky; top:0; }
 }
 </style>
-
+   
+<style id="user-sheet-close-fix">
+@media (max-width:899px), (hover:none) and (pointer:coarse){
+  .overlay .sheet-close{ position:absolute !important; top:14px !important; right:14px !important; left:auto !important; }
+}
+</style>
+   
 </body>
 </html>
