@@ -19828,77 +19828,6 @@ function compareMonthlyOfficers(a, b) {
     flex-basis:34px !important;
   }
 }
-
-/* =========================================================
-   CIB : ใช้เฉพาะสีกรมท่า #002a5c และสีเหลือง #ffd400 (และเฉดของ 2 สีนี้)
-   ========================================================= */
-:root[data-theme="cib"]{
-  --dawn-1:#fff9d6; --dawn-2:#fff3b8; --dawn-3:#eef2f9; --dawn-4:#e3eaf5; --bg-0:#e9eef7; --bg-1:#fffdf3;
-  --panel:#ffffff; --panel-soft:#f5f8fc; --panel-line:#d6e0ee; --panel-hi:#fff6cc;
-  --ink:#001a3a; --ink-dim:#4d6283; --ink-faint:#8797b2;
-  --navy:#002a5c; --navy-deep:#001a3a; --navy-wash:rgba(0,42,92,.07); --navy-line:rgba(0,42,92,.22);
-  --gold:#ffd400; --gold-deep:#8a6d00; --gold-wash:rgba(255,212,0,.22); --gold-line:rgba(255,212,0,.6);
-  --ok:#002a5c; --ok-wash:rgba(0,42,92,.10);
-  --warn:#8a6d00; --warn-wash:rgba(255,212,0,.30);
-  --bad:#001a3a; --bad-wash:rgba(0,26,58,.12);
-  --off:#6b7d99; --off-wash:rgba(107,125,153,.14);
-  --info:#2f5b92; --info-wash:rgba(47,91,146,.12);
-  --side-1:#002a5c; --side-2:#001a3a;
-  --c1:#002a5c; --c2:#ffd400; --c3:#4d7bb5; --c4:#c9a500; --c5:#001a3a; --c6:#9fb0c8;
-  --chart-line:#002a5c; --chart-bar:#ffd400;
-  --shadow-sm:0 1px 2px rgba(0,26,58,.05), 0 6px 16px rgba(0,26,58,.05);
-  --shadow-md:0 10px 28px rgba(0,26,58,.09); --shadow-lg:0 20px 48px rgba(0,26,58,.14);
-}
-:root[data-theme="cibnight"]{
-  --dawn-1:#002a5c; --dawn-2:#00234c; --dawn-3:#001a3a; --dawn-4:#00142d; --bg-0:#000e21; --bg-1:#001a3a;
-  --panel:#00234b; --panel-soft:#002a5c; --panel-line:#0d3a70; --panel-hi:#0d3a70;
-  --ink:#ffffff; --ink-dim:#b7c6dd; --ink-faint:#7f93b3;
-  --navy:#2b5b9a; --navy-deep:#002a5c; --navy-wash:rgba(43,91,154,.20); --navy-line:rgba(43,91,154,.55);
-  --gold:#ffd400; --gold-deep:#ffe066; --gold-wash:rgba(255,212,0,.16); --gold-line:rgba(255,212,0,.5);
-  --ok:#ffd400; --ok-wash:rgba(255,212,0,.14);
-  --warn:#ffd400; --warn-wash:rgba(255,212,0,.20);
-  --bad:#7fa8de; --bad-wash:rgba(43,91,154,.35);
-  --off:#8fa3c2; --off-wash:rgba(143,163,194,.16);
-  --info:#7fa8de; --info-wash:rgba(127,168,222,.16);
-  --side-1:#002a5c; --side-2:#000e21; --sheet-bg:#00234b; --opt-bg:#00234b;
-  --icon:#ffd400; --icon-bg:rgba(255,212,0,.14);
-  --c1:#ffd400; --c2:#7fa8de; --c3:#2b5b9a; --c4:#ffe066; --c5:#5c86c4; --c6:#8fa3c2;
-  --chart-line:#ffd400; --chart-bar:#2b5b9a;
-  --shadow-sm:0 1px 0 rgba(255,255,255,.03); --shadow-md:0 6px 18px rgba(0,0,0,.5); --shadow-lg:0 14px 36px rgba(0,0,0,.6);
-}
-:root[data-theme="cib"] .topbar{ background:linear-gradient(180deg,rgba(255,253,243,.94),rgba(255,253,243,.7)); }
-:root[data-theme="cibnight"] .topbar{ background:linear-gradient(180deg,rgba(0,26,58,.94),rgba(0,26,58,.72)); }
-:root[data-theme="cib"] .brand-badge,
-:root[data-theme="cibnight"] .brand-badge{ background:var(--gold); color:#002a5c; box-shadow:0 6px 16px rgba(255,212,0,.35); }
-:root[data-theme="cibnight"] .role-pill{ background:#002a5c; color:#ffd400; }
-:root[data-theme="cibnight"] .more-item.active .more-ico,
-:root[data-theme="cib"] .more-item.active .more-ico{ background:#002a5c; color:#ffd400; }
-
-/* =========================================================
-   การ์ดกริดแบบ A: ป้ายสถานะมุมขวาบน + ไอคอน + แถวข้อมูล (ใช้ทุกธีม)
-   ========================================================= */
-.asset-grid .ba-card .ba-head{
-  position:relative; flex-direction:column; align-items:flex-start; gap:10px; padding:16px;
-  background:linear-gradient(160deg, var(--gold-wash), var(--panel-hi));
-  border-bottom:1px solid var(--panel-line);
-}
-.asset-grid .ba-card .ba-head .status-badge,
-.asset-grid .ba-card .ba-head .ax-st{ position:absolute; top:12px; right:12px; align-self:auto; }
-.asset-grid .ba-card .asset-card-icon{
-  width:46px; height:46px; border-radius:15px; background:var(--navy); color:var(--gold);
-  box-shadow:none; display:flex; align-items:center; justify-content:center;
-}
-.asset-grid .ba-card .ba-txt{ width:100%; padding-right:0; }
-.asset-grid .ba-card .asset-card-title{ font-size:16px; line-height:1.3; }
-.asset-grid .ba-card .ax-sn{ font-size:12px; color:var(--ink-dim); margin-top:2px; }
-.asset-grid .ba-card .ba-body{ padding:12px 16px 14px; }
-.asset-grid .ba-card .ba-cells{ display:flex; flex-direction:column; gap:8px; }
-.asset-grid .ba-card .ba-cell{
-  display:flex; justify-content:space-between; align-items:baseline; gap:10px;
-  background:none; border:0; border-radius:0; padding:0;
-}
-.asset-grid .ba-card .ba-cell small{ font-size:12px; color:var(--ink-dim); flex:none; }
-.asset-grid .ba-card .ba-cell b{ font-size:12.5px; font-weight:600; text-align:right; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 </style>
 ${pages}`;
     } else {
@@ -20612,5 +20541,79 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
 }
 </script>
+
+<style id="cib-card-final">
+/* =========================================================
+   CIB : ใช้เฉพาะสีกรมท่า #002a5c และสีเหลือง #ffd400 (และเฉดของ 2 สีนี้)
+   ========================================================= */
+:root[data-theme="cib"]{
+  --dawn-1:#fff9d6; --dawn-2:#fff3b8; --dawn-3:#eef2f9; --dawn-4:#e3eaf5; --bg-0:#e9eef7; --bg-1:#fffdf3;
+  --panel:#ffffff; --panel-soft:#f5f8fc; --panel-line:#d6e0ee; --panel-hi:#fff6cc;
+  --ink:#001a3a; --ink-dim:#4d6283; --ink-faint:#8797b2;
+  --navy:#002a5c; --navy-deep:#001a3a; --navy-wash:rgba(0,42,92,.07); --navy-line:rgba(0,42,92,.22);
+  --gold:#ffd400; --gold-deep:#8a6d00; --gold-wash:rgba(255,212,0,.22); --gold-line:rgba(255,212,0,.6);
+  --ok:#002a5c; --ok-wash:rgba(0,42,92,.10);
+  --warn:#8a6d00; --warn-wash:rgba(255,212,0,.30);
+  --bad:#001a3a; --bad-wash:rgba(0,26,58,.12);
+  --off:#6b7d99; --off-wash:rgba(107,125,153,.14);
+  --info:#2f5b92; --info-wash:rgba(47,91,146,.12);
+  --side-1:#002a5c; --side-2:#001a3a;
+  --c1:#002a5c; --c2:#ffd400; --c3:#4d7bb5; --c4:#c9a500; --c5:#001a3a; --c6:#9fb0c8;
+  --chart-line:#002a5c; --chart-bar:#ffd400;
+  --shadow-sm:0 1px 2px rgba(0,26,58,.05), 0 6px 16px rgba(0,26,58,.05);
+  --shadow-md:0 10px 28px rgba(0,26,58,.09); --shadow-lg:0 20px 48px rgba(0,26,58,.14);
+}
+:root[data-theme="cibnight"]{
+  --dawn-1:#002a5c; --dawn-2:#00234c; --dawn-3:#001a3a; --dawn-4:#00142d; --bg-0:#000e21; --bg-1:#001a3a;
+  --panel:#00234b; --panel-soft:#002a5c; --panel-line:#0d3a70; --panel-hi:#0d3a70;
+  --ink:#ffffff; --ink-dim:#b7c6dd; --ink-faint:#7f93b3;
+  --navy:#2b5b9a; --navy-deep:#002a5c; --navy-wash:rgba(43,91,154,.20); --navy-line:rgba(43,91,154,.55);
+  --gold:#ffd400; --gold-deep:#ffe066; --gold-wash:rgba(255,212,0,.16); --gold-line:rgba(255,212,0,.5);
+  --ok:#ffd400; --ok-wash:rgba(255,212,0,.14);
+  --warn:#ffd400; --warn-wash:rgba(255,212,0,.20);
+  --bad:#7fa8de; --bad-wash:rgba(43,91,154,.35);
+  --off:#8fa3c2; --off-wash:rgba(143,163,194,.16);
+  --info:#7fa8de; --info-wash:rgba(127,168,222,.16);
+  --side-1:#002a5c; --side-2:#000e21; --sheet-bg:#00234b; --opt-bg:#00234b;
+  --icon:#ffd400; --icon-bg:rgba(255,212,0,.14);
+  --c1:#ffd400; --c2:#7fa8de; --c3:#2b5b9a; --c4:#ffe066; --c5:#5c86c4; --c6:#8fa3c2;
+  --chart-line:#ffd400; --chart-bar:#2b5b9a;
+  --shadow-sm:0 1px 0 rgba(255,255,255,.03); --shadow-md:0 6px 18px rgba(0,0,0,.5); --shadow-lg:0 14px 36px rgba(0,0,0,.6);
+}
+:root[data-theme="cib"] .topbar{ background:linear-gradient(180deg,rgba(255,253,243,.94),rgba(255,253,243,.7)); }
+:root[data-theme="cibnight"] .topbar{ background:linear-gradient(180deg,rgba(0,26,58,.94),rgba(0,26,58,.72)); }
+:root[data-theme="cib"] .brand-badge,
+:root[data-theme="cibnight"] .brand-badge{ background:var(--gold); color:#002a5c; box-shadow:0 6px 16px rgba(255,212,0,.35); }
+:root[data-theme="cibnight"] .role-pill{ background:#002a5c; color:#ffd400; }
+:root[data-theme="cibnight"] .more-item.active .more-ico,
+:root[data-theme="cib"] .more-item.active .more-ico{ background:#002a5c; color:#ffd400; }
+
+/* =========================================================
+   การ์ดกริดแบบ A: ป้ายสถานะมุมขวาบน + ไอคอน + แถวข้อมูล (ใช้ทุกธีม)
+   ========================================================= */
+.asset-grid .ba-card .ba-head{
+  position:relative; flex-direction:column; align-items:flex-start; gap:10px; padding:16px;
+  background:linear-gradient(160deg, var(--gold-wash), var(--panel-hi));
+  border-bottom:1px solid var(--panel-line);
+}
+.asset-grid .ba-card .ba-head .status-badge,
+.asset-grid .ba-card .ba-head .ax-st{ position:absolute; top:12px; right:12px; align-self:auto; }
+.asset-grid .ba-card .asset-card-icon{
+  width:46px; height:46px; border-radius:15px; background:var(--navy); color:var(--gold);
+  box-shadow:none; display:flex; align-items:center; justify-content:center;
+}
+.asset-grid .ba-card .ba-txt{ width:100%; padding-right:0; }
+.asset-grid .ba-card .asset-card-title{ font-size:16px; line-height:1.3; }
+.asset-grid .ba-card .ax-sn{ font-size:12px; color:var(--ink-dim); margin-top:2px; }
+.asset-grid .ba-card .ba-body{ padding:12px 16px 14px; }
+.asset-grid .ba-card .ba-cells{ display:flex; flex-direction:column; gap:8px; }
+.asset-grid .ba-card .ba-cell{
+  display:flex; justify-content:space-between; align-items:baseline; gap:10px;
+  background:none; border:0; border-radius:0; padding:0;
+}
+.asset-grid .ba-card .ba-cell small{ font-size:12px; color:var(--ink-dim); flex:none; }
+.asset-grid .ba-card .ba-cell b{ font-size:12.5px; font-weight:600; text-align:right; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+</style>
 </body>
 </html>
