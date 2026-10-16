@@ -11474,6 +11474,20 @@ function ensureValuePickerCss() {
   document.head.appendChild(s);
 }
 
+/* ---------- สไตล์หน้าเลือกค่า: หัวและช่องค้นหาอยู่คงที่ รายการเลื่อนได้ ---------- */
+function ensureValuePickerCss() {
+  if (document.getElementById('valuePickerCss')) return;
+  const s = document.createElement('style');
+  s.id = 'valuePickerCss';
+  s.textContent = `
+.vp-sheet{display:flex;flex-direction:column;overflow:hidden}
+.vp-sheet .sheet-title{flex:none}
+.vp-sheet .vp-search{flex:none}
+.vp-sheet .vp-list{flex:1 1 auto;min-height:120px;max-height:none;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+`;
+  document.head.appendChild(s);
+}
+
 /* ---------- หน้าเลือกค่า: ค้นหา / เลือกจากที่มี / พิมพ์ใหม่ ---------- */
 function openValuePicker({ title, placeholder, current, options, onPick }) {
   ensureAssetFormCss();
@@ -11485,21 +11499,15 @@ function openValuePicker({ title, placeholder, current, options, onPick }) {
   `, 'vp-sheet');
 
   const sheet = document.querySelector('#overlayEl .sheet');
-  const overlay = document.getElementById('overlayEl');
   const q = document.getElementById('vp_q');
   const list = document.getElementById('vp_list');
   const vv = window.visualViewport;
 
-  // ตรึงหน้าต่างให้อยู่ในพื้นที่ที่เห็นจริง (เหนือแป้นพิมพ์) และสูงเท่ากันทุกครั้ง
+  // ปรับความสูงหน้าต่างให้เท่ากับพื้นที่ที่เห็นจริง (ไม่รวมส่วนที่แป้นพิมพ์บัง)
   const fit = () => {
-    if (!sheet || !overlay || !document.body.contains(sheet)) { cleanup(); return; }
-    const vh = vv ? vv.height : window.innerHeight;
-    const top = vv ? vv.offsetTop : 0;
-    overlay.style.top = top + 'px';
-    overlay.style.bottom = 'auto';
-    overlay.style.height = vh + 'px';
-    sheet.style.height = Math.max(320, Math.floor(vh - 12)) + 'px';
-    sheet.style.maxHeight = sheet.style.height;
+    if (!sheet || !document.body.contains(sheet)) { cleanup(); return; }
+    const h = vv ? vv.height : window.innerHeight;
+    sheet.style.maxHeight = Math.max(280, Math.floor(h - 16)) + 'px';
   };
   const cleanup = () => {
     if (vv) { vv.removeEventListener('resize', fit); vv.removeEventListener('scroll', fit); }
@@ -11509,8 +11517,11 @@ function openValuePicker({ title, placeholder, current, options, onPick }) {
   window.addEventListener('resize', fit);
   fit();
 
-  // ตอนแป้นพิมพ์ขึ้น ระบบอาจใช้เวลาปรับจอ จึงปรับซ้ำอีกครั้ง
-  q.onfocus = () => { fit(); setTimeout(fit, 300); setTimeout(fit, 700); };
+  // เมื่อเริ่มพิมพ์ ให้รอให้แป้นพิมพ์ขึ้นก่อน แล้วเลื่อนช่องค้นหามาอยู่กลางจอ
+  q.onfocus = () => setTimeout(() => {
+    fit();
+    q.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }, 320);
 
   const pick = (value) => { cleanup(); closeSheet(); onPick(value); };
 
