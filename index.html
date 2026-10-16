@@ -9146,6 +9146,40 @@ function renderDashboard() {
       <div class="dbx-track"><div class="dbx-fill" style="width:${o.pct}%"></div></div>
       <div class="dbx-cap">${o.cap}</div>
     </div>`;
+
+  const heroHtml = (desk) => `
+    <div class="dbx-hero ${desk ? 'dbx-hero-d' : ''}">
+      <div class="dbx-hero-row">
+        <div>
+          <div class="dbx-lbl">ครุภัณฑ์ทั้งหมด</div>
+          <div class="dbx-num">${total.toLocaleString('en-US')}<small>รายการ</small></div>
+        </div>
+        <div>
+          <div class="dbx-lbl">มูลค่ารวม</div>
+          <div class="dbx-num dbx-gold">${valueMil}<small>ล้านบาท</small></div>
+        </div>
+      </div>
+      <div class="dbx-bar-head"><span>พร้อมใช้งาน</span><b>${readyPct}%</b></div>
+      <div class="dbx-track"><div class="dbx-fill" style="width:${readyPct}%"></div></div>
+      ${desk ? `<div class="dbx-cap">${ready.toLocaleString('en-US')} จาก ${total.toLocaleString('en-US')} รายการ</div>` : ''}
+    </div>`;
+
+  const statsHtml = (desk) => `
+    <div class="${desk ? 'dbx-side' : 'dbx-stats'}">
+      <div class="dbx-stat is-out">
+        <div><div class="dbx-stat-lbl">${desk ? 'กำลังถูกยืม' : 'กำลังยืม'}</div><div class="dbx-stat-num">${borrowed.toLocaleString('en-US')}</div></div>
+        ${desk ? `<div class="dbx-ico">${ICONS.swap}</div>` : ''}
+      </div>
+      <div class="dbx-stat is-bad">
+        <div><div class="dbx-stat-lbl">${desk ? 'เกินกำหนดคืน' : 'เกินกำหนด'}</div><div class="dbx-stat-num">${overdue.toLocaleString('en-US')}</div></div>
+        ${desk ? `<div class="dbx-ico">${ICONS.warn}</div>` : ''}
+      </div>
+      <div class="dbx-stat is-ok">
+        <div><div class="dbx-stat-lbl">${desk ? 'อยู่ระหว่างซ่อม' : 'กำลังซ่อม'}</div><div class="dbx-stat-num">${repair.toLocaleString('en-US')}</div></div>
+        ${desk ? `<div class="dbx-ico">${ICONS.wrench}</div>` : ''}
+      </div>
+    </div>`;
+
   const carouselHtml = `<div class="dbx-carousel">
       <div class="dbx-slides" id="dbxSlides">
         <div class="dbx-slide">${heroHtml(false)}</div>
