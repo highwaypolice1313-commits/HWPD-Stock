@@ -12625,14 +12625,18 @@ function offFilterCount() {
   return [f.role !== 'all', f.rank !== 'all', f.flag !== 'all', state.offGroup !== 'none'].filter(Boolean).length;
 }
 
-function openOffFilterSheet() {
+/* เนื้อหาในกล่องตัวกรอง */
+function offFsBodyHtml() {
   const rows = offBuildRows();
   const f = state.offFilter;
   const countRole = v => v === 'all' ? rows.length : rows.filter(r => r.role === v).length;
   const countRank = v => v === 'all' ? rows.length : rows.filter(r => r.rank === v).length;
   const holdCount = rows.filter(r => r.hold.length > 0).length;
   const flagCount = rows.filter(r => r.issues.some(x => x.lv !== 'info')).length;
-  const countFlag = v => v === 'all' ? rows.length : v === 'issue' ? flagCount : v === 'hold' ? holdCount : rows.length - holdCount;
+  const countFlag = v => v === 'all' ? rows.length
+    : v === 'issue' ? flagCount
+    : v === 'hold' ? holdCount
+    : rows.length - holdCount;
 
   const group = (title, opts, cur, count, key) => `
     <div class="off-fs-title">${title}</div>
@@ -12641,30 +12645,49 @@ function openOffFilterSheet() {
         ${escapeHtml(t)}${count ? `<small>${count(v)}</small>` : ''}</button>`).join('')}
     </div>`;
 
-  showSheet(`
-    <div class="sheet-title">ตัวกรอง</div>
-    ${group('บทบาทเบิก-ยืม', OFF_ROLE_CHIPS, f.role, countRole, 'role')}
-    ${group('ยศ', OFF_RANK_CHIPS, f.rank, countRank, 'rank')}
-    ${group('สถานะ', OFF_FLAG_CHIPS, f.flag, countFlag, 'flag')}
-    ${group('จัดกลุ่ม', OFF_GROUP_OPTIONS, state.offGroup, null, 'group')}
-    <div class="btn-row">
-      <button class="btn btn-ghost" id="offFsReset">ล้างทั้งหมด</button>
-      <button class="btn btn-primary" id="offFsDone">ดูผลลัพธ์</button>
-    </div>
-  `, 'off-fs-sheet');
+  return `
+    <div class="off-fs-body">
+      <div class="sheet-title">ตัวกรอง</div>
+      ${group('บทบาทเบิก-ยืม', OFF_ROLE_CHIPS, f.role, countRole, 'role')}
+      ${group('ยศ', OFF_RANK_CHIPS, f.rank, countRank, 'rank')}
+      ${group('สถานะ', OFF_FLAG_CHIPS, f.flag, countFlag, 'flag')}
+      ${group('จัดกลุ่ม', OFF_GROUP_OPTIONS, state.offGroup, null, 'group')}
+      <div class="btn-row">
+        <button class="btn btn-ghost" id="offFsReset">ล้างทั้งหมด</button>
+        <button class="btn btn-primary" id="offFsDone">ดูผลลัพธ์</button>
+      </div>
+    </div>`;
+}
 
-  document.querySelectorAll('#modalRoot .off-fs-opt').forEach(b => b.onclick = () => {
+/* ผูกปุ่มในกล่องตัวกรองที่เปิดอยู่ */
+function wireOffFsSheet() {
+  const ov = document.querySelector('#modalRoot .overlay.off-fs-overlay');
+  if (!ov) return;
+  ov.querySelectorAll('.off-fs-opt').forEach(b => b.onclick = () => {
     const k = b.dataset.k, v = b.dataset.v;
     if (k === 'group') { state.offGroup = v; state.offGroupClosed = new Set(); }
     else state.offFilter[k] = v;
-    openOffFilterSheet();                       // วาดใหม่ในกล่องเดิม ให้เห็นค่าที่เลือก
+    openOffFilterSheet();                      // เปลี่ยนเนื้อหาในกล่องเดิม ไม่เปิดซ้อน
   });
-  document.getElementById('offFsReset').onclick = () => {
+  ov.querySelector('#offFsReset').onclick = () => {
     state.offFilter = { role: 'all', rank: 'all', flag: 'all' };
     state.offGroup = 'none'; state.offGroupClosed = new Set();
     closeSheet(); drawUsers();
   };
-  document.getElementById('offFsDone').onclick = () => { closeSheet(); drawUsers(); };
+  ov.querySelector('#offFsDone').onclick = () => { closeSheet(); drawUsers(); };
+}
+
+function openOffFilterSheet() {
+  const root = document.getElementById('modalRoot');
+  const cur = root.querySelector('.overlay.off-fs-overlay');
+  if (cur) {
+    // กล่องเปิดอยู่แล้ว: เปลี่ยนเนื้อหาในที่เดิม (ไม่ push เข้า sheetStack)
+    cur.querySelector('.off-fs-body').outerHTML = offFsBodyHtml();
+  } else {
+    showSheet(offFsBodyHtml(), 'off-fs-sheet');
+    root.lastElementChild.classList.add('off-fs-overlay');
+  }
+  wireOffFsSheet();
 }
 
 function bindOffFilterBar() {
