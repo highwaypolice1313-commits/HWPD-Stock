@@ -7194,18 +7194,30 @@ html, body{
   /* ระยะห่างการ์ดเท่ากันทุกใบ */
   #view-dashboard .dbx-mob .dbx-card{ margin-top:16px !important; }
 
-  /* ข้อ 2: การ์ดสถิติมีแถบสีที่ขอบซ้าย */
-  #view-dashboard .dbx-mob .dbx-stat{
-    position:relative; overflow:hidden; padding:14px 12px 14px 16px;
+</style>
+
+   <style id="dash-enter-v1">
+@keyframes dbxRise{
+  from{ opacity:0; transform:translateY(14px); }
+  to{ opacity:1; transform:none; }
+}
+@media (max-width:899px){
+  /* ความห่างระหว่างแต่ละชั้น แก้ค่านี้เพื่อให้เร็วหรือช้าลง */
+  #view-dashboard .dbx-mob{ --dbx-stagger:.3s; }
+
+  #view-dashboard .dbx-mob > *{
+    animation:dbxRise .6s cubic-bezier(.2,.8,.2,1) both;
   }
-  #view-dashboard .dbx-mob .dbx-stat::before{
-    content:""; position:absolute; left:0; top:14px; bottom:14px; width:3px;
-    border-radius:0 3px 3px 0; background:var(--ink-faint);
-  }
-  #view-dashboard .dbx-mob .dbx-stat.is-out::before{ background:var(--gold); }
-  #view-dashboard .dbx-mob .dbx-stat.is-bad::before{ background:var(--bad); }
-  #view-dashboard .dbx-mob .dbx-stat.is-ok::before{ background:var(--ok); }
-  #view-dashboard .dbx-mob .dbx-stat-lbl{ font-size:11px; color:var(--ink-dim); }
+  #view-dashboard .dbx-mob > *:nth-child(1){ animation-delay:0s; }
+  #view-dashboard .dbx-mob > *:nth-child(2){ animation-delay:calc(var(--dbx-stagger) * 1); }
+  #view-dashboard .dbx-mob > *:nth-child(3){ animation-delay:calc(var(--dbx-stagger) * 2); }
+  #view-dashboard .dbx-mob > *:nth-child(4){ animation-delay:calc(var(--dbx-stagger) * 3); }
+  #view-dashboard .dbx-mob > *:nth-child(5){ animation-delay:calc(var(--dbx-stagger) * 4); }
+  #view-dashboard .dbx-mob > *:nth-child(6){ animation-delay:calc(var(--dbx-stagger) * 5); }
+  #view-dashboard .dbx-mob > *:nth-child(n+7){ animation-delay:calc(var(--dbx-stagger) * 6); }
+}
+@media (prefers-reduced-motion:reduce){
+  #view-dashboard .dbx-mob > *{ animation:none; }
 }
 </style>
    
