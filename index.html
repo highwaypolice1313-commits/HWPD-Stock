@@ -20384,18 +20384,6 @@ const lock = () => {
   sync();
 })();
 
-/* ripple เวลากดปุ่ม .btn */
-document.addEventListener('pointerdown', e => {
-  const b = e.target.closest('.btn');
-  if (!b || b.disabled) return;
-  const r = b.getBoundingClientRect(), s = Math.max(r.width, r.height) * 2;
-  const d = document.createElement('span');
-  d.className = 'ripple';
-  d.style.cssText = `width:${s}px;height:${s}px;left:${e.clientX - r.left - s/2}px;top:${e.clientY - r.top - s/2}px`;
-  b.appendChild(d);
-  setTimeout(() => d.remove(), 600);
-}, { passive: true });
-
 document.getElementById('notifBtn')?.addEventListener('click', openNotifications);
 
    /* ป้าย topbar แสดงชื่อผู้ใช้ และคงสีตามบทบาท */
@@ -20668,53 +20656,6 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 :root[data-theme="cibnight"] #view-users .off-card-band{ background:linear-gradient(180deg,#ffd400,#e6bf00); }
 :root[data-theme="cibnight"] #view-users .off-card{ border-color:#0d3a70; }
 </style>
-<style id="pressFx">
-.press-target{ transition:transform .2s cubic-bezier(.2,.8,.2,1), filter .2s ease, box-shadow .2s ease; -webkit-tap-highlight-color:transparent; }
-.press-target.press-on{ transform:scale(.94) !important; filter:brightness(.92) saturate(1.05) !important; box-shadow:inset 0 2px 6px rgba(0,0,0,.18) !important; transition:transform .07s ease-out, filter .07s ease-out, box-shadow .07s ease-out !important; }
-.press-target.press-on .ap-caret{ transform:none !important; }
-</style>
-<script id="pressFxJs">
-(function(){
-  var SEL = 'button, a, [role="button"], .btn, .icon-btn, .tab, .fab, .chip, .sort-chip-row, .memo-sort-chip, .memo-month-chip, .list-item, .asset-card, .memo-card, .memo-group-head, .more-item, .role-select-card, .theme-card, .sw-btn, .nav-collapse-btn, .ax-round, .ax-gcard .ax-ghead';
-  var NO = 'input, textarea, select, [contenteditable="true"], .no-press';
-  var timers = new WeakMap();
-  function findTarget(node){
-    if (!node || !node.closest) return null;
-    if (node.closest('.tabbar, .tab-pill, .nav-collapse-btn')) return null;
-    var el = node.closest(SEL);
-    if (!el || el.matches(NO) || el.disabled || el.getAttribute('aria-disabled') === 'true') return null;
-    return el;
-  }
-  function press(el){
-    el.classList.add('press-target');
-    clearTimeout(timers.get(el));
-    el.classList.add('press-on');
-    if (navigator.vibrate) { try { navigator.vibrate(8); } catch(_) {} }
-  }
-  function release(el){
-    clearTimeout(timers.get(el));
-    // ให้เห็นการกดอย่างน้อย 120ms ก่อนคืนรูป (กันกรณีกดสั้นจนไม่เห็น)
-    timers.set(el, setTimeout(function(){ el.classList.remove('press-on'); }, 120));
-  }
-  var active = null;
-  document.addEventListener('pointerdown', function(e){
-    if (e.button && e.button !== 0) return;
-    var el = findTarget(e.target);
-    if (!el) return;
-    active = el;
-    press(el);
-  }, { capture: true, passive: true });
-  function up(){ if (active) { release(active); active = null; } }
-  document.addEventListener('pointerup', up, true);
-  document.addEventListener('pointercancel', up, true);
-  document.addEventListener('pointermove', function(e){
-    if (!active) return;
-    var under = document.elementFromPoint(e.clientX, e.clientY);
-    if (!under || !active.contains(under)) { release(active); active = null; }
-  }, { capture: true, passive: true });
-  document.addEventListener('scroll', function(){ up(); }, { capture: true, passive: true });
-})();
-</script>
 <style id="cibThemeFlat">
 /* ===== ธีม CIB สว่าง/มืด: ใช้ชุดสี 7 สี (เหลือง กรมท่า เทา ขาว ดำ เขียว แดง) ไม่ไล่สี ไม่มีเงา; อนิเมชันคงเดิม ===== */
 :root[data-theme="cib"]{
@@ -20757,6 +20698,83 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 :root[data-theme="cib"] .topbar, :root[data-theme="cibnight"] .topbar{ background-color:var(--topbar-bg); }
 :root[data-theme="cib"] .brand-badge, :root[data-theme="cibnight"] .brand-badge,
 :root[data-theme="cib"] .fab, :root[data-theme="cibnight"] .fab{ background-color:#ffd400; color:#002a5c; }
+</style>
+<style id="pressAnim">
+/* ===== อนิเมชั่นกดปุ่ม (ตามตัวอย่าง): ยุบเล็กน้อย + วงแผ่ตรงจุดที่กด ===== */
+button{position:relative;overflow:hidden;transition:transform .12s ease,background-color .15s,color .15s,border-color .15s,box-shadow .15s,opacity .15s;-webkit-tap-highlight-color:transparent}
+button:not(:disabled):active{transform:scale(.95)}
+button:disabled{cursor:not-allowed}
+.rpl{position:absolute;border-radius:9999px;pointer-events:none;background:currentColor;opacity:.22;transform:scale(0);animation:ripple .55s ease-out forwards}
+/* เมนูบาร์ด้านล่าง: ไม่มีอนิเมชั่นกด (คงตามที่ขอไว้) */
+.tabbar button:not(:disabled):active,.tabbar .tab:active{transform:none !important}
+.tabbar .rpl{display:none}
+</style>
+<script id="pressAnimJs">
+(function(){
+  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  function addRipple(b, x, y){
+    const r = b.getBoundingClientRect(), d = Math.max(r.width, r.height) * 2;
+    const s = document.createElement('span');
+    s.className = 'rpl';
+    s.style.width = s.style.height = d + 'px';
+    s.style.left = (x - r.left - d / 2) + 'px';
+    s.style.top = (y - r.top - d / 2) + 'px';
+    b.appendChild(s);
+    setTimeout(() => s.remove(), 600);
+  }
+  document.addEventListener('pointerdown', e => {
+    if (e.button > 0) return;
+    const b = e.target.closest('button');
+    if (b && !b.disabled && !b.closest('.tabbar')) addRipple(b, e.clientX, e.clientY);
+  }, { passive: true });
+  document.addEventListener('click', e => {
+    if (e.detail !== 0) return;   // เฉพาะการกดด้วยคีย์บอร์ด
+    const b = e.target.closest('button');
+    if (b && !b.disabled && !b.closest('.tabbar')) { const r = b.getBoundingClientRect(); addRipple(b, r.left + r.width / 2, r.top + r.height / 2); }
+  });
+})();
+</script>
+<style id="cibContrastFix">
+/* CIB contrast repair: presentation only; no application logic changed */
+:root[data-theme="cib"]{
+ --bg-0:#edf1f6;--bg-1:#f8fafc;--panel:#ffffff;--panel-soft:#f4f6fa;--panel-line:#b9c7d9;--panel-hi:#fff2a6;
+ --ink:#101820;--ink-dim:#46566b;--ink-faint:#68778a;--navy:#002a5c;--navy-deep:#001a3a;
+ --gold:#ffd400;--gold-deep:#002a5c;--gold-wash:#fff1a6;--gold-line:#d6ae00;
+}
+:root[data-theme="cibnight"]{
+ --bg-0:#061426;--bg-1:#091b31;--dawn-1:#0b2340;--dawn-2:#0b2340;--dawn-3:#0b2340;--dawn-4:#0b2340;
+ --panel:#102943;--panel-soft:#0a2038;--panel-line:#365674;--panel-hi:#183b5e;
+ --ink:#ffffff;--ink-dim:#d0dceb;--ink-faint:#a0b3c9;--navy:#002a5c;--navy-deep:#00101f;
+ --gold:#ffd400;--gold-deep:#ffe56a;--gold-wash:#263449;--gold-line:#ffd400;
+ --side-1:#002a5c;--side-2:#00101f;--topbar-bg:#002a5c;--sheet-bg:#102943;--opt-bg:#102943;
+}
+/* Restore useful surfaces and crisp boundaries (the earlier blanket rule flattened everything). */
+:root[data-theme="cib"] body,:root[data-theme="cibnight"] body{background:var(--bg-0)!important;color:var(--ink)!important}
+:root[data-theme="cib"] .glass,:root[data-theme="cib"] .stat-card,:root[data-theme="cib"] .chart-card,:root[data-theme="cib"] .rp-card,:root[data-theme="cib"] .rp-kpi,:root[data-theme="cib"] .list-item,:root[data-theme="cib"] .asset-card,:root[data-theme="cib"] .sheet,:root[data-theme="cib"] .loading-card,
+:root[data-theme="cibnight"] .glass,:root[data-theme="cibnight"] .stat-card,:root[data-theme="cibnight"] .chart-card,:root[data-theme="cibnight"] .rp-card,:root[data-theme="cibnight"] .rp-kpi,:root[data-theme="cibnight"] .list-item,:root[data-theme="cibnight"] .asset-card,:root[data-theme="cibnight"] .sheet,:root[data-theme="cibnight"] .loading-card{
+ background:var(--panel)!important;color:var(--ink)!important;border:1px solid var(--panel-line)!important;box-shadow:0 2px 0 rgba(0,0,0,.08)!important
+}
+:root[data-theme="cib"] .input,:root[data-theme="cib"] select.input,:root[data-theme="cibnight"] .input,:root[data-theme="cibnight"] select.input{background:var(--panel-soft)!important;color:var(--ink)!important;border:1.5px solid var(--panel-line)!important}
+:root[data-theme="cib"] .input::placeholder,:root[data-theme="cibnight"] .input::placeholder{color:var(--ink-faint)!important;opacity:1}
+:root[data-theme="cib"] .section-title,:root[data-theme="cibnight"] .section-title,:root[data-theme="cib"] .li-title,:root[data-theme="cibnight"] .li-title,:root[data-theme="cib"] .asset-card-title,:root[data-theme="cibnight"] .asset-card-title{color:var(--ink)!important}
+:root[data-theme="cib"] .li-sub,:root[data-theme="cibnight"] .li-sub,:root[data-theme="cib"] .stat-label,:root[data-theme="cibnight"] .stat-label{color:var(--ink-dim)!important}
+/* Explicit, distinguishable button families across the app */
+:root[data-theme="cib"] button:not(.tab),:root[data-theme="cibnight"] button:not(.tab){border-color:var(--panel-line)}
+:root[data-theme="cib"] .btn-primary,:root[data-theme="cib"] .chip.active,:root[data-theme="cib"] .view-toggle button.active,:root[data-theme="cib"] .pagination button:not(:disabled):hover,
+:root[data-theme="cibnight"] .btn-primary,:root[data-theme="cibnight"] .chip.active,:root[data-theme="cibnight"] .view-toggle button.active,:root[data-theme="cibnight"] .pagination button:not(:disabled):hover{background:#002a5c!important;color:#fff!important;border:2px solid #ffd400!important}
+:root[data-theme="cib"] .btn-ghost,:root[data-theme="cib"] .icon-btn,:root[data-theme="cib"] .refresh-btn,:root[data-theme="cib"] .pagination button,:root[data-theme="cib"] .sheet-close,:root[data-theme="cib"] .zbtn,:root[data-theme="cib"] .chip,
+:root[data-theme="cibnight"] .btn-ghost,:root[data-theme="cibnight"] .icon-btn,:root[data-theme="cibnight"] .refresh-btn,:root[data-theme="cibnight"] .pagination button,:root[data-theme="cibnight"] .sheet-close,:root[data-theme="cibnight"] .zbtn,:root[data-theme="cibnight"] .chip{background:var(--panel)!important;color:var(--ink)!important;border:1.5px solid var(--panel-line)!important}
+:root[data-theme="cib"] .btn-primary,:root[data-theme="cibnight"] .btn-primary{background:#002a5c!important;color:#ffd400!important;border:2px solid #ffd400!important}
+:root[data-theme="cib"] .btn-danger,:root[data-theme="cibnight"] .btn-danger{background:#8f1d25!important;color:#fff!important;border:2px solid #ff777e!important}
+:root[data-theme="cib"] .btn-ok,:root[data-theme="cibnight"] .btn-ok{background:#12633d!important;color:#fff!important;border:2px solid #49c58b!important}
+:root[data-theme="cib"] .fab,:root[data-theme="cibnight"] .fab{background:#ffd400!important;color:#002a5c!important;border:2px solid #002a5c!important}
+:root[data-theme="cib"] .hero-card,:root[data-theme="cibnight"] .hero-card{background:#002a5c!important;color:#fff!important;border:2px solid #ffd400!important;box-shadow:0 6px 0 rgba(0,0,0,.12)!important}
+:root[data-theme="cib"] .hero-num--sm,:root[data-theme="cibnight"] .hero-num--sm{color:#ffd400!important}
+:root[data-theme="cib"] .tabbar{background:#fff!important;border:1.5px solid #b9c7d9!important}
+:root[data-theme="cibnight"] .tabbar{background:#071b30!important;border:1.5px solid #365674!important}
+/* Ripple animation matches example 2; bottom tab bar deliberately untouched. */
+:root[data-theme="cib"] .rpl{background:#002a5c;opacity:.18}
+:root[data-theme="cibnight"] .rpl{background:#ffd400;opacity:.28}
 </style>
 </body>
 </html>
