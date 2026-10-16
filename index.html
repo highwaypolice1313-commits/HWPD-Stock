@@ -7341,26 +7341,20 @@ html, body{
 .li-icon svg [fill]:not([fill="none"]), .ax-icon svg [fill]:not([fill="none"]){ fill:currentColor; }
 </style>
 <style>
-/* ===== ดีไซน์ใหม่ทุกหน้า (ตามตัวอย่างที่เลือก) ===== */
-/* รายการเรียบ: กลุ่มเป็นกล่องเดียว มีเส้นคั่นบาง */
+/* ===== แยกแถว: แต่ละรายการเป็นแถวของตัวเอง เว้นระยะเท่ากัน ===== */
 #assetList:not(.asset-grid), #borrowList:not(.asset-grid), #maintList:not(.asset-grid),
 #userList, #auditList, .memo-group-body:not(.memo-grid):not(.asset-grid){
-  background:var(--panel); border:1px solid var(--panel-line); border-radius:22px; overflow:hidden;
-  box-shadow:0 10px 30px rgba(22,32,43,.06);
+  display:flex; flex-direction:column; gap:10px;
+  background:none; border:0; border-radius:0; box-shadow:none; overflow:visible;
 }
 #assetList:not(.asset-grid) .glass.list-item, #borrowList:not(.asset-grid) .glass.list-item,
 #maintList:not(.asset-grid) .glass.list-item, #userList .glass.list-item,
 #auditList .glass.list-item, .memo-group-body:not(.memo-grid):not(.asset-grid) .glass.list-item{
-  background:transparent; border:0; border-radius:0; box-shadow:none; padding:14px 18px;
+  background:var(--panel); border:1px solid var(--panel-line); border-radius:20px;
+  box-shadow:0 1px 2px rgba(32,48,63,.04), 0 6px 18px rgba(32,48,63,.06);
+  padding:14px 16px;
 }
-#assetList:not(.asset-grid) .glass.list-item + .glass.list-item,
-#borrowList:not(.asset-grid) .glass.list-item + .glass.list-item,
-#maintList:not(.asset-grid) .glass.list-item + .glass.list-item,
-#userList .glass.list-item + .glass.list-item,
-#auditList .glass.list-item + .glass.list-item,
-.memo-group-body:not(.memo-grid):not(.asset-grid) .glass.list-item + .glass.list-item,
-#assetList:not(.asset-grid) .sw-wrap + .sw-wrap, #borrowList:not(.asset-grid) .sw-wrap + .sw-wrap,
-#maintList:not(.asset-grid) .sw-wrap + .sw-wrap{ border-top:1px solid var(--panel-line); }
+#assetList:not(.asset-grid) .sw-wrap, #borrowList:not(.asset-grid) .sw-wrap, #maintList:not(.asset-grid) .sw-wrap{ border:0; }
 
 /* กระเบื้อง: การ์ดในมุมมองการ์ด */
 .asset-grid .glass.asset-card{
