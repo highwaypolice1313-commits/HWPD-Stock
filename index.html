@@ -20763,9 +20763,14 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 :root[data-theme="night"] .icon-btn{ color:var(--ink) !important; }
 
 /* ===== 5) อนิเมชันกดปุ่ม: ยุบน้อยลง ไม่มีเงาด้านใน ===== */
-.press-target.press-on{
-  transform:scale(.97) !important; filter:none !important; box-shadow:none !important;
-  transition:transform .12s ease-out !important;
+.press-target.press-on,
+.list-item.press-on,
+.glass.list-item.press-on,
+.glass.asset-card.press-on{
+  transform:scale(.975) !important;
+  filter:brightness(.96) !important;
+  box-shadow:inset 0 2px 5px rgba(0,0,0,.14) !important;
+  transition:transform .08s ease-out, filter .08s ease-out, box-shadow .08s ease-out !important;
 }
 </style>
    <style id="user-fixes-sig-dark">
