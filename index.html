@@ -20657,47 +20657,103 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 :root[data-theme="cibnight"] #view-users .off-card{ border-color:#0d3a70; }
 </style>
 <style id="cibThemeFlat">
-/* ===== ธีม CIB สว่าง/มืด: ใช้ชุดสี 7 สี (เหลือง กรมท่า เทา ขาว ดำ เขียว แดง) ไม่ไล่สี ไม่มีเงา; อนิเมชันคงเดิม ===== */
+/* CIB theme palette only: navy #002a5c + yellow #ffd400. No application logic changes. */
 :root[data-theme="cib"]{
-  --bg-0:#f2f3f5; --bg-1:#ffffff; --dawn-1:#ffffff; --dawn-2:#f2f3f5; --dawn-3:#f2f3f5; --dawn-4:#e6e8ec;
-  --panel:#ffffff; --panel-soft:#f2f3f5; --panel-line:#d9dce1; --panel-hi:#ffffff;
-  --ink:#111111; --ink-dim:#5f6670; --ink-faint:#8a929e;
-  --navy:#002a5c; --navy-deep:#002a5c; --navy-wash:rgba(0,42,92,.08); --navy-line:rgba(0,42,92,.25);
-  --gold:#ffd400; --gold-deep:#002a5c; --gold-wash:rgba(255,212,0,.28); --gold-line:rgba(255,212,0,.7);
-  --side-1:#002a5c; --side-2:#002a5c; --topbar-bg:#ffffff;
-  --ok:#1e8e3e; --ok-wash:rgba(30,142,62,.12);
-  --warn:#002a5c; --warn-wash:rgba(255,212,0,.35);
-  --bad:#d93025; --bad-wash:rgba(217,48,37,.12);
-  --off:#8a929e; --off-wash:rgba(138,146,158,.16);
-  --info:#002a5c; --info-wash:rgba(0,42,92,.10);
-  --c1:#002a5c; --c2:#ffd400; --c3:#8a929e; --c4:#111111; --c5:#1e8e3e; --c6:#d93025;
+  --bg-0:#fff8cf; --bg-1:#fffdf0; --dawn-1:#fff2a8; --dawn-2:#fff6c7; --dawn-3:#fffbe5; --dawn-4:#ffed80;
+  --panel:#ffffff; --panel-soft:#fff9d9; --panel-line:#d7b900; --panel-hi:#fff0a0;
+  --ink:#002a5c; --ink-dim:#23466f; --ink-faint:#526b8b;
+  --navy:#002a5c; --navy-deep:#001b3c; --navy-wash:rgba(0,42,92,.08); --navy-line:rgba(0,42,92,.32);
+  --gold:#ffd400; --gold-deep:#002a5c; --gold-wash:rgba(255,212,0,.32); --gold-line:#d0ad00;
+  --side-1:#002a5c; --side-2:#001b3c; --topbar-bg:#002a5c;
+  --ok:#176b3a; --ok-wash:rgba(23,107,58,.12); --warn:#654f00; --warn-wash:rgba(255,212,0,.4);
+  --bad:#a51d24; --bad-wash:rgba(165,29,36,.1); --off:#526b8b; --off-wash:rgba(82,107,139,.12);
+  --info:#002a5c; --info-wash:rgba(0,42,92,.1);
+  --c1:#002a5c; --c2:#ffd400; --c3:#294f7d; --c4:#d8b500; --c5:#176b3a; --c6:#a51d24;
   --chart-line:#002a5c; --chart-bar:#ffd400;
-  --shadow-sm:none; --shadow-md:none; --shadow-lg:none;
+  --shadow-sm:0 2px 7px rgba(0,42,92,.09); --shadow-md:0 7px 18px rgba(0,42,92,.12); --shadow-lg:0 12px 28px rgba(0,42,92,.15);
 }
 :root[data-theme="cibnight"]{
-  --bg-0:#0a0c10; --bg-1:#0a0c10; --dawn-1:#0a0c10; --dawn-2:#0a0c10; --dawn-3:#0a0c10; --dawn-4:#0a0c10;
-  --panel:#1a1e26; --panel-soft:#14171d; --panel-line:#2e3440; --panel-hi:#1a1e26;
-  --ink:#ffffff; --ink-dim:#a4abb7; --ink-faint:#7a828e;
-  --navy:#2a5aa0; --navy-deep:#002a5c; --navy-wash:rgba(42,90,160,.22); --navy-line:rgba(42,90,160,.55);
-  --gold:#ffd400; --gold-deep:#ffd400; --gold-wash:rgba(255,212,0,.16); --gold-line:rgba(255,212,0,.5);
-  --side-1:#002a5c; --side-2:#0a0c10; --sheet-bg:#1a1e26; --opt-bg:#1a1e26; --topbar-bg:#002a5c;
-  --icon:#ffd400; --icon-bg:rgba(255,212,0,.14);
-  --ok:#3dbe5a; --ok-wash:rgba(61,190,90,.16);
-  --warn:#ffd400; --warn-wash:rgba(255,212,0,.18);
-  --bad:#ff6b5e; --bad-wash:rgba(255,107,94,.16);
-  --off:#8a929e; --off-wash:rgba(138,146,158,.18);
-  --info:#ffd400; --info-wash:rgba(255,212,0,.14);
-  --c1:#ffd400; --c2:#8a929e; --c3:#2a5aa0; --c4:#ffffff; --c5:#3dbe5a; --c6:#ff6b5e;
-  --chart-line:#ffd400; --chart-bar:#2a5aa0;
-  --shadow-sm:none; --shadow-md:none; --shadow-lg:none;
+  --bg-0:#00152f; --bg-1:#002044; --dawn-1:#002a5c; --dawn-2:#00234c; --dawn-3:#001b3c; --dawn-4:#00142d;
+  --panel:#082f5d; --panel-soft:#05284f; --panel-line:#41658a; --panel-hi:#10416f;
+  --ink:#ffffff; --ink-dim:#d3e0f0; --ink-faint:#a8bfdc;
+  --navy:#002a5c; --navy-deep:#00152f; --navy-wash:rgba(255,212,0,.1); --navy-line:rgba(255,212,0,.38);
+  --gold:#ffd400; --gold-deep:#002a5c; --gold-wash:rgba(255,212,0,.17); --gold-line:#ffd400;
+  --side-1:#002a5c; --side-2:#00152f; --sheet-bg:#082f5d; --opt-bg:#082f5d; --topbar-bg:#002a5c;
+  --icon:#ffd400; --icon-bg:rgba(255,212,0,.18);
+  --ok:#7ce6a0; --ok-wash:rgba(124,230,160,.14); --warn:#ffd400; --warn-wash:rgba(255,212,0,.18);
+  --bad:#ff9999; --bad-wash:rgba(255,153,153,.15); --off:#b5c8df; --off-wash:rgba(181,200,223,.15);
+  --info:#ffd400; --info-wash:rgba(255,212,0,.15);
+  --c1:#ffd400; --c2:#ffffff; --c3:#79a7dc; --c4:#ffe36b; --c5:#7ce6a0; --c6:#ff9999;
+  --chart-line:#ffd400; --chart-bar:#79a7dc;
+  --shadow-sm:0 2px 8px rgba(0,0,0,.18); --shadow-md:0 7px 18px rgba(0,0,0,.24); --shadow-lg:0 12px 28px rgba(0,0,0,.3);
 }
-:root[data-theme="cib"] *:not([class*="skeleton"]):not([class*="spinner"]),
-:root[data-theme="cibnight"] *:not([class*="skeleton"]):not([class*="spinner"]){
-  box-shadow:none !important; text-shadow:none !important; background-image:none !important;
-}
-:root[data-theme="cib"] .topbar, :root[data-theme="cibnight"] .topbar{ background-color:var(--topbar-bg); }
-:root[data-theme="cib"] .brand-badge, :root[data-theme="cibnight"] .brand-badge,
-:root[data-theme="cib"] .fab, :root[data-theme="cibnight"] .fab{ background-color:#ffd400; color:#002a5c; }
+/* Light CIB: dark structural zones are navy; light surfaces are yellow/ivory. */
+:root[data-theme="cib"] .topbar,
+:root[data-theme="cib"] .sidebar,
+:root[data-theme="cib"] .side-nav,
+:root[data-theme="cib"] .sidenav,
+:root[data-theme="cib"] .nav-panel,
+:root[data-theme="cib"] .command-bar{background:#002a5c !important;color:#ffd400 !important;border-color:#002a5c !important;}
+:root[data-theme="cib"] .topbar :is(a,button,span,i,svg),
+:root[data-theme="cib"] .sidebar :is(a,button,span,i,svg),
+:root[data-theme="cib"] .side-nav :is(a,button,span,i,svg),
+:root[data-theme="cib"] .sidenav :is(a,button,span,i,svg){color:inherit;}
+:root[data-theme="cib"] .topbar .brand-title,
+:root[data-theme="cib"] .topbar .brand-sub{color:#ffffff !important;}
+:root[data-theme="cib"] .brand-badge,
+:root[data-theme="cib"] .login-badge,
+:root[data-theme="cib"] .rsc-icon,
+:root[data-theme="cib"] .fab,
+:root[data-theme="cib"] .ax-round .ax-badge,
+:root[data-theme="cib"] #view-users .off-filter-badge{background:#ffd400 !important;color:#002a5c !important;border:2px solid #002a5c !important;}
+:root[data-theme="cib"] .glass,
+:root[data-theme="cib"] .stat-card,
+:root[data-theme="cib"] .chart-card,
+:root[data-theme="cib"] .rp-card,
+:root[data-theme="cib"] .rp-kpi,
+:root[data-theme="cib"] .list-item,
+:root[data-theme="cib"] .asset-card,
+:root[data-theme="cib"] .sheet,
+:root[data-theme="cib"] .loading-card,
+:root[data-theme="cib"] .modal-content,
+:root[data-theme="cib"] .modal-card{background:#fffdf0 !important;color:#002a5c !important;border:1px solid #d7b900 !important;box-shadow:var(--shadow-sm) !important;}
+:root[data-theme="cib"] .card-header,
+:root[data-theme="cib"] .section-header,
+:root[data-theme="cib"] .panel-header,
+:root[data-theme="cib"] .rp-card-head{background:#fff0a0 !important;color:#002a5c !important;border-bottom:1px solid #d7b900 !important;}
+:root[data-theme="cib"] :is(h1,h2,h3,h4,.card-title,.section-title,.stat-title,.asset-card-title,.rp-kpi .k-label){color:#002a5c !important;}
+:root[data-theme="cib"] :is(input,select,textarea,.form-control){background:#ffffff !important;color:#002a5c !important;border:1px solid #8c9db3 !important;}
+:root[data-theme="cib"] :is(input,select,textarea,.form-control)::placeholder{color:#526b8b !important;opacity:1;}
+/* Button contrast: primary navy/yellow, secondary yellow/navy, danger red/white. */
+:root[data-theme="cib"] :is(.btn-primary,.primary,.btn.primary,.pc-btn.primary,.mc-btn.primary,.vt-btn.primary){background:#002a5c !important;color:#ffd400 !important;border:1px solid #002a5c !important;}
+:root[data-theme="cib"] :is(.btn,.button,.btn-ghost,.tab-secondary,.icon-btn,.refresh-btn,.sw-btn,.cu-btn,.ml-btn,.mc-btn,.mc-tool-btn,.pc-btn,.vt-btn,.audit-btn,.link-btn){border-color:#002a5c !important;}
+:root[data-theme="cib"] :is(.btn:not(.btn-primary):not(.btn-danger),.button,.btn-ghost,.tab-secondary,.icon-btn,.refresh-btn,.sw-btn,.cu-btn,.ml-btn,.mc-btn,.mc-tool-btn,.pc-btn,.vt-btn,.audit-btn){background:#ffd400 !important;color:#002a5c !important;}
+:root[data-theme="cib"] :is(.btn-danger,.btn.danger,.tone-bad,.audit-print-btn){background:#a51d24 !important;color:#ffffff !important;border-color:#a51d24 !important;}
+:root[data-theme="cib"] :is(.active,.selected,[aria-selected="true"]):not(.tabbar *){border-color:#002a5c !important;}
+:root[data-theme="cib"] .more-item.active,
+:root[data-theme="cib"] .nav-item.active,
+:root[data-theme="cib"] .menu-item.active{background:#ffd400 !important;color:#002a5c !important;border:1px solid #002a5c !important;}
+:root[data-theme="cib"] .more-item.active .more-ico{background:#002a5c !important;color:#ffd400 !important;}
+/* Dark CIB: preserve navy surfaces and use yellow for key controls/active states. */
+:root[data-theme="cibnight"] .topbar,
+:root[data-theme="cibnight"] .sidebar,
+:root[data-theme="cibnight"] .side-nav,
+:root[data-theme="cibnight"] .sidenav,
+:root[data-theme="cibnight"] .nav-panel{background:#002a5c !important;color:#ffd400 !important;border-color:#41658a !important;}
+:root[data-theme="cibnight"] .brand-badge,
+:root[data-theme="cibnight"] .login-badge,
+:root[data-theme="cibnight"] .rsc-icon,
+:root[data-theme="cibnight"] .fab,
+:root[data-theme="cibnight"] .ax-round .ax-badge{background:#ffd400 !important;color:#002a5c !important;border:2px solid #ffd400 !important;}
+:root[data-theme="cibnight"] :is(.glass,.stat-card,.chart-card,.rp-card,.rp-kpi,.list-item,.asset-card,.sheet,.loading-card,.modal-content,.modal-card){background:#082f5d !important;color:#ffffff !important;border:1px solid #41658a !important;box-shadow:var(--shadow-sm) !important;}
+:root[data-theme="cibnight"] :is(input,select,textarea,.form-control){background:#001b3c !important;color:#ffffff !important;border:1px solid #7895b8 !important;}
+:root[data-theme="cibnight"] :is(.btn-primary,.primary,.btn.primary,.pc-btn.primary,.mc-btn.primary,.vt-btn.primary){background:#ffd400 !important;color:#002a5c !important;border:1px solid #ffd400 !important;}
+:root[data-theme="cibnight"] :is(.btn,.button,.btn-ghost,.tab-secondary,.icon-btn,.refresh-btn,.sw-btn,.cu-btn,.ml-btn,.mc-btn,.mc-tool-btn,.pc-btn,.vt-btn,.audit-btn){border-color:#ffd400 !important;}
+:root[data-theme="cibnight"] :is(.btn:not(.btn-primary):not(.btn-danger),.button,.btn-ghost,.tab-secondary,.icon-btn,.refresh-btn,.sw-btn,.cu-btn,.ml-btn,.mc-btn,.mc-tool-btn,.pc-btn,.vt-btn,.audit-btn){background:#002a5c !important;color:#ffd400 !important;}
+:root[data-theme="cibnight"] :is(.btn-danger,.btn.danger,.tone-bad){background:#a51d24 !important;color:#ffffff !important;border-color:#ff9999 !important;}
+/* Keep lower navigation untouched, including its original colors and animations. */
+:root[data-theme="cib"] .tabbar,
+:root[data-theme="cibnight"] .tabbar{box-shadow:none !important;}
 </style>
 <style id="pressAnim">
 /* ===== อนิเมชั่นกดปุ่ม (ตามตัวอย่าง): ยุบเล็กน้อย + วงแผ่ตรงจุดที่กด ===== */
@@ -20734,47 +20790,5 @@ button:disabled{cursor:not-allowed}
   });
 })();
 </script>
-<style id="cibContrastFix">
-/* CIB contrast repair: presentation only; no application logic changed */
-:root[data-theme="cib"]{
- --bg-0:#edf1f6;--bg-1:#f8fafc;--panel:#ffffff;--panel-soft:#f4f6fa;--panel-line:#b9c7d9;--panel-hi:#fff2a6;
- --ink:#101820;--ink-dim:#46566b;--ink-faint:#68778a;--navy:#002a5c;--navy-deep:#001a3a;
- --gold:#ffd400;--gold-deep:#002a5c;--gold-wash:#fff1a6;--gold-line:#d6ae00;
-}
-:root[data-theme="cibnight"]{
- --bg-0:#061426;--bg-1:#091b31;--dawn-1:#0b2340;--dawn-2:#0b2340;--dawn-3:#0b2340;--dawn-4:#0b2340;
- --panel:#102943;--panel-soft:#0a2038;--panel-line:#365674;--panel-hi:#183b5e;
- --ink:#ffffff;--ink-dim:#d0dceb;--ink-faint:#a0b3c9;--navy:#002a5c;--navy-deep:#00101f;
- --gold:#ffd400;--gold-deep:#ffe56a;--gold-wash:#263449;--gold-line:#ffd400;
- --side-1:#002a5c;--side-2:#00101f;--topbar-bg:#002a5c;--sheet-bg:#102943;--opt-bg:#102943;
-}
-/* Restore useful surfaces and crisp boundaries (the earlier blanket rule flattened everything). */
-:root[data-theme="cib"] body,:root[data-theme="cibnight"] body{background:var(--bg-0)!important;color:var(--ink)!important}
-:root[data-theme="cib"] .glass,:root[data-theme="cib"] .stat-card,:root[data-theme="cib"] .chart-card,:root[data-theme="cib"] .rp-card,:root[data-theme="cib"] .rp-kpi,:root[data-theme="cib"] .list-item,:root[data-theme="cib"] .asset-card,:root[data-theme="cib"] .sheet,:root[data-theme="cib"] .loading-card,
-:root[data-theme="cibnight"] .glass,:root[data-theme="cibnight"] .stat-card,:root[data-theme="cibnight"] .chart-card,:root[data-theme="cibnight"] .rp-card,:root[data-theme="cibnight"] .rp-kpi,:root[data-theme="cibnight"] .list-item,:root[data-theme="cibnight"] .asset-card,:root[data-theme="cibnight"] .sheet,:root[data-theme="cibnight"] .loading-card{
- background:var(--panel)!important;color:var(--ink)!important;border:1px solid var(--panel-line)!important;box-shadow:0 2px 0 rgba(0,0,0,.08)!important
-}
-:root[data-theme="cib"] .input,:root[data-theme="cib"] select.input,:root[data-theme="cibnight"] .input,:root[data-theme="cibnight"] select.input{background:var(--panel-soft)!important;color:var(--ink)!important;border:1.5px solid var(--panel-line)!important}
-:root[data-theme="cib"] .input::placeholder,:root[data-theme="cibnight"] .input::placeholder{color:var(--ink-faint)!important;opacity:1}
-:root[data-theme="cib"] .section-title,:root[data-theme="cibnight"] .section-title,:root[data-theme="cib"] .li-title,:root[data-theme="cibnight"] .li-title,:root[data-theme="cib"] .asset-card-title,:root[data-theme="cibnight"] .asset-card-title{color:var(--ink)!important}
-:root[data-theme="cib"] .li-sub,:root[data-theme="cibnight"] .li-sub,:root[data-theme="cib"] .stat-label,:root[data-theme="cibnight"] .stat-label{color:var(--ink-dim)!important}
-/* Explicit, distinguishable button families across the app */
-:root[data-theme="cib"] button:not(.tab),:root[data-theme="cibnight"] button:not(.tab){border-color:var(--panel-line)}
-:root[data-theme="cib"] .btn-primary,:root[data-theme="cib"] .chip.active,:root[data-theme="cib"] .view-toggle button.active,:root[data-theme="cib"] .pagination button:not(:disabled):hover,
-:root[data-theme="cibnight"] .btn-primary,:root[data-theme="cibnight"] .chip.active,:root[data-theme="cibnight"] .view-toggle button.active,:root[data-theme="cibnight"] .pagination button:not(:disabled):hover{background:#002a5c!important;color:#fff!important;border:2px solid #ffd400!important}
-:root[data-theme="cib"] .btn-ghost,:root[data-theme="cib"] .icon-btn,:root[data-theme="cib"] .refresh-btn,:root[data-theme="cib"] .pagination button,:root[data-theme="cib"] .sheet-close,:root[data-theme="cib"] .zbtn,:root[data-theme="cib"] .chip,
-:root[data-theme="cibnight"] .btn-ghost,:root[data-theme="cibnight"] .icon-btn,:root[data-theme="cibnight"] .refresh-btn,:root[data-theme="cibnight"] .pagination button,:root[data-theme="cibnight"] .sheet-close,:root[data-theme="cibnight"] .zbtn,:root[data-theme="cibnight"] .chip{background:var(--panel)!important;color:var(--ink)!important;border:1.5px solid var(--panel-line)!important}
-:root[data-theme="cib"] .btn-primary,:root[data-theme="cibnight"] .btn-primary{background:#002a5c!important;color:#ffd400!important;border:2px solid #ffd400!important}
-:root[data-theme="cib"] .btn-danger,:root[data-theme="cibnight"] .btn-danger{background:#8f1d25!important;color:#fff!important;border:2px solid #ff777e!important}
-:root[data-theme="cib"] .btn-ok,:root[data-theme="cibnight"] .btn-ok{background:#12633d!important;color:#fff!important;border:2px solid #49c58b!important}
-:root[data-theme="cib"] .fab,:root[data-theme="cibnight"] .fab{background:#ffd400!important;color:#002a5c!important;border:2px solid #002a5c!important}
-:root[data-theme="cib"] .hero-card,:root[data-theme="cibnight"] .hero-card{background:#002a5c!important;color:#fff!important;border:2px solid #ffd400!important;box-shadow:0 6px 0 rgba(0,0,0,.12)!important}
-:root[data-theme="cib"] .hero-num--sm,:root[data-theme="cibnight"] .hero-num--sm{color:#ffd400!important}
-:root[data-theme="cib"] .tabbar{background:#fff!important;border:1.5px solid #b9c7d9!important}
-:root[data-theme="cibnight"] .tabbar{background:#071b30!important;border:1.5px solid #365674!important}
-/* Ripple animation matches example 2; bottom tab bar deliberately untouched. */
-:root[data-theme="cib"] .rpl{background:#002a5c;opacity:.18}
-:root[data-theme="cibnight"] .rpl{background:#ffd400;opacity:.28}
-</style>
 </body>
 </html>
