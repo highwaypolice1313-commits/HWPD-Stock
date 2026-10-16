@@ -6716,6 +6716,42 @@ html, body{
     text-align:center;
   }
 
+  <style id="dbx-menu-v4">
+@media (max-width:899px){
+  /* แถบเมนู: ระยะห่างเท่ากันทุกปุ่ม */
+  #view-dashboard .dbx-menu{ gap:8px; padding:12px 10px; }
+
+  /* ทุกปุ่มขนาดเท่ากัน: กว้างและสูงคงที่ ชื่อที่ยาวขึ้นบรรทัดใหม่ได้สูงสุด 2 บรรทัด */
+  #view-dashboard .dbx-menu .dbx-tile{
+    flex:0 0 80px; width:80px; min-width:80px; height:108px;
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+    gap:8px; padding:8px 4px 6px; box-sizing:border-box;
+    background:transparent; border:none; box-shadow:none;
+    color:var(--ink); font:inherit; font-size:11px; font-weight:500; line-height:1.25;
+  }
+
+  /* ไอคอนสีเดียวกันทุกปุ่ม (ทับคลาส is-gold / is-bad) */
+  #view-dashboard .dbx-menu .dbx-tile .dbx-tile-ico,
+  #view-dashboard .dbx-menu .dbx-tile.is-gold .dbx-tile-ico,
+  #view-dashboard .dbx-menu .dbx-tile.is-bad .dbx-tile-ico{
+    flex:none; width:52px; height:52px; min-width:52px; border-radius:18px;
+    display:grid; place-items:center;
+    background:linear-gradient(145deg,var(--panel),var(--panel-soft));
+    color:var(--navy);
+    border:1px solid var(--panel-line);
+    box-shadow:0 6px 14px color-mix(in srgb,var(--navy-deep) 8%,transparent);
+  }
+  #view-dashboard .dbx-menu .dbx-tile-ico svg{ width:22px; height:22px; }
+
+  /* ชื่อ: ขึ้นบรรทัดใหม่ได้ สูงสุด 2 บรรทัด ความสูงเท่ากันทุกปุ่ม */
+  #view-dashboard .dbx-menu .dbx-tile > span:last-child{
+    display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2;
+    width:100%; min-height:2.5em; overflow:hidden;
+    white-space:normal; overflow-wrap:anywhere; text-align:center;
+  }
+}
+</style> 
+
   /* แถวสถิติมือถือ: ตัวเลขเด่น */
   #view-dashboard .dbx-stats{margin-top:12px;gap:10px}
   #view-dashboard .dbx-stat{padding:14px 12px}
