@@ -6952,13 +6952,6 @@ html, body{
 }
 </style>  
 
-<style id="home-nav-v1">
-@media (max-width:899px){
-  /* หน้าหลัก: ซ่อนปุ่ม "เมนูทั้งหมด" เพราะเมนูอยู่ในหน้าแล้ว */
-  body.home-active .tabbar .tab-more{ display:none !important; }
-}
-</style>
-   
 </style>
    
 </head>
@@ -8489,7 +8482,6 @@ if ((name === 'audit' || name === 'monthly') && !isAdmin()) name = 'dashboard';
 });
 const moreBtn = document.getElementById('tabMore');
 if (moreBtn) moreBtn.classList.toggle('active', !!document.querySelector('.tab-secondary[data-tab="' + name + '"]'));
-document.body.classList.toggle('home-active', name === 'dashboard');   
 layoutNav();
    
   document.querySelectorAll('.page').forEach(p => { p.style.display = 'none'; });
@@ -8836,7 +8828,6 @@ function renderDashboard() {
 
   // เมนูมือถือ: ไอคอนดึงจากแถบเมนูจริง ชื่อและลำดับตรงกับเมนูจริง
   const menu = [
-    ['dashboard', 'หน้าหลัก', ''],
     ['assets', 'ครุภัณฑ์', ''],
     ['borrow', 'ยืม-คืน', 'is-gold'],
     ['users', 'จนท.ในสังกัด', ''],
