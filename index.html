@@ -6770,6 +6770,41 @@ html, body{
 /* ===== ซ่อนชื่อผู้ใช้บน topbar (ยังอยู่ใน DOM สำหรับการ์ดผู้ใช้ในเมนู) ===== */
 .topbar #profileName,
 .topbar .profile-name{ display:none !important; }
+
+/* ===== แถบตัวกรองรายชื่อ (มือถือ) ===== */
+.off-filter-bar{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:0 0 10px; }
+.off-filter-open{
+  display:inline-flex; align-items:center; gap:6px; height:36px; padding:0 14px;
+  border-radius:99px; border:1px solid var(--panel-line); background:var(--panel);
+  color:var(--ink); font:inherit; font-size:13px; cursor:pointer; flex:none;
+}
+.off-filter-open svg{ width:16px; height:16px; }
+.off-filter-badge{
+  min-width:18px; height:18px; padding:0 5px; border-radius:99px;
+  background:var(--navy); color:#fff; font-size:10px; font-weight:700;
+  align-items:center; justify-content:center; font-family:var(--font-num);
+}
+.off-filter-chips{ display:flex; gap:6px; flex-wrap:wrap; min-width:0; }
+.off-chip{
+  display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:99px;
+  background:var(--gold-wash); color:var(--gold-deep); font-size:12px; cursor:pointer;
+}
+.off-chip b{ font-size:14px; line-height:1; }
+
+/* ===== กล่องตัวกรอง ===== */
+.off-fs-title{ font-size:12.5px; font-weight:600; color:var(--ink-dim); margin:14px 0 6px; }
+.off-fs-opts{ display:flex; flex-wrap:wrap; gap:6px; }
+.off-fs-opt{
+  padding:7px 12px; border-radius:99px; border:1px solid var(--panel-line);
+  background:var(--panel-soft); color:var(--ink); font:inherit; font-size:12.5px; cursor:pointer;
+  display:inline-flex; align-items:center; gap:5px;
+}
+.off-fs-opt small{ font-family:var(--font-num); color:var(--ink-faint); font-size:11px; }
+.off-fs-opt.on{ background:var(--navy); border-color:var(--navy); color:#fff; }
+.off-fs-opt.on small{ color:#fff; opacity:.8; }
+
+/* ซ่อนแถว select เดิมที่ไม่ใช้แล้ว (กันกรณียังมีค้าง) */
+.off-filters{ display:none !important; }    
     
 </style>
    
@@ -12499,6 +12534,83 @@ function offItemHtml(r, isGrid) {
   </div>`;
 }
 
+/* ตัวกรองแบบ bottom sheet: แสดงเป็นชิปเฉพาะค่าที่เลือก */
+function offFilterChipsHtml() {
+  const f = state.offFilter, chips = [];
+  const label = (list, v) => (list.find(x => x[0] === v) || [v, v])[1];
+  if (f.role !== 'all') chips.push(['role', label(OFF_ROLE_CHIPS, f.role)]);
+  if (f.rank !== 'all') chips.push(['rank', label(OFF_RANK_CHIPS, f.rank)]);
+  if (f.flag !== 'all') chips.push(['flag', label(OFF_FLAG_CHIPS, f.flag)]);
+  if (state.offGroup && state.offGroup !== 'none') chips.push(['group', label(OFF_GROUP_OPTIONS, state.offGroup)]);
+  return chips.map(([k, t]) =>
+    `<span class="off-chip" data-clear="${k}">${escapeHtml(t)} <b aria-label="ล้าง">×</b></span>`
+  ).join('');
+}
+
+function offFilterCount() {
+  const f = state.offFilter;
+  return [f.role !== 'all', f.rank !== 'all', f.flag !== 'all', state.offGroup !== 'none'].filter(Boolean).length;
+}
+
+function openOffFilterSheet() {
+  const rows = offBuildRows();
+  const f = state.offFilter;
+  const countRole = v => v === 'all' ? rows.length : rows.filter(r => r.role === v).length;
+  const countRank = v => v === 'all' ? rows.length : rows.filter(r => r.rank === v).length;
+  const holdCount = rows.filter(r => r.hold.length > 0).length;
+  const flagCount = rows.filter(r => r.issues.some(x => x.lv !== 'info')).length;
+  const countFlag = v => v === 'all' ? rows.length : v === 'issue' ? flagCount : v === 'hold' ? holdCount : rows.length - holdCount;
+
+  const group = (title, opts, cur, count, key) => `
+    <div class="off-fs-title">${title}</div>
+    <div class="off-fs-opts">
+      ${opts.map(([v, t]) => `<button type="button" class="off-fs-opt ${cur === v ? 'on' : ''}" data-k="${key}" data-v="${v}">
+        ${escapeHtml(t)}${count ? `<small>${count(v)}</small>` : ''}</button>`).join('')}
+    </div>`;
+
+  showSheet(`
+    <div class="sheet-title">ตัวกรอง</div>
+    ${group('บทบาทเบิก-ยืม', OFF_ROLE_CHIPS, f.role, countRole, 'role')}
+    ${group('ยศ', OFF_RANK_CHIPS, f.rank, countRank, 'rank')}
+    ${group('สถานะ', OFF_FLAG_CHIPS, f.flag, countFlag, 'flag')}
+    ${group('จัดกลุ่ม', OFF_GROUP_OPTIONS, state.offGroup, null, 'group')}
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="offFsReset">ล้างทั้งหมด</button>
+      <button class="btn btn-primary" id="offFsDone">ดูผลลัพธ์</button>
+    </div>
+  `, 'off-fs-sheet');
+
+  document.querySelectorAll('#modalRoot .off-fs-opt').forEach(b => b.onclick = () => {
+    const k = b.dataset.k, v = b.dataset.v;
+    if (k === 'group') { state.offGroup = v; state.offGroupClosed = new Set(); }
+    else state.offFilter[k] = v;
+    openOffFilterSheet();                       // วาดใหม่ในกล่องเดิม ให้เห็นค่าที่เลือก
+  });
+  document.getElementById('offFsReset').onclick = () => {
+    state.offFilter = { role: 'all', rank: 'all', flag: 'all' };
+    state.offGroup = 'none'; state.offGroupClosed = new Set();
+    closeSheet(); drawUsers();
+  };
+  document.getElementById('offFsDone').onclick = () => { closeSheet(); drawUsers(); };
+}
+
+function bindOffFilterBar() {
+  const open = document.getElementById('offFilterOpen');
+  if (open) open.onclick = openOffFilterSheet;
+  const chips = document.getElementById('offFilterChips');
+  if (chips) chips.onclick = e => {
+    const c = e.target.closest('[data-clear]'); if (!c) return;
+    const k = c.dataset.clear;
+    if (k === 'group') { state.offGroup = 'none'; state.offGroupClosed = new Set(); }
+    else state.offFilter[k] = 'all';
+    drawUsers();
+  };
+  const badge = document.getElementById('offFilterBadge');
+  const n = offFilterCount();
+  if (badge) { badge.style.display = n ? 'inline-flex' : 'none'; badge.textContent = n; }
+  document.getElementById('offFilterChips').innerHTML = offFilterChipsHtml();
+}
+   
 /* ---------- หน้าหลัก ---------- */
 function drawUsers() {
   ensureSrchStyles();
@@ -12547,20 +12659,14 @@ function drawUsers() {
       <button class="ax-round off-selmode ${state.offSelectMode ? 'on' : ''}" id="btnOffSelMode" title="เลือกหลายคน" aria-label="เลือกหลายคน">${ICONS.checklist}</button>
     </div>
 
-    <div class="off-filters">
-      <select class="input" id="offRoleSel" aria-label="กรองตามบทบาท">
-        ${OFF_ROLE_CHIPS.map(([v, t]) => opt(v, 'บทบาท: ' + t, countRole(v), f.role)).join('')}
-      </select>
-      <select class="input" id="offRankSel" aria-label="กรองตามยศ">
-        ${OFF_RANK_CHIPS.map(([v, t]) => opt(v, 'ยศ: ' + t, countRank(v), f.rank)).join('')}
-      </select>
-      <select class="input" id="offFlagSel" aria-label="กรองตามสถานะ">
-        ${OFF_FLAG_CHIPS.map(([v, t]) => opt(v, 'สถานะ: ' + t, countFlag(v), f.flag)).join('')}
-      </select>
-      <select class="input" id="offGroupSel" aria-label="จัดกลุ่ม">
-        ${OFF_GROUP_OPTIONS.map(([v, t]) => opt(v, t, null, state.offGroup)).join('')}
-      </select>
-    </div>
+<div class="off-filter-bar">
+  <button type="button" class="off-filter-open" id="offFilterOpen" aria-label="ตัวกรอง">
+    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3 5h14M6 10h8M9 15h2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+    <span>ตัวกรอง</span>
+    <span class="off-filter-badge" id="offFilterBadge" style="display:none;"></span>
+  </button>
+  <div class="off-filter-chips" id="offFilterChips"></div>
+</div>
 
     <div id="offBulk"></div>
     <div class="ax-count" id="userCount"></div>
