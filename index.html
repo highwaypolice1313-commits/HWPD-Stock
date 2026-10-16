@@ -6857,6 +6857,27 @@ html, body{
   #view-users .off-toolbar{ max-width:760px; }
   #view-users .off-title{ font-size:22px; }
 }    
+
+    /* ===== ขยายแถบเครื่องมือและหัวหน้าให้เต็มความกว้าง ===== */
+#view-users .off-head,
+#view-users .off-toolbar,
+#view-users .off-chips,
+#view-users #userCount,
+#view-users .off-stats{
+  width:100%;
+  max-width:none;
+}
+#view-users .off-toolbar{
+  display:flex; align-items:center; gap:10px; margin:0 0 10px;
+}
+#view-users .off-search{ flex:1 1 auto; min-width:0; }
+#view-users .off-search .srch-box,
+#view-users .off-search .input{ width:100%; }
+
+@media (min-width:900px){
+  #view-users .off-toolbar{ gap:12px; }
+  #view-users .off-round{ width:50px; height:50px; }
+}
     
 </style>
    
