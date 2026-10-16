@@ -9811,14 +9811,14 @@ function assetCardHtml(a) {
       <div class="asset-card-icon">${catIcon(a['หมวดหมู่'])}</div>
       <div class="ba-txt">
         <div class="asset-card-title">${escapeHtml(a['ชื่อครุภัณฑ์'])}</div>
+        <div class="ba-cat"><small>หมวดหมู่</small><b>${escapeHtml(a['หมวดหมู่'] || '-')}</b></div>
         <div class="ax-sn">${assetSerialHtml(a)}</div>
       </div>
       <div class="ax-st" style="--c:${c};">${escapeHtml(a['สถานะ'])}</div>
     </div>
     <div class="ba-body">
       <div class="ba-cells">
-        <div class="ba-cell"><small>ผู้ครอบครอง</small><b>${escapeHtml(owner)}</b></div>
-        <div class="ba-cell"><small>หมวดหมู่</small><b>${escapeHtml(a['หมวดหมู่'] || '-')}</b></div>
+        <div class="ba-cell"><small>ผู้ยืม</small><b>${escapeHtml(owner)}</b></div>
       </div>
       ${assetWarnHtml(a)}
     </div>
@@ -20612,7 +20612,10 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   background:none; border:0; border-radius:0; padding:0;
 }
 .asset-grid .ba-card .ba-cell small{ font-size:12px; color:var(--ink-dim); flex:none; }
-.asset-grid .ba-card .ba-cell b{ font-size:12.5px; font-weight:600; text-align:right; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.asset-grid .ba-card .ba-cell b{ font-size:12.5px; font-weight:600; text-align:right; min-width:0; white-space:normal; overflow-wrap:anywhere; line-height:1.35; }
+.asset-grid .ba-card .ba-cat{ font-size:12px; color:var(--ink-dim); margin-top:4px; }
+.asset-grid .ba-card .ba-cat small{ margin-right:6px; }
+.asset-grid .ba-card .ba-cat b{ font-weight:600; color:var(--ink); }
 
 
 /* ปุ่ม/ไอคอนพื้นเหลือง: ใช้ตัวอักษรกรมท่าเข้มให้อ่านง่าย */
