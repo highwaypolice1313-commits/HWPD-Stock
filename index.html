@@ -7077,6 +7077,19 @@ html, body{
   to{ transform:rotate(360deg); }
 }
 </style>   
+
+<style id="capsule-buttons-v4">
+/* ปุ่มทุกตัวในแคปซูลมีสไตล์เดียวกัน (ยกเว้นโปรไฟล์) */
+.topbar .capsule > button:not(.cap-avatar){
+  background:transparent !important;
+  border:none !important;
+  box-shadow:none !important;
+  transition:transform .15s ease, background .2s ease;
+}
+.topbar .capsule > button:not(.cap-avatar):hover{
+  background:var(--navy-wash) !important;
+}
+</style>
    
 </head>
    
