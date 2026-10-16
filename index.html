@@ -9130,49 +9130,37 @@ function renderDashboard() {
   const pendingBorrow = B.filter(b => b['สถานะ'] === 'รออนุมัติ').length;
   const doneMaint = M.filter(m => m['สถานะ'] === 'ซ่อมเสร็จ').length;
   const maintCost = M.reduce((s, m) => s + (Number(m['ค่าใช้จ่าย(บาท)']) || 0), 0);
-  const slideCard = (title, items) => `<div class="dbx-hero">
-      <div class="dbx-lbl" style="margin-bottom:14px;">${escapeHtml(title)}</div>
-      <div class="dbx-slide-grid">${items.map(([l, v, cls]) => `<div><div class="dbx-lbl">${escapeHtml(l)}</div><div class="dbx-num ${cls || ''}" style="font-size:26px;">${v}</div></div>`).join('')}</div>
-    </div>`;
-
-  const heroHtml = (desk) => `
-    <div class="dbx-hero ${desk ? 'dbx-hero-d' : ''}">
+  const pctOf = (n, d) => d ? Math.round(n / d * 100) : 0;
+  const slideHero = (o) => `<div class="dbx-hero">
       <div class="dbx-hero-row">
         <div>
-          <div class="dbx-lbl">ครุภัณฑ์ทั้งหมด</div>
-          <div class="dbx-num">${total.toLocaleString('en-US')}<small>รายการ</small></div>
+          <div class="dbx-lbl">${o.l1}</div>
+          <div class="dbx-num">${o.n1}<small>${o.u1}</small></div>
         </div>
         <div>
-          <div class="dbx-lbl">มูลค่ารวม</div>
-          <div class="dbx-num dbx-gold">${valueMil}<small>ล้านบาท</small></div>
+          <div class="dbx-lbl">${o.l2}</div>
+          <div class="dbx-num dbx-gold">${o.n2}<small>${o.u2}</small></div>
         </div>
       </div>
-      <div class="dbx-bar-head"><span>พร้อมใช้งาน</span><b>${readyPct}%</b></div>
-      <div class="dbx-track"><div class="dbx-fill" style="width:${readyPct}%"></div></div>
-      ${desk ? `<div class="dbx-cap">${ready.toLocaleString('en-US')} จาก ${total.toLocaleString('en-US')} รายการ</div>` : ''}
+      <div class="dbx-bar-head"><span>${o.barLabel}</span><b>${o.pct}%</b></div>
+      <div class="dbx-track"><div class="dbx-fill" style="width:${o.pct}%"></div></div>
+      <div class="dbx-cap">${o.cap}</div>
     </div>`;
-
-  const statsHtml = (desk) => `
-    <div class="${desk ? 'dbx-side' : 'dbx-stats'}">
-      <div class="dbx-stat is-out">
-        <div><div class="dbx-stat-lbl">${desk ? 'กำลังถูกยืม' : 'กำลังยืม'}</div><div class="dbx-stat-num">${borrowed.toLocaleString('en-US')}</div></div>
-        ${desk ? `<div class="dbx-ico">${ICONS.swap}</div>` : ''}
-      </div>
-      <div class="dbx-stat is-bad">
-        <div><div class="dbx-stat-lbl">${desk ? 'เกินกำหนดคืน' : 'เกินกำหนด'}</div><div class="dbx-stat-num">${overdue.toLocaleString('en-US')}</div></div>
-        ${desk ? `<div class="dbx-ico">${ICONS.warn}</div>` : ''}
-      </div>
-      <div class="dbx-stat is-ok">
-        <div><div class="dbx-stat-lbl">${desk ? 'อยู่ระหว่างซ่อม' : 'กำลังซ่อม'}</div><div class="dbx-stat-num">${repair.toLocaleString('en-US')}</div></div>
-        ${desk ? `<div class="dbx-ico">${ICONS.wrench}</div>` : ''}
-      </div>
-    </div>`;
-
   const carouselHtml = `<div class="dbx-carousel">
       <div class="dbx-slides" id="dbxSlides">
         <div class="dbx-slide">${heroHtml(false)}</div>
-        <div class="dbx-slide">${slideCard('การยืม-คืน', [['กำลังถูกยืม', borrowed.toLocaleString('en-US')], ['เกินกำหนด', overdue.toLocaleString('en-US'), 'dbx-gold'], ['รออนุมัติ', pendingBorrow.toLocaleString('en-US')]])}</div>
-        <div class="dbx-slide">${slideCard('ซ่อมบำรุง', [['กำลังซ่อม', repair.toLocaleString('en-US')], ['ซ่อมเสร็จแล้ว', doneMaint.toLocaleString('en-US')], ['ค่าใช้จ่าย (บาท)', maintCost.toLocaleString('en-US')]])}</div>
+        <div class="dbx-slide">${slideHero({
+          l1: 'กำลังถูกยืม', n1: borrowed.toLocaleString('en-US'), u1: 'รายการ',
+          l2: 'เกินกำหนดคืน', n2: overdue.toLocaleString('en-US'), u2: 'รายการ',
+          barLabel: 'สัดส่วนที่ถูกยืมจากทั้งหมด', pct: pctOf(borrowed, total),
+          cap: `${borrowed.toLocaleString('en-US')} จาก ${total.toLocaleString('en-US')} รายการ · รออนุมัติ ${pendingBorrow.toLocaleString('en-US')} รายการ`
+        })}</div>
+        <div class="dbx-slide">${slideHero({
+          l1: 'กำลังซ่อม', n1: repair.toLocaleString('en-US'), u1: 'รายการ',
+          l2: 'ค่าใช้จ่ายสะสม', n2: maintCost.toLocaleString('en-US'), u2: 'บาท',
+          barLabel: 'ซ่อมเสร็จแล้ว', pct: pctOf(doneMaint, M.length),
+          cap: `${doneMaint.toLocaleString('en-US')} จาก ${M.length.toLocaleString('en-US')} งานซ่อม`
+        })}</div>
       </div>
       <div class="dbx-dots" id="dbxDots"><i class="on"></i><i></i><i></i></div>
     </div>`;
