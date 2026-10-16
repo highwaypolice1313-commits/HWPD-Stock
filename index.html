@@ -9180,6 +9180,21 @@ function renderDashboard() {
       </div>
     </div>`;
 
+  let offStats = { total: 0, off: 0, pol: 0, hold: 0, flag: 0 };
+  try {
+    if (Array.isArray(state.users) && state.users.length) {
+      initOfficerState();
+      const offRows = offBuildRows();
+      offStats = {
+        total: offRows.length,
+        off: offRows.filter(r => r.rank === 'สัญญาบัตร').length,
+        pol: offRows.filter(r => r.rank === 'ประทวน').length,
+        hold: offRows.filter(r => r.hold.length > 0).length,
+        flag: offRows.filter(r => r.issues.some(x => x.lv !== 'info')).length
+      };
+    }
+  } catch (e) { /* ถ้าข้อมูลเจ้าหน้าที่ยังไม่พร้อม ให้แสดงเป็น 0 แทนการทำให้หน้าพัง */ }
+
   const carouselHtml = `<div class="dbx-carousel">
       <div class="dbx-slides" id="dbxSlides">
         <div class="dbx-slide">${heroHtml(false)}</div>
@@ -9190,10 +9205,10 @@ function renderDashboard() {
           cap: `${borrowed.toLocaleString('en-US')} จาก ${total.toLocaleString('en-US')} รายการ · รออนุมัติ ${pendingBorrow.toLocaleString('en-US')} รายการ`
         })}</div>
         <div class="dbx-slide">${slideHero({
-          l1: 'กำลังซ่อม', n1: repair.toLocaleString('en-US'), u1: 'รายการ',
-          l2: 'ค่าใช้จ่ายสะสม', n2: maintCost.toLocaleString('en-US'), u2: 'บาท',
-          barLabel: 'ซ่อมเสร็จแล้ว', pct: pctOf(doneMaint, M.length),
-          cap: `${doneMaint.toLocaleString('en-US')} จาก ${M.length.toLocaleString('en-US')} งานซ่อม`
+          l1: 'เจ้าหน้าที่ทั้งหมด', n1: offStats.total.toLocaleString('en-US'), u1: 'คน',
+          l2: 'กำลังถือพัสดุ', n2: offStats.hold.toLocaleString('en-US'), u2: 'คน',
+          barLabel: 'สัดส่วนที่ถือพัสดุอยู่', pct: pctOf(offStats.hold, offStats.total),
+          cap: `สัญญาบัตร ${offStats.off.toLocaleString('en-US')} · ประทวน ${offStats.pol.toLocaleString('en-US')} · ต้องตรวจข้อมูล ${offStats.flag.toLocaleString('en-US')}`
         })}</div>
       </div>
       <div class="dbx-dots" id="dbxDots"><i class="on"></i><i></i><i></i></div>
