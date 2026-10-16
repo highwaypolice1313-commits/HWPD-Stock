@@ -4609,6 +4609,16 @@ body.modal-open{ overflow:hidden; overscroll-behavior:none; }
 :root[data-theme="cibnight"] .brand-badge{ color:#002a5c; }
 :root[data-theme="cibnight"] .brand-badge{ color:#00101f; }
 
+/* การ์ดครุภัณฑ์ (มุมมองการ์ด): S/N อยู่คนละบรรทัดกับทะเบียน */
+.asset-card .ax-sn{ display:flex; flex-direction:column; align-items:flex-start; gap:2px; }
+.asset-card .ax-sn > *{ display:block; }
+.asset-card .ax-sn .ax-sn-line::before{ content:none; }
+.ax-sn-line::before{ content:'· '; }
+
+/* เมนูทั้งหมด: รายการที่เลือกอยู่ ใช้สีกรมท่า #002a5c ตามชุดสี CIB */
+:root[data-theme="cib"] .more-item.active{ border-color:rgba(0,42,92,.35); background:rgba(0,42,92,.07); }
+:root[data-theme="cib"] .more-item.active .more-ico{ background:#002a5c; color:#fff; }
+
 /* HAMBURGER THEME — ปุ่มย่อ/ขยายเมนู เปลี่ยนสีตาม menubar (--side-1/--side-2) ของทุกธีม */
 :root:root:root body .nav-collapse-btn{
   background:color-mix(in srgb, var(--side-1) 100%, #fff 10%) !important;
@@ -9740,7 +9750,7 @@ function assetSerialHtml(a) {
     const plateHtml = plate
       ? `<span class="ax-serial">ทะเบียน ${escapeHtml(plate)}</span>`
       : `<span class="none">ยังไม่ระบุทะเบียน</span>`;
-    const snHtml = serial ? ` <span class="ax-sub">· S/N ${escapeHtml(serial)}</span>` : '';
+    const snHtml = serial ? ` <span class="ax-sub ax-sn-line">S/N ${escapeHtml(serial)}</span>` : '';
     return plateHtml + snHtml;
   }
 
