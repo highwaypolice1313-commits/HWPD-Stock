@@ -4541,6 +4541,18 @@ body.modal-open{ overflow:hidden; overscroll-behavior:none; }
     transform:none !important;
   }
 }
+
+/* HAMBURGER THEME — ปุ่มย่อ/ขยายเมนู เปลี่ยนสีตาม menubar (--side-1/--side-2) ของทุกธีม */
+:root:root:root body .nav-collapse-btn{
+  background:color-mix(in srgb, var(--side-1) 100%, #fff 10%) !important;
+  border:1px solid rgba(255,255,255,.22) !important;
+  color:rgba(255,255,255,.94) !important;
+  box-shadow:0 7px 18px color-mix(in srgb, var(--side-2) 45%, transparent), 0 0 0 1px rgba(255,255,255,.04) !important;
+}
+:root:root:root body .nav-collapse-btn:hover{
+  background:color-mix(in srgb, var(--side-1) 100%, #fff 20%) !important;
+  border-color:rgba(255,255,255,.36) !important;
+}
 </style>
 
 
@@ -11582,9 +11594,9 @@ function ensureValuePickerCss() {
 .vp-sheet .vp-search{flex:none}
 .vp-sheet .vp-list{flex:1 1 auto;min-height:120px;max-height:none;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 
-/* ปุ่มกรอกชื่อใหม่: สีทอง เด่นกว่ารายการทั่วไป */
-.vp-create{flex:none;display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:50px;margin-bottom:12px;border:0;border-radius:16px;font:inherit;font-size:14.5px;font-weight:600;color:#fff;background:linear-gradient(135deg,var(--gold),var(--gold-deep));box-shadow:0 6px 16px rgba(187,138,63,.35);cursor:pointer;transition:transform .15s ease,box-shadow .15s ease}
-.vp-create:hover{transform:translateY(-1px);box-shadow:0 10px 22px rgba(187,138,63,.42)}
+/* ปุ่มกรอกชื่อใหม่: ใช้สีเดียวกับ menubar ของธีมที่เลือก */
+.vp-create{flex:none;display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:50px;margin-bottom:12px;border:0;border-radius:16px;font:inherit;font-size:14.5px;font-weight:600;color:#fff;background:linear-gradient(135deg,var(--navy),var(--navy-deep));box-shadow:0 6px 16px color-mix(in srgb,var(--navy) 38%,transparent);cursor:pointer;transition:transform .15s ease,box-shadow .15s ease}
+.vp-create:hover{transform:translateY(-1px);box-shadow:0 10px 22px color-mix(in srgb,var(--navy) 46%,transparent);filter:brightness(1.12)}
 .vp-create:active{transform:scale(.98)}
 .vp-create svg{width:18px;height:18px}
 
@@ -20323,7 +20335,7 @@ const ADMIN_INITIAL = 'อ';
 
 /* กดรูปผู้ใช้ เปิดเมนูบัญชี: ชื่อ สถานะ รีเฟรช ออกจากระบบ */
 /* เมนูบัญชี: กดรูปโปรไฟล์แล้วขึ้นเมนูย่อยตรงปุ่ม */
-const svgSettings = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></svg>';
+const svgSettings = '<svg viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>';
 const svgMoon = '<svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 019.5 4a8 8 0 1010.5 10.5z"/></svg>';
 const svgSun = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5"/></svg>';
 const svgLogout = '<svg viewBox="0 0 24 24"><path d="M14 4h4a2 2 0 012 2v12a2 2 0 01-2 2h-4M10 16l-4-4 4-4M6 12h10"/></svg>';
