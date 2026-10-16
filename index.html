@@ -11460,7 +11460,10 @@ function assetValueOptions(field, selCat) {
     .sort((x, y) => (y.sameCat - x.sameCat) || (y.count - x.count) || x.value.localeCompare(y.value, 'th'));
 }
 
-/* ---------- สไตล์หน้าเลือกค่า: หัวและช่องค้นหาอยู่คงที่ รายการเลื่อนได้ ---------- */
+/* ---------- ไอคอนเครื่องหมายบวกสำหรับปุ่มกรอกใหม่ ---------- */
+const AF_ICON_PLUS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
+
+/* ---------- สไตล์หน้าเลือกค่าและหน้ากรอกค่าใหม่ ---------- */
 function ensureValuePickerCss() {
   if (document.getElementById('valuePickerCss')) return;
   const s = document.createElement('style');
@@ -11470,16 +11473,33 @@ function ensureValuePickerCss() {
 .vp-sheet .sheet-title{flex:none}
 .vp-sheet .vp-search{flex:none}
 .vp-sheet .vp-list{flex:1 1 auto;min-height:120px;max-height:none;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+
+/* ปุ่มกรอกชื่อใหม่: สีทอง เด่นกว่ารายการทั่วไป */
+.vp-create{flex:none;display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:50px;margin-bottom:12px;border:0;border-radius:16px;font:inherit;font-size:14.5px;font-weight:600;color:#fff;background:linear-gradient(135deg,var(--gold),var(--gold-deep));box-shadow:0 6px 16px rgba(187,138,63,.35);cursor:pointer;transition:transform .15s ease,box-shadow .15s ease}
+.vp-create:hover{transform:translateY(-1px);box-shadow:0 10px 22px rgba(187,138,63,.42)}
+.vp-create:active{transform:scale(.98)}
+.vp-create svg{width:18px;height:18px}
+
+/* หน้ากรอกค่าใหม่ */
+.ve-sheet .ve-hint{font-size:12.5px;color:var(--ink-dim);line-height:1.5;margin:-4px 0 14px}
+.ve-sheet .ve-input{font-size:16px;min-height:48px}
+.ve-sheet .ve-note{font-size:12px;color:var(--ink-dim);min-height:18px;margin:8px 2px 14px}
+.ve-sheet .ve-note.match{color:var(--ok)}
+
+@media (prefers-reduced-motion: reduce){
+  .vp-create, .vp-create:hover { transition:none; transform:none }
+}
 `;
   document.head.appendChild(s);
 }
 
-/* ---------- หน้าเลือกค่า: ค้นหา / เลือกจากที่มี / พิมพ์ใหม่ ---------- */
+/* ---------- หน้าเลือกค่า: ปุ่มกรอกใหม่ / ค้นหา / รายการที่มีอยู่ ---------- */
 function openValuePicker({ title, placeholder, current, options, onPick }) {
   ensureAssetFormCss();
   ensureValuePickerCss();
   showSheet(`
     <div class="sheet-title">${escapeHtml(title)}</div>
+    <button type="button" class="vp-create" id="vp_create">${AF_ICON_PLUS}<span>กรอก${escapeHtml(title)}ใหม่</span></button>
     <div class="vp-search">${AF_ICON_SEARCH}<input class="input" id="vp_q" placeholder="${escapeHtml(placeholder)}" autocomplete="off" enterkeyhint="done"></div>
     <div class="vp-list" id="vp_list"></div>
   `, 'vp-sheet');
@@ -11503,27 +11523,62 @@ function openValuePicker({ title, placeholder, current, options, onPick }) {
   window.addEventListener('resize', fit);
   fit();
 
-  // เมื่อเริ่มพิมพ์ ให้รอให้แป้นพิมพ์ขึ้นก่อน แล้วเลื่อนช่องค้นหามาอยู่กลางจอ
-  q.onfocus = () => setTimeout(() => {
-    fit();
-    q.scrollIntoView({ block: 'center', behavior: 'smooth' });
-  }, 320);
-
+  // ปิดหน้าเลือก แล้วส่งค่ากลับไปที่ฟอร์ม
   const pick = (value) => { cleanup(); closeSheet(); onPick(value); };
+
+  // หน้ากรอกค่าใหม่แยกต่างหาก ช่องพิมพ์อยู่บนสุด
+  const openEntry = (prefill) => {
+    showSheet(`
+      <div class="sheet-title">${escapeHtml(title)}ใหม่</div>
+      <div class="ve-hint">พิมพ์${escapeHtml(title)}ที่ยังไม่มีในระบบ เมื่อบันทึกแล้วจะขึ้นให้เลือกในครั้งถัดไป</div>
+      <input class="input ve-input" id="ve_input" placeholder="${escapeHtml(placeholder)}" autocomplete="off" enterkeyhint="done" value="${escapeHtml(prefill || '')}">
+      <div class="ve-note" id="ve_note"></div>
+      <div class="btn-row"><button class="btn btn-ghost" id="ve_back">ย้อนกลับ</button><button class="btn btn-primary" id="ve_ok">ใช้ค่านี้</button></div>
+    `, 've-sheet');
+
+    // จัดหน้าต่างให้ชิดด้านบน เพื่อให้ช่องพิมพ์อยู่เหนือแป้นพิมพ์
+    const entryOverlay = document.getElementById('overlayEl');
+    if (entryOverlay) entryOverlay.style.alignItems = 'flex-start';
+
+    const inp = document.getElementById('ve_input');
+    const note = document.getElementById('ve_note');
+
+    const findExisting = (t) => {
+      const k = t.trim().toLowerCase();
+      return options.find(o => o.value.toLowerCase() === k);
+    };
+
+    const refreshNote = () => {
+      const t = inp.value.trim();
+      const hit = t ? findExisting(t) : null;
+      note.textContent = hit ? 'มีอยู่แล้วในระบบ จะใช้ชื่อเดิมนี้' : '';
+      note.className = 've-note' + (hit ? ' match' : '');
+    };
+
+    const saveEntry = () => {
+      const t = inp.value.trim();
+      if (!t) { toast('กรุณากรอก' + title); return; }
+      const hit = findExisting(t);
+      const value = hit ? hit.value : t;
+      closeSheet();   // ปิดหน้ากรอกค่าใหม่ กลับไปหน้าเลือก
+      pick(value);    // ปิดหน้าเลือก แล้วส่งค่ากลับไปที่ฟอร์ม
+    };
+
+    inp.oninput = refreshNote;
+    inp.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); saveEntry(); } };
+    document.getElementById('ve_ok').onclick = saveEntry;
+    document.getElementById('ve_back').onclick = () => closeSheet();
+    refreshNote();
+    setTimeout(() => inp.focus(), 250);
+  };
+
+  document.getElementById('vp_create').onclick = () => openEntry(q.value.trim());
 
   function draw() {
     const qq = q.value.trim();
     const lower = qq.toLowerCase();
     const items = options.filter(o => !lower || o.value.toLowerCase().includes(lower));
-    const exact = options.some(o => o.value.toLowerCase() === lower);
-    let html = '';
-    if (qq && !exact) {
-      html += `<button type="button" class="vp-item vp-new" data-v="${escapeHtml(qq)}">
-        <span class="vp-ico">${AF_ICON_PENCIL}</span>
-        <span class="vp-body"><span class="vp-name">ใช้ "${escapeHtml(qq)}"</span><span class="vp-sub">กรอกเป็นค่าใหม่</span></span>
-      </button>`;
-    }
-    html += items.map(o => `
+    let html = items.map(o => `
       <button type="button" class="vp-item${o.value === current ? ' active' : ''}" data-v="${escapeHtml(o.value)}">
         <span class="vp-ico">${o.icon || ICONS.tag}</span>
         <span class="vp-body">
@@ -11532,14 +11587,24 @@ function openValuePicker({ title, placeholder, current, options, onPick }) {
         </span>
         <span class="vp-count">${o.count}</span>
       </button>`).join('');
-    if (!html) html = `<div class="vp-empty">ยังไม่มีข้อมูล พิมพ์เพื่อกรอกค่าใหม่</div>`;
+    if (!html) {
+      html = qq
+        ? `<div class="vp-empty">ไม่พบ "${escapeHtml(qq)}" ในระบบ กดปุ่มกรอกใหม่ด้านบนเพื่อบันทึก</div>`
+        : `<div class="vp-empty">ยังไม่มีข้อมูลในระบบ กดปุ่มกรอกใหม่ด้านบนเพื่อเริ่ม</div>`;
+    }
     list.innerHTML = html;
     list.querySelectorAll('.vp-item').forEach(b => { b.onclick = () => pick(b.dataset.v); });
   }
 
   q.oninput = draw;
   q.onkeydown = (e) => {
-    if (e.key === 'Enter' && q.value.trim()) { e.preventDefault(); pick(q.value.trim()); }
+    if (e.key !== 'Enter') return;
+    const t = q.value.trim();
+    if (!t) return;
+    e.preventDefault();
+    const exact = options.find(o => o.value.toLowerCase() === t.toLowerCase());
+    if (exact) pick(exact.value);
+    else openEntry(t);
   };
   draw();
 }
