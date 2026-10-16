@@ -7267,7 +7267,26 @@ html, body{
 .fs-label{font-size:12.5px;color:var(--ink-dim);margin:14px 2px 6px;}
 .fs-wrap{flex-wrap:wrap;gap:8px;}
 </style>
+<style>
+/* ---- แดชบอร์ดสไลด์ / หัวหน้าหน้ารายชื่อ / การ์ดสถิติครุภัณฑ์ ---- */
+#view-dashboard .dbx-slides{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;gap:0;}
+#view-dashboard .dbx-slides::-webkit-scrollbar{display:none;}
+#view-dashboard .dbx-slide{flex:0 0 100%;min-width:0;scroll-snap-align:start;}
+#view-dashboard .dbx-slide .dbx-hero{height:100%;}
+#view-dashboard .dbx-slide-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}
+#view-dashboard .dbx-dots{display:flex;gap:6px;justify-content:center;margin-top:10px;}
+#view-dashboard .dbx-dots i{width:6px;height:6px;border-radius:99px;background:var(--panel-line);transition:width .2s;}
+#view-dashboard .dbx-dots i.on{background:var(--navy);width:18px;}
+#view-users .off-head{margin:0 2px 12px;}
+#view-assets .stat-grid{
+  display:grid; grid-template-columns:none; grid-auto-flow:column; grid-auto-columns:minmax(42%,1fr);
+  overflow-x:auto; scroll-snap-type:x proximity; scrollbar-width:none; -webkit-overflow-scrolling:touch; width:100%;
+}
+#view-assets .stat-grid::-webkit-scrollbar{display:none;}
+#view-assets .stat-grid > *{scroll-snap-align:start;min-width:0;}
+</style>
 </head>
+
    
 <body>
 
@@ -9093,7 +9112,7 @@ function renderDashboard() {
   const catMap = {};
   if (d.byCategory && Object.keys(d.byCategory).length) Object.entries(d.byCategory).forEach(([k, v]) => catMap[k] = Number(v) || 0);
   else A.forEach(a => { const c = a['หมวดหมู่'] || 'อื่นๆ'; catMap[c] = (catMap[c] || 0) + 1; });
-  const cats = Object.entries(catMap).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const cats = Object.entries(catMap).sort((a, b) => b[1] - a[1]);
   const catMax = cats.length ? cats[0][1] : 1;
   const catColors = ['var(--navy)', 'var(--ok)', 'var(--info)', 'var(--gold)', 'var(--ink-faint)'];
 
@@ -9104,6 +9123,21 @@ function renderDashboard() {
   const dateLine = 'วัน' + wd + 'ที่ ' + thaiDateLong();
   const valueMil = (value / 1000000).toFixed(1);
   const isDeskNow = window.matchMedia('(min-width:900px)').matches;
+  const pendingBorrow = B.filter(b => b['สถานะ'] === 'รออนุมัติ').length;
+  const doneMaint = M.filter(m => m['สถานะ'] === 'ซ่อมเสร็จ').length;
+  const maintCost = M.reduce((s, m) => s + (Number(m['ค่าใช้จ่าย(บาท)']) || 0), 0);
+  const slideCard = (title, items) => `<div class="dbx-hero">
+      <div class="dbx-lbl" style="margin-bottom:14px;">${escapeHtml(title)}</div>
+      <div class="dbx-slide-grid">${items.map(([l, v, cls]) => `<div><div class="dbx-lbl">${escapeHtml(l)}</div><div class="dbx-num ${cls || ''}" style="font-size:26px;">${v}</div></div>`).join('')}</div>
+    </div>`;
+  const carouselHtml = `<div class="dbx-carousel">
+      <div class="dbx-slides" id="dbxSlides">
+        <div class="dbx-slide">${heroHtml(false)}</div>
+        <div class="dbx-slide">${slideCard('การยืม-คืน', [['กำลังถูกยืม', borrowed.toLocaleString('en-US')], ['เกินกำหนด', overdue.toLocaleString('en-US'), 'dbx-gold'], ['รออนุมัติ', pendingBorrow.toLocaleString('en-US')]])}</div>
+        <div class="dbx-slide">${slideCard('ซ่อมบำรุง', [['กำลังซ่อม', repair.toLocaleString('en-US')], ['ซ่อมเสร็จแล้ว', doneMaint.toLocaleString('en-US')], ['ค่าใช้จ่าย (บาท)', maintCost.toLocaleString('en-US')]])}</div>
+      </div>
+      <div class="dbx-dots" id="dbxDots"><i class="on"></i><i></i><i></i></div>
+    </div>`;
 
   const heroHtml = (desk) => `
     <div class="dbx-hero ${desk ? 'dbx-hero-d' : ''}">
@@ -9220,7 +9254,7 @@ function renderDashboard() {
           <h1 class="dbx-h1">ภาพรวมระบบพัสดุ</h1>
         </div>
 
-        ${heroHtml(false)}
+        ${carouselHtml}
 
 <div class="dbx-sec">เมนูลัด</div>
 <div class="dbx-menu-wrap">
@@ -9232,7 +9266,6 @@ function renderDashboard() {
       </button>`).join('')}
   </div>
 </div>
-         ${statsHtml(false)}
          
         <div class="dbx-card" style="margin-top:16px;">
           <div class="dbx-head">
@@ -9260,6 +9293,14 @@ function renderDashboard() {
     </div>`;
 
   el.querySelectorAll('[data-go]').forEach(b => b.onclick = () => renderTab(b.dataset.go));
+const dbxSlides = el.querySelector('#dbxSlides');
+if (dbxSlides) {
+  const dots = el.querySelectorAll('#dbxDots i');
+  dbxSlides.addEventListener('scroll', () => {
+    const idx = Math.round(dbxSlides.scrollLeft / Math.max(1, dbxSlides.clientWidth));
+    dots.forEach((d, i) => d.classList.toggle('on', i === idx));
+  }, { passive: true });
+}
 const dbxMore = el.querySelector('#dbxMenuMore');
 if (dbxMore) dbxMore.onclick = () => {
   dbxMenuOpen = !dbxMenuOpen;
@@ -9835,14 +9876,13 @@ function renderAssets() {
   ensureSrchStyles();
   if (!state.assetLimit) state.assetLimit = ASSET_STEP;
   if (state.assetView === undefined) state.assetView = getViewMode('assets');
-  const isGrid = state.assetView === 'grid';
+  if (state.assetFilter === undefined) state.assetFilter = 'all';
+  if (state.assetStatusFilter === undefined) state.assetStatusFilter = 'all';
+  if (state.assetSort === undefined) state.assetSort = 'name_asc';
 
-  const baseList = state.assets.filter(a => state.assetStatusFilter === 'all' || a['สถานะ'] === state.assetStatusFilter);
-  const catPills = [{ v: 'all', label: 'ทั้งหมด', n: baseList.length, icon: ICONS.other }]
-    .concat(getCategories().map(c => ({ v: c, label: c, n: baseList.filter(a => a['หมวดหมู่'] === c).length, icon: catIcon(c) })))
-    .filter(p => p.v === 'all' || p.n > 0 || p.v === state.assetFilter);
-
-  const activeFilters = (state.assetStatusFilter !== 'all' ? 1 : 0) + (state.assetSort !== 'name_asc' ? 1 : 0);
+  const A = state.assets || [];
+  const cnt = s => A.filter(a => a['สถานะ'] === s).length;
+  const filterCount = (state.assetFilter !== 'all' ? 1 : 0) + (state.assetStatusFilter !== 'all' ? 1 : 0) + (state.assetSort !== 'name_asc' ? 1 : 0);
 
   el.innerHTML = `
     <div class="section-title">
@@ -9854,16 +9894,16 @@ function renderAssets() {
       </span>
     </div>
 
-    <div class="ax-top">
-      ${srchBoxHtml('assetSearchInput', state.assetSearch, 'ค้นหาชื่อ / รหัส / S/N / ทะเบียน / ยี่ห้อ')}
-      <button class="ax-round" id="btnAssetFilter" title="ตัวกรอง" aria-label="ตัวกรอง">
-        <svg viewBox="0 0 20 20" fill="none"><path d="M3 5h14M6 10h8M9 15h2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-        ${activeFilters ? `<span class="ax-badge">${activeFilters}</span>` : ''}
-      </button>
+    <div class="stat-grid" style="margin-bottom:14px;">
+      <div class="stat-card"><div class="stat-num">${A.length}</div><div class="stat-label">ทั้งหมด</div></div>
+      <div class="stat-card ok"><div class="stat-num">${cnt('พร้อมใช้งาน')}</div><div class="stat-label">พร้อมใช้งาน</div></div>
+      <div class="stat-card warn"><div class="stat-num">${cnt('กำลังยืม')}</div><div class="stat-label">กำลังยืม</div></div>
+      <div class="stat-card bad"><div class="stat-num">${cnt('ซ่อมบำรุง')}</div><div class="stat-label">ซ่อมบำรุง</div></div>
     </div>
 
-    <div class="ax-pills">
-      ${catPills.map(p => `<div class="ax-pill ${state.assetFilter === p.v ? 'active' : ''}" data-cat="${escapeHtml(p.v)}">${p.icon}${escapeHtml(p.label)} <b>${p.n}</b></div>`).join('')}
+    <div class="ax-top">
+      ${srchBoxHtml('assetSearchInput', state.assetSearch, 'ค้นหาชื่อ / รหัส / S/N / ทะเบียน / ยี่ห้อ')}
+      ${filterRoundBtnHtml('btnAssetFilter', filterCount)}
     </div>
 
     <div class="ax-count" id="assetCount"></div>
@@ -9877,16 +9917,22 @@ function renderAssets() {
     drawAssetList();
   });
 
-  document.getElementById('btnAssetFilter').onclick = openAssetFilterSheet;
   document.getElementById('btnScanQr').onclick = openScannerSheet;
   document.getElementById('btnPrintQrBatch').onclick = () => printQrBatch(assetFiltered());
-  wireViewToggle(renderAssets, '#view-assets', 'assetView');
-  el.querySelectorAll('.ax-pill').forEach(p => p.onclick = () => {
-    state.assetFilter = p.dataset.cat;
-    state.assetLimit = ASSET_STEP;
-    renderAssets();
-  });
+  document.getElementById('btnAssetFilter').onclick = () =>
+    openFilterSheet('ตัวกรองครุภัณฑ์', [
+      { key: 'cat', label: 'หมวดหมู่', current: state.assetFilter, options: [['all', 'ทุกหมวด']].concat(getCategories().map(c => [c, c])) },
+      { key: 'status', label: 'สถานะ', current: state.assetStatusFilter, options: [['all', 'ทุกสถานะ']].concat(ASSET_STATUSES.map(s => [s, s])) },
+      { key: 'sort', label: 'เรียงลำดับ', current: state.assetSort, options: [['name_asc', 'ชื่อ ก-ฮ'], ['name_desc', 'ชื่อ ฮ-ก'], ['date_desc', 'รับเข้าล่าสุด'], ['date_asc', 'รับเข้าเก่าสุด'], ['value_desc', 'มูลค่ามาก-น้อย']] }
+    ], (k, v) => {
+      if (k === 'cat') state.assetFilter = v;
+      else if (k === 'status') state.assetStatusFilter = v;
+      else state.assetSort = v;
+      state.assetLimit = ASSET_STEP;
+      renderAssets();
+    });
 
+  wireViewToggle(renderAssets, '#view-assets', 'assetView');
   drawAssetList();
   requestAnimationFrame(() => applyPremiumMotion(el));
 }
@@ -15773,15 +15819,15 @@ function wireAuditActions() {
 
 function auditHeaderHtml(mode, yearSel) {
   return `<div class="section-title">ตรวจนับประจำปี
-    <span class="section-actions">
-      ${viewToggleHtml('audit', mode)}
-      <span class="audit-head-actions">
-        <button type="button" class="audit-tools-icon" id="btnAuditPrint" title="พิมพ์รายงาน" aria-label="พิมพ์รายงาน">${AUDIT_ICON_PRINT}</button>
-        <button type="button" class="audit-tools-icon" id="btnAuditTools" title="เครื่องมือตรวจนับ" aria-label="เครื่องมือตรวจนับ">${AUDIT_ICON_TOOLS}</button>
-      </span>
-      ${yearSel}
-    </span>
-  </div>`;
+     <span class="section-actions">
+       ${viewToggleHtml('audit', mode)}
+       <span class="audit-head-actions">
+         <button type="button" class="audit-tools-icon" id="btnAuditPrint" title="พิมพ์รายงาน" aria-label="พิมพ์รายงาน">${AUDIT_ICON_PRINT}</button>
+         <button type="button" class="audit-tools-icon" id="btnAuditTools" title="เครื่องมือตรวจนับ" aria-label="เครื่องมือตรวจนับ">${AUDIT_ICON_TOOLS}</button>
+       </span>
+     </span>
+   </div>
+   <div class="ax-top audit-year-row">${yearSel}</div>`;
 }
 
 function wireAuditHeader(kinds) {
@@ -15967,7 +16013,7 @@ function drawAuditView() {
     return { key: k.key, label: k.label, run: k.run, total: k.pool.length, done, missing: k.pool.length - done };
   }).filter(k => k.total > 0);
 
-  const yearSel = `<select class="input sort-select" id="auditYearSelect" style="min-width:130px;">${auditYearOptions()}</select>`;
+  const yearSel = `<select class="input sort-select" id="auditYearSelect" style="width:100%;min-width:0;">${auditYearOptions()}</select>`;
 
   // ---------- มุมมองการ์ด ----------
   if (isCard) {
