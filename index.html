@@ -7393,7 +7393,39 @@ html, body{
 .ba-cell b{ display:block; font-size:13.5px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .ba-body .stg{ margin-top:14px; border:0; padding-top:0; }
 </style>
+<style>
+/* ===== รายการ: แบบ A กระจกเต็ม ===== */
+#assetList:not(.asset-grid) .glass.list-item, #borrowList:not(.asset-grid) .glass.list-item,
+#maintList:not(.asset-grid) .glass.list-item, #userList .glass.list-item,
+#auditList .glass.list-item, .memo-group-body:not(.memo-grid):not(.asset-grid) .glass.list-item{
+  background:color-mix(in srgb, var(--panel) 86%, transparent) !important;
+  -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px);
+  border:1px solid color-mix(in srgb, var(--panel) 90%, transparent) !important;
+  border-radius:20px;
+  box-shadow:0 10px 28px rgba(22,32,43,.08), inset 0 1px 0 color-mix(in srgb, var(--panel) 90%, transparent) !important;
+}
+
+/* ===== มุมมองการ์ด: แยกจากมุมมองรายการ เป็นการ์ดแนวตั้งสองคอลัมน์ ===== */
+.asset-grid{ grid-template-columns:repeat(2, minmax(0,1fr)) !important; gap:12px !important; align-items:stretch; }
+@media (min-width:900px){ .asset-grid{ grid-template-columns:repeat(3, minmax(0,1fr)) !important; } }
+.asset-grid .glass.ba-card{ height:100%; display:flex; flex-direction:column; border-radius:22px; }
+.asset-grid .ba-card .ba-head{ flex-direction:column; align-items:flex-start; gap:10px; padding:14px; }
+.asset-grid .ba-card .asset-card-icon{ width:50px; height:50px; border-radius:17px; }
+.asset-grid .ba-card .ba-txt{ width:100%; }
+.asset-grid .ba-card .asset-card-title{ font-size:15px; white-space:normal; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; line-height:1.3; min-height:2.6em; }
+.asset-grid .ba-card .ba-head .status-badge, .asset-grid .ba-card .ba-head .ax-st{ align-self:flex-start; font-size:11.5px; padding:4px 10px; }
+.asset-grid .ba-card .ba-body{ padding:12px 14px 14px; flex:1; display:flex; flex-direction:column; }
+.asset-grid .ba-cells{ grid-template-columns:1fr; gap:6px; }
+.asset-grid .ba-cell{ padding:8px 10px; }
+.asset-grid .ba-cell small{ font-size:10px; }
+.asset-grid .ba-cell b{ font-size:12.5px; }
+.asset-grid .ba-body .stg{ margin-top:auto; padding-top:10px; }
+.asset-grid .stg-s{ width:auto; flex:1; }
+.asset-grid .stg-l{ display:none; }
+.asset-grid .stg-seg{ min-width:6px; }
+</style>
 </head>
+
 
 
    
