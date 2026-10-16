@@ -11461,16 +11461,56 @@ function assetValueOptions(field, selCat) {
 }
 
 /* ---------- หน้าเลือกค่า: ค้นหา / เลือกจากที่มี / พิมพ์ใหม่ ---------- */
+/* ---------- สไตล์หน้าเลือกค่า: หัวและช่องค้นหาอยู่คงที่ รายการเลื่อนได้ ---------- */
+function ensureValuePickerCss() {
+  if (document.getElementById('valuePickerCss')) return;
+  const s = document.createElement('style');
+  s.id = 'valuePickerCss';
+  s.textContent = `
+.vp-sheet{display:flex;flex-direction:column;overflow:hidden}
+.vp-sheet .sheet-title{flex:none}
+.vp-sheet .vp-search{flex:none}
+.vp-sheet .vp-list{flex:1 1 auto;min-height:120px;max-height:none;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+`;
+  document.head.appendChild(s);
+}
+
+/* ---------- หน้าเลือกค่า: ค้นหา / เลือกจากที่มี / พิมพ์ใหม่ ---------- */
 function openValuePicker({ title, placeholder, current, options, onPick }) {
   ensureAssetFormCss();
+  ensureValuePickerCss();
   showSheet(`
     <div class="sheet-title">${escapeHtml(title)}</div>
-    <div class="vp-search">${AF_ICON_SEARCH}<input class="input" id="vp_q" placeholder="${escapeHtml(placeholder)}" autocomplete="off"></div>
+    <div class="vp-search">${AF_ICON_SEARCH}<input class="input" id="vp_q" placeholder="${escapeHtml(placeholder)}" autocomplete="off" enterkeyhint="done"></div>
     <div class="vp-list" id="vp_list"></div>
-  `);
+  `, 'vp-sheet');
+
+  const sheet = document.querySelector('#overlayEl .sheet');
   const q = document.getElementById('vp_q');
   const list = document.getElementById('vp_list');
-  const pick = (value) => { closeSheet(); onPick(value); };
+  const vv = window.visualViewport;
+
+  // ปรับความสูงหน้าต่างให้เท่ากับพื้นที่ที่เห็นจริง (ไม่รวมส่วนที่แป้นพิมพ์บัง)
+  const fit = () => {
+    if (!sheet || !document.body.contains(sheet)) { cleanup(); return; }
+    const h = vv ? vv.height : window.innerHeight;
+    sheet.style.maxHeight = Math.max(280, Math.floor(h - 16)) + 'px';
+  };
+  const cleanup = () => {
+    if (vv) { vv.removeEventListener('resize', fit); vv.removeEventListener('scroll', fit); }
+    window.removeEventListener('resize', fit);
+  };
+  if (vv) { vv.addEventListener('resize', fit); vv.addEventListener('scroll', fit); }
+  window.addEventListener('resize', fit);
+  fit();
+
+  // เมื่อเริ่มพิมพ์ ให้รอให้แป้นพิมพ์ขึ้นก่อน แล้วเลื่อนช่องค้นหามาอยู่กลางจอ
+  q.onfocus = () => setTimeout(() => {
+    fit();
+    q.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }, 320);
+
+  const pick = (value) => { cleanup(); closeSheet(); onPick(value); };
 
   function draw() {
     const qq = q.value.trim();
