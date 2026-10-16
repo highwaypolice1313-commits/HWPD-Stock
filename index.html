@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>ระบบพัสดุครุภัณฑ์ - ตำรวจทางหลวง</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Sarabun:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
 <!-- TODO: วางไฟล์สองตัวนี้ไว้โฟลเดอร์เดียวกับ index.html -->
 <script src="chart.umd.js"></script>
 <script src="qrcode.min.js"></script>
@@ -40,7 +40,7 @@ html{ -webkit-text-size-adjust:100%; text-size-adjust:100%; }
   --info:#4a86b4; --info-wash:rgba(74,134,180,.12);
   --side-1:#14304e; --side-2:#0c1e33;
   --r-xl:26px; --r-lg:20px; --r-md:16px; --r-sm:13px; --r-tag:99px;
-  --font-th:'Kanit',sans-serif; --font-disp:'Fraunces','Kanit',serif; --font-num:'Inter','Kanit',sans-serif;
+  --font-th:'Kanit',sans-serif; --font-disp:'Kanit',sans-serif; --font-num:'Kanit',sans-serif;
   --shadow-sm:0 1px 2px rgba(32,48,63,.05), 0 6px 16px rgba(32,48,63,.05);
   --shadow-md:0 10px 28px rgba(32,48,63,.09);
   --shadow-lg:0 20px 48px rgba(20,32,45,.14);
@@ -4580,6 +4580,35 @@ body.modal-open{ overflow:hidden; overscroll-behavior:none; }
 :root[data-theme="linenight"] .list-item,
 :root[data-theme="linenight"] .asset-card{ box-shadow:none; }
 
+/* ---------- CIB : ชุดสี ตำรวจสอบสวนกลาง (สว่าง) ---------- */
+:root[data-theme="cib"]{
+  --dawn-1:#fff9dc; --dawn-2:#fff4c4; --dawn-3:#f3f6fa; --dawn-4:#e9eff7; --bg-0:#eef2f7; --bg-1:#f8f9fc;
+  --panel:#ffffff; --panel-soft:#f5f7fb; --panel-line:#dce4ef; --panel-hi:#fff6d0;
+  --ink:#0b1f3a; --ink-dim:#55657d; --ink-faint:#9aa7b8;
+  --navy:#002a5c; --navy-deep:#001a3a; --navy-wash:rgba(0,42,92,.07); --navy-line:rgba(0,42,92,.22);
+  --gold:#ffd400; --gold-deep:#8a6d00; --gold-wash:rgba(255,212,0,.22); --gold-line:rgba(255,212,0,.6);
+  --side-1:#002a5c; --side-2:#001a3a;
+  --c1:#002a5c; --c2:#ffd400; --c3:#4a86b4; --c4:#e0a800; --c5:#c1495a; --c6:#9aa7b8;
+  --chart-line:#002a5c; --chart-bar:#ffd400;
+}
+/* ---------- CIB ราตรี : ชุดสี ตำรวจสอบสวนกลาง (มืด) ---------- */
+:root[data-theme="cibnight"]{
+  --dawn-1:#0a2140; --dawn-2:#081b36; --dawn-3:#06142a; --dawn-4:#051026; --bg-0:#00101f; --bg-1:#031529;
+  --panel:#0c2847; --panel-soft:#10305a; --panel-line:#1f3e66; --panel-hi:#17386a;
+  --ink:#f2f6fb; --ink-dim:#a9b8cc; --ink-faint:#6f819a;
+  --navy:#3a7bd5; --navy-deep:#0b4a96; --navy-wash:rgba(58,123,213,.18); --navy-line:rgba(58,123,213,.45);
+  --gold:#ffd400; --gold-deep:#ffe066; --gold-wash:rgba(255,212,0,.16); --gold-line:rgba(255,212,0,.45);
+  --side-1:#06203f; --side-2:#00101f; --sheet-bg:#0c2847; --opt-bg:#0c2847;
+  --icon:#ffd400; --icon-bg:rgba(255,212,0,.14);
+  --c1:#ffd400; --c2:#5aa9f0; --c3:#22d3ee; --c4:#ffb020; --c5:#ff6b7a; --c6:#7f93ad;
+  --chart-line:#ffd400; --chart-bar:#3a7bd5;
+  --ok:#4ade80; --warn:#fbbf24; --bad:#fb7185; --info:#60a5fa;
+}
+/* ปุ่มตราสีเหลือง ให้ตัวอักษรเป็นสีน้ำเงินเข้มเพื่อให้อ่านชัด */
+:root[data-theme="cib"] .brand-badge,
+:root[data-theme="cibnight"] .brand-badge{ color:#002a5c; }
+:root[data-theme="cibnight"] .brand-badge{ color:#00101f; }
+
 /* HAMBURGER THEME — ปุ่มย่อ/ขยายเมนู เปลี่ยนสีตาม menubar (--side-1/--side-2) ของทุกธีม */
 :root:root:root body .nav-collapse-btn{
   background:color-mix(in srgb, var(--side-1) 100%, #fff 10%) !important;
@@ -6499,14 +6528,6 @@ html, body{
   background:repeating-linear-gradient(-45deg,var(--warn) 0 6px,transparent 6px 12px);opacity:.6;
 }
 
-/* ---- 5) skeleton ตอนโหลด ---- */
-.memo-skel-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
-.memo-skel{border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--panel-line)}
-.memo-skel-img{aspect-ratio:1 / 1.12;border-radius:0;border:0}
-.memo-skel-line{height:11px;border-radius:6px;margin:12px 12px 0}
-.memo-skel-line.short{width:55%;margin-bottom:12px}
-.memo-skel-pill{flex:0 0 150px;height:82px;border-radius:18px}
-@media (max-width:520px){ .memo-skel-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px} }
 
 .sort-chip-row{
   flex:0 0 auto;
@@ -7771,7 +7792,9 @@ const THEMES = [
   { id:'cyber',    name:'ไซเบอร์พังก์',      swatches:['#d6249f','#22e5ff','#06040f'], tag:'มืด · นีออน', mode:'dark' },
    { id:'liquid', name:'ลิควิดกลาส', swatches:['#0a84ff','#5ac8fa','#e9f1ff'], tag:'สว่าง · ลิควิดกลาส', glass:true },
   { id:'line',      name:'ไลน์ ขาว',          swatches:['#111111','#06c755','#ffffff'], tag:'สว่าง · ขาว-ดำ สไตล์ไลน์' },
-  { id:'linenight', name:'ไลน์ ดำ',           swatches:['#06c755','#ffffff','#000000'], tag:'มืด · ขาว-ดำ สไตล์ไลน์', mode:'dark' }
+  { id:'linenight', name:'ไลน์ ดำ',           swatches:['#06c755','#ffffff','#000000'], tag:'มืด · ขาว-ดำ สไตล์ไลน์', mode:'dark' },
+  { id:'cib',      name:'CIB ตำรวจสอบสวนกลาง', swatches:['#002a5c','#ffd400','#fff9dc'], tag:'สว่าง · ชุดสี CIB' },
+  { id:'cibnight', name:'CIB ราตรี',           swatches:['#3a7bd5','#ffd400','#001a3a'], tag:'มืด · ชุดสี CIB', mode:'dark' }
 ];
 
 function currentTheme() {
@@ -15019,16 +15042,6 @@ function memoKpiHtml(all) {
   </div>`;
 } 
 
-function memoSkeletonHtml() {
-  const pills = Array.from({ length: 5 }, () => '<div class="skeleton-shimmer memo-skel-pill"></div>').join('');
-  const card = `<div class="glass memo-skel">
-    <div class="skeleton-shimmer memo-skel-img"></div>
-    <div class="skeleton-shimmer memo-skel-line"></div>
-    <div class="skeleton-shimmer memo-skel-line short"></div>
-  </div>`;
-  return `<div class="memo-kpi-strip">${pills}</div>
-    <div class="memo-skel-grid">${Array.from({ length: 6 }, () => card).join('')}</div>`;
-}
    
 function memoQuickActionsHtml(id) {
   return `<div class="memo-quick" data-qa="${escapeHtml(id)}">
@@ -15078,8 +15091,8 @@ async function renderMemos() {
   if (state.memoSort === undefined) state.memoSort = 'date_desc';
   if (state.memoMonth === undefined) state.memoMonth = 'all';
   if (state.memoLimit === undefined) state.memoLimit = MEMO_STEP;
-  const el = document.getElementById('view-memos');
-  el.innerHTML = memoSkeletonHtml();
+  // วาดทันทีจากข้อมูลที่มี แล้วอัปเดตอีกครั้งเมื่อโหลดเสร็จ (ไม่ใช้ skeleton)
+  drawMemos();
   try {
     state.memos = await apiGet('getMemos', { token: state.sessionToken });
   } catch (e) {
@@ -20468,7 +20481,7 @@ function acctAct(a) {
 }
 
 /* ธีมที่มีคู่สว่าง/มืดของตัวเอง; ธีมอื่นจะจำธีมล่าสุดของแต่ละโหมดไว้ */
-const THEME_PAIRS = { line: 'linenight', linenight: 'line' };
+const THEME_PAIRS = { line: 'linenight', linenight: 'line', cib: 'cibnight', cibnight: 'cib' };
 function toggleThemeMode() {
   const cur = currentTheme();
   const dark = isDarkTheme();
