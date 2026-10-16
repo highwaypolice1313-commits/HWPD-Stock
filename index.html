@@ -7135,6 +7135,40 @@ html, body{
 .ap-danger svg{ stroke:var(--bad); }
 .ap-danger:hover{ background:var(--bad-wash); }
 </style>
+
+<style id="notif-readall-v1">
+.notif-readall{
+  position:relative; overflow:hidden;
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  width:100%; height:48px; margin-top:14px; padding:0 18px; box-sizing:border-box;
+  border:none; border-radius:16px; cursor:pointer;
+  background:var(--navy); color:var(--panel);
+  font:inherit; font-size:14px; font-weight:600;
+  box-shadow:0 10px 22px -12px color-mix(in srgb,var(--navy-deep) 70%,transparent);
+  transition:transform .2s cubic-bezier(.2,.8,.2,1), box-shadow .25s ease;
+}
+/* แสงวิ่งผ่านตอนชี้ */
+.notif-readall::before{
+  content:""; position:absolute; inset:0; pointer-events:none;
+  background:linear-gradient(105deg, transparent 30%, color-mix(in srgb,var(--panel) 35%,transparent) 50%, transparent 70%);
+  transform:translateX(-100%); transition:transform .6s ease;
+}
+.notif-readall:hover::before{ transform:translateX(100%); }
+.notif-readall:hover{
+  transform:translateY(-1px);
+  box-shadow:0 16px 28px -12px color-mix(in srgb,var(--navy-deep) 80%,transparent);
+}
+.notif-readall:active{ transform:scale(.98); }
+.notif-readall:focus-visible{ outline:2px solid var(--gold); outline-offset:3px; }
+.notif-readall svg{
+  width:18px; height:18px; flex:none; fill:none; stroke:currentColor;
+  stroke-width:2; stroke-linecap:round; stroke-linejoin:round;
+  transition:transform .3s cubic-bezier(.2,.8,.2,1);
+}
+.notif-readall:hover svg{ transform:scale(1.15); }
+.notif-readall:disabled{ opacity:.45; cursor:default; transform:none; box-shadow:none; }
+.notif-readall:disabled::before{ display:none; }
+</style>   
    
 </head>
    
@@ -8926,7 +8960,7 @@ function openNotifications() {
           <button class="notif-go" data-nt="${i}" type="button">ดูงาน</button>
         </div>`).join('') : emptyState('ไม่มีรายการที่ต้องดำเนินการ')}
     </div>
-    <button class="notif-readall" id="notifReadAll" type="button">ทำเครื่องหมายว่าอ่านแล้วทั้งหมด</button>
+<button class="notif-readall" id="notifReadAll" type="button" ${list.length ? '' : 'disabled'}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7"/></svg><span>ทำเครื่องหมายว่าอ่านแล้วทั้งหมด</span></button>
   `, 'notif-sheet');
   document.querySelectorAll('#modalRoot [data-nt]').forEach(b => b.onclick = () => { const a = list[+b.dataset.nt]; closeSheet(); goAlert(a); });
   document.getElementById('notifReadAll').onclick = () => {
