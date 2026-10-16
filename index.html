@@ -6721,6 +6721,37 @@ html, body{
   #view-dashboard .dbx-stat{padding:14px 12px}
   #view-dashboard .dbx-stat-num{font-size:26px}
 }
+
+    /* ===== กระดิ่งแจ้งเตือน ===== */
+.notif-btn{ position:relative; }
+.notif-count{
+  position:absolute; top:-4px; right:-4px; min-width:18px; height:18px; padding:0 5px;
+  border-radius:99px; background:#ff3b30; color:#fff; border:2px solid var(--panel);
+  font-family:var(--font-num); font-size:9px; font-weight:700; line-height:1;
+  align-items:center; justify-content:center; pointer-events:none;
+}
+
+/* ===== ป้ายบทบาท: แสดงเป็นไอคอนวงกลม ไม่มีข้อความ ===== */
+.topbar .role-pill.role-icon{
+  width:30px !important; height:30px !important; min-width:30px !important;
+  padding:0 !important; border-radius:50% !important;
+  display:inline-flex !important; align-items:center !important; justify-content:center !important;
+  font-size:0 !important; line-height:0 !important; overflow:hidden !important;
+  position:relative; flex:none !important;
+}
+.topbar .role-pill.role-icon .role-text{ display:none !important; }
+.topbar .role-pill.role-icon::before{
+  content:""; width:14px; height:14px; background:currentColor; display:block;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7z'/%3E%3C/svg%3E") center/contain no-repeat;
+          mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7z'/%3E%3C/svg%3E") center/contain no-repeat;
+}
+.topbar .role-pill.role-icon:not(.viewer){ background:var(--navy) !important; color:#fff !important; box-shadow:0 4px 12px rgba(23,50,79,.25) !important; }
+.topbar .role-pill.role-icon.viewer{ background:var(--off-wash) !important; color:var(--off) !important; box-shadow:none !important; }
+
+/* ===== ซ่อนชื่อผู้ใช้บน topbar (ยังอยู่ใน DOM สำหรับการ์ดผู้ใช้ในเมนู) ===== */
+.topbar #profileName,
+.topbar .profile-name{ display:none !important; }
+    
 </style>
    
 </head>
@@ -6786,21 +6817,25 @@ html, body{
         <div class="brand-sub">ตำรวจทางหลวง</div>
       </div>
     </div>
-    <div class="profile">
-      <div class="desktop-tools">
-        <span class="connection-dot" id="connectionDot" title="สถานะการเชื่อมต่อ"></span>
-        <span class="last-sync" id="lastSync">ยังไม่ได้อัปเดต</span>
-        <button class="icon-btn command-trigger" id="commandBtn" type="button" title="ค้นหาด่วน (Ctrl+K)" aria-label="ค้นหาด่วน (Ctrl+K)"><svg viewBox="0 0 20 20" fill="none"><circle cx="8.7" cy="8.7" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M12.5 12.5l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
-        <button class="refresh-btn" id="refreshBtn" type="button" title="รีเฟรชข้อมูล" aria-label="รีเฟรชข้อมูล">
-          <svg viewBox="0 0 20 20" fill="none"><path d="M16 6.5A6.5 6.5 0 104.7 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M16 3.5v3h-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
-      </div>
-      <span class="role-pill" id="rolePill">…</span>
-      <span class="profile-name" id="profileName"></span>
-      <button class="icon-btn" id="btnLogout" title="ออกจากระบบ" aria-label="ออกจากระบบ">
-        <svg viewBox="0 0 20 20" fill="none"><path d="M8 3.5H5.5a1.5 1.5 0 00-1.5 1.5v10a1.5 1.5 0 001.5 1.5H8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M12.5 13.5L16.5 10l-4-3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M16.2 10H8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-      </button>
-    </div>
+<div class="profile">
+  <div class="desktop-tools">
+    <span class="connection-dot" id="connectionDot" title="สถานะการเชื่อมต่อ"></span>
+    <span class="last-sync" id="lastSync">ยังไม่ได้อัปเดต</span>
+    <button class="icon-btn command-trigger" id="commandBtn" type="button" title="ค้นหาด่วน (Ctrl+K)" aria-label="ค้นหาด่วน (Ctrl+K)"><svg viewBox="0 0 20 20" fill="none"><circle cx="8.7" cy="8.7" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M12.5 12.5l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+    <button class="refresh-btn" id="refreshBtn" type="button" title="รีเฟรชข้อมูล" aria-label="รีเฟรชข้อมูล">
+      <svg viewBox="0 0 20 20" fill="none"><path d="M16 6.5A6.5 6.5 0 104.7 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M16 3.5v3h-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
+  <button class="icon-btn notif-btn" id="notifBtn" type="button" title="การแจ้งเตือน" aria-label="การแจ้งเตือน">
+    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 3a4.5 4.5 0 00-4.5 4.5v2.3c0 .9-.3 1.8-.9 2.5L3.7 14.2h12.6l-.9-1.9c-.6-.7-.9-1.6-.9-2.5V7.5A4.5 4.5 0 0010 3z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M8.3 16.2a1.8 1.8 0 003.4 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+    <span class="notif-count" id="notifCount" style="display:none;"></span>
+  </button>
+  <span class="role-pill role-icon" id="rolePill" aria-label=""><span class="role-text">…</span></span>
+  <span class="profile-name" id="profileName"></span>
+  <button class="icon-btn" id="btnLogout" title="ออกจากระบบ" aria-label="ออกจากระบบ">
+    <svg viewBox="0 0 20 20" fill="none"><path d="M8 3.5H5.5a1.5 1.5 0 00-1.5 1.5v10a1.5 1.5 0 001.5 1.5H8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M12.5 13.5L16.5 10l-4-3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M16.2 10H8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+  </button>
+</div>
   </div>
 
   <div class="page" id="view-dashboard"></div>
@@ -18713,7 +18748,9 @@ document.addEventListener('pointerdown', e => {
   d.style.cssText = `width:${s}px;height:${s}px;left:${e.clientX - r.left - s/2}px;top:${e.clientY - r.top - s/2}px`;
   b.appendChild(d);
   setTimeout(() => d.remove(), 600);
-}, { passive: true });   
+}, { passive: true });
+
+document.getElementById('notifBtn')?.addEventListener('click', openNotifications);
 
 init();   // <-- ของเดิม คงไว้ตามเดิม
 /* ===== จดจำตำแหน่งเลื่อนของหน้า ===== */
