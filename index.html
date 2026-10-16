@@ -11347,22 +11347,36 @@ function filterRoundBtnHtml(id, count) {
     ${count ? `<span class="ax-badge">${count}</span>` : ''}</button>`;
 }
 function openFilterSheet(title, groups, onPick, onReset) {
+  const sel = {};
+  groups.forEach(g => { sel[g.key] = g.current; });
   showSheet(`
     <div class="sheet-title">${escapeHtml(title)}</div>
     ${groups.map(g => `
       <div class="fs-label">${escapeHtml(g.label)}</div>
       <div class="ax-pills fs-wrap">
-        ${g.options.map(([v, t]) => `<button type="button" class="ax-pill ${g.current === v ? 'active' : ''}" data-fs-k="${escapeHtml(g.key)}" data-fs-v="${escapeHtml(v)}">${escapeHtml(t)}${g.current === v ? ' ✓' : ''}</button>`).join('')}
+        ${g.options.map(([v, t]) => `<button type="button" class="ax-pill ${g.current === v ? 'active' : ''}" data-fs-k="${escapeHtml(g.key)}" data-fs-v="${escapeHtml(v)}" data-fs-t="${escapeHtml(t)}">${escapeHtml(t)}${g.current === v ? ' ✓' : ''}</button>`).join('')}
       </div>`).join('')}
     <div class="btn-row">
       ${onReset ? '<button class="btn btn-ghost" id="fsReset">ล้างตัวกรอง</button>' : ''}
-      <button class="btn btn-ghost" id="fsClose">ปิด</button>
+      <button class="btn btn-primary" id="fsApply">ดูผลลัพธ์</button>
     </div>`);
-  document.querySelectorAll('#modalRoot [data-fs-v]').forEach(b => b.onclick = () => {
-    closeSheet();
-    onPick(b.dataset.fsK, b.dataset.fsV);
+
+  // เลือกได้หลายกลุ่มก่อน ยังไม่ใช้ผลจนกว่าจะกด "ดูผลลัพธ์"
+  document.querySelectorAll('#modalRoot [data-fs-v]').forEach(btn => btn.onclick = () => {
+    const k = btn.dataset.fsK;
+    sel[k] = btn.dataset.fsV;
+    document.querySelectorAll(`#modalRoot [data-fs-k="${k}"]`).forEach(x => {
+      const on = x.dataset.fsV === sel[k];
+      x.classList.toggle('active', on);
+      x.textContent = x.dataset.fsT + (on ? ' ✓' : '');
+    });
   });
-  document.getElementById('fsClose').onclick = closeSheet;
+
+  document.getElementById('fsApply').onclick = () => {
+    const changed = groups.filter(g => sel[g.key] !== g.current);
+    closeSheet();
+    changed.forEach(g => onPick(g.key, sel[g.key]));
+  };
   const rb = document.getElementById('fsReset');
   if (rb) rb.onclick = () => { closeSheet(); onReset(); };
 }
@@ -14061,39 +14075,22 @@ const MEMO_SORT_LABEL = {
   subject_asc: 'เรื่อง ก-ฮ'
 };
 function openMemoSortSheet() {
-  const opts = [
-    ['date_desc', 'วันที่ล่าสุดก่อน'],
-    ['date_asc', 'วันที่เก่าสุดก่อน'],
-    ['subject_asc', 'เรื่อง ก-ฮ']
-  ];
-  showSheet(`
-    <div class="sheet-title">เรียงลำดับเอกสาร</div>
-    <div class="ax-pills" style="flex-direction:column;align-items:stretch;gap:8px;">
-      ${opts.map(([v, t]) => `
-        <button type="button" class="ax-pill ${state.memoSort === v ? 'active' : ''}" data-ms="${v}" style="justify-content:space-between;width:100%;">
-          ${t}${state.memoSort === v ? ' ✓' : ''}
-        </button>`).join('')}
-    </div>
-    <div class="btn-row">
-      <button class="btn btn-ghost" id="msReset">ล้างตัวกรอง</button>
-      <button class="btn btn-ghost" id="msClose">ปิด</button>
-    </div>
-  `);
-  document.querySelectorAll('[data-ms]').forEach(b => b.onclick = () => {
-    state.memoSort = b.dataset.ms;
-    closeSheet();
+  openFilterSheet('เรียงลำดับเอกสาร', [
+    { key: 'sort', label: 'เรียงลำดับ', current: state.memoSort, options: [
+      ['date_desc', 'วันที่ล่าสุดก่อน'],
+      ['date_asc', 'วันที่เก่าสุดก่อน'],
+      ['subject_asc', 'เรื่อง ก-ฮ']
+    ] }
+  ], (k, v) => {
+    state.memoSort = v;
     drawMemos();
-  });
-  document.getElementById('msClose').onclick = closeSheet;
-  document.getElementById('msReset').onclick = () => {
+  }, () => {
     state.memoSort = 'date_desc';
     state.memoMonth = 'all';
-    closeSheet();
     drawMemos();
-  };
+  });
 }
 
-/* ---- ป้ายชิปเดือนแบบสั้น เช่น "มิ.ย. 69" ---- */
 function memoMonthChipLabel(key) {
   if (key === 'unknown') return 'ไม่ระบุ';
   const [y, m] = key.split('-');
