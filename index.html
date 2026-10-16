@@ -6989,6 +6989,45 @@ html, body{
 /* เมนูบัญชี (bottom sheet) */
 .acct-meta{ font-size:12.5px; color:var(--ink-dim); margin:-4px 0 14px; }
 </style>   
+
+   <style id="topbar-capsule-v2">
+/* ปุ่มบัญชีเป็นชื่อเต็มแบบ pill */
+.topbar .cap-avatar{
+  height:34px; width:auto; max-width:150px; padding:0 14px; margin-left:4px;
+  border-radius:99px; font-size:12.5px; font-weight:600; line-height:34px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:center;
+  transition:transform .15s ease, box-shadow .2s ease;
+}
+@media (max-width:899px){
+  .topbar .cap-avatar{ display:block !important; }
+}
+.topbar .cap-avatar:hover{ box-shadow:0 4px 12px color-mix(in srgb,var(--navy-deep) 30%,transparent); }
+.topbar .cap-avatar:active{ transform:scale(.96); }
+
+/* ปุ่มในแคปซูล: มีการตอบสนองเมื่อกด */
+.topbar .capsule > button{ transition:transform .15s ease, background .2s ease; }
+.topbar .capsule > button:active{ transform:scale(.9); }
+
+/* ค้นหา: ขยายไอคอนเล็กน้อยเมื่อชี้ */
+.topbar #commandBtn svg{ transition:transform .2s ease; }
+.topbar #commandBtn:hover svg{ transform:scale(1.12); }
+
+/* รีเฟรช: หมุนไอคอนเมื่อชี้ และหมุนต่อเนื่องตอนกด */
+.topbar #refreshBtn svg{ transition:transform .55s cubic-bezier(.2,.7,.2,1); }
+.topbar #refreshBtn:hover svg{ transform:rotate(180deg); }
+.topbar #refreshBtn.is-spinning svg{ animation:dbxSpin .7s linear infinite; }
+@keyframes dbxSpin{ to{ transform:rotate(360deg); } }
+
+/* กระดิ่ง: แกว่งเบา ๆ เมื่อชี้ */
+.topbar #notifBtn svg{ transform-origin:50% 10%; }
+.topbar #notifBtn:hover svg{ animation:dbxBell .6s ease; }
+@keyframes dbxBell{
+  0%,100%{ transform:rotate(0); }
+  25%{ transform:rotate(-14deg); }
+  50%{ transform:rotate(12deg); }
+  75%{ transform:rotate(-6deg); }
+}
+</style>
    
 </style>
    
@@ -8490,7 +8529,12 @@ function exportCsv(filename, headers, rows) {
 
 /* ========================================================= TABS */
 document.querySelectorAll('.tab[data-tab]').forEach(btn => { btn.addEventListener('click', () => renderTab(btn.dataset.tab)); });
-document.getElementById('refreshBtn')?.addEventListener('click', () => location.reload());
+document.getElementById('refreshBtn')?.addEventListener('click', e => {
+  const b = e.currentTarget;
+  if (b.classList.contains('is-spinning')) return;
+  b.classList.add('is-spinning');
+  setTimeout(() => location.reload(), 600);
+});
 window.addEventListener('online', () => setConnection(true));
 window.addEventListener('offline', () => { setConnection(false); toast('ขณะนี้อุปกรณ์ออฟไลน์'); });
 
@@ -19083,12 +19127,12 @@ document.getElementById('notifBtn')?.addEventListener('click', openNotifications
 
 document.getElementById('notifBtn')?.addEventListener('click', openNotifications);
 
-/* รูปผู้ใช้: แสดงตัวอักษรแรกของชื่อ */
-(function syncAvatar(){
+/* ปุ่มบัญชี: แสดงชื่อเต็มผู้ใช้ */
+(function syncAcct(){
   const name = document.getElementById('profileName');
   const av = document.getElementById('avatarBtn');
   if (!name || !av) return;
-  const up = () => { const t = name.textContent.trim(); av.textContent = t ? t.charAt(0) : '?'; };
+  const up = () => { av.textContent = name.textContent.trim() || 'ผู้ใช้งาน'; };
   up();
   new MutationObserver(up).observe(name, {childList:true, characterData:true, subtree:true});
 })();
