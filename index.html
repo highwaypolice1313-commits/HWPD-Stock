@@ -15128,7 +15128,7 @@ async function renderMemos() {
     // วาดซ้ำเฉพาะเมื่อข้อมูลเปลี่ยนจริง จะได้ไม่กระพริบหรือเด้งแอนิเมชันซ้ำ
     if (changed || !hasCache) {
       drawMemos();
-      applyPremiumMotion(document.getElementById('view-memos'));
+
     }
   } catch (e) {
     toast('โหลดเอกสารไม่สำเร็จ: ' + (e.message || ''));
@@ -15249,6 +15249,7 @@ function wireMemoListEvents(isGrid) {
       if (m && thumb && !thumb.dataset.mounted) {
         thumb.dataset.mounted = '1';
         mountPaper(thumb, wrapPfDoc(m['เนื้อหาเอกสาร(HTML)'], false));
+        thumb.classList.add('ready');
         if (thumbRO) thumbRO.observe(thumb);
       }
     };
@@ -20863,6 +20864,10 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   }, true);
 })();
 </script>
+<style id="user-fixes-memo-thumb">
+.memo-thumb .paper-scale{ opacity:0; transition:opacity .25s ease; }
+.memo-thumb.ready .paper-scale{ opacity:1; }
+</style>   
  
 </body>
 </html>
