@@ -7030,6 +7030,53 @@ html, body{
 </style>
    
 </style>
+
+<style id="topbar-unified-v3">
+/* แถบด้านบนเหมือนกันทุกขนาดจอ */
+.topbar .desktop-tools,
+.topbar #rolePill,
+.topbar #profileName,
+.topbar #btnLogout{ display:none !important; }
+
+.topbar .capsule{ height:44px; padding:4px; gap:2px; }
+.topbar .capsule > button{ width:38px; height:38px; }
+.topbar .cap-sep{ margin:0 4px; }
+
+/* โปรไฟล์กลม สีตามธีม */
+.topbar .cap-avatar{
+  display:grid !important; place-items:center;
+  width:36px; height:36px; min-width:36px; max-width:none;
+  padding:0; margin:0 0 0 2px; border:none; border-radius:50% !important;
+  background:var(--navy); color:var(--panel);
+  font-family:inherit; font-size:15px; font-weight:600; line-height:1;
+  box-shadow:0 4px 10px color-mix(in srgb,var(--navy-deep) 25%,transparent);
+  transition:transform .2s ease, box-shadow .2s ease;
+}
+.topbar .cap-avatar:hover{ transform:scale(1.06); }
+.topbar .cap-avatar:active{ transform:scale(.94); }
+
+/* รีเฟรช: วงแหวนขยายออก และหมุนหนึ่งรอบ */
+.topbar #refreshBtn{ overflow:visible; }
+.topbar #refreshBtn::after{
+  content:""; position:absolute; inset:0; border-radius:50%;
+  border:2px solid var(--navy); opacity:0; pointer-events:none;
+}
+.topbar #refreshBtn svg{
+  transform-box:view-box; transform-origin:50% 50%;
+  transition:transform .35s ease;
+}
+.topbar #refreshBtn:hover svg{ transform:rotate(-30deg); }
+.topbar #refreshBtn.is-refreshing::after{ animation:dbxRing .6s ease-out forwards; }
+.topbar #refreshBtn.is-refreshing svg{ animation:dbxTurn .6s cubic-bezier(.4,0,.2,1) forwards; }
+@keyframes dbxRing{
+  from{ transform:scale(.7); opacity:.8; }
+  to{ transform:scale(1.7); opacity:0; }
+}
+@keyframes dbxTurn{
+  from{ transform:rotate(0); }
+  to{ transform:rotate(360deg); }
+}
+</style>   
    
 </head>
    
@@ -7101,7 +7148,7 @@ html, body{
   </div>
   <div class="capsule" id="topCapsule">
     <button class="icon-btn command-trigger" id="commandBtn" type="button" title="ค้นหาด่วน (Ctrl+K)" aria-label="ค้นหาด่วน (Ctrl+K)"><svg viewBox="0 0 20 20" fill="none"><circle cx="8.7" cy="8.7" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M12.5 12.5l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
-    <button class="refresh-btn" id="refreshBtn" type="button" title="รีเฟรชข้อมูล" aria-label="รีเฟรชข้อมูล"><svg viewBox="0 0 20 20" fill="none"><path d="M16 6.5A6.5 6.5 0 104.7 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M16 3.5v3h-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <button class="refresh-btn" id="refreshBtn" type="button" title="รีเฟรชข้อมูล" aria-label="รีเฟรชข้อมูล"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19.5 12a7.5 7.5 0 11-2.2-5.3"/><path d="M19.5 4.5v4h-4"/></svg></button>
     <button class="icon-btn notif-btn" id="notifBtn" type="button" title="การแจ้งเตือน" aria-label="การแจ้งเตือน"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 3a4.5 4.5 0 00-4.5 4.5v2.3c0 .9-.3 1.8-.9 2.5L3.7 14.2h12.6l-.9-1.9c-.6-.7-.9-1.6-.9-2.5V7.5A4.5 4.5 0 0010 3z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M8.3 16.2a1.8 1.8 0 003.4 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg><span class="notif-count" id="notifCount" style="display:none;"></span></button>
     <span class="cap-sep"></span>
     <button class="cap-avatar" id="avatarBtn" type="button" aria-label="บัญชีผู้ใช้">?</button>
@@ -8531,9 +8578,9 @@ function exportCsv(filename, headers, rows) {
 document.querySelectorAll('.tab[data-tab]').forEach(btn => { btn.addEventListener('click', () => renderTab(btn.dataset.tab)); });
 document.getElementById('refreshBtn')?.addEventListener('click', e => {
   const b = e.currentTarget;
-  if (b.classList.contains('is-spinning')) return;
-  b.classList.add('is-spinning');
-  setTimeout(() => location.reload(), 600);
+  if (b.classList.contains('is-refreshing')) return;
+  b.classList.add('is-refreshing');
+  setTimeout(() => location.reload(), 650);
 });
 window.addEventListener('online', () => setConnection(true));
 window.addEventListener('offline', () => { setConnection(false); toast('ขณะนี้อุปกรณ์ออฟไลน์'); });
@@ -19127,12 +19174,17 @@ document.getElementById('notifBtn')?.addEventListener('click', openNotifications
 
 document.getElementById('notifBtn')?.addEventListener('click', openNotifications);
 
-/* ปุ่มบัญชี: แสดงชื่อเต็มผู้ใช้ */
+/* ตัวอักษรในวงกลมโปรไฟล์: แอดมินใช้ "อ" ผู้ใช้อื่นใช้อักษรแรกของชื่อ */
+const ADMIN_INITIAL = 'อ';
 (function syncAcct(){
   const name = document.getElementById('profileName');
   const av = document.getElementById('avatarBtn');
   if (!name || !av) return;
-  const up = () => { av.textContent = name.textContent.trim() || 'ผู้ใช้งาน'; };
+  const up = () => {
+    const t = name.textContent.trim();
+    av.textContent = state.role === 'admin' ? ADMIN_INITIAL : (t.charAt(0) || '?');
+    av.title = t || 'ผู้ใช้งาน';
+  };
   up();
   new MutationObserver(up).observe(name, {childList:true, characterData:true, subtree:true});
 })();
