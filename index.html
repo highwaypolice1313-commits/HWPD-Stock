@@ -20834,5 +20834,88 @@ button:disabled{cursor:not-allowed}
 }
 </style>
 
+
+<style id="cib-reference-detail-fixes-v2">
+/* Targeted CIB visual fixes only; no application logic changed. */
+/* 1,5,6: icons without a frame use yellow; framed icons get a yellow frame and navy glyph. */
+:root[data-theme="cibnight"] .shortcut-icon,
+:root[data-theme="cibnight"] .quick-action-icon,
+:root[data-theme="cibnight"] .memo-quick .icon-btn,
+:root[data-theme="cibnight"] .more-ico,
+:root[data-theme="cibnight"] .nav-icon,
+:root[data-theme="cibnight"] .action-icon,
+:root[data-theme="cibnight"] .tile-icon,
+:root[data-theme="cibnight"] .dbx-tile-icon,
+:root[data-theme="cibnight"] .rsc-icon,
+:root[data-theme="cibnight"] .cu-icon,
+:root[data-theme="cibnight"] .asset-card-icon,
+:root[data-theme="cib"] .asset-card-icon{
+  color:#ffd400!important;
+}
+:root[data-theme="cibnight"] .shortcut-icon:not(.has-frame),
+:root[data-theme="cibnight"] .quick-action-icon:not(.has-frame),
+:root[data-theme="cibnight"] .more-ico:not(.framed),
+:root[data-theme="cibnight"] .nav-icon:not(.framed),
+:root[data-theme="cibnight"] .action-icon:not(.framed),
+:root[data-theme="cibnight"] .tile-icon:not(.framed),
+:root[data-theme="cibnight"] .dbx-tile-icon:not(.framed){background:transparent!important;border-color:transparent!important;color:#ffd400!important;}
+:root[data-theme="cibnight"] .shortcut-icon.has-frame,
+:root[data-theme="cibnight"] .quick-action-icon.has-frame,
+:root[data-theme="cibnight"] .more-ico.framed,
+:root[data-theme="cibnight"] .nav-icon.framed,
+:root[data-theme="cibnight"] .action-icon.framed,
+:root[data-theme="cibnight"] .tile-icon.framed,
+:root[data-theme="cibnight"] .dbx-tile-icon.framed,
+:root[data-theme="cibnight"] #view-assets .asset-card-icon,
+:root[data-theme="cib"] #view-assets .asset-card-icon{
+  background:#ffd400!important;border:1px solid #ffd400!important;color:#002a5c!important;
+}
+/* The inventory card icon should match the framed icon treatment on Borrow/Return. */
+:root[data-theme="cib"] .asset-grid .ba-card .asset-card-icon,
+:root[data-theme="cibnight"] .asset-grid .ba-card .asset-card-icon{
+  background:#ffd400!important;border:1px solid #ffd400!important;color:#002a5c!important;
+  border-radius:12px!important;
+}
+/* 2,7: preserve the coloured top band on police roster card view. */
+:root[data-theme="cib"] #view-users .off-card-band{background-color:#002a5c!important;background-image:linear-gradient(180deg,#002a5c,#001a3a)!important;}
+:root[data-theme="cibnight"] #view-users .off-card-band{background-color:#ffd400!important;background-image:linear-gradient(180deg,#ffd400,#e6bf00)!important;}
+/* 3: month chips in the requisition-document page remain legible in both views. */
+:root[data-theme="cibnight"] .memo-month-chip,
+:root[data-theme="cibnight"] .memo-month-chip b{color:#fff!important;}
+:root[data-theme="cibnight"] .memo-month-chip.on{background:#002a5c!important;border-color:#ffd400!important;color:#fff!important;}
+:root[data-theme="cibnight"] .memo-month-chip.on b{color:#fff!important;}
+:root[data-theme="cib"] .memo-month-chip.on{background:#002a5c!important;border-color:#002a5c!important;color:#fff!important;}
+:root[data-theme="cib"] .memo-month-chip.on b{color:#fff!important;}
+/* 4,8: report charts use navy + yellow; report controls use navy text, selected state yellow. */
+:root[data-theme="cib"] #view-reports,
+:root[data-theme="cibnight"] #view-reports{--chart-line:#ffd400;--chart-bar:#002a5c;--chart-edge:#002a5c;--ok:#002a5c;--info:#002a5c;}
+:root[data-theme="cib"] #view-reports .chip,
+:root[data-theme="cib"] #view-reports .seg-btn,
+:root[data-theme="cib"] #view-reports .tab-btn,
+:root[data-theme="cib"] #view-reports .filter-btn,
+:root[data-theme="cib"] #view-reports button,
+:root[data-theme="cibnight"] #view-reports .chip,
+:root[data-theme="cibnight"] #view-reports .seg-btn,
+:root[data-theme="cibnight"] #view-reports .tab-btn,
+:root[data-theme="cibnight"] #view-reports .filter-btn,
+:root[data-theme="cibnight"] #view-reports button{color:#002a5c!important;}
+:root[data-theme="cib"] #view-reports .chip.active,
+:root[data-theme="cib"] #view-reports .seg-btn.active,
+:root[data-theme="cib"] #view-reports .tab-btn.active,
+:root[data-theme="cib"] #view-reports .filter-btn.active,
+:root[data-theme="cib"] #view-reports button.active,
+:root[data-theme="cibnight"] #view-reports .chip.active,
+:root[data-theme="cibnight"] #view-reports .seg-btn.active,
+:root[data-theme="cibnight"] #view-reports .tab-btn.active,
+:root[data-theme="cibnight"] #view-reports .filter-btn.active,
+:root[data-theme="cibnight"] #view-reports button.active{background:#ffd400!important;border-color:#ffd400!important;color:#002a5c!important;}
+:root[data-theme="cib"] #view-reports .k-num,
+:root[data-theme="cib"] #view-reports .rp-kpi .value,
+:root[data-theme="cibnight"] #view-reports .k-num,
+:root[data-theme="cibnight"] #view-reports .rp-kpi .value{color:#002a5c!important;}
+:root[data-theme="cibnight"] #view-reports .k-num,
+:root[data-theme="cibnight"] #view-reports .rp-kpi .value{color:#ffd400!important;}
+</style>
+
 </body>
 </html>
