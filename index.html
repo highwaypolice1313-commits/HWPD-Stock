@@ -2708,6 +2708,9 @@ html{scroll-behavior:smooth;}
   transition:left .26s cubic-bezier(.2,.8,.2,1);
 }
 .sw-wrap.sw-drag > .list-item{ transition:none; }
+/* แถวจนท.ในสังกัด (มุมมองรายการ) ใช้กลไกปัดเดียวกับรายการอื่น */
+.sw-wrap > .off-row{ position:relative; z-index:1; margin-bottom:0 !important; touch-action:pan-y; user-select:none; -webkit-user-select:none; transition:left .26s cubic-bezier(.2,.8,.2,1); }
+.sw-wrap.sw-drag > .off-row{ transition:none; }
 .sw-wrap.sw-active{ overflow:hidden; }
 
 .sw-actions{
@@ -9933,9 +9936,8 @@ const BORROW_SWIPE = {
 };
 
 const USER_SWIPE = {
-  selector: '.list-item.user-item',
-  find: id => state.users.find(u =>
-    (officerId(u) || u['LINEUserId'] || u['ชื่อผู้ใช้'] || u['ชื่อ-สกุล']) === id),
+  selector: '.off-row.user-item',
+  find: id => (state.users || []).find(u => offKey(u) === id),
   buttons: () => swBtn('ok', ICONS.edit, 'แก้ไข', 'edit') + swBtn('danger', ICONS.trash, 'ลบ', 'del'),
   run: (act, u) => {
     if (act === 'edit') openUserForm(u);
@@ -20678,6 +20680,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   var timers = new WeakMap();
   function findTarget(node){
     if (!node || !node.closest) return null;
+    if (node.closest('.tabbar, .tab-pill, .nav-collapse-btn')) return null;
     var el = node.closest(SEL);
     if (!el || el.matches(NO) || el.disabled || el.getAttribute('aria-disabled') === 'true') return null;
     return el;
