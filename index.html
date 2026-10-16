@@ -7375,7 +7375,26 @@ html, body{
 .stg-seg.done{background:var(--ok);}
 .asset-card .stg{margin-top:14px;padding-top:12px;border-top:1px dashed var(--panel-line);}
 </style>
+<style>
+/* ===== มุมมองการ์ด: แบบ B+A (หัวการ์ดพื้นอ่อน + โครงแนวนอน) ===== */
+.asset-grid{ grid-template-columns:1fr !important; gap:14px; }
+@media (min-width:900px){ .asset-grid{ grid-template-columns:repeat(2,minmax(0,1fr)) !important; } }
+.asset-grid .glass.ba-card{ padding:0; overflow:hidden; border-radius:24px; background:var(--panel); border:1px solid var(--panel-line); box-shadow:0 12px 32px rgba(22,32,43,.08); }
+.ba-card .ba-head{ padding:16px; background:linear-gradient(160deg, var(--navy-wash), var(--panel-hi)); display:flex; gap:14px; align-items:center; }
+.ba-card .asset-card-icon{ width:58px; height:58px; border-radius:20px; background:linear-gradient(150deg, var(--gold), var(--gold-deep)); color:#fff; box-shadow:0 10px 20px color-mix(in srgb, var(--gold-deep) 30%, transparent); flex:none; }
+.ba-card .ba-txt{ flex:1; min-width:0; }
+.ba-card .asset-card-title{ font-size:16.5px; font-weight:600; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ba-card .ax-sn{ font-size:12px; color:var(--ink-dim); margin-top:4px; }
+.ba-card .ba-head .status-badge, .ba-card .ba-head .ax-st{ flex:none; }
+.ba-body{ padding:14px 16px 16px; }
+.ba-cells{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.ba-cell{ background:var(--panel-soft); border-radius:14px; padding:10px 12px; min-width:0; }
+.ba-cell small{ display:block; font-size:10.5px; color:var(--ink-faint); }
+.ba-cell b{ display:block; font-size:13.5px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ba-body .stg{ margin-top:14px; border:0; padding-top:0; }
+</style>
 </head>
+
 
    
 <body>
@@ -9610,15 +9629,21 @@ function assetRowHtml(a) {
 /* มุมมองการ์ด: 1 การ์ด = 1 ครุภัณฑ์ */
 function assetCardHtml(a) {
   const c = ASSET_STATUS_COLOR[a['สถานะ']] || 'var(--ink-dim)';
-  return `<div class="glass asset-card asset-item" data-id="${escapeHtml(a['รหัสครุภัณฑ์'])}">
-    <div class="asset-card-top">
+  const owner = a['ผู้ครอบครอง/หน่วยงาน'] || 'คลังพัสดุ';
+  return `<div class="glass asset-card ba-card asset-item" data-id="${escapeHtml(a['รหัสครุภัณฑ์'])}">
+    <div class="ba-head">
       <div class="asset-card-icon">${catIcon(a['หมวดหมู่'])}</div>
+      <div class="ba-txt">
+        <div class="asset-card-title">${escapeHtml(a['ชื่อครุภัณฑ์'])}</div>
+        <div class="ax-sn">${assetSerialHtml(a)}</div>
+      </div>
       <div class="ax-st" style="--c:${c};">${escapeHtml(a['สถานะ'])}</div>
     </div>
-    <div>
-      <div class="asset-card-title">${escapeHtml(a['ชื่อครุภัณฑ์'])}</div>
-      <div class="ax-sn">${assetSerialHtml(a)}</div>
-      <div class="asset-card-sub">${escapeHtml(a['ผู้ครอบครอง/หน่วยงาน'] || 'คลังพัสดุ')}</div>
+    <div class="ba-body">
+      <div class="ba-cells">
+        <div class="ba-cell"><small>ผู้ครอบครอง</small><b>${escapeHtml(owner)}</b></div>
+        <div class="ba-cell"><small>หมวดหมู่</small><b>${escapeHtml(a['หมวดหมู่'] || '-')}</b></div>
+      </div>
       ${assetWarnHtml(a)}
     </div>
   </div>`;
@@ -11546,19 +11571,25 @@ function sortChipInRowHtml(id, label) {
 function borrowCard(b) {
   const eff = effectiveBorrowStatus(b);
   const info = borrowDaysInfo(b);
-  return `<div class="glass asset-card borrow-item" data-id="${escapeHtml(b['รหัสรายการ'])}">
-    <div class="asset-card-top">
+  return `<div class="glass asset-card ba-card borrow-item" data-id="${escapeHtml(b['รหัสรายการ'])}">
+    <div class="ba-head">
       <div class="asset-card-icon">${ICONS.swap}</div>
+      <div class="ba-txt">
+        <div class="asset-card-title">${escapeHtml(b['ชื่อครุภัณฑ์'])}</div>
+        <div class="ax-sn">${escapeHtml(b['รหัสครุภัณฑ์'] || '')}</div>
+      </div>
       <div class="status-badge ${statusClass(eff)}">${escapeHtml(eff)}</div>
     </div>
-    <div>
-      <div class="asset-card-title">${escapeHtml(b['ชื่อครุภัณฑ์'])}</div>
+    <div class="ba-body">
+      <div class="ba-cells">
+        <div class="ba-cell"><small>ผู้ยืม</small><b>${escapeHtml(b['ผู้ยืม'] || '-')}</b></div>
+        <div class="ba-cell"><small>กำหนดคืน</small><b>${info ? escapeHtml(info) : systemDate(b['กำหนดคืน'])}</b></div>
+      </div>
       ${stageHtml(borrowStageIdx(b), BORROW_STAGES)}
-      <div class="asset-card-sub">${escapeHtml(b['ผู้ยืม'])}</div>
-      ${info ? `<div class="asset-card-sub">${escapeHtml(info)}</div>` : ''}
     </div>
   </div>`;
 }
+
 function effectiveBorrowStatus(b) {
   if (b['สถานะ'] === 'คืนแล้ว' || b['สถานะ'] === 'รออนุมัติ' || b['สถานะ'] === 'ถูกปฏิเสธ') return b['สถานะ'];
   const due = toDate(b['กำหนดคืน']);
@@ -12501,19 +12532,25 @@ function maintRow(m) {
   </div>`;
 }
 function maintCard(m) {
-  return `<div class="glass asset-card maint-item" data-id="${escapeHtml(m['รหัสรายการ'])}">
-    <div class="asset-card-top">
+  return `<div class="glass asset-card ba-card maint-item" data-id="${escapeHtml(m['รหัสรายการ'])}">
+    <div class="ba-head">
       <div class="asset-card-icon">${ICONS.wrench}</div>
+      <div class="ba-txt">
+        <div class="asset-card-title">${escapeHtml(m['ชื่อครุภัณฑ์'])}</div>
+        <div class="ax-sn">${escapeHtml(m['รหัสครุภัณฑ์'] || '')}</div>
+      </div>
       <div class="status-badge ${statusClass(m['สถานะ'])}">${escapeHtml(m['สถานะ'])}</div>
     </div>
-    <div>
-      <div class="asset-card-title">${escapeHtml(m['ชื่อครุภัณฑ์'])}</div>
+    <div class="ba-body">
+      <div class="ba-cells">
+        <div class="ba-cell"><small>อาการ/ปัญหา</small><b>${escapeHtml(m['อาการ/ปัญหา'] || '-')}</b></div>
+        <div class="ba-cell"><small>แจ้งเมื่อ</small><b>${systemDate(m['วันที่แจ้ง'])}</b></div>
+      </div>
       ${stageHtml(maintStageIdx(m), MAINT_STAGES)}
-      <div class="asset-card-sub">${escapeHtml(m['อาการ/ปัญหา'])}</div>
-      <div class="asset-card-sub">แจ้งเมื่อ ${systemDate(m['วันที่แจ้ง'])}</div>
     </div>
   </div>`;
 }
+
 function openMaintDetail(id) {
   const m = state.maint.find(x => x['รหัสรายการ'] === id);
   if (!m) return;
