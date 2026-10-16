@@ -20715,5 +20715,48 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   document.addEventListener('scroll', function(){ up(); }, { capture: true, passive: true });
 })();
 </script>
+<style id="cibThemeFlat">
+/* ===== ธีม CIB สว่าง/มืด: ใช้ชุดสี 7 สี (เหลือง กรมท่า เทา ขาว ดำ เขียว แดง) ไม่ไล่สี ไม่มีเงา; อนิเมชันคงเดิม ===== */
+:root[data-theme="cib"]{
+  --bg-0:#f2f3f5; --bg-1:#ffffff; --dawn-1:#ffffff; --dawn-2:#f2f3f5; --dawn-3:#f2f3f5; --dawn-4:#e6e8ec;
+  --panel:#ffffff; --panel-soft:#f2f3f5; --panel-line:#d9dce1; --panel-hi:#ffffff;
+  --ink:#111111; --ink-dim:#5f6670; --ink-faint:#8a929e;
+  --navy:#002a5c; --navy-deep:#002a5c; --navy-wash:rgba(0,42,92,.08); --navy-line:rgba(0,42,92,.25);
+  --gold:#ffd400; --gold-deep:#002a5c; --gold-wash:rgba(255,212,0,.28); --gold-line:rgba(255,212,0,.7);
+  --side-1:#002a5c; --side-2:#002a5c; --topbar-bg:#ffffff;
+  --ok:#1e8e3e; --ok-wash:rgba(30,142,62,.12);
+  --warn:#002a5c; --warn-wash:rgba(255,212,0,.35);
+  --bad:#d93025; --bad-wash:rgba(217,48,37,.12);
+  --off:#8a929e; --off-wash:rgba(138,146,158,.16);
+  --info:#002a5c; --info-wash:rgba(0,42,92,.10);
+  --c1:#002a5c; --c2:#ffd400; --c3:#8a929e; --c4:#111111; --c5:#1e8e3e; --c6:#d93025;
+  --chart-line:#002a5c; --chart-bar:#ffd400;
+  --shadow-sm:none; --shadow-md:none; --shadow-lg:none;
+}
+:root[data-theme="cibnight"]{
+  --bg-0:#0a0c10; --bg-1:#0a0c10; --dawn-1:#0a0c10; --dawn-2:#0a0c10; --dawn-3:#0a0c10; --dawn-4:#0a0c10;
+  --panel:#1a1e26; --panel-soft:#14171d; --panel-line:#2e3440; --panel-hi:#1a1e26;
+  --ink:#ffffff; --ink-dim:#a4abb7; --ink-faint:#7a828e;
+  --navy:#2a5aa0; --navy-deep:#002a5c; --navy-wash:rgba(42,90,160,.22); --navy-line:rgba(42,90,160,.55);
+  --gold:#ffd400; --gold-deep:#ffd400; --gold-wash:rgba(255,212,0,.16); --gold-line:rgba(255,212,0,.5);
+  --side-1:#002a5c; --side-2:#0a0c10; --sheet-bg:#1a1e26; --opt-bg:#1a1e26; --topbar-bg:#002a5c;
+  --icon:#ffd400; --icon-bg:rgba(255,212,0,.14);
+  --ok:#3dbe5a; --ok-wash:rgba(61,190,90,.16);
+  --warn:#ffd400; --warn-wash:rgba(255,212,0,.18);
+  --bad:#ff6b5e; --bad-wash:rgba(255,107,94,.16);
+  --off:#8a929e; --off-wash:rgba(138,146,158,.18);
+  --info:#ffd400; --info-wash:rgba(255,212,0,.14);
+  --c1:#ffd400; --c2:#8a929e; --c3:#2a5aa0; --c4:#ffffff; --c5:#3dbe5a; --c6:#ff6b5e;
+  --chart-line:#ffd400; --chart-bar:#2a5aa0;
+  --shadow-sm:none; --shadow-md:none; --shadow-lg:none;
+}
+:root[data-theme="cib"] *:not([class*="skeleton"]):not([class*="spinner"]),
+:root[data-theme="cibnight"] *:not([class*="skeleton"]):not([class*="spinner"]){
+  box-shadow:none !important; text-shadow:none !important; background-image:none !important;
+}
+:root[data-theme="cib"] .topbar, :root[data-theme="cibnight"] .topbar{ background-color:var(--topbar-bg); }
+:root[data-theme="cib"] .brand-badge, :root[data-theme="cibnight"] .brand-badge,
+:root[data-theme="cib"] .fab, :root[data-theme="cibnight"] .fab{ background-color:#ffd400; color:#002a5c; }
+</style>
 </body>
 </html>
