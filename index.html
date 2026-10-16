@@ -10047,7 +10047,7 @@ function wireSwipeRows(listEl, cfg) {
       if (!dragging) return;
       dragging = false;
       wrap.classList.remove('sw-drag');
-      if (dx < -Math.max(40, w * 0.35)) {
+      if (e.pointerType !== 'mouse' && dx < -Math.max(40, w * 0.35)) {
         row.style.left = -w + 'px';
         wrap.dataset.open = '1';
         swOpenWrap = wrap;
@@ -20683,7 +20683,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 </style>
 <script id="pressFxJs">
 (function(){
-  var SEL = 'button, a, [role="button"], .btn, .icon-btn, .tab, .fab, .chip, .sort-chip-row, .memo-sort-chip, .memo-month-chip, .list-item, .asset-card, .memo-card, .memo-group-head, .more-item, .role-select-card, .theme-card, .sw-btn, .nav-collapse-btn, .ax-round, .ax-gcard .ax-ghead';
+  var SEL = 'button, a, [role="button"], .btn, .icon-btn, .tab, .fab, .chip, .sort-chip-row, .memo-sort-chip, .memo-month-chip, .list-item, .off-row, .asset-card, .memo-card, .memo-group-head, .more-item, .role-select-card, .theme-card, .sw-btn, .nav-collapse-btn, .ax-round, .ax-gcard .ax-ghead';
   var NO = 'input, textarea, select, [contenteditable="true"], .no-press';
   var timers = new WeakMap();
   function findTarget(node){
