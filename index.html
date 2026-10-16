@@ -7169,6 +7169,27 @@ html, body{
 .notif-readall:disabled{ opacity:.45; cursor:default; transform:none; box-shadow:none; }
 .notif-readall:disabled::before{ display:none; }
 </style>   
+
+   <style id="dash-band-plain-v1">
+@media (max-width:899px){
+  /* แถบส่วนหัวเรียบ: ไล่สีกรมท่าและโค้งขอบล่าง */
+  #view-dashboard .dbx-mob-head{
+    margin:-14px -14px 0;
+    padding:18px 18px 40px;
+    background:linear-gradient(160deg,var(--navy),var(--navy-deep));
+    border-radius:0 0 28px 28px;
+    color:var(--panel);
+  }
+  #view-dashboard .dbx-mob-head .dbx-date{ color:var(--panel); opacity:.75; }
+  #view-dashboard .dbx-mob-head .dbx-h1{ color:var(--panel); }
+
+  /* การ์ดยอดรวมซ้อนขึ้นไปบนขอบแถบเล็กน้อย */
+  #view-dashboard .dbx-mob > .dbx-hero{
+    position:relative; z-index:1; margin-top:-24px;
+    box-shadow:0 14px 26px -14px color-mix(in srgb,var(--navy-deep) 60%,transparent);
+  }
+}
+</style>
    
 </head>
    
