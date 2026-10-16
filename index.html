@@ -4542,6 +4542,44 @@ body.modal-open{ overflow:hidden; overscroll-behavior:none; }
   }
 }
 
+/* ---------- line : ขาว-ดำ สไตล์แอพไลน์ (สว่าง) ---------- */
+:root[data-theme="line"]{
+  --dawn-1:#ffffff; --dawn-2:#f7f8fa; --dawn-3:#f4f5f7; --dawn-4:#f1f2f4; --bg-0:#f2f3f5; --bg-1:#f7f8fa;
+  --panel:#ffffff; --panel-soft:#f7f8fa; --panel-line:#e6e8eb; --panel-hi:#f1f2f4;
+  --ink:#111111; --ink-dim:#6b7078; --ink-faint:#a8adb4;
+  --navy:#111111; --navy-deep:#000000; --navy-wash:rgba(17,17,17,.06); --navy-line:rgba(17,17,17,.22);
+  --gold:#06c755; --gold-deep:#049a41; --gold-wash:rgba(6,199,85,.13); --gold-line:rgba(6,199,85,.4);
+  --ok:#06c755; --ok-wash:rgba(6,199,85,.12);
+  --side-1:#1c1c1e; --side-2:#000000;
+  --c1:#111111; --c2:#06c755; --c3:#4a86b4; --c4:#f5a623; --c5:#e5484d; --c6:#9aa0a6;
+  --chart-line:#06c755; --chart-bar:#111111;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.04), 0 4px 12px rgba(0,0,0,.04); --shadow-md:0 8px 24px rgba(0,0,0,.07);
+}
+/* ---------- linenight : ขาว-ดำ สไตล์แอพไลน์ (มืด) ---------- */
+:root[data-theme="linenight"]{
+  --dawn-1:#161616; --dawn-2:#121212; --dawn-3:#0d0d0d; --dawn-4:#0a0a0a;
+  --bg-0:#000000; --bg-1:#0b0b0b;
+  --panel:#1a1a1a; --panel-soft:#222222; --panel-line:#2e2e2e; --panel-hi:#262626;
+  --ink:#ffffff; --ink-dim:#a7abb0; --ink-faint:#6c7076;
+  --navy:#06c755; --navy-deep:#049a41; --navy-wash:rgba(6,199,85,.14); --navy-line:rgba(6,199,85,.45);
+  --gold:#ffffff; --gold-deep:#d9d9d9; --gold-wash:rgba(255,255,255,.1); --gold-line:rgba(255,255,255,.35);
+  --ok:#06c755; --ok-wash:rgba(6,199,85,.15); --warn:#fbbf24; --warn-wash:rgba(251,191,36,.15);
+  --bad:#ff5a5f; --bad-wash:rgba(255,90,95,.15); --off:#8a8f95; --off-wash:rgba(138,143,149,.15);
+  --info:#60a5fa; --info-wash:rgba(96,165,250,.15);
+  --side-1:#141414; --side-2:#000000; --sheet-bg:#1a1a1a; --opt-bg:#1a1a1a;
+  --icon:#06c755; --icon-bg:rgba(6,199,85,.16);
+  --c1:#06c755; --c2:#ffffff; --c3:#22d3ee; --c4:#fbbf24; --c5:#ff5a5f; --c6:#8a8f95;
+  --chart-line:#06c755; --chart-bar:#ffffff;
+  --shadow-sm:0 1px 0 rgba(255,255,255,.03); --shadow-md:0 6px 18px rgba(0,0,0,.5); --shadow-lg:0 14px 36px rgba(0,0,0,.6);
+}
+:root[data-theme="linenight"] .glass,
+:root[data-theme="linenight"] .stat-card,
+:root[data-theme="linenight"] .chart-card,
+:root[data-theme="linenight"] .rp-card,
+:root[data-theme="linenight"] .rp-kpi,
+:root[data-theme="linenight"] .list-item,
+:root[data-theme="linenight"] .asset-card{ box-shadow:none; }
+
 /* HAMBURGER THEME — ปุ่มย่อ/ขยายเมนู เปลี่ยนสีตาม menubar (--side-1/--side-2) ของทุกธีม */
 :root:root:root body .nav-collapse-btn{
   background:color-mix(in srgb, var(--side-1) 100%, #fff 10%) !important;
@@ -7146,6 +7184,13 @@ html, body{
 .ap-danger{ color:var(--bad); }
 .ap-danger svg{ stroke:var(--bad); }
 .ap-danger:hover{ background:var(--bad-wash); }
+/* สวิตช์สลับโหมดมืด */
+.ap-switch{ flex:none; position:relative; width:42px; height:24px; border-radius:99px; background:var(--off); opacity:.55; transition:background .2s ease, opacity .2s ease; }
+.ap-switch b{ position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.3); transition:transform .22s cubic-bezier(.3,.9,.4,1); }
+.ap-toggle.on .ap-switch{ background:var(--navy); opacity:1; }
+.ap-toggle.on .ap-switch b{ transform:translateX(18px); }
+.ap-toggle:hover svg{ transform:none; }
+.ap-toggle:focus-visible{ outline:2px solid var(--navy); outline-offset:-2px; }
 </style>
 
 <style id="notif-readall-v1">
@@ -7641,7 +7686,7 @@ html, body{
   </button>
 
   <button class="tab tab-secondary" data-tab="settings" id="settingsTabBtn" style="display:none;">
-    <span class="ico"><svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="2.6" stroke="currentColor" stroke-width="1.4"/><path d="M10 2.8v2M10 15.2v2M17.2 10h-2M4.8 10h-2M15.1 4.9l-1.4 1.4M6.3 13.7l-1.4 1.4M15.1 15.1l-1.4-1.4M6.3 6.3L4.9 4.9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></span>
+    <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></span>
     <span class="lbl">ตั้งค่า</span>
   </button>
 
@@ -7724,7 +7769,9 @@ const THEMES = [
   { id:'nord',     name:'นอร์ดิก',           swatches:['#5e81ac','#ebcb8b','#1b2029'], tag:'มืด · เทาฟ้า', mode:'dark' },
   { id:'dracula',  name:'แดร็กคูลา',         swatches:['#9569e8','#ff79c6','#14151f'], tag:'มืด · ม่วงชมพู', mode:'dark' },
   { id:'cyber',    name:'ไซเบอร์พังก์',      swatches:['#d6249f','#22e5ff','#06040f'], tag:'มืด · นีออน', mode:'dark' },
-   { id:'liquid', name:'ลิควิดกลาส', swatches:['#0a84ff','#5ac8fa','#e9f1ff'], tag:'สว่าง · ลิควิดกลาส', glass:true }
+   { id:'liquid', name:'ลิควิดกลาส', swatches:['#0a84ff','#5ac8fa','#e9f1ff'], tag:'สว่าง · ลิควิดกลาส', glass:true },
+  { id:'line',      name:'ไลน์ ขาว',          swatches:['#111111','#06c755','#ffffff'], tag:'สว่าง · ขาว-ดำ สไตล์ไลน์' },
+  { id:'linenight', name:'ไลน์ ดำ',           swatches:['#06c755','#ffffff','#000000'], tag:'มืด · ขาว-ดำ สไตล์ไลน์', mode:'dark' }
 ];
 
 function currentTheme() {
@@ -7854,7 +7901,7 @@ Object.assign(ICONS, {
 
   // --- เครื่องมือ / สำนักงาน / ของใช้ ---
   toolbox:  _ic('<rect x="2.5" y="7" width="15" height="9.500" rx="1.500"/><path d="M7.500 7V5h5v2M2.500 11.500h15"/>'),
-  gear:     _ic('<circle cx="10" cy="10" r="2.600"/><path d="M10 2.800v2M10 15.200v2M17.200 10h-2M4.800 10h-2M15.100 4.900l-1.400 1.400M6.300 13.700l-1.400 1.400M15.100 15.100l-1.400-1.400M6.300 6.300L4.900 4.900"/>'),
+  gear:     _ic('<g transform="scale(.8333)"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></g>'),
   scissors: _ic('<circle cx="5.500" cy="14.500" r="2"/><circle cx="14.500" cy="14.500" r="2"/><path d="M7 13L16 3.500M13 13L4 3.500"/>'),
   ruler:    _ic('<path d="M3 13l10-10 4 4L7 17l-4-4z"/><path d="M6.500 9.500L8 11M9 7l1.500 1.500M11.500 4.500L13 6"/>'),
   box:      _ic('<path d="M3 6.500l7-3.500 7 3.500v7l-7 3.500-7-3.500v-7z"/><path d="M3 6.500l7 3.500 7-3.500M10 10v7"/>'),
@@ -20383,7 +20430,7 @@ function openAcctPop() {
     </div>
     <div class="ap-sep"></div>
     <button class="ap-item" data-act="settings" role="menuitem" type="button">${svgSettings}<span>ตั้งค่า</span></button>
-    <button class="ap-item" data-act="theme" role="menuitem" type="button">${dark ? svgSun : svgMoon}<span>${dark ? 'โหมดสว่าง' : 'โหมดมืด'}</span></button>
+    <button class="ap-item ap-toggle${dark ? ' on' : ''}" data-act="theme" role="switch" aria-checked="${dark}" type="button">${svgMoon}<span>โหมดมืด</span><i class="ap-switch" aria-hidden="true"><b></b></i></button>
     <div class="ap-sep"></div>
     <button class="ap-item ap-danger" data-act="logout" role="menuitem" type="button">${svgLogout}<span>ออกจากระบบ</span></button>`;
 
@@ -20413,10 +20460,35 @@ function acctOutside(e) {
 function acctEsc(e) { if (e.key === 'Escape') closeAcctPop(); }
 
 function acctAct(a) {
+  // สลับโหมด: ไม่ปิดเมนู จะได้กดสลับซ้ำได้เรื่อยๆ
+  if (a === 'theme') { toggleThemeMode(); return; }
   closeAcctPop();
   if (a === 'settings') renderTab('settings');
-  if (a === 'theme') applyTheme(isDarkTheme() ? 'dawn' : 'midnight');
   if (a === 'logout') document.getElementById('btnLogout')?.click();
+}
+
+/* ธีมที่มีคู่สว่าง/มืดของตัวเอง; ธีมอื่นจะจำธีมล่าสุดของแต่ละโหมดไว้ */
+const THEME_PAIRS = { line: 'linenight', linenight: 'line' };
+function toggleThemeMode() {
+  const cur = currentTheme();
+  const dark = isDarkTheme();
+  let next = THEME_PAIRS[cur];
+  if (!next) {
+    let mem = null;
+    try { mem = localStorage.getItem(dark ? 'hpAssetLastLight' : 'hpAssetLastDark'); } catch (e) {}
+    const t = THEMES.find(x => x.id === mem);
+    next = (t && (t.mode === 'dark') !== dark) ? mem : (dark ? 'dawn' : 'midnight');
+  }
+  try { localStorage.setItem(dark ? 'hpAssetLastDark' : 'hpAssetLastLight', cur); } catch (e) {}
+  applyTheme(next);
+  syncAcctToggle();
+}
+function syncAcctToggle() {
+  const b = document.querySelector('#acctPop [data-act="theme"]');
+  if (!b) return;
+  const dark = isDarkTheme();
+  b.classList.toggle('on', dark);
+  b.setAttribute('aria-checked', String(dark));
 }
 
 document.getElementById('avatarBtn')?.addEventListener('click', openAcctPop);
