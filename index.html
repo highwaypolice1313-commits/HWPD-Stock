@@ -12896,7 +12896,7 @@ function openOfficerProfile(u) {
   const fullName = officerFullName(u);
   const holdings = state.borrow.filter(b => eqCiJs_(b['ผู้ยืม'], fullName) && (effectiveBorrowStatus(b) === 'กำลังยืม' || effectiveBorrowStatus(b) === 'เกินกำหนด'));
   const photoHtml = u['รูปถ่าย']
-    ? `<img class="avatar-lg" src="${u['รูปถ่าย']}" alt="">`
+    ? `<img class="avatar-lg" src="${escapeHtml(u['รูปถ่าย'])}" alt="">`
     : `<div class="avatar-placeholder">${ICONS.user}</div>`;
   showSheet(`
     <div class="sheet-title">โปรไฟล์เจ้าหน้าที่</div>
@@ -12904,19 +12904,23 @@ function openOfficerProfile(u) {
       ${photoHtml}
       <div style="min-width:0;">
         <div style="font-size:17px; font-weight:600;">${escapeHtml(fullName)}</div>
-        <div style="font-size:12.5px; color:var(--ink-dim); margin-top:2px;">${escapeHtml(u['ตำแหน่ง']) || 'ไม่ระบุตำแหน่ง'}${u['หน่วยงาน'] ? ' · ' + escapeHtml(u['หน่วยงาน']) : ''}</div>
+        <div style="font-size:12.5px; color:var(--ink-dim); margin-top:2px;">${escapeHtml(u['ตำแหน่ง']) || 'ไม่ระบุตำแหน่ง'}</div>
+        ${u['หน่วยงาน'] ? `<div style="font-size:12px; color:var(--ink-dim); margin-top:2px;">${escapeHtml(u['หน่วยงาน'])}</div>` : ''}
       </div>
     </div>
     <div class="hint" style="margin-top:0; font-weight:500; color:var(--ink);">พัสดุ/อาวุธปืนที่อยู่ในความครอบครอง (${holdings.length} รายการ)</div>
     ${holdings.length ? holdings.map(b => {
       const comps = borrowCompLabels(b); // ส่วนควบที่ยืมไปพร้อมอุปกรณ์ชิ้นนี้
       return `
-      <div class="detail-row">
-        <div style="flex:1 1 160px; min-width:0;">
-          <div style="color:var(--ink);">${escapeHtml(b['ชื่อครุภัณฑ์'])}</div>
+      <div class="detail-row" style="align-items:flex-start; gap:12px;">
+        <div style="flex:1 1 0; min-width:0;">
+          <div style="color:var(--ink); word-break:break-word;">${escapeHtml(b['ชื่อครุภัณฑ์'])}</div>
           ${comps.length ? `<div style="font-size:11.5px; color:var(--ink-dim); margin-top:3px; line-height:1.6;">ส่วนควบ: ${comps.map(escapeHtml).join(', ')}</div>` : ''}
         </div>
-        <span>${systemDate(b['วันที่ยืม'])} → ${systemDate(b['กำหนดคืน'])} <span class="status-badge ${statusClass(effectiveBorrowStatus(b))}" style="margin-left:6px;">${escapeHtml(effectiveBorrowStatus(b))}</span></span>
+        <div style="flex:none; display:flex; flex-direction:column; align-items:flex-end; gap:6px; white-space:nowrap; font-size:12.5px;">
+          <span>${systemDate(b['วันที่ยืม'])} → ${systemDate(b['กำหนดคืน'])}</span>
+          <span class="status-badge ${statusClass(effectiveBorrowStatus(b))}">${escapeHtml(effectiveBorrowStatus(b))}</span>
+        </div>
       </div>`;
     }).join('') : `<div class="hint">ไม่มีพัสดุในความครอบครองขณะนี้</div>`}
     <div class="btn-row">
@@ -13252,32 +13256,40 @@ const OFF_CSS = `
 #view-users .off-bulk-actions{display:flex;gap:8px;flex-wrap:wrap}
 #view-users .off-bulk-actions .btn{flex:1 1 auto;min-height:40px}
 
-/* ---------- มุมมองรายการ (สไตล์ใหม่) ---------- */
-#view-users .off-row{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:20px;background:var(--panel);border:1px solid var(--panel-line);box-shadow:var(--shadow-sm);cursor:pointer}
-#view-users .off-row.off-selected{outline:2px solid var(--gold)}
-#view-users .off-row-body{flex:1;min-width:0}
-#view-users .off-row-title{font-size:15px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#view-users .off-row-sub{font-size:12px;color:var(--ink-dim);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#view-users .off-row-side{text-align:right;flex:none}
-#view-users .off-row-num{font-family:var(--font-num);font-size:22px;font-weight:700;line-height:1;color:var(--navy)}
-#view-users .off-row-lbl{font-size:11px;color:var(--ink-dim)}
-#view-users .off-row-status{font-size:11px;font-weight:500;color:var(--ok)}
-#view-users .off-row-status.flag{color:var(--warn)}
+/* ---------- ตำแหน่ง / สังกัด: คนละบรรทัด ---------- */
+#view-users .off-pos{font-size:12.5px;color:var(--ink);line-height:1.45}
+#view-users .off-unit{font-size:11.5px;color:var(--ink-dim);line-height:1.45;word-break:break-word}
 
-/* ---------- มุมมองการ์ด (สไตล์ใหม่) ---------- */
+/* ---------- มุมมองรายการ (สไตล์ใหม่) ---------- */
+#view-users .off-row{position:relative;display:flex;align-items:center;gap:14px;padding:14px 16px 14px 18px;border-radius:20px;background:var(--panel);border:1px solid var(--panel-line);box-shadow:var(--shadow-sm);cursor:pointer;overflow:hidden}
+#view-users .off-row::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--panel-line)}
+#view-users .off-row.ring-ok::before{background:var(--ok)}
+#view-users .off-row.ring-gold::before{background:var(--gold)}
+#view-users .off-row.off-selected{outline:2px solid var(--gold)}
+#view-users .off-row-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+#view-users .off-row-title{font-size:15.5px;font-weight:600;color:var(--ink);line-height:1.35;word-break:break-word}
+#view-users .off-row-body .off-pill{margin-top:7px;align-self:flex-start}
+#view-users .off-row-side{display:flex;flex-direction:column;align-items:center;gap:6px;flex:none}
+#view-users .off-row-tile{width:58px;height:58px;border-radius:16px;background:linear-gradient(160deg,var(--side-1),var(--side-2));color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 4px 10px rgba(12,30,51,.18)}
+#view-users .off-row-tile b{font-family:var(--font-num);font-size:21px;font-weight:700;line-height:1}
+#view-users .off-row-tile small{font-size:10px;opacity:.85;margin-top:2px}
+#view-users .off-row-status{font-size:11px;font-weight:500;padding:3px 9px;border-radius:var(--r-tag);background:var(--ok-wash);color:var(--ok);white-space:nowrap}
+#view-users .off-row-status.flag{background:var(--warn-wash);color:var(--warn)}
+
+/* ---------- มุมมองการ์ด (คงสไตล์เดิม) ---------- */
 #view-users .memo-group-body.asset-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 #view-users .off-card{display:flex;flex-direction:column;overflow:hidden;padding:0;border-radius:20px;background:var(--panel);border:1px solid var(--panel-line);box-shadow:var(--shadow-sm);cursor:pointer}
 #view-users .off-card.off-selected{outline:2px solid var(--gold)}
 #view-users .off-card-band{height:64px;background:linear-gradient(180deg,var(--side-1),var(--side-2))}
 #view-users .off-card-main{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:0 12px 12px;margin-top:-30px}
 #view-users .off-card-name{font-size:14px;font-weight:600;line-height:1.35;color:var(--ink);word-break:break-word}
-#view-users .off-card-sub{font-size:11px;color:var(--ink-dim)}
+#view-users .off-card-main .off-pos,#view-users .off-card-main .off-unit{text-align:center}
 #view-users .off-card-foot{margin-top:auto;border-top:1px solid var(--panel-line);padding:9px 12px;display:flex;justify-content:space-between;gap:6px;font-size:11px;color:var(--ink-dim)}
 #view-users .off-card-foot .flag{color:var(--warn);font-weight:500}
 #view-users .off-card-foot .ok{color:var(--ok);font-weight:500}
 
 /* วงกลมรูป/อักษรแรก: สีขอบตามบทบาท */
-#view-users .off-av{width:50px;height:50px;border-radius:50%;flex:none;border:2px solid var(--panel-line);background:var(--dawn-4);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:16px;color:var(--navy);overflow:hidden}
+#view-users .off-av{width:52px;height:52px;border-radius:50%;flex:none;border:2px solid var(--panel-line);background:var(--dawn-4);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:16px;color:var(--navy);overflow:hidden}
 #view-users .off-av.ring-ok{border-color:var(--ok)}
 #view-users .off-av.ring-gold{border-color:var(--gold)}
 #view-users .off-card .off-av{width:60px;height:60px;font-size:18px;border-width:3px;box-shadow:0 0 0 3px var(--panel)}
@@ -13305,8 +13317,9 @@ function offItemHtml(r, isGrid) {
     : '';
 
   const name = escapeHtml(officerFullName(u));
-  const sub = [u['ตำแหน่ง'], u['หน่วยงาน']].filter(Boolean).map(escapeHtml).join(' · ')
-    || 'ไม่ระบุตำแหน่ง';
+  // ตำแหน่งและสังกัดแยกคนละบรรทัด
+  const posHtml = `<div class="off-pos">${u['ตำแหน่ง'] ? escapeHtml(u['ตำแหน่ง']) : 'ไม่ระบุตำแหน่ง'}</div>`;
+  const unitHtml = u['หน่วยงาน'] ? `<div class="off-unit">${escapeHtml(u['หน่วยงาน'])}</div>` : '';
   const initial = escapeHtml(String(u['ชื่อ-สกุล'] || '?').trim().charAt(0) || '?');
 
   // สีขอบวงกลม: ผู้อนุมัติ = เขียว, ผู้เบิก = ทอง, อื่น ๆ = เส้นปกติ
@@ -13340,7 +13353,8 @@ function offItemHtml(r, isGrid) {
         ${avatarHtml}
         ${chk}
         <div class="off-card-name">${name}</div>
-        <div class="off-card-sub">${sub}</div>
+        ${posHtml}
+        ${unitHtml}
         ${rolePill}
       </div>
       <div class="off-card-foot">
@@ -13351,18 +13365,18 @@ function offItemHtml(r, isGrid) {
   }
 
   // ---------- มุมมองรายการ ----------
-  return `<div class="off-row user-item${selCls}" data-id="${key}">
+  return `<div class="off-row user-item ${ringCls}${selCls}" data-id="${key}">
     ${chk}
     ${avatarHtml}
     <div class="off-row-body">
       <div class="off-row-title">${name}</div>
-      <div class="off-row-sub">${sub}</div>
-      ${rolePill ? `<div style="margin-top:8px">${rolePill}</div>` : ''}
+      ${posHtml}
+      ${unitHtml}
+      ${rolePill}
     </div>
     <div class="off-row-side">
-      <div class="off-row-num">${holdCount}</div>
-      <div class="off-row-lbl">รายการ</div>
-      <div class="off-row-status ${flagged ? 'flag' : ''}" title="${statusTip}">${statusTxt}</div>
+      <div class="off-row-tile"><b>${holdCount}</b><small>รายการ</small></div>
+      <div class="off-row-status ${flagged ? 'flag' : ''}" title="${statusTip}">${flagged ? '● ' : '● '}${statusTxt}</div>
     </div>
   </div>`;
 }
