@@ -20868,6 +20868,38 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 .memo-thumb .paper-scale{ opacity:0; transition:opacity .25s ease; }
 .memo-thumb.ready .paper-scale{ opacity:1; }
 </style>   
- 
+ <script id="user-sheet-scroll-lock">
+(function(){
+  var mq = window.matchMedia('(max-width:899px), (hover:none) and (pointer:coarse)');
+  var savedY = 0, locked = false;
+
+  function lock(){
+    if (locked || !mq.matches) return;
+    savedY = window.scrollY; locked = true;
+    var s = document.body.style;
+    s.position = 'fixed'; s.top = '-' + savedY + 'px';
+    s.left = '0'; s.right = '0'; s.width = '100%';
+  }
+  function unlock(){
+    if (!locked) return;
+    locked = false;
+    var s = document.body.style;
+    s.position = ''; s.top = ''; s.left = ''; s.right = ''; s.width = '';
+    window.scrollTo(0, savedY);
+  }
+
+  new MutationObserver(function(){
+    if (document.body.classList.contains('modal-open')) lock(); else unlock();
+  }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+
+  // นิ้วที่ลากบนพื้นหลังมืดของ modal จะไม่ไปเลื่อนหน้าด้านหลัง
+  document.addEventListener('touchmove', function(e){
+    if (!document.body.classList.contains('modal-open')) return;
+    var inScroller = e.target.closest && e.target.closest('.sheet, .command-results');
+    if (!inScroller) e.preventDefault();
+  }, { passive: false });
+})();
+</script>
+
 </body>
 </html>
