@@ -9878,8 +9878,8 @@ function drawAssetList() {
 let swOpenWrap = null;
 function swClose(wrap) {
   if (!wrap) return;
-  const row = wrap.querySelector('.list-item');
-  if (row) row.style.left = '0px';
+  // รีเซ็ตแถวทุกชนิด (ยืม-คืน ใช้ .list-item / จนท.ในสังกัด ใช้ .off-row)
+  wrap.querySelectorAll('.list-item, .off-row').forEach(r => { r.style.left = '0px'; });
   wrap.classList.remove('sw-drag');
   delete wrap.dataset.open;
   setTimeout(() => { if (!wrap.dataset.open) wrap.classList.remove('sw-active'); }, 270);
@@ -10047,7 +10047,7 @@ function wireSwipeRows(listEl, cfg) {
       if (!dragging) return;
       dragging = false;
       wrap.classList.remove('sw-drag');
-      if (e.pointerType !== 'mouse' && dx < -Math.max(40, w * 0.35)) {
+      if (dx < -Math.max(40, w * 0.35)) {
         row.style.left = -w + 'px';
         wrap.dataset.open = '1';
         swOpenWrap = wrap;
