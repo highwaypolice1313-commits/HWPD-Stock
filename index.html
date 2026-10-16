@@ -6923,20 +6923,34 @@ html, body{
     width:100%; min-height:2.5em; overflow:hidden;
     white-space:normal; overflow-wrap:anywhere; text-align:center;
   }
-
-  /* ปุ่มขยาย/ย่อ */
-  #view-dashboard .dbx-menu-more{
-    display:flex; align-items:center; justify-content:center; gap:6px;
-    margin:12px auto 0; height:34px; padding:0 16px;
-    border-radius:99px; border:1px solid var(--panel-line);
-    background:var(--panel); color:var(--navy);
-    font:inherit; font-size:12px; font-weight:600; cursor:pointer;
-    box-shadow:var(--shadow-sm);
-  }
-  #view-dashboard .dbx-menu-more svg{ width:16px; height:16px; transition:transform .2s ease; }
-  #view-dashboard .dbx-menu-more.is-open svg{ transform:rotate(180deg); }
 }
 </style>
+
+<style id="dbx-menu-v6">
+@media (max-width:899px){
+  /* แถบเมนูแนวนอน: เลื่อนได้ ชนขอบจอทั้งสองข้าง */
+  #view-dashboard .dbx-menu-wrap{ margin:0 -14px; }
+  #view-dashboard .dbx-menu{
+    display:flex; flex-wrap:nowrap; gap:10px;
+    grid-template-columns:none;
+    margin:0; padding:4px 14px 12px;
+    overflow-x:auto; overflow-y:hidden;
+    scroll-snap-type:x mandatory; scroll-padding:0 14px;
+    scrollbar-width:none; -webkit-overflow-scrolling:touch;
+    background:none; border:none; box-shadow:none;
+  }
+  #view-dashboard .dbx-menu::-webkit-scrollbar{ display:none; }
+
+  /* ทุกปุ่มแสดงหมด (แทนกฎซ่อนจาก v5) */
+  #view-dashboard .dbx-menu:not(.is-open) .dbx-tile:nth-child(n+5){ display:flex; }
+
+  /* การ์ดแต่ละปุ่ม: กว้างและสูงคงที่ */
+  #view-dashboard .dbx-menu .dbx-tile{
+    flex:0 0 92px; width:92px; min-width:92px; height:104px;
+    scroll-snap-align:start;
+  }
+}
+</style>   
    
 </style>
    
@@ -7100,7 +7114,7 @@ html, body{
   <!-- ปุ่มเมนู (แสดงเฉพาะมือถือ) -->
   <button class="tab tab-more" id="tabMore" type="button" aria-label="เมนูทั้งหมด">
     <span class="ico"><svg viewBox="0 0 20 20" fill="none"><circle cx="4.5" cy="10" r="1.5" fill="currentColor"/><circle cx="10" cy="10" r="1.5" fill="currentColor"/><circle cx="15.5" cy="10" r="1.5" fill="currentColor"/></svg></span>
-    <span class="lbl">เมนูย่อย</span>
+    <span class="lbl">เมนู</span>
   </button>
 
   <div class="nav-user-card" id="navUserCard" aria-label="ผู้ใช้งานปัจจุบัน">
@@ -8897,20 +8911,15 @@ function renderDashboard() {
 
         ${heroHtml(false)}
 
-<div class="dbx-sec">เมนู</div>
+<div class="dbx-sec">เมนูลัด</div>
 <div class="dbx-menu-wrap">
-  <div class="dbx-menu ${dbxMenuOpen ? 'is-open' : ''}" id="dbxMenu">
+  <div class="dbx-menu" id="dbxMenu">
     ${menu.map(m => `
       <button class="dbx-tile" data-go="${m[0]}" type="button">
         <span class="dbx-tile-ico">${dbxTabIcon(m[0])}</span>
         <span>${escapeHtml(m[1])}</span>
       </button>`).join('')}
   </div>
-  ${menu.length > 4 ? `
-  <button class="dbx-menu-more ${dbxMenuOpen ? 'is-open' : ''}" id="dbxMenuMore" type="button" aria-expanded="${dbxMenuOpen}">
-    <span>${dbxMenuOpen ? 'ย่อเมนู' : 'ขยายเมนู'}</span>
-    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-  </button>` : ''}
 </div>
          ${statsHtml(false)}
          
