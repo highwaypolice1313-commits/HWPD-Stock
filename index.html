@@ -12683,14 +12683,7 @@ function drawUsers() {
     const s = document.getElementById(id);
     if (s) s.onchange = e => fn(e.target.value);
   };
-  bind('offRoleSel', v => { state.offFilter.role = v; drawUsers(); });
-  bind('offRankSel', v => { state.offFilter.rank = v; drawUsers(); });
-  bind('offFlagSel', v => { state.offFilter.flag = v; drawUsers(); });
-  bind('offGroupSel', v => {
-    state.offGroup = v;
-    state.offGroupClosed = new Set();
-    drawUserList();
-  });
+   bindOffFilterBar();
 
   document.getElementById('btnOffSelMode').onclick = () => {
     state.offSelectMode = !state.offSelectMode;
