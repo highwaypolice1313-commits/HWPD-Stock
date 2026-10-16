@@ -7195,31 +7195,6 @@ html, body{
   #view-dashboard .dbx-mob .dbx-card{ margin-top:16px !important; }
 
 </style>
-
-   <style id="dash-enter-v1">
-@keyframes dbxRise{
-  from{ opacity:0; transform:translateY(14px); }
-  to{ opacity:1; transform:none; }
-}
-@media (max-width:899px){
-  /* ความห่างระหว่างแต่ละชั้น แก้ค่านี้เพื่อให้เร็วหรือช้าลง */
-  #view-dashboard .dbx-mob{ --dbx-stagger:.15s; }
-
-  #view-dashboard .dbx-mob > *{
-    animation:dbxRise .6s cubic-bezier(.2,.8,.2,1) both;
-  }
-  #view-dashboard .dbx-mob > *:nth-child(1){ animation-delay:0s; }
-  #view-dashboard .dbx-mob > *:nth-child(2){ animation-delay:calc(var(--dbx-stagger) * 1); }
-  #view-dashboard .dbx-mob > *:nth-child(3){ animation-delay:calc(var(--dbx-stagger) * 2); }
-  #view-dashboard .dbx-mob > *:nth-child(4){ animation-delay:calc(var(--dbx-stagger) * 3); }
-  #view-dashboard .dbx-mob > *:nth-child(5){ animation-delay:calc(var(--dbx-stagger) * 4); }
-  #view-dashboard .dbx-mob > *:nth-child(6){ animation-delay:calc(var(--dbx-stagger) * 5); }
-  #view-dashboard .dbx-mob > *:nth-child(n+7){ animation-delay:calc(var(--dbx-stagger) * 6); }
-}
-@media (prefers-reduced-motion:reduce){
-  #view-dashboard .dbx-mob > *{ animation:none; }
-}
-</style>
    
 </head>
    
