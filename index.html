@@ -20823,6 +20823,22 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 :root[data-theme="cibnight"] #f_sigIcon svg *,
 :root[data-theme="cibnight"] [id$="sigIcon"].li-icon svg *{ stroke:currentColor !important; stroke-width:2.2 !important; }
 </style>
+<style id="user-fixes-white-bg">
+/* CIB มืด: ไอคอนบนพื้นขาวให้เป็นสีกรมท่าทึบ */
+:root[data-theme="cibnight"] .icon-btn,
+:root[data-theme="cibnight"] .icon-btn svg,
+:root[data-theme="cibnight"] .preview-box,
+:root[data-theme="cibnight"] .preview-box svg,
+:root[data-theme="cibnight"] .sig-box,
+:root[data-theme="cibnight"] .sig-box svg{ color:#002a5c !important; opacity:1 !important; }
+:root[data-theme="cibnight"] .icon-btn svg *,
+:root[data-theme="cibnight"] .preview-box svg *,
+:root[data-theme="cibnight"] .sig-box svg *{ stroke:currentColor !important; stroke-width:2.2 !important; }
+
+/* ปุ่มในหน้าบันทึกข้อความ พื้นเข้ม คงสีขาว */
+:root[data-theme="cibnight"] .memo-quick .icon-btn,
+:root[data-theme="cibnight"] .memo-quick .icon-btn svg{ color:#ffffff !important; }
+</style>
    
 </body>
 </html>
