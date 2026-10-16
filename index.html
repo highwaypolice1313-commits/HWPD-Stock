@@ -20384,6 +20384,18 @@ const lock = () => {
   sync();
 })();
 
+/* ripple เวลากดปุ่ม .btn */
+document.addEventListener('pointerdown', e => {
+  const b = e.target.closest('.btn');
+  if (!b || b.disabled) return;
+  const r = b.getBoundingClientRect(), s = Math.max(r.width, r.height) * 2;
+  const d = document.createElement('span');
+  d.className = 'ripple';
+  d.style.cssText = `width:${s}px;height:${s}px;left:${e.clientX - r.left - s/2}px;top:${e.clientY - r.top - s/2}px`;
+  b.appendChild(d);
+  setTimeout(() => d.remove(), 600);
+}, { passive: true });
+
 document.getElementById('notifBtn')?.addEventListener('click', openNotifications);
 
    /* ป้าย topbar แสดงชื่อผู้ใช้ และคงสีตามบทบาท */
@@ -20656,82 +20668,51 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 :root[data-theme="cibnight"] #view-users .off-card-band{ background:linear-gradient(180deg,#ffd400,#e6bf00); }
 :root[data-theme="cibnight"] #view-users .off-card{ border-color:#0d3a70; }
 </style>
-<style id="cibThemeFlat">
-/* ===== ธีม CIB สว่าง/มืด: ใช้ชุดสี 7 สี (เหลือง กรมท่า เทา ขาว ดำ เขียว แดง) ไม่ไล่สี ไม่มีเงา; อนิเมชันคงเดิม ===== */
-:root[data-theme="cib"]{
-  --bg-0:#f2f3f5; --bg-1:#ffffff; --dawn-1:#ffffff; --dawn-2:#f2f3f5; --dawn-3:#f2f3f5; --dawn-4:#e6e8ec;
-  --panel:#ffffff; --panel-soft:#f2f3f5; --panel-line:#d9dce1; --panel-hi:#ffffff;
-  --ink:#111111; --ink-dim:#5f6670; --ink-faint:#8a929e;
-  --navy:#002a5c; --navy-deep:#002a5c; --navy-wash:rgba(0,42,92,.08); --navy-line:rgba(0,42,92,.25);
-  --gold:#ffd400; --gold-deep:#002a5c; --gold-wash:rgba(255,212,0,.28); --gold-line:rgba(255,212,0,.7);
-  --side-1:#002a5c; --side-2:#002a5c; --topbar-bg:#ffffff;
-  --ok:#1e8e3e; --ok-wash:rgba(30,142,62,.12);
-  --warn:#002a5c; --warn-wash:rgba(255,212,0,.35);
-  --bad:#d93025; --bad-wash:rgba(217,48,37,.12);
-  --off:#8a929e; --off-wash:rgba(138,146,158,.16);
-  --info:#002a5c; --info-wash:rgba(0,42,92,.10);
-  --c1:#002a5c; --c2:#ffd400; --c3:#8a929e; --c4:#111111; --c5:#1e8e3e; --c6:#d93025;
-  --chart-line:#002a5c; --chart-bar:#ffd400;
-  --shadow-sm:none; --shadow-md:none; --shadow-lg:none;
-}
-:root[data-theme="cibnight"]{
-  --bg-0:#0a0c10; --bg-1:#0a0c10; --dawn-1:#0a0c10; --dawn-2:#0a0c10; --dawn-3:#0a0c10; --dawn-4:#0a0c10;
-  --panel:#1a1e26; --panel-soft:#14171d; --panel-line:#2e3440; --panel-hi:#1a1e26;
-  --ink:#ffffff; --ink-dim:#a4abb7; --ink-faint:#7a828e;
-  --navy:#2a5aa0; --navy-deep:#002a5c; --navy-wash:rgba(42,90,160,.22); --navy-line:rgba(42,90,160,.55);
-  --gold:#ffd400; --gold-deep:#ffd400; --gold-wash:rgba(255,212,0,.16); --gold-line:rgba(255,212,0,.5);
-  --side-1:#002a5c; --side-2:#0a0c10; --sheet-bg:#1a1e26; --opt-bg:#1a1e26; --topbar-bg:#002a5c;
-  --icon:#ffd400; --icon-bg:rgba(255,212,0,.14);
-  --ok:#3dbe5a; --ok-wash:rgba(61,190,90,.16);
-  --warn:#ffd400; --warn-wash:rgba(255,212,0,.18);
-  --bad:#ff6b5e; --bad-wash:rgba(255,107,94,.16);
-  --off:#8a929e; --off-wash:rgba(138,146,158,.18);
-  --info:#ffd400; --info-wash:rgba(255,212,0,.14);
-  --c1:#ffd400; --c2:#8a929e; --c3:#2a5aa0; --c4:#ffffff; --c5:#3dbe5a; --c6:#ff6b5e;
-  --chart-line:#ffd400; --chart-bar:#2a5aa0;
-  --shadow-sm:none; --shadow-md:none; --shadow-lg:none;
-}
-:root[data-theme="cib"] *:not([class*="skeleton"]):not([class*="spinner"]),
-:root[data-theme="cibnight"] *:not([class*="skeleton"]):not([class*="spinner"]){
-  box-shadow:none !important; text-shadow:none !important; background-image:none !important;
-}
-:root[data-theme="cib"] .topbar, :root[data-theme="cibnight"] .topbar{ background-color:var(--topbar-bg); }
-:root[data-theme="cib"] .brand-badge, :root[data-theme="cibnight"] .brand-badge,
-:root[data-theme="cib"] .fab, :root[data-theme="cibnight"] .fab{ background-color:#ffd400; color:#002a5c; }
+<style id="pressFx">
+.press-target{ transition:transform .2s cubic-bezier(.2,.8,.2,1), filter .2s ease, box-shadow .2s ease; -webkit-tap-highlight-color:transparent; }
+.press-target.press-on{ transform:scale(.94) !important; filter:brightness(.92) saturate(1.05) !important; box-shadow:inset 0 2px 6px rgba(0,0,0,.18) !important; transition:transform .07s ease-out, filter .07s ease-out, box-shadow .07s ease-out !important; }
+.press-target.press-on .ap-caret{ transform:none !important; }
 </style>
-<style id="pressAnim">
-/* ===== อนิเมชั่นกดปุ่ม (ตามตัวอย่าง): ยุบเล็กน้อย + วงแผ่ตรงจุดที่กด ===== */
-button{position:relative;overflow:hidden;transition:transform .12s ease,background-color .15s,color .15s,border-color .15s,box-shadow .15s,opacity .15s;-webkit-tap-highlight-color:transparent}
-button:not(:disabled):active{transform:scale(.95)}
-button:disabled{cursor:not-allowed}
-.rpl{position:absolute;border-radius:9999px;pointer-events:none;background:currentColor;opacity:.22;transform:scale(0);animation:ripple .55s ease-out forwards}
-/* เมนูบาร์ด้านล่าง: ไม่มีอนิเมชั่นกด (คงตามที่ขอไว้) */
-.tabbar button:not(:disabled):active,.tabbar .tab:active{transform:none !important}
-.tabbar .rpl{display:none}
-</style>
-<script id="pressAnimJs">
+<script id="pressFxJs">
 (function(){
-  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  function addRipple(b, x, y){
-    const r = b.getBoundingClientRect(), d = Math.max(r.width, r.height) * 2;
-    const s = document.createElement('span');
-    s.className = 'rpl';
-    s.style.width = s.style.height = d + 'px';
-    s.style.left = (x - r.left - d / 2) + 'px';
-    s.style.top = (y - r.top - d / 2) + 'px';
-    b.appendChild(s);
-    setTimeout(() => s.remove(), 600);
+  var SEL = 'button, a, [role="button"], .btn, .icon-btn, .tab, .fab, .chip, .sort-chip-row, .memo-sort-chip, .memo-month-chip, .list-item, .asset-card, .memo-card, .memo-group-head, .more-item, .role-select-card, .theme-card, .sw-btn, .nav-collapse-btn, .ax-round, .ax-gcard .ax-ghead';
+  var NO = 'input, textarea, select, [contenteditable="true"], .no-press';
+  var timers = new WeakMap();
+  function findTarget(node){
+    if (!node || !node.closest) return null;
+    if (node.closest('.tabbar, .tab-pill, .nav-collapse-btn')) return null;
+    var el = node.closest(SEL);
+    if (!el || el.matches(NO) || el.disabled || el.getAttribute('aria-disabled') === 'true') return null;
+    return el;
   }
-  document.addEventListener('pointerdown', e => {
-    if (e.button > 0) return;
-    const b = e.target.closest('button');
-    if (b && !b.disabled && !b.closest('.tabbar')) addRipple(b, e.clientX, e.clientY);
-  }, { passive: true });
-  document.addEventListener('click', e => {
-    if (e.detail !== 0) return;   // เฉพาะการกดด้วยคีย์บอร์ด
-    const b = e.target.closest('button');
-    if (b && !b.disabled && !b.closest('.tabbar')) { const r = b.getBoundingClientRect(); addRipple(b, r.left + r.width / 2, r.top + r.height / 2); }
-  });
+  function press(el){
+    el.classList.add('press-target');
+    clearTimeout(timers.get(el));
+    el.classList.add('press-on');
+    if (navigator.vibrate) { try { navigator.vibrate(8); } catch(_) {} }
+  }
+  function release(el){
+    clearTimeout(timers.get(el));
+    // ให้เห็นการกดอย่างน้อย 120ms ก่อนคืนรูป (กันกรณีกดสั้นจนไม่เห็น)
+    timers.set(el, setTimeout(function(){ el.classList.remove('press-on'); }, 120));
+  }
+  var active = null;
+  document.addEventListener('pointerdown', function(e){
+    if (e.button && e.button !== 0) return;
+    var el = findTarget(e.target);
+    if (!el) return;
+    active = el;
+    press(el);
+  }, { capture: true, passive: true });
+  function up(){ if (active) { release(active); active = null; } }
+  document.addEventListener('pointerup', up, true);
+  document.addEventListener('pointercancel', up, true);
+  document.addEventListener('pointermove', function(e){
+    if (!active) return;
+    var under = document.elementFromPoint(e.clientX, e.clientY);
+    if (!under || !active.contains(under)) { release(active); active = null; }
+  }, { capture: true, passive: true });
+  document.addEventListener('scroll', function(){ up(); }, { capture: true, passive: true });
 })();
 </script>
 </body>
