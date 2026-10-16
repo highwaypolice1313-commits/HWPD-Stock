@@ -20868,38 +20868,25 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 .memo-thumb .paper-scale{ opacity:0; transition:opacity .25s ease; }
 .memo-thumb.ready .paper-scale{ opacity:1; }
 </style>   
- <script id="user-sheet-scroll-lock">
-(function(){
-  var mq = window.matchMedia('(max-width:899px), (hover:none) and (pointer:coarse)');
-  var savedY = 0, locked = false;
 
-  function lock(){
-    if (locked || !mq.matches) return;
-    savedY = window.scrollY; locked = true;
-    var s = document.body.style;
-    s.position = 'fixed'; s.top = '-' + savedY + 'px';
-    s.left = '0'; s.right = '0'; s.width = '100%';
+<style id="user-ios-sheet-scroll">
+@media (max-width:899px), (hover:none) and (pointer:coarse){
+  .overlay, .command-overlay{
+    touch-action:manipulation !important;
+    overscroll-behavior:contain !important;
+    -webkit-overflow-scrolling:touch;
   }
-  function unlock(){
-    if (!locked) return;
-    locked = false;
-    var s = document.body.style;
-    s.position = ''; s.top = ''; s.left = ''; s.right = ''; s.width = '';
-    window.scrollTo(0, savedY);
+  .overlay .sheet{
+    touch-action:pan-y !important;
+    overscroll-behavior:contain !important;
+    -webkit-overflow-scrolling:touch;
+    overflow-y:auto !important;
+    max-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 24px) !important;
+    margin-top:env(safe-area-inset-top);
   }
-
-  new MutationObserver(function(){
-    if (document.body.classList.contains('modal-open')) lock(); else unlock();
-  }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
-
-  // นิ้วที่ลากบนพื้นหลังมืดของ modal จะไม่ไปเลื่อนหน้าด้านหลัง
-  document.addEventListener('touchmove', function(e){
-    if (!document.body.classList.contains('modal-open')) return;
-    var inScroller = e.target.closest && e.target.closest('.sheet, .command-results');
-    if (!inScroller) e.preventDefault();
-  }, { passive: false });
-})();
-</script>
+  .overlay .sheet-close{ position:sticky; top:0; }
+}
+</style>
 
 </body>
 </html>
