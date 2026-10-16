@@ -6772,18 +6772,6 @@ html, body{
 .topbar .profile-name{ display:none !important; }
 
 /* ===== แถบตัวกรองรายชื่อ (มือถือ) ===== */
-.off-filter-bar{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:0 0 10px; }
-.off-filter-open{
-  display:inline-flex; align-items:center; gap:6px; height:36px; padding:0 14px;
-  border-radius:99px; border:1px solid var(--panel-line); background:var(--panel);
-  color:var(--ink); font:inherit; font-size:13px; cursor:pointer; flex:none;
-}
-.off-filter-open svg{ width:16px; height:16px; }
-.off-filter-badge{
-  min-width:18px; height:18px; padding:0 5px; border-radius:99px;
-  background:var(--navy); color:#fff; font-size:10px; font-weight:700;
-  align-items:center; justify-content:center; font-family:var(--font-num);
-}
 .off-filter-chips{ display:flex; gap:6px; flex-wrap:wrap; min-width:0; }
 .off-chip{
   display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:99px;
@@ -6804,7 +6792,71 @@ html, body{
 .off-fs-opt.on small{ color:#fff; opacity:.8; }
 
 /* ซ่อนแถว select เดิมที่ไม่ใช้แล้ว (กันกรณียังมีค้าง) */
-.off-filters{ display:none !important; }    
+.off-filters{ display:none !important; }  
+
+/* ===== หัวหน้ารายชื่อ จนท. ===== */
+#view-users .off-head{
+  display:flex; align-items:center; justify-content:space-between; gap:10px; margin:4px 0 12px;
+}
+#view-users .off-title{
+  font-family:var(--font-disp); font-size:18px; font-weight:600; color:var(--navy-deep);
+  min-width:0; line-height:1.3;
+}
+#view-users .off-head-tools{ display:flex; gap:6px; flex:none; }
+
+/* ===== แถบเครื่องมือ: ค้นหา + ตัวกรอง + เลือกหลายคน ===== */
+#view-users .off-toolbar{
+  display:flex; align-items:center; gap:8px; margin:0 0 10px;
+}
+#view-users .off-search{ flex:1 1 auto; min-width:0; }
+#view-users .off-round{
+  position:relative; flex:none; width:46px; height:46px; border-radius:50%;
+  border:1px solid var(--panel-line); background:var(--panel); color:var(--navy);
+  display:inline-flex; align-items:center; justify-content:center; cursor:pointer;
+  box-shadow:var(--shadow-sm);
+}
+#view-users .off-round svg{ width:19px; height:19px; }
+#view-users .off-round.on{ background:var(--navy); color:#fff; border-color:var(--navy); }
+#view-users .off-filter-badge{
+  position:absolute; top:-3px; right:-3px; min-width:18px; height:18px; padding:0 5px;
+  border-radius:99px; background:var(--gold); color:#fff; font-size:10px; font-weight:700;
+  align-items:center; justify-content:center; font-family:var(--font-num);
+}
+
+/* ===== ชิปตัวกรองที่เลือกอยู่ (แสดงเฉพาะตอนมีค่า) ===== */
+#view-users .off-chips{
+  display:flex; gap:6px; flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none;
+  margin:0 0 6px;
+}
+#view-users .off-chips::-webkit-scrollbar{ display:none; }
+#view-users .off-chips:empty{ display:none; }
+#view-users .off-chip{
+  flex:none; display:inline-flex; align-items:center; gap:4px; padding:5px 10px;
+  border-radius:99px; background:var(--gold-wash); color:var(--gold-deep);
+  font-size:12px; cursor:pointer; white-space:nowrap;
+}
+#view-users .off-chip b{ font-size:14px; line-height:1; }
+
+/* ===== จำนวนรายการ ===== */
+#view-users #userCount{ font-size:12px; color:var(--ink-dim); margin:4px 2px 8px; }
+
+/* ===== กล่องตัวกรอง (bottom sheet) ===== */
+.off-fs-title{ font-size:12.5px; font-weight:600; color:var(--ink-dim); margin:14px 0 6px; }
+.off-fs-opts{ display:flex; flex-wrap:wrap; gap:6px; }
+.off-fs-opt{
+  padding:7px 12px; border-radius:99px; border:1px solid var(--panel-line);
+  background:var(--panel-soft); color:var(--ink); font:inherit; font-size:12.5px; cursor:pointer;
+  display:inline-flex; align-items:center; gap:5px;
+}
+.off-fs-opt small{ font-family:var(--font-num); color:var(--ink-faint); font-size:11px; }
+.off-fs-opt.on{ background:var(--navy); border-color:var(--navy); color:#fff; }
+.off-fs-opt.on small{ color:#fff; opacity:.8; }
+
+/* ===== จอกว้าง ===== */
+@media (min-width:900px){
+  #view-users .off-toolbar{ max-width:760px; }
+  #view-users .off-title{ font-size:22px; }
+}    
     
 </style>
    
@@ -12618,32 +12670,22 @@ function drawUsers() {
   initOfficerState();
   const el = document.getElementById('view-users');
   const rows = offBuildRows();
-  const f = state.offFilter;
 
   const offCount = rows.filter(r => r.rank === 'สัญญาบัตร').length;
   const polCount = rows.filter(r => r.rank === 'ประทวน').length;
   const holdCount = rows.filter(r => r.hold.length > 0).length;
   const flagCount = rows.filter(r => r.issues.some(x => x.lv !== 'info')).length;
 
-  const countRole = v => v === 'all' ? rows.length : rows.filter(r => r.role === v).length;
-  const countRank = v => v === 'all' ? rows.length : rows.filter(r => r.rank === v).length;
-  const countFlag = v => v === 'all' ? rows.length
-    : v === 'issue' ? flagCount
-    : v === 'hold' ? holdCount
-    : rows.length - holdCount;
-
-  const opt = (v, label, n, cur) =>
-    `<option value="${escapeHtml(v)}" ${v === cur ? 'selected' : ''}>${escapeHtml(label)}${n === null ? '' : ' (' + n + ')'}</option>`;
   const stat = (n, t, cls) => `<div class="off-stat ${cls || ''}"><b>${n}</b><span>${t}</span></div>`;
 
   el.innerHTML = `
-    <div class="section-title">
-      รายชื่อข้าราชการตำรวจในสังกัด
-      <span class="section-actions">
+    <div class="off-head">
+      <div class="off-title">รายชื่อข้าราชการตำรวจในสังกัด</div>
+      <div class="off-head-tools">
         ${viewToggleHtml('users', state.usersView)}
         <button class="icon-btn" id="btnOffExport" title="ส่งออก CSV ตามตัวกรอง" aria-label="ส่งออก CSV">${ICONS.download}</button>
         <button class="icon-btn" id="btnPrintAllUsers" title="พิมพ์รายชื่อตามตัวกรอง" aria-label="พิมพ์รายชื่อ">${ICONS.print}</button>
-      </span>
+      </div>
     </div>
 
     <div class="off-stats">
@@ -12654,20 +12696,16 @@ function drawUsers() {
       ${stat(flagCount, 'ต้องตรวจข้อมูล', flagCount ? 'warn' : '')}
     </div>
 
-    <div class="ax-top">
-      ${srchBoxHtml('userSearchInput', state.userSearch, 'ค้นหาชื่อ ตำแหน่ง หน่วยงาน')}
-      <button class="ax-round off-selmode ${state.offSelectMode ? 'on' : ''}" id="btnOffSelMode" title="เลือกหลายคน" aria-label="เลือกหลายคน">${ICONS.checklist}</button>
+    <div class="off-toolbar">
+      <div class="off-search">${srchBoxHtml('userSearchInput', state.userSearch, 'ค้นหาชื่อ ตำแหน่ง หน่วยงาน')}</div>
+      <button type="button" class="off-round" id="offFilterOpen" aria-label="ตัวกรอง">
+        <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3 5h14M6 10h8M9 15h2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        <span class="off-filter-badge" id="offFilterBadge" style="display:none;"></span>
+      </button>
+      <button type="button" class="off-round off-selmode ${state.offSelectMode ? 'on' : ''}" id="btnOffSelMode" aria-label="เลือกหลายคน">${ICONS.checklist}</button>
     </div>
 
-<div class="off-filter-bar">
-  <button type="button" class="off-filter-open" id="offFilterOpen" aria-label="ตัวกรอง">
-    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3 5h14M6 10h8M9 15h2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-    <span>ตัวกรอง</span>
-    <span class="off-filter-badge" id="offFilterBadge" style="display:none;"></span>
-  </button>
-  <div class="off-filter-chips" id="offFilterChips"></div>
-</div>
-
+    <div class="off-chips" id="offFilterChips"></div>
     <div id="offBulk"></div>
     <div class="ax-count" id="userCount"></div>
     <div id="userList"></div>
@@ -12679,11 +12717,7 @@ function drawUsers() {
     drawUserList();
   });
 
-  const bind = (id, fn) => {
-    const s = document.getElementById(id);
-    if (s) s.onchange = e => fn(e.target.value);
-  };
-   bindOffFilterBar();
+  bindOffFilterBar();
 
   document.getElementById('btnOffSelMode').onclick = () => {
     state.offSelectMode = !state.offSelectMode;
