@@ -8441,7 +8441,7 @@ function exportCsv(filename, headers, rows) {
 
 /* ========================================================= TABS */
 document.querySelectorAll('.tab[data-tab]').forEach(btn => { btn.addEventListener('click', () => renderTab(btn.dataset.tab)); });
-document.getElementById('refreshBtn')?.addEventListener('click', refreshData);
+document.getElementById('refreshBtn')?.addEventListener('click', () => location.reload());
 window.addEventListener('online', () => setConnection(true));
 window.addEventListener('offline', () => { setConnection(false); toast('ขณะนี้อุปกรณ์ออฟไลน์'); });
 
@@ -8896,7 +8896,6 @@ function renderDashboard() {
         </div>
 
         ${heroHtml(false)}
-        ${statsHtml(false)}
 
 <div class="dbx-sec">เมนู</div>
 <div class="dbx-menu-wrap">
@@ -8913,7 +8912,8 @@ function renderDashboard() {
     <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </button>` : ''}
 </div>
-
+         ${statsHtml(false)}
+         
         <div class="dbx-card" style="margin-top:16px;">
           <div class="dbx-head">
             <div class="dbx-title">คำขอล่าสุด</div>
