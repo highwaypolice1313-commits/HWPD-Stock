@@ -6459,6 +6459,8 @@ html, body{
 .memo-group .ap-caret{width:16px;height:16px;transition:transform .15s ease}
 .memo-group.open .ap-caret{transform:rotate(90deg)}
 .memo-group:not(.open) .memo-group-body{ display:none; }
+/* มุมมองรายการ: ต้องซ่อนเดือนที่ย่อ (กฎ display:flex ด้านล่างมีความเฉพาะเจาะจงสูงกว่า) */
+.memo-group:not(.open) > .memo-group-body{ display:none !important; }
 .memo-group-body.memo-grid{
   display:grid;
   grid-template-columns:repeat(auto-fill,minmax(190px,1fr));
@@ -15184,20 +15186,22 @@ function drawMemoList() {
 
   const q = terms.length ? terms[0][0] : '';
 
+  if (state.memoClosedGroups === undefined) state.memoClosedGroups = new Set();
   host.innerHTML = list.length ? groups.map(([key, items]) => {
-    const open = state.memoOpenGroups.has(key) || state.memoMonth !== 'all' || terms.length > 0 || groups.length === 1;
+    const open = !state.memoClosedGroups.has(key) || terms.length > 0;
     const signed = items.filter(x => memoSigTone(x['เนื้อหาเอกสาร(HTML)']) === 'ok').length;
-    return `<div class="ap-group memo-group ${open ? 'open' : ''}" data-mkey="${key}">
+    return `<div class="ap-group memo-group ${open ? 'open' : ''}" data-mkey="${escapeHtml(key)}">
       <div class="memo-group-head">
-        <svg class="ap-caret" viewBox="0 0 20 20" fill="none"><path d="M7 4l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg class="ap-caret" viewBox="0 0 20 20" fill="none" style="transform:rotate(${open ? 90 : 0}deg);transition:transform .18s ease;"><path d="M7 4l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span>${memoMonthLabel(key)}</span>
         <span class="memo-group-stat">ครบลายเซ็น ${signed}/${items.length}</span>
         <span class="ap-count">${items.length} ฉบับ</span>
       </div>
-      <div class="memo-group-body ${isGrid ? 'memo-grid' : ''}">
+      <div class="memo-group-body ${isGrid ? 'memo-grid' : ''}" style="${open ? '' : 'display:none;'}">
         ${items.map(m => isGrid ? memoCard(m, q) : memoRow(m, q)).join('')}
       </div>
     </div>`;
+
   }).join('') : (terms.length
       ? `<div class="glass empty-state">ไม่พบเอกสารที่ตรงกับ "${escapeHtml(state.memoSearch.trim())}"</div>`
       : emptyState(all.length ? 'ไม่พบเอกสารตามตัวกรองที่เลือก' : 'ยังไม่มีเอกสารที่บันทึกไว้ — กดปุ่ม + เพื่อสร้างเอกสารใหม่'));
@@ -15212,13 +15216,20 @@ function wireMemoListEvents(isGrid) {
   const findMemo = id => all.find(x => x['รหัสใบเบิก'] === id);
   const openMemo = (m) => { if (m) openMemoEditor({ id: m['รหัสใบเบิก'], docHtml: m['เนื้อหาเอกสาร(HTML)'], borrowId: m['รหัสรายการยืม'], readOnly: !isAdmin() }); };
 
-  el.querySelectorAll('.memo-group-head').forEach(h => h.onclick = () => {
-    const g = h.closest('.memo-group');
+  const gHost = document.getElementById('memoGridHost');
+  if (gHost) gHost.onclick = e => {
+    const head = e.target.closest('.memo-group-head');
+    if (!head || !gHost.contains(head)) return;
+    const g = head.closest('.memo-group');
     const key = g.dataset.mkey;
     const nowOpen = !g.classList.contains('open');
     g.classList.toggle('open', nowOpen);
-    if (nowOpen) state.memoOpenGroups.add(key); else state.memoOpenGroups.delete(key);
-  });
+    const body = g.querySelector('.memo-group-body');
+    if (body) body.style.display = nowOpen ? '' : 'none';
+    const caret = head.querySelector('.ap-caret');
+    if (caret) caret.style.transform = 'rotate(' + (nowOpen ? 90 : 0) + 'deg)';
+    if (nowOpen) state.memoClosedGroups.delete(key); else state.memoClosedGroups.add(key);
+  };
 
   if (isGrid) {
     const thumbRO = ('ResizeObserver' in window) ? new ResizeObserver(entries => entries.forEach(en => fitPaper(en.target))) : null;
@@ -20655,5 +20666,51 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 :root[data-theme="cibnight"] #view-users .off-card-band{ background:linear-gradient(180deg,#ffd400,#e6bf00); }
 :root[data-theme="cibnight"] #view-users .off-card{ border-color:#0d3a70; }
 </style>
+<style id="pressFx">
+.press-target{ transition:transform .2s cubic-bezier(.2,.8,.2,1), filter .2s ease, box-shadow .2s ease; -webkit-tap-highlight-color:transparent; }
+.press-target.press-on{ transform:scale(.94) !important; filter:brightness(.92) saturate(1.05) !important; box-shadow:inset 0 2px 6px rgba(0,0,0,.18) !important; transition:transform .07s ease-out, filter .07s ease-out, box-shadow .07s ease-out !important; }
+.press-target.press-on .ap-caret{ transform:none !important; }
+</style>
+<script id="pressFxJs">
+(function(){
+  var SEL = 'button, a, [role="button"], .btn, .icon-btn, .tab, .fab, .chip, .sort-chip-row, .memo-sort-chip, .memo-month-chip, .list-item, .asset-card, .memo-card, .memo-group-head, .more-item, .role-select-card, .theme-card, .sw-btn, .nav-collapse-btn, .ax-round, .ax-gcard .ax-ghead';
+  var NO = 'input, textarea, select, [contenteditable="true"], .no-press';
+  var timers = new WeakMap();
+  function findTarget(node){
+    if (!node || !node.closest) return null;
+    var el = node.closest(SEL);
+    if (!el || el.matches(NO) || el.disabled || el.getAttribute('aria-disabled') === 'true') return null;
+    return el;
+  }
+  function press(el){
+    el.classList.add('press-target');
+    clearTimeout(timers.get(el));
+    el.classList.add('press-on');
+    if (navigator.vibrate) { try { navigator.vibrate(8); } catch(_) {} }
+  }
+  function release(el){
+    clearTimeout(timers.get(el));
+    // ให้เห็นการกดอย่างน้อย 120ms ก่อนคืนรูป (กันกรณีกดสั้นจนไม่เห็น)
+    timers.set(el, setTimeout(function(){ el.classList.remove('press-on'); }, 120));
+  }
+  var active = null;
+  document.addEventListener('pointerdown', function(e){
+    if (e.button && e.button !== 0) return;
+    var el = findTarget(e.target);
+    if (!el) return;
+    active = el;
+    press(el);
+  }, { capture: true, passive: true });
+  function up(){ if (active) { release(active); active = null; } }
+  document.addEventListener('pointerup', up, true);
+  document.addEventListener('pointercancel', up, true);
+  document.addEventListener('pointermove', function(e){
+    if (!active) return;
+    var under = document.elementFromPoint(e.clientX, e.clientY);
+    if (!under || !active.contains(under)) { release(active); active = null; }
+  }, { capture: true, passive: true });
+  document.addEventListener('scroll', function(){ up(); }, { capture: true, passive: true });
+})();
+</script>
 </body>
 </html>
