@@ -11329,103 +11329,159 @@ function componentsSection(assetId) {
     }).join('') : `<div class="hint">ยังไม่มีข้อมูลส่วนควบ</div>`}
   `;
 }
+/* ---------- สไตล์หน้าเลือกหมวดหมู่ (ฉีดเข้า <head> ครั้งเดียว) ---------- */
+function ensureCatPickerCss() {
+  if (document.getElementById('catPickerCss')) return;
+  const s = document.createElement('style');
+  s.id = 'catPickerCss';
+  s.textContent = `
+.cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px;margin-bottom:6px}
+.cat-tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;min-height:108px;padding:14px 8px;border-radius:18px;border:1px solid var(--panel-line);background:var(--panel);cursor:pointer;font:inherit;color:var(--ink);box-shadow:0 1px 2px rgba(32,48,63,.04);transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease,background-color .18s ease}
+.cat-tile:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);border-color:var(--gold-line)}
+.cat-tile:active{transform:scale(.97)}
+.cat-tile.active{border-color:var(--navy);background:var(--navy-wash);box-shadow:inset 0 0 0 1px var(--navy)}
+.cat-tile-icon{width:48px;height:48px;border-radius:15px;display:flex;align-items:center;justify-content:center;background:var(--panel-soft);color:var(--icon)}
+.cat-tile-icon svg{width:24px;height:24px}
+.cat-tile.active .cat-tile-icon{background:var(--navy);color:#fff}
+.cat-tile-name{font-size:12.5px;font-weight:500;text-align:center;line-height:1.35;word-break:break-word}
+@media (prefers-reduced-motion: reduce){ .cat-tile, .cat-tile:hover{transition:none;transform:none} }
+`;
+  document.head.appendChild(s);
+}
+
+/* ---------- หน้าต่างเลือกหมวดหมู่ด้วยไอคอน ---------- */
+function openCategoryPicker(current, onPick) {
+  ensureCatPickerCss();
+  const cats = getCategories();
+  showSheet(`
+    <div class="sheet-title">เลือกหมวดหมู่</div>
+    <div class="cat-grid">
+      ${cats.map(c => `
+        <button type="button" class="cat-tile${c === current ? ' active' : ''}" data-cat="${escapeHtml(c)}">
+          <span class="cat-tile-icon">${catIcon(c)}</span>
+          <span class="cat-tile-name">${escapeHtml(c)}</span>
+        </button>`).join('')}
+    </div>
+  `);
+  document.querySelectorAll('#overlayEl .cat-tile').forEach(btn => {
+    btn.onclick = () => {
+      const c = btn.dataset.cat;
+      closeSheet();          // กลับไปที่ฟอร์มเดิม (ข้อมูลที่กรอกไว้ยังอยู่)
+      onPick(c);
+    };
+  });
+}
+
+/* ---------- ฟอร์มเพิ่ม/แก้ไขครุภัณฑ์ ---------- */
 function openAssetForm(a) {
   const editing = !!a;
+  // ค่าเดิมของช่อง (ว่างถ้าเพิ่มใหม่)
+  const v = (k) => (a && a[k]) ? escapeHtml(a[k]) : '';
+  // หมวดหมู่เริ่มต้น: ของเดิม หรือรายการแรกถ้าเพิ่มใหม่
+  const curCat = (a && a['หมวดหมู่']) || getCategories()[0] || '';
+
   showSheet(`
     <div class="sheet-title">${editing ? 'แก้ไขครุภัณฑ์' : 'เพิ่มครุภัณฑ์ใหม่'}</div>
-    <div class="field"><label>ชื่อครุภัณฑ์</label><input class="input" id="f_name" value="${a ? escapeHtml(a['ชื่อครุภัณฑ์']) : ''}"></div>
-    <div class="field"><label>หมวดหมู่</label><select class="input" id="f_cat">${getCategories().map(c => `<option ${a && a['หมวดหมู่']===c?'selected':''}>${escapeHtml(c)}</option>`).join('')}</select></div>
-    <div class="field"><label>ยี่ห้อ/รุ่น</label><input class="input" id="f_brand" value="${a ? escapeHtml(a['ยี่ห้อ/รุ่น'])||'' : ''}"></div>
-    <div class="field"><label>หมายเลขเครื่อง/serial</label><input class="input" id="f_serial" value="${a ? escapeHtml(a['หมายเลขเครื่อง'])||'' : ''}"></div>
-    
-<div id="f_vehicleWrap" style="display:none;">
-  <div class="field"><label>ขนาดยาง</label><input class="input" id="f_tireSize" placeholder="เช่น 265/65R17" value="${a ? escapeHtml(a['ขนาดยาง'])||'' : ''}"></div>
-  <div class="field"><label>ทะเบียนรถ</label><input class="input" id="f_licensePlate" value="${a ? escapeHtml(a['ทะเบียนรถ'])||'' : ''}"></div>
-  <div class="field"><label>หมายเลขตัวถัง/แชสซี่</label><input class="input" id="f_chassisNo" value="${a ? escapeHtml(a['หมายเลขตัวถัง'])||'' : ''}"></div>
-  <div class="field"><label>หมายเลขเครื่องยนต์</label><input class="input" id="f_engineNo" value="${a ? escapeHtml(a['หมายเลขเครื่องยนต์'])||'' : ''}"></div>
-</div>
 
-    <div class="field"><label>วันที่รับเข้า</label><input class="input" type="date" id="f_date" value="${a && a['วันที่รับเข้า'] ? isoDate(a['วันที่รับเข้า']) : isoDate()}"></div>
-    <div class="field"><label>มูลค่า (บาท)</label><input class="input" type="number" id="f_value" value="${a ? escapeHtml(a['มูลค่า(บาท)']) : ''}"></div>
-    <div class="field"><label>สถานะ</label><select class="input" id="f_status">${ASSET_STATUSES.map(s => `<option ${a && a['สถานะ']===s?'selected':''}>${s}</option>`).join('')}</select></div>
-    <div class="field"><label>ผู้ครอบครอง/หน่วยงาน</label><input class="input" id="f_holder" value="${a ? escapeHtml(a['ผู้ครอบครอง/หน่วยงาน'])||'' : ''}"></div>
-    <div class="field"><label>หน่วยงานเจ้าของ</label><input class="input" id="f_unit" value="${a ? escapeHtml(a['หน่วยงาน'])||'' : ''}"></div>
-    <div class="field"><label>วันครบกำหนดตรวจสภาพ/ต่อทะเบียน</label><input class="input" type="date" id="f_renewal" value="${a && a['วันครบกำหนดตรวจสภาพ/ต่อทะเบียน'] ? isoDate(a['วันครบกำหนดตรวจสภาพ/ต่อทะเบียน']) : ''}"></div>
-    <div class="field"><label>หมายเหตุ</label><input class="input" id="f_note" value="${a ? escapeHtml(a['หมายเหตุ'])||'' : ''}"></div>
-    <div class="btn-row"><button class="btn btn-ghost" id="btnCancel">ยกเลิก</button><button class="btn btn-primary" id="btnSave">บันทึก</button></div>
-  `);
-   function toggleVehicleFields() {
-  document.getElementById('f_vehicleWrap').style.display = (val('f_cat') === 'ยานพาหนะ') ? 'block' : 'none';
-}
-document.getElementById('f_cat').onchange = toggleVehicleFields;
-toggleVehicleFields();
-  document.getElementById('btnCancel').onclick = closeSheet;
-  document.getElementById('btnSave').onclick = async () => {
-const payload = {
-  id: a ? a['รหัสครุภัณฑ์'] : undefined,
-  name: val('f_name'), category: val('f_cat'), brand: val('f_brand'), serial: val('f_serial'),
-  receivedDate: val('f_date'), value: val('f_value'), status: val('f_status'), holder: val('f_holder'), unit: val('f_unit'),
-  renewalDue: val('f_renewal'), note: val('f_note'),
-  licensePlate: val('f_licensePlate'), chassisNo: val('f_chassisNo'), engineNo: val('f_engineNo'), tireSize: val('f_tireSize')
-};
-    if (!payload.name) { toast('กรุณากรอกชื่อครุภัณฑ์'); return; }
-    const saveBtn = document.getElementById('btnSave'); if (saveBtn.disabled) return; setButtonBusy(saveBtn, true); setLoading(true, 'กำลังบันทึกข้อมูล...');
-        try { await apiPost(editing ? 'updateAsset' : 'addAsset', payload); closeAllSheets(); toast(editing ? 'แก้ไขข้อมูลแล้ว' : 'เพิ่มครุภัณฑ์แล้ว'); await reloadThen(renderAssets); }
-    catch (err) { toast(err.message || 'บันทึกไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(saveBtn, false); }
-  };
-}
-function openComponentForm(parentId, c) {
-  const editing = !!c;
-  const curType = c ? String(c['ประเภท'] || '') : COMPONENT_TYPES[0];
+    <!-- ส่วนที่ 1: ข้อมูลครุภัณฑ์ -->
+    <div class="mf-section">
+      <div class="mf-section-title"><span class="mf-step">1</span> ข้อมูลครุภัณฑ์</div>
+      <div class="field"><label>ชื่อครุภัณฑ์</label><input class="input" id="f_name" value="${v('ชื่อครุภัณฑ์')}"></div>
 
-  // ถ้าข้อมูลเก่ามีประเภทที่ไม่อยู่ในรายการใหม่ (เช่น "ซองกระสุน/แม็กกาซีน") ให้เพิ่มเป็นตัวเลือกไว้ก่อน จะได้ไม่หาย
-  const typeOptions = COMPONENT_TYPES.slice();
-  if (curType && typeOptions.indexOf(curType) === -1) typeOptions.unshift(curType);
+      <!-- หมวดหมู่: แตะเพื่อเปิดหน้าเลือกด้วยไอคอน -->
+      <div class="field">
+        <label>หมวดหมู่</label>
+        <div class="glass list-item" id="f_catTrigger" role="button" tabindex="0" style="cursor:pointer;">
+          <div class="li-icon" id="f_catIcon">${catIcon(curCat)}</div>
+          <div class="li-body">
+            <div class="li-title" id="f_catName">${escapeHtml(curCat) || 'เลือกหมวดหมู่'}</div>
+            <div class="li-sub">แตะเพื่อเลือกหมวดหมู่</div>
+          </div>
+          <span class="status-badge status-ready" style="flex:none;">เปลี่ยน</span>
+        </div>
+        <input type="hidden" id="f_cat" value="${escapeHtml(curCat)}">
+      </div>
 
-  // ชื่อเดิมที่พิมพ์เอง (ใช้ตอนประเภท = อื่นๆ เท่านั้น)
-  const otherNameDefault = (c && curType === 'อื่นๆ' && c['ชื่อส่วนควบ'] && c['ชื่อส่วนควบ'] !== 'อื่นๆ') ? c['ชื่อส่วนควบ'] : '';
+      <div class="memo-two-col">
+        <div class="field"><label>ยี่ห้อ/รุ่น</label><input class="input" id="f_brand" value="${v('ยี่ห้อ/รุ่น')}"></div>
+        <div class="field"><label>หมายเลขเครื่อง/serial</label><input class="input" id="f_serial" value="${v('หมายเลขเครื่อง')}"></div>
+      </div>
 
-  showSheet(`
-    <div class="sheet-title">${editing ? 'แก้ไขส่วนควบ' : 'เพิ่มส่วนควบ'}</div>
-    <div class="field"><label>ประเภทส่วนควบ (ระบบจะใช้ชื่อประเภทเป็นชื่อให้อัตโนมัติ)</label>
-      <select class="input" id="c_type">${typeOptions.map(t => `<option value="${escapeHtml(t)}" ${curType === t ? 'selected' : ''}>${escapeHtml(t)}</option>`).join('')}</select>
+      <!-- ช่องเฉพาะยานพาหนะ จะแสดงเมื่อเลือกหมวด "ยานพาหนะ" -->
+      <div id="f_vehicleWrap" style="display:none;">
+        <div class="hint" style="margin:4px 0 10px;">ข้อมูลยานพาหนะ</div>
+        <div class="memo-two-col">
+          <div class="field"><label>ทะเบียนรถ</label><input class="input" id="f_licensePlate" value="${v('ทะเบียนรถ')}"></div>
+          <div class="field"><label>ขนาดยาง</label><input class="input" id="f_tireSize" placeholder="เช่น 265/65R17" value="${v('ขนาดยาง')}"></div>
+        </div>
+        <div class="memo-two-col">
+          <div class="field"><label>หมายเลขตัวถัง/แชสซี่</label><input class="input" id="f_chassisNo" value="${v('หมายเลขตัวถัง')}"></div>
+          <div class="field"><label>หมายเลขเครื่องยนต์</label><input class="input" id="f_engineNo" value="${v('หมายเลขเครื่องยนต์')}"></div>
+        </div>
+      </div>
     </div>
-    <!-- ช่องกรอกชื่อ: โชว์เฉพาะตอนเลือกประเภท "อื่นๆ" -->
-    <div class="field" id="c_nameWrap" style="display:none;"><label>ระบุชื่อส่วนควบ</label><input class="input" id="c_name" value="${escapeHtml(otherNameDefault)}" placeholder="เช่น ขาทราย"></div>
-    <div class="field"><label>จำนวน</label><input class="input" type="number" min="1" id="c_qty" value="${c ? compQty(c) : 1}"></div>
-    <div class="field"><label>หมายเลข/ซีเรียล</label><input class="input" id="c_serial" value="${c ? escapeHtml(c['หมายเลข/ซีเรียล'])||'' : ''}"></div>
-    <div class="field"><label>หมายเหตุ</label><input class="input" id="c_note" value="${c ? escapeHtml(c['หมายเหตุ'])||'' : ''}"></div>
+
+    <!-- ส่วนที่ 2: การรับเข้าและมูลค่า -->
+    <div class="mf-section">
+      <div class="mf-section-title"><span class="mf-step">2</span> การรับเข้าและมูลค่า</div>
+      <div class="memo-two-col">
+        <div class="field"><label>วันที่รับเข้า</label><input class="input" type="date" id="f_date" value="${a && a['วันที่รับเข้า'] ? isoDate(a['วันที่รับเข้า']) : isoDate()}"></div>
+        <div class="field"><label>มูลค่า (บาท)</label><input class="input" type="number" id="f_value" value="${v('มูลค่า(บาท)')}"></div>
+      </div>
+      <div class="memo-two-col">
+        <div class="field"><label>สถานะ</label><select class="input" id="f_status">${ASSET_STATUSES.map(s => `<option ${a && a['สถานะ']===s?'selected':''}>${s}</option>`).join('')}</select></div>
+        <div class="field"><label>วันครบกำหนดตรวจสภาพ/ต่อทะเบียน</label><input class="input" type="date" id="f_renewal" value="${a && a['วันครบกำหนดตรวจสภาพ/ต่อทะเบียน'] ? isoDate(a['วันครบกำหนดตรวจสภาพ/ต่อทะเบียน']) : ''}"></div>
+      </div>
+    </div>
+
+    <!-- ส่วนที่ 3: การครอบครองและหมายเหตุ -->
+    <div class="mf-section">
+      <div class="mf-section-title"><span class="mf-step">3</span> การครอบครอง</div>
+      <div class="memo-two-col">
+        <div class="field"><label>ผู้ครอบครอง/หน่วยงาน</label><input class="input" id="f_holder" value="${v('ผู้ครอบครอง/หน่วยงาน')}"></div>
+        <div class="field"><label>หน่วยงานเจ้าของ</label><input class="input" id="f_unit" value="${v('หน่วยงาน')}"></div>
+      </div>
+      <div class="field"><label>หมายเหตุ</label><input class="input" id="f_note" value="${v('หมายเหตุ')}"></div>
+    </div>
+
     <div class="btn-row"><button class="btn btn-ghost" id="btnCancel">ยกเลิก</button><button class="btn btn-primary" id="btnSave">บันทึก</button></div>
-    ${editing ? `<div class="btn-row"><button class="btn btn-danger" id="btnDeleteComp">ลบส่วนควบนี้</button></div>` : ''}
   `);
 
-  // แสดง/ซ่อนช่องชื่อ ตามประเภทที่เลือก
-  function toggleNameField() {
-    document.getElementById('c_nameWrap').style.display = (val('c_type') === 'อื่นๆ') ? 'block' : 'none';
+  function toggleVehicleFields() {
+    document.getElementById('f_vehicleWrap').style.display = (val('f_cat') === 'ยานพาหนะ') ? 'block' : 'none';
   }
-  document.getElementById('c_type').onchange = toggleNameField;
-  toggleNameField();
+  toggleVehicleFields();
+
+  // เปิดหน้าเลือกหมวดหมู่ เมื่อเลือกแล้วอัปเดตช่องในฟอร์ม
+  const catTrigger = document.getElementById('f_catTrigger');
+  const openCat = () => openCategoryPicker(val('f_cat'), (c) => {
+    document.getElementById('f_cat').value = c;
+    document.getElementById('f_catName').textContent = c;
+    document.getElementById('f_catIcon').innerHTML = catIcon(c);
+    toggleVehicleFields();
+  });
+  catTrigger.onclick = openCat;
+  catTrigger.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openCat(); } };
 
   document.getElementById('btnCancel').onclick = closeSheet;
   document.getElementById('btnSave').onclick = async () => {
-    const type = val('c_type');
-    // ชื่อ = ชื่อประเภท (ยกเว้น "อื่นๆ" ให้ใช้ชื่อที่กรอก ถ้าไม่กรอกใช้คำว่า "อื่นๆ")
-    const name = (type === 'อื่นๆ') ? (val('c_name').trim() || 'อื่นๆ') : type;
-    if (!type) { toast('กรุณาเลือกประเภทส่วนควบ'); return; }
-    const qty = Math.max(1, parseInt(val('c_qty'), 10) || 1);
-    if (editing && qty < compOut(c)) { toast('จำนวนต้องไม่น้อยกว่าที่ถูกยืมอยู่ (' + compOut(c) + ')'); return; }
-    const payload = { id: c ? c['รหัสส่วนควบ'] : undefined, parentId, name, type, serial: val('c_serial'), note: val('c_note'), qty };
-    const saveBtn = document.getElementById('btnSave'); if (saveBtn.disabled) return; setButtonBusy(saveBtn, true); setLoading(true, 'กำลังบันทึกส่วนควบ...');
-    try { await apiPost(editing ? 'updateComponent' : 'addComponent', payload); closeSheet(); toast('บันทึกส่วนควบแล้ว'); await reloadThen(() => openAssetDetail(parentId)); }
-    catch (err) { toast(err.message || 'บันทึกส่วนควบไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(saveBtn, false); }
-  };
-  if (editing) {
-    document.getElementById('btnDeleteComp').onclick = async () => {
-if (!await confirmSheet('ย้ายส่วนควบนี้ไปถังขยะ? กู้คืนได้ภายใน 30 วันที่ตั้งค่า > ถังขยะ', {title:'ลบส่วนควบ', okText:'ย้ายไปถังขยะ', tone:'bad'})) return;
-      try { await apiPost('deleteComponent', { id: c['รหัสส่วนควบ'] }); closeSheet(); toast('ลบส่วนควบแล้ว'); await reloadThen(() => openAssetDetail(parentId)); }
-      catch (err) { toast(err.message || 'ลบส่วนควบไม่สำเร็จ'); }
+    const payload = {
+      id: a ? a['รหัสครุภัณฑ์'] : undefined,
+      name: val('f_name'), category: val('f_cat'), brand: val('f_brand'), serial: val('f_serial'),
+      receivedDate: val('f_date'), value: val('f_value'), status: val('f_status'), holder: val('f_holder'), unit: val('f_unit'),
+      renewalDue: val('f_renewal'), note: val('f_note'),
+      licensePlate: val('f_licensePlate'), chassisNo: val('f_chassisNo'), engineNo: val('f_engineNo'), tireSize: val('f_tireSize')
     };
-  }
+    if (!payload.name) { toast('กรุณากรอกชื่อครุภัณฑ์'); return; }
+    const saveBtn = document.getElementById('btnSave'); if (saveBtn.disabled) return;
+    setButtonBusy(saveBtn, true); setLoading(true, 'กำลังบันทึกข้อมูล...');
+    try {
+      await apiPost(editing ? 'updateAsset' : 'addAsset', payload);
+      closeAllSheets(); toast(editing ? 'แก้ไขข้อมูลแล้ว' : 'เพิ่มครุภัณฑ์แล้ว');
+      await reloadThen(renderAssets);
+    } catch (err) { toast(err.message || 'บันทึกไม่สำเร็จ'); }
+    finally { setLoading(false); setButtonBusy(saveBtn, false); }
+  };
 }
 
 /* ========================================================= BORROW */
