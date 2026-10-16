@@ -14073,6 +14073,7 @@ async function renderMemos() {
     toast('โหลดเอกสารไม่สำเร็จ: ' + (e.message || ''));
   }
   drawMemos();
+  applyPremiumMotion(document.getElementById('view-memos'));
 }
 
 /* กรองตามคำค้น + เดือนที่เลือก แล้วเรียงตามที่ผู้ใช้เลือก */
