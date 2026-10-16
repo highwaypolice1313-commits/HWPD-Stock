@@ -7169,27 +7169,6 @@ html, body{
 .notif-readall:disabled{ opacity:.45; cursor:default; transform:none; box-shadow:none; }
 .notif-readall:disabled::before{ display:none; }
 </style>   
-
-<style id="dash-band-fixed-v1">
-@media (max-width:899px){
-  /* แถบพื้นหลังคงที่ เนื้อหาเลื่อนทับไปบนแถบ */
-  #view-dashboard .dbx-mob{ position:relative; }
-  #view-dashboard .dbx-mob::before{
-    content:""; position:fixed; left:0; right:0;
-    top:var(--topbar-h, 72px);
-    height:250px;
-    background:linear-gradient(160deg,var(--navy),var(--navy-deep));
-    border-radius:0 0 28px 28px;
-    z-index:0; pointer-events:none;
-  }
-  #view-dashboard .dbx-mob > *{ position:relative; z-index:1; }
-
-  /* ข้อความหัวเรื่องอยู่บนแถบ */
-  #view-dashboard .dbx-mob-head{ color:var(--panel); padding-top:6px; }
-  #view-dashboard .dbx-mob-head .dbx-date{ color:var(--panel); opacity:.75; }
-  #view-dashboard .dbx-mob-head .dbx-h1{ color:var(--panel); }
-}
-</style>
    
 </head>
    
