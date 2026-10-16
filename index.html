@@ -7229,6 +7229,29 @@ html, body{
   #view-borrow .chip-row{ margin-bottom:8px; }
 }
 </style>
+
+   <style id="borrow-fullwidth-v2">
+/* ยืม-คืน มือถือ: การ์ดสถิติสามช่องเต็มความกว้าง */
+@media (max-width:899px){
+  #view-borrow .stat-grid{
+    display:grid !important; grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:8px; width:100%; margin:0 0 10px !important;
+  }
+  #view-borrow .stat-grid .stat-card{ flex:none; width:auto; padding:12px 8px; }
+  #view-borrow .stat-grid .stat-num{ font-size:20px; }
+
+  /* หมวดหมู่ย้ายไปอยู่ใน sheet ผ่านชิปในแถวแท็บ */
+  #view-borrow .ax-pills{ display:none !important; }
+  #view-borrow .ax-cat-chip{
+    background:var(--gold-wash); color:var(--gold-deep); border-color:transparent; font-weight:600;
+  }
+  #view-borrow .ax-top{ margin-bottom:8px; }
+  #view-borrow .chip-row{ margin-bottom:8px; }
+}
+@media (min-width:900px){
+  #view-borrow .ax-cat-chip{ display:none; }
+}
+</style>
    
 </head>
    
@@ -11259,6 +11282,7 @@ function renderBorrow() {
     </div>
 
     <div class="chip-row">
+      <button type="button" class="chip ax-cat-chip" id="borrowCatBtn">${escapeHtml(state.borrowCat === 'all' ? 'ทุกหมวด' : state.borrowCat)} ▾</button>
       ${TABS.map(t => `<div class="chip ${state.borrowTab === t.id ? 'active' : ''}" data-btab="${t.id}">${t.label} (${t.count})</div>`).join('')}
     </div>
 
@@ -11268,7 +11292,12 @@ function renderBorrow() {
 
   document.getElementById('btnExportBorrow').onclick = () => exportCsv('ยืมคืน.csv',
     ['รหัสรายการ','รหัสครุภัณฑ์','ชื่อครุภัณฑ์','ผู้ยืม','วันที่ยืม','กำหนดคืน','วันที่คืนจริง','สถานะ','ผู้อนุมัติ','หมายเหตุ'], state.borrow);
-  document.getElementById('btnPrintAllBorrow').onclick = printAllBorrow;
+    document.getElementById('borrowCatBtn').onclick = () =>
+    openSortSheet('หมวดครุภัณฑ์', catPills.map(p => [p.v, `${p.label} (${p.n})`]), state.borrowCat, v => {
+      state.borrowCat = v;
+      renderBorrow();
+    });
+ document.getElementById('btnPrintAllBorrow').onclick = printAllBorrow;
 
   document.getElementById('borrowSortBtn').onclick = () =>
     openSortSheet('เรียงลำดับรายการยืม-คืน', BORROW_SORT_OPTIONS, state.borrowSort, v => {
