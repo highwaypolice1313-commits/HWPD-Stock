@@ -7283,6 +7283,10 @@ html, body{
   overflow-x:auto; scroll-snap-type:x proximity; scrollbar-width:none; -webkit-overflow-scrolling:touch; width:100%;
 }
 #view-assets .stat-grid::-webkit-scrollbar{display:none;}
+#view-users .stat-grid{display:grid;grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(42%,1fr);overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none;width:100%;}
+#view-users .stat-grid::-webkit-scrollbar{display:none;}
+#view-users .stat-grid > *{scroll-snap-align:start;min-width:0;}
+#view-users .ax-round.on{background:var(--navy);color:#fff;border-color:var(--navy);}
 #view-assets .stat-grid > *{scroll-snap-align:start;min-width:0;}
 </style>
 </head>
@@ -9130,14 +9134,6 @@ function renderDashboard() {
       <div class="dbx-lbl" style="margin-bottom:14px;">${escapeHtml(title)}</div>
       <div class="dbx-slide-grid">${items.map(([l, v, cls]) => `<div><div class="dbx-lbl">${escapeHtml(l)}</div><div class="dbx-num ${cls || ''}" style="font-size:26px;">${v}</div></div>`).join('')}</div>
     </div>`;
-  const carouselHtml = `<div class="dbx-carousel">
-      <div class="dbx-slides" id="dbxSlides">
-        <div class="dbx-slide">${heroHtml(false)}</div>
-        <div class="dbx-slide">${slideCard('การยืม-คืน', [['กำลังถูกยืม', borrowed.toLocaleString('en-US')], ['เกินกำหนด', overdue.toLocaleString('en-US'), 'dbx-gold'], ['รออนุมัติ', pendingBorrow.toLocaleString('en-US')]])}</div>
-        <div class="dbx-slide">${slideCard('ซ่อมบำรุง', [['กำลังซ่อม', repair.toLocaleString('en-US')], ['ซ่อมเสร็จแล้ว', doneMaint.toLocaleString('en-US')], ['ค่าใช้จ่าย (บาท)', maintCost.toLocaleString('en-US')]])}</div>
-      </div>
-      <div class="dbx-dots" id="dbxDots"><i class="on"></i><i></i><i></i></div>
-    </div>`;
 
   const heroHtml = (desk) => `
     <div class="dbx-hero ${desk ? 'dbx-hero-d' : ''}">
@@ -9170,6 +9166,15 @@ function renderDashboard() {
         <div><div class="dbx-stat-lbl">${desk ? 'อยู่ระหว่างซ่อม' : 'กำลังซ่อม'}</div><div class="dbx-stat-num">${repair.toLocaleString('en-US')}</div></div>
         ${desk ? `<div class="dbx-ico">${ICONS.wrench}</div>` : ''}
       </div>
+    </div>`;
+
+  const carouselHtml = `<div class="dbx-carousel">
+      <div class="dbx-slides" id="dbxSlides">
+        <div class="dbx-slide">${heroHtml(false)}</div>
+        <div class="dbx-slide">${slideCard('การยืม-คืน', [['กำลังถูกยืม', borrowed.toLocaleString('en-US')], ['เกินกำหนด', overdue.toLocaleString('en-US'), 'dbx-gold'], ['รออนุมัติ', pendingBorrow.toLocaleString('en-US')]])}</div>
+        <div class="dbx-slide">${slideCard('ซ่อมบำรุง', [['กำลังซ่อม', repair.toLocaleString('en-US')], ['ซ่อมเสร็จแล้ว', doneMaint.toLocaleString('en-US')], ['ค่าใช้จ่าย (บาท)', maintCost.toLocaleString('en-US')]])}</div>
+      </div>
+      <div class="dbx-dots" id="dbxDots"><i class="on"></i><i></i><i></i></div>
     </div>`;
 
   // เมนูมือถือ: ไอคอนดึงจากแถบเมนูจริง ชื่อและลำดับตรงกับเมนูจริง
@@ -13161,16 +13166,16 @@ function drawUsers() {
   const stat = (n, t, cls) => `<div class="stat-card ${cls || ''}"><div class="stat-num">${n}</div><div class="stat-label">${t}</div></div>`;
 
   el.innerHTML = `
-    <div class="off-head">
-      <div class="off-title">รายชื่อข้าราชการตำรวจในสังกัด</div>
-      <div class="off-head-tools">
+    <div class="section-title">
+      รายชื่อข้าราชการตำรวจในสังกัด
+      <span class="section-actions">
         ${viewToggleHtml('users', state.usersView)}
         <button class="icon-btn" id="btnOffExport" title="ส่งออก CSV ตามตัวกรอง" aria-label="ส่งออก CSV">${ICONS.download}</button>
         <button class="icon-btn" id="btnPrintAllUsers" title="พิมพ์รายชื่อตามตัวกรอง" aria-label="พิมพ์รายชื่อ">${ICONS.print}</button>
-      </div>
+      </span>
     </div>
 
-    <div class="stat-row">
+    <div class="stat-grid" style="margin-bottom:14px;">
       ${stat(rows.length, 'ทั้งหมด (คน)')}
       ${stat(offCount, 'สัญญาบัตร', 'info')}
       ${stat(polCount, 'ประทวน', 'info')}
@@ -13178,16 +13183,16 @@ function drawUsers() {
       ${stat(flagCount, 'ต้องตรวจข้อมูล', flagCount ? 'warn' : '')}
     </div>
 
-    <div class="off-toolbar">
-      <div class="off-search">${srchBoxHtml('userSearchInput', state.userSearch, 'ค้นหาชื่อ ตำแหน่ง หน่วยงาน')}</div>
-      <button type="button" class="off-round" id="offFilterOpen" aria-label="ตัวกรอง">
+    <div class="ax-top">
+      ${srchBoxHtml('userSearchInput', state.userSearch, 'ค้นหาชื่อ ตำแหน่ง หน่วยงาน')}
+      <button type="button" class="ax-round" id="offFilterOpen" aria-label="ตัวกรอง">
         <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3 5h14M6 10h8M9 15h2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-        <span class="off-filter-badge" id="offFilterBadge" style="display:none;"></span>
+        <span class="ax-badge" id="offFilterBadge" style="display:none;"></span>
       </button>
-      <button type="button" class="off-round off-selmode ${state.offSelectMode ? 'on' : ''}" id="btnOffSelMode" aria-label="เลือกหลายคน">${ICONS.checklist}</button>
+      <button type="button" class="ax-round off-selmode ${state.offSelectMode ? 'on' : ''}" id="btnOffSelMode" aria-label="เลือกหลายคน" title="เลือกหลายคน">${ICONS.checklist}</button>
     </div>
 
-    <div class="off-chips" id="offFilterChips"></div>
+    <div id="offFilterChips" style="display:none;"></div>
     <div id="offBulk"></div>
     <div class="ax-count" id="userCount"></div>
     <div id="userList"></div>
