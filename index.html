@@ -20769,4 +20769,28 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 }
 </style>
 </body>
+   <style id="user-fixes-sig-dark">
+/* ไอคอนลายเซ็น โหมดมืด: สีทึบ เส้นหนา */
+:root[data-theme="night"] .list-item .li-icon[id$="SigIcon"],
+:root[data-theme="cibnight"] .list-item .li-icon[id$="SigIcon"],
+:root[data-theme="night"] .list-item .li-icon[id$="sigIcon"],
+:root[data-theme="cibnight"] .list-item .li-icon[id$="sigIcon"]{
+  opacity:1 !important;
+}
+:root[data-theme="night"] .list-item .li-icon[id$="SigIcon"] svg,
+:root[data-theme="night"] .list-item .li-icon[id$="sigIcon"] svg{
+  color:#0c1e33 !important; opacity:1 !important;
+}
+:root[data-theme="cibnight"] .list-item .li-icon[id$="SigIcon"] svg,
+:root[data-theme="cibnight"] .list-item .li-icon[id$="sigIcon"] svg{
+  color:#002a5c !important; opacity:1 !important;
+}
+:root[data-theme="night"] .list-item .li-icon[id$="SigIcon"] svg *,
+:root[data-theme="night"] .list-item .li-icon[id$="sigIcon"] svg *,
+:root[data-theme="cibnight"] .list-item .li-icon[id$="SigIcon"] svg *,
+:root[data-theme="cibnight"] .list-item .li-icon[id$="sigIcon"] svg *{
+  stroke:currentColor !important; stroke-width:2.2 !important; opacity:1 !important;
+}
+</style>
+</body>
 </html>
