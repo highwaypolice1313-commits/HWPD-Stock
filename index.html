@@ -6952,6 +6952,44 @@ html, body{
 }
 </style>  
 
+<style id="topbar-capsule-v1">
+/* แคปซูลรวมปุ่มรอง */
+.topbar .capsule{
+  display:flex; align-items:center; gap:2px;
+  height:42px; padding:3px; box-sizing:border-box;
+  background:var(--panel); border:1px solid var(--panel-line);
+  border-radius:99px; box-shadow:var(--shadow-sm);
+}
+.topbar .capsule > button{
+  width:36px; height:36px; padding:0; margin:0;
+  border:none; background:transparent; box-shadow:none;
+  display:grid; place-items:center; color:var(--navy); cursor:pointer;
+  position:relative; border-radius:50%;
+}
+.topbar .capsule > button svg{ width:17px; height:17px; }
+.topbar .capsule > button:hover{ background:var(--navy-wash); }
+.topbar .cap-sep{ width:1px; height:18px; background:var(--panel-line); margin:0 4px; }
+.topbar .cap-avatar{
+  display:none; width:34px; height:34px; border-radius:50%;
+  background:linear-gradient(145deg,var(--navy),var(--navy-deep)); color:#fff;
+  font:inherit; font-size:14px; font-weight:600; border:none; cursor:pointer;
+  place-items:center; padding:0; margin-left:2px;
+}
+
+/* มือถือ: ซ่อนของที่ย้ายไปอยู่ในเมนูบัญชี */
+@media (max-width:899px){
+  .topbar .desktop-tools,
+  .topbar #rolePill,
+  .topbar #profileName,
+  .topbar #btnLogout{ display:none !important; }
+  .topbar .cap-avatar{ display:grid !important; }
+  .topbar .cap-sep{ margin:0 2px; }
+}
+
+/* เมนูบัญชี (bottom sheet) */
+.acct-meta{ font-size:12.5px; color:var(--ink-dim); margin:-4px 0 14px; }
+</style>   
+   
 </style>
    
 </head>
@@ -7021,20 +7059,17 @@ html, body{
   <div class="desktop-tools">
     <span class="connection-dot" id="connectionDot" title="สถานะการเชื่อมต่อ"></span>
     <span class="last-sync" id="lastSync">ยังไม่ได้อัปเดต</span>
-    <button class="icon-btn command-trigger" id="commandBtn" type="button" title="ค้นหาด่วน (Ctrl+K)" aria-label="ค้นหาด่วน (Ctrl+K)"><svg viewBox="0 0 20 20" fill="none"><circle cx="8.7" cy="8.7" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M12.5 12.5l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
-    <button class="refresh-btn" id="refreshBtn" type="button" title="รีเฟรชข้อมูล" aria-label="รีเฟรชข้อมูล">
-      <svg viewBox="0 0 20 20" fill="none"><path d="M16 6.5A6.5 6.5 0 104.7 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M16 3.5v3h-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </button>
   </div>
-  <button class="icon-btn notif-btn" id="notifBtn" type="button" title="การแจ้งเตือน" aria-label="การแจ้งเตือน">
-    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 3a4.5 4.5 0 00-4.5 4.5v2.3c0 .9-.3 1.8-.9 2.5L3.7 14.2h12.6l-.9-1.9c-.6-.7-.9-1.6-.9-2.5V7.5A4.5 4.5 0 0010 3z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M8.3 16.2a1.8 1.8 0 003.4 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-    <span class="notif-count" id="notifCount" style="display:none;"></span>
-  </button>
-<span class="role-pill user-pill" id="rolePill" data-role="">…</span>
-<span class="profile-name" id="profileName"></span>
-  <button class="icon-btn" id="btnLogout" title="ออกจากระบบ" aria-label="ออกจากระบบ">
-    <svg viewBox="0 0 20 20" fill="none"><path d="M8 3.5H5.5a1.5 1.5 0 00-1.5 1.5v10a1.5 1.5 0 001.5 1.5H8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M12.5 13.5L16.5 10l-4-3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M16.2 10H8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-  </button>
+  <div class="capsule" id="topCapsule">
+    <button class="icon-btn command-trigger" id="commandBtn" type="button" title="ค้นหาด่วน (Ctrl+K)" aria-label="ค้นหาด่วน (Ctrl+K)"><svg viewBox="0 0 20 20" fill="none"><circle cx="8.7" cy="8.7" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M12.5 12.5l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+    <button class="refresh-btn" id="refreshBtn" type="button" title="รีเฟรชข้อมูล" aria-label="รีเฟรชข้อมูล"><svg viewBox="0 0 20 20" fill="none"><path d="M16 6.5A6.5 6.5 0 104.7 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M16 3.5v3h-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <button class="icon-btn notif-btn" id="notifBtn" type="button" title="การแจ้งเตือน" aria-label="การแจ้งเตือน"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 3a4.5 4.5 0 00-4.5 4.5v2.3c0 .9-.3 1.8-.9 2.5L3.7 14.2h12.6l-.9-1.9c-.6-.7-.9-1.6-.9-2.5V7.5A4.5 4.5 0 0010 3z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M8.3 16.2a1.8 1.8 0 003.4 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg><span class="notif-count" id="notifCount" style="display:none;"></span></button>
+    <span class="cap-sep"></span>
+    <button class="cap-avatar" id="avatarBtn" type="button" aria-label="บัญชีผู้ใช้">?</button>
+  </div>
+  <span class="role-pill" id="rolePill">…</span>
+  <span class="profile-name" id="profileName"></span>
+  <button class="icon-btn" id="btnLogout" title="ออกจากระบบ" aria-label="ออกจากระบบ"><svg viewBox="0 0 20 20" fill="none"><path d="M8 3.5H5.5a1.5 1.5 0 00-1.5 1.5v10a1.5 1.5 0 001.5 1.5H8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M12.5 13.5L16.5 10l-4-3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M16.2 10H8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></button>
 </div>
   </div>
 
@@ -19047,6 +19082,33 @@ document.getElementById('notifBtn')?.addEventListener('click', openNotifications
 })();
 
 document.getElementById('notifBtn')?.addEventListener('click', openNotifications);
+
+/* รูปผู้ใช้: แสดงตัวอักษรแรกของชื่อ */
+(function syncAvatar(){
+  const name = document.getElementById('profileName');
+  const av = document.getElementById('avatarBtn');
+  if (!name || !av) return;
+  const up = () => { const t = name.textContent.trim(); av.textContent = t ? t.charAt(0) : '?'; };
+  up();
+  new MutationObserver(up).observe(name, {childList:true, characterData:true, subtree:true});
+})();
+
+/* กดรูปผู้ใช้ เปิดเมนูบัญชี: ชื่อ สถานะ รีเฟรช ออกจากระบบ */
+function openAccountSheet() {
+  const name = (document.getElementById('profileName')?.textContent || '').trim() || 'ผู้ใช้งาน';
+  const role = state.role === 'admin' ? 'แอดมิน' : 'ดูอย่างเดียว';
+  const sync = document.getElementById('lastSync')?.textContent || '';
+  showSheet(`
+    <div class="sheet-title">${escapeHtml(name)}</div>
+    <div class="acct-meta">${escapeHtml(role)} · ${escapeHtml(sync)}</div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="acctRefresh">รีเฟรชข้อมูล</button>
+      <button class="btn btn-primary" id="acctLogout">ออกจากระบบ</button>
+    </div>`, 'acct-sheet');
+  document.getElementById('acctRefresh').onclick = () => { closeSheet(); location.reload(); };
+  document.getElementById('acctLogout').onclick = () => { closeSheet(); document.getElementById('btnLogout')?.click(); };
+}
+document.getElementById('avatarBtn')?.addEventListener('click', openAccountSheet);   
 
 init();   // <-- ของเดิม คงไว้ตามเดิม
 /* ===== จดจำตำแหน่งเลื่อนของหน้า ===== */
