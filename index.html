@@ -7340,6 +7340,47 @@ html, body{
 .li-icon svg, .ax-ico svg, .asset-card-icon svg{ stroke:currentColor; }
 .li-icon svg [fill]:not([fill="none"]), .ax-icon svg [fill]:not([fill="none"]){ fill:currentColor; }
 </style>
+<style>
+/* ===== ดีไซน์ใหม่ทุกหน้า (ตามตัวอย่างที่เลือก) ===== */
+/* รายการเรียบ: กลุ่มเป็นกล่องเดียว มีเส้นคั่นบาง */
+#assetList:not(.asset-grid), #borrowList:not(.asset-grid), #maintList:not(.asset-grid),
+#userList, #auditList, .memo-group-body:not(.memo-grid):not(.asset-grid){
+  background:var(--panel); border:1px solid var(--panel-line); border-radius:22px; overflow:hidden;
+  box-shadow:0 10px 30px rgba(22,32,43,.06);
+}
+#assetList:not(.asset-grid) .glass.list-item, #borrowList:not(.asset-grid) .glass.list-item,
+#maintList:not(.asset-grid) .glass.list-item, #userList .glass.list-item,
+#auditList .glass.list-item, .memo-group-body:not(.memo-grid):not(.asset-grid) .glass.list-item{
+  background:transparent; border:0; border-radius:0; box-shadow:none; padding:14px 18px;
+}
+#assetList:not(.asset-grid) .glass.list-item + .glass.list-item,
+#borrowList:not(.asset-grid) .glass.list-item + .glass.list-item,
+#maintList:not(.asset-grid) .glass.list-item + .glass.list-item,
+#userList .glass.list-item + .glass.list-item,
+#auditList .glass.list-item + .glass.list-item,
+.memo-group-body:not(.memo-grid):not(.asset-grid) .glass.list-item + .glass.list-item,
+#assetList:not(.asset-grid) .sw-wrap + .sw-wrap, #borrowList:not(.asset-grid) .sw-wrap + .sw-wrap,
+#maintList:not(.asset-grid) .sw-wrap + .sw-wrap{ border-top:1px solid var(--panel-line); }
+
+/* กระเบื้อง: การ์ดในมุมมองการ์ด */
+.asset-grid .glass.asset-card{
+  background:var(--panel); border:1px solid var(--panel-line); border-radius:22px; padding:16px;
+  box-shadow:0 10px 30px rgba(22,32,43,.06);
+}
+
+/* เส้นขั้นตอน */
+.stg{display:flex;align-items:flex-start;margin:10px 0 0;}
+.stg-s{display:flex;flex-direction:column;align-items:center;gap:5px;flex:none;width:46px;}
+.stg-d{width:9px;height:9px;border-radius:50%;background:var(--panel-line);}
+.stg-d.done{background:var(--ok);}
+.stg-d.now{background:var(--gold);box-shadow:0 0 0 4px color-mix(in srgb, var(--gold) 22%, transparent);}
+.stg-l{font-size:10.5px;color:var(--ink-faint);white-space:nowrap;line-height:1;}
+.stg-s.done .stg-l{color:var(--ok);}
+.stg-s.now .stg-l{color:var(--gold);font-weight:600;}
+.stg-seg{flex:1;height:2px;background:var(--panel-line);margin:4px 2px 0;min-width:10px;}
+.stg-seg.done{background:var(--ok);}
+.asset-card .stg{margin-top:14px;padding-top:12px;border-top:1px dashed var(--panel-line);}
+</style>
 </head>
 
    
@@ -11518,6 +11559,7 @@ function borrowCard(b) {
     </div>
     <div>
       <div class="asset-card-title">${escapeHtml(b['ชื่อครุภัณฑ์'])}</div>
+      ${stageHtml(borrowStageIdx(b), BORROW_STAGES)}
       <div class="asset-card-sub">${escapeHtml(b['ผู้ยืม'])}</div>
       ${info ? `<div class="asset-card-sub">${escapeHtml(info)}</div>` : ''}
     </div>
@@ -11529,6 +11571,30 @@ function effectiveBorrowStatus(b) {
   if (!isNaN(due) && due.getTime() < new Date().setHours(0, 0, 0, 0)) return 'เกินกำหนด';
   return b['สถานะ'] || 'กำลังยืม';
 }
+/* ===== ขั้นตอนงาน: แสดงเป็นเส้นเวลาสั้น ๆ ในรายการและการ์ด ===== */
+const BORROW_STAGES = ['ขอยืม', 'อนุมัติ', 'ยืมอยู่', 'คืนแล้ว'];
+const MAINT_STAGES = ['แจ้ง', 'ซ่อม', 'เสร็จ'];
+function borrowStageIdx(b) {
+  const s = effectiveBorrowStatus(b);
+  if (s === 'คืนแล้ว') return 3;
+  if (s === 'กำลังยืม' || s === 'เกินกำหนด') return 2;
+  if (s === 'รออนุมัติ' || s === 'ถูกปฏิเสธ') return 0;
+  return 1;
+}
+function maintStageIdx(m) {
+  const s = m['สถานะ'];
+  if (s === 'ซ่อมเสร็จ') return 2;
+  if (s === 'รอซ่อม') return 0;
+  return 1;
+}
+function stageHtml(cur, labels) {
+  return `<div class="stg">${labels.map((l, i) => {
+    const st = i < cur ? 'done' : (i === cur ? 'now' : '');
+    const seg = i ? `<div class="stg-seg ${i <= cur ? 'done' : ''}"></div>` : '';
+    return `${seg}<div class="stg-s ${st}"><div class="stg-d ${st}"></div><span class="stg-l">${escapeHtml(l)}</span></div>`;
+  }).join('')}</div>`;
+}
+
 function borrowRow(b) {
   const eff = effectiveBorrowStatus(b);
   const info = borrowDaysInfo(b);
@@ -11537,6 +11603,7 @@ function borrowRow(b) {
     <div class="li-body">
       <div class="li-title">${escapeHtml(b['ชื่อครุภัณฑ์'])}</div>
       <div class="li-sub">${escapeHtml(b['ผู้ยืม'])}${info ? ' · ' + info : ''}</div>
+      ${stageHtml(borrowStageIdx(b), BORROW_STAGES)}
     </div>
     <div class="status-badge ${statusClass(eff)}">${escapeHtml(eff)}</div>
   </div>`;
@@ -12434,6 +12501,7 @@ function maintRow(m) {
     <div class="li-body">
       <div class="li-title">${escapeHtml(m['ชื่อครุภัณฑ์'])}</div>
       <div class="li-sub">${escapeHtml(m['อาการ/ปัญหา'])} · แจ้งเมื่อ ${systemDate(m['วันที่แจ้ง'])}</div>
+      ${stageHtml(maintStageIdx(m), MAINT_STAGES)}
     </div>
     <div class="status-badge ${statusClass(m['สถานะ'])}">${escapeHtml(m['สถานะ'])}</div>
   </div>`;
@@ -12446,6 +12514,7 @@ function maintCard(m) {
     </div>
     <div>
       <div class="asset-card-title">${escapeHtml(m['ชื่อครุภัณฑ์'])}</div>
+      ${stageHtml(maintStageIdx(m), MAINT_STAGES)}
       <div class="asset-card-sub">${escapeHtml(m['อาการ/ปัญหา'])}</div>
       <div class="asset-card-sub">แจ้งเมื่อ ${systemDate(m['วันที่แจ้ง'])}</div>
     </div>
