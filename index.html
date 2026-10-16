@@ -7424,11 +7424,63 @@ html, body{
 .asset-grid .stg-l{ display:none; }
 .asset-grid .stg-seg{ min-width:6px; }
 </style>
+
+   <style>
+/* ---------- ยกการ์ด/แถวขึ้นเล็กน้อยเมื่อเอาเมาส์ชี้ (เฉพาะอุปกรณ์ที่มีเมาส์) ---------- */
+@media (hover:hover) and (pointer:fine) {
+  .list-item,
+  .asset-card,
+  .memo-card,
+  .mc-card,
+  .theme-card,
+  .role-select-card,
+  .cu-item,
+  .dbx-tile,
+  .stat-card,
+  .chart-card,
+  .off-row,
+  .off-card,
+  .user-item {
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, background-color .18s ease;
+  }
+  .list-item:hover,
+  .asset-card:hover,
+  .memo-card:hover,
+  .mc-card:hover,
+  .theme-card:hover,
+  .role-select-card:hover,
+  .cu-item:hover,
+  .dbx-tile:hover,
+  .stat-card:hover,
+  .chart-card:hover,
+  .off-row:hover,
+  .off-card:hover,
+  .user-item:hover,
+  #view-users .off-row:hover,
+  #view-users .off-card:hover,
+  #view-users .user-item:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: var(--shadow-md) !important;
+  }
+}
+
+/* ผู้ที่ตั้งค่าลดการเคลื่อนไหวในระบบ จะไม่เห็นการขยับ */
+@media (prefers-reduced-motion: reduce) {
+  .list-item, .asset-card, .memo-card, .mc-card, .theme-card, .role-select-card,
+  .cu-item, .dbx-tile, .stat-card, .chart-card, .off-row, .off-card, .user-item {
+    transition: none !important;
+  }
+  .list-item:hover, .asset-card:hover, .memo-card:hover, .mc-card:hover,
+  .theme-card:hover, .role-select-card:hover, .cu-item:hover, .dbx-tile:hover,
+  .stat-card:hover, .chart-card:hover, .off-row:hover, .off-card:hover, .user-item:hover {
+    transform: none !important;
+  }
+}
+</style>
+   
 </head>
 
 
-
-   
 <body>
 
 <div id="loginScreen" class="login-wrap">
