@@ -167,8 +167,9 @@ const userToThai = r => ({
   'รหัสจนท.': r.id, 'LINEUserId': r.line_user_id, 'ชื่อ-สกุล': r.name, 'ตำแหน่ง': r.position,
   'หน่วยงาน': r.unit, 'สิทธิ์': r.role, 'วันที่เพิ่ม': r.created_at, 'ชื่อผู้ใช้': r.username,
   'ยศ': r.rank, 'บทบาทเบิก-ยืม': r.memo_role, 'รูปถ่าย': r.photo, 'ลายเซ็น': r.signature,
-  'เลขบัตรประชาชน': r.citizen_id, 'รหัสหมวก': r.badge_no, 'เบอร์โทร': r.phone, 'วัน/เดือน/ปีเกิด': r.birth_date,
-  'กรุ๊ปเลือด': r.blood_type, 'auth_user_id': r.auth_user_id
+  'เลขบัตรประชาชน': r.citizen_id, 'เบอร์โทร': r.phone, 'วัน/เดือน/ปีเกิด': r.birth_date,
+  'กรุ๊ปเลือด': r.blood_type, 'auth_user_id': r.auth_user_id,
+  'รหัสหมวก': r.badge_no // ✅ เพิ่มบรรทัดนี้
 });
 const activityToThai = r => ({
   'รหัส': r.id, 'วันที่-เวลา': r.created_at, 'ผู้ทำรายการ': r.actor, 'การกระทำ': r.action, 'รายละเอียด': r.detail
@@ -272,7 +273,7 @@ async function sGetAll() {
     fetchAll('v_borrow', '*', 'created_at'),
     fetchAll('v_maint', '*', 'created_at'),
     fetchAll('v_components', '*', 'created_at'),
-    fetchAll('v_users', 'id,line_user_id,name,position,unit,role,rank,memo_role,photo,username,created_at,signature', 'created_at')
+   fetchAll('v_users', 'id,line_user_id,name,position,unit,role,rank,memo_role,photo,username,created_at,signature,badge_no', 'created_at')
   ]);
   const settings = await sGetSystemSettings();
   const assets = assetsD.map(assetToThai);
