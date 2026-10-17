@@ -14547,7 +14547,6 @@ function openUserForm(u) {
       <div class="field" style="max-width:140px;"><label>ยศ</label><select class="input" id="u_rank"><option value="">-</option>${RANK_OPTIONS.map(r => `<option ${editing && u['ยศ']===r?'selected':''}>${r}</option>`).join('')}</select></div>
       <div class="field"><label>ชื่อ-สกุล</label><input class="input" id="u_name" value="${editing ? escapeHtml(u['ชื่อ-สกุล']) : ''}"></div>
     </div>
-    <div class="field"><label>ชื่อผู้ใช้ (ใช้เข้าระบบ)</label><input class="input" id="u_username" autocapitalize="none" value="${editing ? escapeHtml(u['ชื่อผู้ใช้'] || '') : ''}" ${editing ? 'disabled' : ''}></div>
     <div class="memo-two-col">
       <div class="field"><label>เลขบัตรประชาชน</label><input class="input" id="u_citizen" inputmode="numeric" maxlength="13"></div>
       <div class="field"><label>เบอร์โทร</label><input class="input" id="u_phone" inputmode="tel"></div>
@@ -14559,7 +14558,7 @@ function openUserForm(u) {
     <div class="field"><label>ตำแหน่ง</label><input class="input" id="u_position" value="${editing ? escapeHtml(u['ตำแหน่ง'])||'' : ''}" placeholder="เช่น ผบ.หมู่ ส.ทล.3 กก.1 บก.ทล."></div>
     <div class="field"><label>หน่วยงาน</label><input class="input" id="u_unit" value="${editing ? escapeHtml(u['หน่วยงาน'])||'' : ''}"></div>
     <div class="field"><label>บทบาทในบันทึกเบิก-ยืม</label><select class="input" id="u_memorole">${MEMO_ROLES.map(r => `<option ${editing && u['บทบาทเบิก-ยืม']===r?'selected':''}>${r}</option>`).join('')}</select></div>
-    <div class="field"><label>ระดับผู้ใช้งาน (อ้างอิงเท่านั้น ไม่ผูกกับรหัสผ่านเข้าระบบ)</label><select class="input" id="u_role"><option value="officer" ${editing && u['สิทธิ์']!=='admin'?'selected':''}>เจ้าหน้าที่</option><option value="admin" ${editing && u['สิทธิ์']==='admin'?'selected':''}>แอดมิน</option></select></div>
+    <div class="field"><label>ระดับผู้ใช้งาน (กำหนดสิทธิ์การเข้าระบบ)</label><select class="input" id="u_role"><option value="officer" ${editing && u['สิทธิ์']!=='admin'?'selected':''}>เจ้าหน้าที่</option><option value="admin" ${editing && u['สิทธิ์']==='admin'?'selected':''}>แอดมิน</option></select></div>
     ${editing ? '<div class="btn-row"><button class="btn btn-ghost" id="btnResetPin" type="button">รีเซ็ต PIN เป็นวันเดือนปีเกิด</button></div>' : ''}
     <div class="btn-row"><button class="btn btn-ghost" id="btnCancel">ยกเลิก</button><button class="btn btn-primary" id="btnSave">บันทึก</button></div>
     ${editing ? `<div class="btn-row"><button class="btn btn-danger" id="btnDeleteUser">ลบรายชื่อนี้</button></div>` : ''}
@@ -14625,7 +14624,7 @@ function openUserForm(u) {
       const sigUrl = await uploadSignature(val('u_sig'), 'user-' + (editing ? (officerId(u) || 'x') : 'new'));
       if (!editing) {
         const { data: cr, error: ce } = await sb.functions.invoke('admin-users', { body: {
-          action: 'create', username: val('u_username').trim(), name: val('u_name'),
+          action: 'create', username: '', name: val('u_name'),
           position: val('u_position'), unit: val('u_unit'), rank: val('u_rank'), role: val('u_role'),
           memoRole: val('u_memorole'), phone: val('u_phone'), citizenId: val('u_citizen'),
           birthDate: val('u_birth'), bloodType: val('u_blood')
@@ -21888,7 +21887,6 @@ refreshNotifBadge();
       '<div class="sheet-title">โปรไฟล์ของฉัน</div>' +
       '<div id="acProfile">' +
         '<div class="ac-row"><span>ชื่อ-สกุล</span><span>' + escapeHtml(u.name || '-') + '</span></div>' +
-        '<div class="ac-row"><span>ชื่อผู้ใช้</span><span>' + escapeHtml(u.username || '-') + '</span></div>' +
         '<div class="ac-row"><span>ตำแหน่ง / หน่วยงาน</span><span>' + escapeHtml([u.position, u.unit].filter(Boolean).join(' / ') || '-') + '</span></div>' +
         '<div class="ac-row"><span>เลขบัตรประชาชน</span><span>' + escapeHtml(u.citizen_id || '-') + '</span></div>' +
         '<div class="ac-row"><span>วัน/เดือน/ปีเกิด</span><span>' + escapeHtml(u.birth_date || '-') + '</span></div>' +
