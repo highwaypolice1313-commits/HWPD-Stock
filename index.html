@@ -21004,13 +21004,11 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   window.addEventListener('touchend', function(){
     if (!tracking) return;
     tracking = false;
-    if (pull >= THRESH && typeof refreshData === 'function') {
+    if (pull >= THRESH) {
       busy = true;
       ind.classList.add('loading');
       ind.querySelector('.ptr-txt').textContent = 'กำลังรีเฟรช...';
-      Promise.resolve(refreshData()).catch(function(){}).then(function(){
-        busy = false; ind.classList.remove('loading', 'show');
-      });
+      setTimeout(function(){ location.reload(); }, 650);
     } else {
       ind.classList.remove('show');
     }
