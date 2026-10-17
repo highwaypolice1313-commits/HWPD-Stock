@@ -21517,6 +21517,25 @@ refreshNotifBadge();
   #pinBox{ margin-top:0 !important; }
 }
 </style>
+   <style id="user-audit-btn-hover">
+.audit-tools-icon{
+  width:38px !important; height:38px !important; border-radius:var(--r-sm) !important;
+  background:color-mix(in srgb,var(--panel) 84%,transparent) !important;
+  border:1px solid var(--premium-line) !important;
+  box-shadow:0 3px 12px color-mix(in srgb,var(--navy-deep) 5%,transparent) !important;
+  color:var(--ink) !important;
+  transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease !important;
+}
+.audit-tools-icon:hover{
+  transform:translateY(-1px) !important;
+  box-shadow:0 8px 20px color-mix(in srgb,var(--navy-deep) 9%,transparent) !important;
+  border-color:var(--gold-line) !important;
+  color:var(--ink) !important;
+}
+.audit-tools-icon:active{ transform:scale(.97) !important; }
+.audit-tools-icon svg{ width:17px !important; height:17px !important; }
+</style>
+
    
 </body>
 </html>
