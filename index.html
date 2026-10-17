@@ -14643,7 +14643,19 @@ function openUserForm(u) {
         await apiPost('updateUserRole', { officerId: cr.id, ...photoPayload, signature: sigUrl });
       } else {
         const { data: au } = await sb.from('users').select('auth_user_id').eq('id', officerId(u)).maybeSingle();
-        const authId = au && au.auth_user_id;
+        let authId = au && au.auth_user_id;
+        if (!authId) {
+          // รายชื่อเดิมที่ยังไม่มีบัญชี: สร้างบัญชีอัตโนมัติตอนบันทึก (PIN เริ่มต้น = วันเดือนปีเกิด)
+          const bd = val('u_birth');
+          if (!bd) throw new Error('กรุณากรอกวัน/เดือน/ปีเกิดก่อนบันทึก เพื่อใช้สร้าง PIN เริ่มต้น');
+          const { data: ac, error: ae } = await sb.functions.invoke('admin-users', { body: {
+            action: 'activate', officerId: officerId(u), role: val('u_role'),
+            citizenId: val('u_citizen'), phone: val('u_phone'), birthDate: bd, bloodType: val('u_blood')
+          } });
+          if (ae || !ac || !ac.ok) throw new Error((ac && ac.error) || (ae && ae.message) || 'สร้างบัญชีเข้าระบบไม่สำเร็จ');
+          authId = ac.authId;
+          toast('สร้างบัญชีเข้าระบบแล้ว PIN เริ่มต้นคือวันเกิด');
+        }
         const oldRole = u['สิทธิ์'] === 'admin' ? 'admin' : 'officer';
         const newRole = val('u_role');
         if (authId && newRole !== oldRole) {
