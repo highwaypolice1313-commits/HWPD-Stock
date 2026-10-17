@@ -11785,7 +11785,7 @@ function openValuePicker({ title, placeholder, current, options, onPick }) {
     document.getElementById('ve_ok').onclick = saveEntry;
     document.getElementById('ve_back').onclick = () => closeSheet();
     refreshNote();
-    setTimeout(() => inp.focus(), 250);
+    setTimeout(() => inp.focus({ preventScroll: true }), 250);
   };
 
   document.getElementById('vp_create').onclick = () => openEntry(q.value.trim());
@@ -21045,6 +21045,34 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 .ve-sheet .ve-note{ min-height:0; margin:6px 2px 0; }
 .ve-sheet .btn-row{ margin-top:12px; }
 </style>
+
+<script id="user-kb-scroll-restore">
+(function(){
+  var vv = window.visualViewport;
+  var stableY = window.scrollY;
+  function kbOpen(){ return !!vv && (window.innerHeight - vv.height) > 80; }
+
+  // จำตำแหน่งการเลื่อนตอนที่ไม่มีแป้นพิมพ์
+  window.addEventListener('scroll', function(){
+    if (!kbOpen()) stableY = window.scrollY;
+  }, { passive: true });
+
+  function restore(){
+    if (kbOpen()) return;
+    if (window.scrollY !== stableY) window.scrollTo(0, stableY);
+    var ov = document.getElementById('overlayEl');
+    if (ov) { ov.style.top = ''; ov.style.height = ''; ov.style.bottom = ''; }
+  }
+
+  // เมื่อออกจากช่องพิมพ์ ให้รอให้แป้นพิมพ์หายก่อน แล้วคืนตำแหน่ง
+  document.addEventListener('focusout', function(e){
+    if (!e.target || !e.target.closest || !e.target.closest('#overlayEl')) return;
+    setTimeout(restore, 400);
+  }, true);
+
+  if (vv) vv.addEventListener('resize', function(){ setTimeout(restore, 120); });
+})();
+</script>   
    
 </body>
 </html>
