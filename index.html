@@ -21073,38 +21073,34 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   if (vv) vv.addEventListener('resize', function(){ setTimeout(restore, 120); });
 })();
 </script>   
-<script id="user-sheet-topbar-clamp">
+
+<script id="user-close-scroll-fix">
 (function(){
-  var root = document.getElementById('modalRoot');
-  if (!root) return;
-  var busy = false;
+  var vv = window.visualViewport;
+  var stableY = window.scrollY;
+  function kbOpen(){ return !!vv && (window.innerHeight - vv.height) > 80; }
+  function modalOpen(){ return !!document.querySelector('#modalRoot .overlay'); }
 
-  function clamp(){
-    if (busy) return;
-    var tb = document.querySelector('.topbar');
-    var floor = tb ? tb.getBoundingClientRect().bottom : 0;
-    var maxH = Math.max(280, Math.floor(window.innerHeight - floor - 8));
-    root.querySelectorAll('.overlay > .sheet').forEach(function(s){
-      var ov = s.parentElement;
-      if (!ov || ov.style.display === 'none') return;
-      var cur = parseFloat(s.style.maxHeight);
-      if (!isNaN(cur) && cur > maxH) {
-        busy = true;
-        s.style.maxHeight = maxH + 'px';
-        busy = false;
-      }
-    });
+  // จำตำแหน่งการเลื่อนของหน้าเว็บ เฉพาะตอนที่ไม่มีแป้นพิมพ์และไม่มี modal เปิดอยู่
+  window.addEventListener('scroll', function(){
+    if (!kbOpen() && !modalOpen()) stableY = window.scrollY;
+  }, { passive: true });
+
+  function settle(){
+    if (kbOpen()) return;
+    if (window.scrollY !== stableY) window.scrollTo(0, stableY);
   }
 
-  new MutationObserver(clamp).observe(root, {
-    childList: true, subtree: true, attributes: true, attributeFilter: ['style']
-  });
-  window.addEventListener('resize', function(){ setTimeout(clamp, 60); });
-  if (window.visualViewport) {
-    window.visualViewport.addEventListener('resize', function(){ setTimeout(clamp, 60); });
-  }
+  // ทุกครั้งที่ปิด modal ให้คืนตำแหน่งการเลื่อนของหน้าเว็บ
+  var _close = closeSheet;
+  closeSheet = function(){
+    var r = _close.apply(this, arguments);
+    setTimeout(settle, 30);
+    setTimeout(settle, 350);
+    return r;
+  };
 })();
 </script>
-
+ 
 </body>
 </html>
