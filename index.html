@@ -14065,7 +14065,7 @@ function offItemHtml(r, isGrid) {
   // ตำแหน่งและสังกัดแยกคนละบรรทัด
   const posHtml = `<div class="off-pos">${u['ตำแหน่ง'] ? escapeHtml(u['ตำแหน่ง']) : 'ไม่ระบุตำแหน่ง'}</div>`;
   const unitHtml = u['หน่วยงาน'] ? `<div class="off-unit">${escapeHtml(u['หน่วยงาน'])}</div>` : '';
-  const initial = escapeHtml(String(u['ชื่อ-สกุล'] || '?').trim().charAt(0) || '?');
+  const initial = escapeHtml(firstLetter(u['ชื่อ-สกุล']));
 
   // สีขอบวงกลม: ผู้อนุมัติ = เขียว, ผู้เบิก = ทอง, อื่น ๆ = เส้นปกติ
   const ringCls = r.role.includes('อนุมัติ') ? 'ring-ok'
@@ -20584,6 +20584,13 @@ document.getElementById('notifBtn')?.addEventListener('click', openNotifications
 document.getElementById('notifBtn')?.addEventListener('click', openNotifications);
 
 /* ตัวอักษรในวงกลมโปรไฟล์: แอดมินใช้ "อ" ผู้ใช้อื่นใช้อักษรแรกของชื่อ */
+// ✅ คืนพยัญชนะไทยตัวแรกของชื่อ โดยข้ามสระและวรรณยุกต์ที่อยู่หน้าพยัญชนะ
+// ถ้าไม่มีพยัญชนะไทยหรืออักษรอังกฤษ/ตัวเลข จะคืนตัวอักษรแรกของข้อความ
+function firstLetter(text) {
+  const s = String(text || '').trim();
+  const m = s.match(/[\u0E01-\u0E2E]|[A-Za-z0-9]/); // พยัญชนะไทย ก-ฮ หรืออักษรละติน/ตัวเลข
+  return m ? m[0] : (s.charAt(0) || '?');
+}      
 const ADMIN_INITIAL = 'อ';
 (function syncAcct(){
   const name = document.getElementById('profileName');
@@ -20591,7 +20598,7 @@ const ADMIN_INITIAL = 'อ';
   if (!name || !av) return;
   const up = () => {
     const t = name.textContent.trim();
-    av.textContent = state.role === 'admin' ? ADMIN_INITIAL : (t.charAt(0) || '?');
+      av.textContent = state.role === 'admin' ? ADMIN_INITIAL : firstLetter(t);
     av.title = t || 'ผู้ใช้งาน';
   };
   up();
@@ -20634,7 +20641,7 @@ function openAcctPop() {
   const name = (document.getElementById('profileName')?.textContent || '').trim() || 'ผู้ใช้งาน';
   const role = state.role === 'admin' ? 'แอดมิน' : 'ดูอย่างเดียว';
   const sync = document.getElementById('lastSync')?.textContent || '';
-  const initial = state.role === 'admin' ? ADMIN_INITIAL : (name.charAt(0) || '?');
+  const initial = state.role === 'admin' ? ADMIN_INITIAL : firstLetter(name);
   const dark = isDarkTheme();
 
   p.innerHTML = `
