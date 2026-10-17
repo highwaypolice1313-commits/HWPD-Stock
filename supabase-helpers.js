@@ -265,7 +265,7 @@ async function sGetAll() {
   ]);
   const settings = await sGetSystemSettings();
   const assets = assetsD.map(assetToThai);
-  const borrow = borrowD.map(borrowToThai);
+  const borrow = borrowD.filter(r => !r.deleted_at).map(borrowToThai);
   const maint = maintD.map(maintToThai);
   const components = componentsD.map(componentToThai);
   const users = usersD.map(userToThai);
