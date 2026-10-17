@@ -21091,5 +21091,117 @@ html.booting .tabbar .tab, html.booting .tabbar .tab *{ transition:none !importa
 })();
 </script>
 
+   <style id="user-avatar-press">
+.topbar .cap-avatar:hover,
+.topbar .cap-avatar:active{ transform:none !important; box-shadow:none !important; }
+</style>
+
+   <style id="user-notif-pop">
+.notif-pop{
+  position:fixed; z-index:9999; box-sizing:border-box; padding:8px;
+  border-radius:20px; background:var(--panel); border:1px solid var(--panel-line);
+  box-shadow:0 18px 40px -12px rgba(0,0,0,.35);
+  opacity:0; transform:translateY(-6px) scale(.96); transform-origin:top right;
+  pointer-events:none;
+  transition:opacity .18s ease, transform .2s cubic-bezier(.2,.8,.2,1);
+}
+.notif-pop.open{ opacity:1; transform:none; pointer-events:auto; }
+.np-head{ display:flex; justify-content:space-between; align-items:baseline; padding:8px 10px 10px; }
+.np-head b{ font-size:14px; color:var(--ink); }
+.np-head span{ font-size:11.5px; color:var(--ink-dim); }
+.np-list{ display:flex; flex-direction:column; gap:6px; max-height:50vh; overflow-y:auto; overscroll-behavior:contain; }
+.np-item{
+  display:flex; align-items:center; gap:10px; width:100%; padding:10px;
+  border:1px solid var(--panel-line); border-radius:14px; background:var(--panel);
+  font:inherit; text-align:left; cursor:pointer; color:var(--ink);
+  transition:transform .15s ease;
+}
+.np-item:active{ transform:scale(.97); }
+.np-dot{ width:9px; height:9px; border-radius:50%; flex:none; background:var(--navy); }
+.np-item.tone-bad .np-dot{ background:#d64545; }
+.np-item.tone-warn .np-dot{ background:#e0a100; }
+.np-body{ display:flex; flex-direction:column; min-width:0; }
+.np-title{ font-size:13px; font-weight:700; line-height:1.35; }
+.np-sub{ font-size:11.5px; color:var(--ink-dim); line-height:1.4; }
+.np-empty{ font-size:12.5px; color:var(--ink-dim); text-align:center; padding:14px 0; }
+.np-readall{
+  margin-top:8px; width:100%; padding:10px; border:0; border-radius:14px;
+  background:var(--navy); color:#fff; font:inherit; font-size:12.5px; font-weight:700; cursor:pointer;
+}
+</style>
+
+<script id="user-notif-pop-js">
+(function(){
+  function ensurePop(){
+    var p = document.getElementById('notifPop');
+    if (!p) {
+      p = document.createElement('div');
+      p.id = 'notifPop';
+      p.className = 'notif-pop';
+      p.setAttribute('role', 'dialog');
+      document.body.appendChild(p);
+    }
+    return p;
+  }
+  function closePop(){
+    var p = document.getElementById('notifPop');
+    if (p) p.classList.remove('open');
+  }
+  function openPop(){
+    var btn = document.getElementById('notifBtn');
+    if (!btn) return;
+    var p = ensurePop();
+    if (p.classList.contains('open')) { closePop(); return; }
+
+    var list = buildAlerts();
+    p.innerHTML = '<div class="np-head"><b>การแจ้งเตือน</b><span>' + list.length + ' รายการ</span></div>' +
+      '<div class="np-list">' + (list.length
+        ? list.map(function(a, i){
+            return '<button type="button" class="np-item tone-' + a.tone + '" data-nt="' + i + '">' +
+              '<span class="np-dot"></span>' +
+              '<span class="np-body"><span class="np-title">' + escapeHtml(a.title) + '</span>' +
+              '<span class="np-sub">' + escapeHtml(a.sub) + '</span></span></button>';
+          }).join('')
+        : '<div class="np-empty">ไม่มีรายการที่ต้องดำเนินการ</div>') +
+      '</div>' +
+      (list.length ? '<button type="button" class="np-readall" id="npReadAll">ทำเครื่องหมายว่าอ่านแล้วทั้งหมด</button>' : '');
+
+    var r = btn.getBoundingClientRect();
+    var w = Math.min(320, window.innerWidth - 16);
+    p.style.width = w + 'px';
+    p.style.top = (r.bottom + 8) + 'px';
+    p.style.left = Math.max(8, Math.min(r.right - w, window.innerWidth - w - 8)) + 'px';
+
+    p.querySelectorAll('[data-nt]').forEach(function(b){
+      b.onclick = function(){ var a = list[+b.dataset.nt]; closePop(); goAlert(a); };
+    });
+    var ra = p.querySelector('#npReadAll');
+    if (ra) ra.onclick = function(){
+      try { localStorage.setItem('hpNotifSeen', notifSignature(list)); } catch (e) {}
+      refreshNotifBadge();
+      closePop();
+    };
+    p.classList.add('open');
+  }
+
+  // แทนที่ปุ่มกระดิ่งด้วยสำเนาที่ไม่มี listener เดิม แล้วผูกกับป๊อปอัพใหม่
+  var old = document.getElementById('notifBtn');
+  if (old) {
+    var btn = old.cloneNode(true);
+    old.replaceWith(btn);
+    btn.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); openPop(); });
+  }
+
+  // กดนอกป๊อปอัพเพื่อปิด (ยกเว้นปุ่มกระดิ่งเอง)
+  document.addEventListener('click', function(e){
+    var p = document.getElementById('notifPop');
+    if (!p || !p.classList.contains('open')) return;
+    if (p.contains(e.target) || (e.target.closest && e.target.closest('#notifBtn'))) return;
+    closePop();
+  }, true);
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closePop(); });
+})();
+</script>
+
 </body>
 </html>
