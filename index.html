@@ -14634,14 +14634,28 @@ function openUserForm(u) {
   document.getElementById('u_phone').placeholder = '0xx-xxx-xxxx';
   bdBind();
   if (editing) {
-    document.getElementById('btnResetPin').onclick = async function(){
-      if (!await confirmSheet('รีเซ็ต PIN ของ ' + (u['ชื่อ-สกุล'] || '') + ' กลับเป็นวันเดือนปีเกิด? ผู้ใช้ต้องตั้ง PIN ใหม่ตอนเข้าครั้งถัดไป', {title:'รีเซ็ต PIN', okText:'รีเซ็ต', tone:'bad'})) return;
-      const { data: au } = await sb.from('users').select('auth_user_id').eq('id', officerId(u)).maybeSingle();
-      if (!au || !au.auth_user_id) return toast('บัญชีนี้ยังไม่มีการเข้าสู่ระบบ');
-      const { data: rr, error: re } = await sb.functions.invoke('admin-users', { body: { action: 'resetPin', authId: au.auth_user_id } });
-      if (re || !rr || !rr.ok) return toast((rr && rr.error) || (re && re.message) || 'รีเซ็ต PIN ไม่สำเร็จ');
-      toast('รีเซ็ต PIN แล้ว');
-    };
+// ✅ แทนที่ handler เดิมของ btnResetPin ทั้งก้อน
+document.getElementById('btnResetPin').onclick = async function(){
+  if (!await confirmSheet('รีเซ็ต PIN ของ ' + (u['ชื่อ-สกุล'] || '') + ' กลับเป็นวันเกิด? ผู้ใช้ต้องตั้ง PIN ใหม่ตอนเข้าครั้งถัดไป', {title:'รีเซ็ต PIN', okText:'รีเซ็ต', tone:'bad'})) return;
+
+  const { data: au } = await sb.from('users').select('auth_user_id').eq('id', officerId(u)).maybeSingle();
+  if (!au || !au.auth_user_id) return toast('บัญชีนี้ยังไม่มีการเข้าสู่ระบบ');
+
+  const { data: rr, error: re } = await sb.functions.invoke('admin-users', {
+    body: { action: 'resetPin', authId: au.auth_user_id }
+  });
+
+  // ✅ อ่านข้อความ error จริงจาก response body ของ Edge Function
+  let detail = '';
+  if (re && re.context && typeof re.context.json === 'function') {
+    try { const j = await re.context.json(); detail = j.error || ''; } catch (_) {}
+  }
+
+  if (re || !rr || !rr.ok) {
+    return toast(detail || (rr && rr.error) || (re && re.message) || 'รีเซ็ต PIN ไม่สำเร็จ');
+  }
+  toast('รีเซ็ต PIN แล้ว');
+};
   }
   document.getElementById('btnSave').onclick = async () => {
     const cit = val('u_citizen').replace(/\D/g, ''), ph = val('u_phone').replace(/\D/g, '');
