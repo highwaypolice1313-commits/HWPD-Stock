@@ -11709,126 +11709,114 @@ function ensureValuePickerCss() {
   document.head.appendChild(s);
 }
 
-/* ---------- หน้าเลือกค่า: ปุ่มกรอกใหม่ / ค้นหา / รายการที่มีอยู่ ---------- */
+/* ---------- หน้าเลือกค่า: ใช้โครงเดียวกับหน้าเลือกครุภัณฑ์ของหน้ายืม-คืน ----------
+   วางรากของตัวเองนอก #modalRoot จึงไม่ซ้อนกับระบบหน้าต่างหลัก ไม่ล็อกหน้าหลัก
+   ปิดด้วยการเอารากนี้ออกเท่านั้น */
 function openValuePicker({ title, placeholder, current, options, onPick }) {
   ensureAssetFormCss();
   ensureValuePickerCss();
-  showSheet(`
-    <div class="sheet-title">${escapeHtml(title)}</div>
-    <button type="button" class="vp-create" id="vp_create">${AF_ICON_PLUS}<span>กรอก${escapeHtml(title)}ใหม่</span></button>
-    <div class="vp-search">${AF_ICON_SEARCH}<input class="input" id="vp_q" placeholder="${escapeHtml(placeholder)}" autocomplete="off" enterkeyhint="done"></div>
-    <div class="vp-list" id="vp_list"></div>
-  `, 'vp-sheet');
 
-  const sheet = document.querySelector('#overlayEl .sheet');
-  const q = document.getElementById('vp_q');
-  const list = document.getElementById('vp_list');
-  const vv = window.visualViewport;
+  const root = document.createElement('div');
+  document.body.appendChild(root);
+  const close = () => root.remove();
 
-  // ปรับความสูงหน้าต่างให้เท่ากับพื้นที่ที่เห็นจริง (ไม่รวมส่วนที่แป้นพิมพ์บัง)
-  const fit = () => {
-    if (!sheet || !document.body.contains(sheet)) { cleanup(); return; }
-    const h = vv ? vv.height : window.innerHeight;
-    const tb = document.querySelector('.topbar');
-    const floor = tb ? tb.getBoundingClientRect().bottom : 0;
-    const fitH = Math.min(h - 16, window.innerHeight - floor - 8);
-    sheet.style.maxHeight = Math.max(280, Math.floor(fitH)) + 'px';
-  };
-  const cleanup = () => {
-    if (vv) { vv.removeEventListener('resize', fit); vv.removeEventListener('scroll', fit); }
-    window.removeEventListener('resize', fit);
-  };
-  const attach = () => {
-    if (vv) { vv.addEventListener('resize', fit); vv.addEventListener('scroll', fit); }
-    window.addEventListener('resize', fit);
-  };
-  attach();
-  fit();
+  const wrap = (inner, extra) => `
+    <div class="overlay" style="z-index:95;">
+      <div class="sheet vp-sheet ${extra || ''}" style="max-height:92vh;">
+        <button class="sheet-close" type="button" title="ปิด" aria-label="ปิด">${ICONS.close}</button>
+        <div class="sheet-handle"></div>
+        ${inner}
+      </div>
+    </div>`;
 
-  // ปิดหน้าเลือก แล้วส่งค่ากลับไปที่ฟอร์ม
-  const pick = (value) => { cleanup(); closeSheet(); onPick(value); };
+  const pick = (value) => { close(); onPick(value); };
 
-  // หน้ากรอกค่าใหม่แยกต่างหาก ช่องพิมพ์อยู่บนสุด
-  const openEntry = (prefill) => {
-    showSheet(`
+  function showEntry(prefill) {
+    root.innerHTML = wrap(`
       <div class="sheet-title">${escapeHtml(title)}ใหม่</div>
       <div class="ve-hint">พิมพ์${escapeHtml(title)}ที่ยังไม่มีในระบบ เมื่อบันทึกแล้วจะขึ้นให้เลือกในครั้งถัดไป</div>
       <input class="input ve-input" id="ve_input" placeholder="${escapeHtml(placeholder)}" autocomplete="off" enterkeyhint="done" value="${escapeHtml(prefill || '')}">
       <div class="ve-note" id="ve_note"></div>
-      <div class="btn-row"><button class="btn btn-ghost" id="ve_back">ย้อนกลับ</button><button class="btn btn-primary" id="ve_ok">ใช้ค่านี้</button></div>
+      <div class="btn-row"><button class="btn btn-ghost" id="ve_back" type="button">ย้อนกลับ</button><button class="btn btn-primary" id="ve_ok" type="button">ใช้ค่านี้</button></div>
     `, 've-sheet');
+    root.querySelector('.sheet-close').onclick = close;
 
-    // จัดหน้าต่างให้ชิดด้านบน เพื่อให้ช่องพิมพ์อยู่เหนือแป้นพิมพ์
-    const entryOverlay = document.getElementById('overlayEl');
-    if (entryOverlay) entryOverlay.style.alignItems = 'flex-start';
-
-    const inp = document.getElementById('ve_input');
-    const note = document.getElementById('ve_note');
-
+    const inp = root.querySelector('#ve_input');
+    const note = root.querySelector('#ve_note');
     const findExisting = (t) => {
       const k = t.trim().toLowerCase();
       return options.find(o => o.value.toLowerCase() === k);
     };
-
     const refreshNote = () => {
       const t = inp.value.trim();
       const hit = t ? findExisting(t) : null;
       note.textContent = hit ? 'มีอยู่แล้วในระบบ จะใช้ชื่อเดิมนี้' : '';
       note.className = 've-note' + (hit ? ' match' : '');
     };
-
-    const saveEntry = () => {
+    const save = () => {
       const t = inp.value.trim();
       if (!t) { toast('กรุณากรอก' + title); return; }
       const hit = findExisting(t);
-      const value = hit ? hit.value : t;
-      closeSheet();   // ปิดหน้ากรอกค่าใหม่ กลับไปหน้าเลือก
-      pick(value);    // ปิดหน้าเลือก แล้วส่งค่ากลับไปที่ฟอร์ม
+      pick(hit ? hit.value : t);
     };
 
     inp.oninput = refreshNote;
-    inp.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); saveEntry(); } };
-    document.getElementById('ve_ok').onclick = saveEntry;
-    document.getElementById('ve_back').onclick = () => { closeSheet(); attach(); fit(); };
+    inp.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); save(); } };
+    root.querySelector('#ve_ok').onclick = save;
+    root.querySelector('#ve_back').onclick = () => showList();
     refreshNote();
-    setTimeout(() => inp.focus(), 250);
-  };
-
-  document.getElementById('vp_create').onclick = () => openEntry(q.value.trim());
-
-  function draw() {
-    const qq = q.value.trim();
-    const lower = qq.toLowerCase();
-    const items = options.filter(o => !lower || o.value.toLowerCase().includes(lower));
-    let html = items.map(o => `
-      <button type="button" class="vp-item${o.value === current ? ' active' : ''}" data-v="${escapeHtml(o.value)}">
-        <span class="vp-ico">${o.icon || ICONS.tag}</span>
-        <span class="vp-body">
-          <span class="vp-name">${escapeHtml(o.value)}</span>
-          ${o.sub ? `<span class="vp-sub">${escapeHtml(o.sub)}</span>` : ''}
-        </span>
-        <span class="vp-count">${o.count}</span>
-      </button>`).join('');
-    if (!html) {
-      html = qq
-        ? `<div class="vp-empty">ไม่พบ "${escapeHtml(qq)}" ในระบบ กดปุ่มกรอกใหม่ด้านบนเพื่อบันทึก</div>`
-        : `<div class="vp-empty">ยังไม่มีข้อมูลในระบบ กดปุ่มกรอกใหม่ด้านบนเพื่อเริ่ม</div>`;
-    }
-    list.innerHTML = html;
-    list.querySelectorAll('.vp-item').forEach(b => { b.onclick = () => pick(b.dataset.v); });
+    setTimeout(() => inp.focus({ preventScroll: true }), 250);
   }
 
-  q.oninput = draw;
-  q.onkeydown = (e) => {
-    if (e.key !== 'Enter') return;
-    const t = q.value.trim();
-    if (!t) return;
-    e.preventDefault();
-    const exact = options.find(o => o.value.toLowerCase() === t.toLowerCase());
-    if (exact) pick(exact.value);
-    else openEntry(t);
-  };
-  draw();
+  function showList() {
+    root.innerHTML = wrap(`
+      <div class="sheet-title">${escapeHtml(title)}</div>
+      <button type="button" class="vp-create" id="vp_create">${AF_ICON_PLUS}<span>กรอก${escapeHtml(title)}ใหม่</span></button>
+      <div class="vp-search">${AF_ICON_SEARCH}<input class="input" id="vp_q" placeholder="${escapeHtml(placeholder)}" autocomplete="off" enterkeyhint="done"></div>
+      <div class="vp-list" id="vp_list"></div>
+    `);
+    root.querySelector('.sheet-close').onclick = close;
+
+    const q = root.querySelector('#vp_q');
+    const list = root.querySelector('#vp_list');
+
+    const draw = () => {
+      const qq = q.value.trim();
+      const lower = qq.toLowerCase();
+      const items = options.filter(o => !lower || o.value.toLowerCase().includes(lower));
+      let html = items.map(o => `
+        <button type="button" class="vp-item${o.value === current ? ' active' : ''}" data-v="${escapeHtml(o.value)}">
+          <span class="vp-ico">${o.icon || ICONS.tag}</span>
+          <span class="vp-body">
+            <span class="vp-name">${escapeHtml(o.value)}</span>
+            ${o.sub ? `<span class="vp-sub">${escapeHtml(o.sub)}</span>` : ''}
+          </span>
+          <span class="vp-count">${o.count}</span>
+        </button>`).join('');
+      if (!html) {
+        html = qq
+          ? `<div class="vp-empty">ไม่พบ "${escapeHtml(qq)}" ในระบบ กดปุ่มกรอกใหม่ด้านบนเพื่อบันทึก</div>`
+          : `<div class="vp-empty">ยังไม่มีข้อมูลในระบบ กดปุ่มกรอกใหม่ด้านบนเพื่อเริ่ม</div>`;
+      }
+      list.innerHTML = html;
+      list.querySelectorAll('.vp-item').forEach(b => { b.onclick = () => pick(b.dataset.v); });
+    };
+
+    q.oninput = draw;
+    q.onkeydown = (e) => {
+      if (e.key !== 'Enter') return;
+      const t = q.value.trim();
+      if (!t) return;
+      e.preventDefault();
+      const exact = options.find(o => o.value.toLowerCase() === t.toLowerCase());
+      if (exact) pick(exact.value);
+      else showEntry(t);
+    };
+    root.querySelector('#vp_create').onclick = () => showEntry(q.value.trim());
+    draw();
+  }
+
+  showList();
 }
 
 /* ---------- ฟอร์มเพิ่ม/แก้ไขครุภัณฑ์ ---------- */
