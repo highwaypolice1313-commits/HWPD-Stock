@@ -22303,6 +22303,182 @@ window.exportAllBackup = async function(){
   }
 };
 </script>
+
+<script id="officer-age-badge-js">
+(function(){
+  // ✅ ตั้งค่าการเรียงอายุ: true = อายุมากกว่าขึ้นก่อน, false = อายุน้อยกว่าขึ้นก่อน
+  var AGE_OLDER_FIRST = true;
+
+  var AGE_CHIPS = [
+    ['all', 'ทุกอายุ'], ['u30', 'ต่ำกว่า 30 ปี'], ['30', '30 – 39 ปี'],
+    ['40', '40 – 49 ปี'], ['50', '50 ปีขึ้นไป'], ['none', 'ไม่ระบุอายุ']
+  ];
+
+  // ---------- ตัวช่วย ----------
+  // อายุเป็นปีเต็มจากวันเกิด (ค.ศ. YYYY-MM-DD) คืน null ถ้าไม่มีวันเกิด
+  function offAge(u){
+    var iso = u && u['วัน/เดือน/ปีเกิด'];
+    if (!iso) return null;
+    var p = String(iso).slice(0, 10).split('-').map(Number);
+    if (p.length !== 3 || !p[0]) return null;
+    var t = new Date();
+    var age = t.getFullYear() - p[0];
+    var dm = (t.getMonth() + 1) - p[1];
+    if (dm < 0 || (dm === 0 && t.getDate() < p[2])) age--;
+    return age;
+  }
+  function ageBand(u){
+    var a = offAge(u);
+    if (a === null) return 'none';
+    if (a < 30) return 'u30';
+    if (a < 40) return '30';
+    if (a < 50) return '40';
+    return '50';
+  }
+  function ageText(u){ var a = offAge(u); return a === null ? '-' : a + ' ปี'; }
+  function badgeOf(u){ return String((u && u['รหัสเปรียบเทียบปรับ']) || '').trim(); }
+  function chipLabel(list, v){
+    var x = list.find(function(c){ return c[0] === v; });
+    return x ? x[1] : v;
+  }
+
+  // ---------- การเรียง: ยศ > ตำแหน่ง > อายุ > ชื่อ ----------
+  comparePoliceOfficers = function(a, b){
+    var ra = policeRankIndex(a && a['ยศ']);
+    var rb = policeRankIndex(b && b['ยศ']);
+    if (ra !== rb) return ra - rb;
+
+    var pc = comparePolicePositions(a && a['ตำแหน่ง'], b && b['ตำแหน่ง']);
+    if (pc) return pc;
+
+    var x = offAge(a), y = offAge(b);
+    if (x !== y) {
+      if (x === null) return 1;      // ไม่มีวันเกิดไปท้ายกลุ่ม
+      if (y === null) return -1;
+      return AGE_OLDER_FIRST ? (y - x) : (x - y);
+    }
+
+    return officerFullName(a).localeCompare(officerFullName(b), 'th', { numeric: true, sensitivity: 'base' });
+  };
+
+  // ---------- ค้นหาด้วยรหัสเปรียบเทียบปรับได้ด้วย ----------
+  var _userSearchText = userSearchText;
+  userSearchText = function(u){
+    return _userSearchText(u) + ' | ' + badgeOf(u);
+  };
+
+  // ---------- ตัวกรองอายุ และรหัสเปรียบเทียบปรับ ----------
+  var _offFiltered = offFiltered;
+  offFiltered = function(rows, terms){
+    var f = state.offFilter || {};
+    return _offFiltered(rows, terms).filter(function(r){
+      if (f.age && f.age !== 'all' && ageBand(r.u) !== f.age) return false;
+      if (f.badge && f.badge !== 'all') {
+        if (badgeOf(r.u).toLowerCase().indexOf(String(f.badge).toLowerCase()) === -1) return false;
+      }
+      return true;
+    });
+  };
+
+  var _offFilterCount = offFilterCount;
+  offFilterCount = function(){
+    var f = state.offFilter || {};
+    var extra = (f.age && f.age !== 'all' ? 1 : 0) + (f.badge && f.badge !== 'all' ? 1 : 0);
+    return _offFilterCount() + extra;
+  };
+
+  var _offFilterChipsHtml = offFilterChipsHtml;
+  offFilterChipsHtml = function(){
+    var f = state.offFilter || {}, extra = [];
+    if (f.age && f.age !== 'all') extra.push(['age', chipLabel(AGE_CHIPS, f.age)]);
+    if (f.badge && f.badge !== 'all') extra.push(['badge', 'รหัส: ' + f.badge]);
+    return _offFilterChipsHtml() + extra.map(function(c){
+      return '<span class="off-chip" data-clear="' + c[0] + '">' + escapeHtml(c[1]) + ' <b aria-label="ล้าง">×</b></span>';
+    }).join('');
+  };
+
+  var _offFsBodyHtml = offFsBodyHtml;
+  offFsBodyHtml = function(){
+    var f = state.offFilter || {};
+    var rows = offBuildRows();
+    var cur = f.age || 'all';
+    var ageOpts = AGE_CHIPS.map(function(c){
+      var n = c[0] === 'all' ? rows.length : rows.filter(function(r){ return ageBand(r.u) === c[0]; }).length;
+      return '<button type="button" class="off-fs-opt ' + (cur === c[0] ? 'on' : '') + '" data-k="age" data-v="' + c[0] + '">' +
+        escapeHtml(c[1]) + '<small>' + n + '</small></button>';
+    }).join('');
+    var badgeVal = f.badge && f.badge !== 'all' ? f.badge : '';
+    var extra =
+      '<div class="off-fs-title">อายุ</div>' +
+      '<div class="off-fs-opts">' + ageOpts + '</div>' +
+      '<div class="off-fs-title">รหัสเปรียบเทียบปรับ</div>' +
+      '<div style="margin-bottom:12px;"><input class="input" id="offFsBadge" value="' + escapeHtml(badgeVal) +
+        '" placeholder="พิมพ์บางส่วนก็ได้" autocomplete="off" style="width:100%;"></div>';
+    return _offFsBodyHtml().replace('<div class="btn-row">', extra + '<div class="btn-row">');
+  };
+
+  var _wireOffFsSheet = wireOffFsSheet;
+  wireOffFsSheet = function(){
+    _wireOffFsSheet();
+    var ov = document.querySelector('#modalRoot .overlay.off-fs-overlay');
+    if (!ov) return;
+
+    var inp = ov.querySelector('#offFsBadge');
+    if (inp) inp.oninput = function(){ state.offFilter.badge = inp.value.trim() || 'all'; };
+
+    // ✅ ล้างตัวกรองต้องรวมอายุและรหัสด้วย
+    var reset = ov.querySelector('#offFsReset');
+    if (reset) reset.onclick = function(){
+      state.offFilter = { role: 'all', rank: 'all', flag: 'all', age: 'all', badge: 'all' };
+      state.offGroup = 'none';
+      state.offGroupClosed = new Set();
+      closeSheet();
+      drawUsers();
+    };
+  };
+
+  // ---------- หน้าโปรไฟล์: แสดงรหัสเปรียบเทียบปรับ วันเกิด และอายุ ----------
+  var _openOfficerProfile = openOfficerProfile;
+  openOfficerProfile = function(u){
+    _openOfficerProfile(u);
+
+    var title = Array.prototype.slice.call(document.querySelectorAll('.sheet-title'))
+      .filter(function(el){ return el.textContent.indexOf('โปรไฟล์เจ้าหน้าที่') !== -1; })[0];
+    if (!title) return;
+
+    function row(k, v){
+      return '<div style="display:flex;justify-content:space-between;gap:12px;padding:4px 0;">' +
+        '<span style="opacity:.7;">' + escapeHtml(k) + '</span><b>' + escapeHtml(v) + '</b></div>';
+    }
+    var birth = u['วัน/เดือน/ปีเกิด'] ? bdText(u['วัน/เดือน/ปีเกิด']) : '-';
+
+    var box = document.createElement('div');
+    box.style.cssText = 'margin:0 0 14px;padding:10px 12px;border-radius:14px;border:1px solid rgba(128,128,128,.25);font-size:13.5px;';
+    box.innerHTML = row('รหัสเปรียบเทียบปรับ', badgeOf(u) || '-') + row('วันเกิด', birth) + row('อายุ', ageText(u));
+    title.insertAdjacentElement('afterend', box);
+  };
+
+  // ---------- รายการ: แสดงรหัสและอายุใต้ตำแหน่งของแต่ละคน ----------
+  function decorateRows(){
+    var list = document.getElementById('userList');
+    if (!list) return;
+    list.querySelectorAll('[data-id]').forEach(function(el){
+      if (el.getAttribute('data-dec') === '1') return;
+      var k = el.getAttribute('data-id');
+      var u = (state.users || []).find(function(x){ return offKey(x) === k; });
+      if (!u) return;
+      el.setAttribute('data-dec', '1');
+
+      var tag = document.createElement('div');
+      tag.className = 'off-meta';
+      tag.innerHTML = '<span class="off-pos">รหัส ' + escapeHtml(badgeOf(u) || '-') + ' · อายุ ' + escapeHtml(ageText(u)) + '</span>';
+      var pos = el.querySelector('.off-pos');
+      if (pos) pos.insertAdjacentElement('afterend', tag); else el.appendChild(tag);
+    });
+  }
+  new MutationObserver(decorateRows).observe(document.body, { childList: true, subtree: true });
+})();
+</script>      
       
 </body>
 </html>
