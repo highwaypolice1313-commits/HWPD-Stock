@@ -21039,7 +21039,12 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   vv.addEventListener('scroll', sync);
 })();
 </script>
-
+<style id="user-ve-spacing">
+/* หน้าเพิ่มชื่อ/ยี่ห้อใหม่: ลดระยะห่างระหว่างช่องพิมพ์กับปุ่ม */
+.ve-sheet .ve-note:empty{ display:none; }
+.ve-sheet .ve-note{ min-height:0; margin:6px 2px 0; }
+.ve-sheet .btn-row{ margin-top:12px; }
+</style>
    
 </body>
 </html>
