@@ -21073,17 +21073,36 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   if (vv) vv.addEventListener('resize', function(){ setTimeout(restore, 120); });
 })();
 </script>   
-
-   <script id="user-overlay-align-reset">
+<script id="user-sheet-topbar-clamp">
 (function(){
   var root = document.getElementById('modalRoot');
   if (!root) return;
-  function clean(){
-    root.querySelectorAll('.overlay').forEach(function(o){
-      if (!o.querySelector('.ve-sheet')) o.style.alignItems = '';
+  var busy = false;
+
+  function clamp(){
+    if (busy) return;
+    var tb = document.querySelector('.topbar');
+    var floor = tb ? tb.getBoundingClientRect().bottom : 0;
+    var maxH = Math.max(280, Math.floor(window.innerHeight - floor - 8));
+    root.querySelectorAll('.overlay > .sheet').forEach(function(s){
+      var ov = s.parentElement;
+      if (!ov || ov.style.display === 'none') return;
+      var cur = parseFloat(s.style.maxHeight);
+      if (!isNaN(cur) && cur > maxH) {
+        busy = true;
+        s.style.maxHeight = maxH + 'px';
+        busy = false;
+      }
     });
   }
-  new MutationObserver(clean).observe(root, { childList: true, subtree: true });
+
+  new MutationObserver(clamp).observe(root, {
+    childList: true, subtree: true, attributes: true, attributeFilter: ['style']
+  });
+  window.addEventListener('resize', function(){ setTimeout(clamp, 60); });
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', function(){ setTimeout(clamp, 60); });
+  }
 })();
 </script>
 
