@@ -21421,7 +21421,18 @@ notifSignature = function(list){
   return list.map(function(a){ return a.title; }).join('|') + '#' + borrowIds + '#' + maintIds;
 };
 refreshNotifBadge();
-</script>
 
+</script>
+   <script id="user-notif-after-load">
+(function(){
+  var _load = loadAll;
+  loadAll = async function(){
+    var r = await _load.apply(this, arguments);
+    try { refreshNotifBadge(); } catch (e) {}
+    return r;
+  };
+})();
+</script>
+   
 </body>
 </html>
