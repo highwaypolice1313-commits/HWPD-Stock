@@ -99,6 +99,26 @@ async function supaLoginWithRole(role, password) {
 function supaLoginAsViewer() {
   return { role: 'viewer', token: makeLocalToken('viewer'), displayName: 'ผู้ดูอย่างเดียว' };
 }
+async function supaLoginWithPin(pin) {
+  const { data, error } = await sb.rpc('login_with_pin', { p_pin: pin });
+  if (error) throw new Error(error.message);
+  if (!data || !data.ok) throw new Error((data && data.error) || 'PIN ไม่ถูกต้อง');
+  return { role: 'admin', token: makeLocalToken('admin'), displayName: 'แอดมิน' };
+}
+
+async function supaSetAdminPin(pin, currentPassword) {
+  const { data, error } = await sb.rpc('set_admin_pin', { p_pin: pin, p_current_password: currentPassword });
+  if (error) throw new Error(error.message);
+  if (!data || !data.ok) throw new Error((data && data.error) || 'บันทึก PIN ไม่สำเร็จ');
+  return true;
+}
+
+async function supaDisableAdminPin(currentPassword) {
+  const { data, error } = await sb.rpc('disable_admin_pin', { p_current_password: currentPassword });
+  if (error) throw new Error(error.message);
+  if (!data || !data.ok) throw new Error((data && data.error) || 'ปิดการใช้ PIN ไม่สำเร็จ');
+  return true;
+}
 
 // ==================== FIELD MAPPING: DB row (English) <-> Thai keys ที่หน้าเว็บใช้ ====================
 
