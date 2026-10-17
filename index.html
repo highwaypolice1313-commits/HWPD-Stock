@@ -14558,6 +14558,7 @@ function openUserForm(u) {
     <div class="field"><label>หน่วยงาน</label><input class="input" id="u_unit" value="${editing ? escapeHtml(u['หน่วยงาน'])||'' : ''}"></div>
     <div class="field"><label>บทบาทในบันทึกเบิก-ยืม</label><select class="input" id="u_memorole">${MEMO_ROLES.map(r => `<option ${editing && u['บทบาทเบิก-ยืม']===r?'selected':''}>${r}</option>`).join('')}</select></div>
     <div class="field"><label>ระดับผู้ใช้งาน (อ้างอิงเท่านั้น ไม่ผูกกับรหัสผ่านเข้าระบบ)</label><select class="input" id="u_role"><option value="officer" ${editing && u['สิทธิ์']!=='admin'?'selected':''}>เจ้าหน้าที่</option><option value="admin" ${editing && u['สิทธิ์']==='admin'?'selected':''}>แอดมิน</option></select></div>
+    ${editing ? '<div class="btn-row"><button class="btn btn-ghost" id="btnResetPin" type="button">รีเซ็ต PIN เป็นวันเดือนปีเกิด</button></div>' : ''}
     <div class="btn-row"><button class="btn btn-ghost" id="btnCancel">ยกเลิก</button><button class="btn btn-primary" id="btnSave">บันทึก</button></div>
     ${editing ? `<div class="btn-row"><button class="btn btn-danger" id="btnDeleteUser">ลบรายชื่อนี้</button></div>` : ''}
   `);
@@ -14602,6 +14603,16 @@ function openUserForm(u) {
 
   // ---------- ยกเลิก / บันทึก ----------
   document.getElementById('btnCancel').onclick = closeSheet;
+  if (editing) {
+    document.getElementById('btnResetPin').onclick = async function(){
+      if (!await confirmSheet('รีเซ็ต PIN ของ ' + (u['ชื่อ-สกุล'] || '') + ' กลับเป็นวันเดือนปีเกิด? ผู้ใช้ต้องตั้ง PIN ใหม่ตอนเข้าครั้งถัดไป', {title:'รีเซ็ต PIN', okText:'รีเซ็ต', tone:'bad'})) return;
+      const { data: au } = await sb.from('users').select('auth_user_id').eq('id', officerId(u)).maybeSingle();
+      if (!au || !au.auth_user_id) return toast('บัญชีนี้ยังไม่มีการเข้าสู่ระบบ');
+      const { data: rr, error: re } = await sb.functions.invoke('admin-users', { body: { action: 'resetPin', authId: au.auth_user_id } });
+      if (re || !rr || !rr.ok) return toast((rr && rr.error) || (re && re.message) || 'รีเซ็ต PIN ไม่สำเร็จ');
+      toast('รีเซ็ต PIN แล้ว');
+    };
+  }
   document.getElementById('btnSave').onclick = async () => {
     if (!val('u_name').trim()) { toast('กรุณากรอกชื่อ-สกุล'); return; }
     const saveBtn = document.getElementById('btnSave'); if (saveBtn.disabled) return; setButtonBusy(saveBtn, true); setLoading(true, 'กำลังบันทึกรายชื่อ จนท....');
@@ -21768,7 +21779,7 @@ refreshNotifBadge();
   }
 
   async function loadProfile(auth){
-    var p = await sb.from('profiles').select('role,display_name,active,must_change_password').eq('id', auth.user.id).maybeSingle();
+    var p = await sb.from('profiles').select('role,display_name,active,must_change_password,must_change_pin').eq('id', auth.user.id).maybeSingle();
     if (!p.data || !p.data.active) { await sb.auth.signOut(); throw new Error('บัญชีนี้ยังไม่เปิดใช้งาน'); }
     return p.data;
   }
@@ -21787,6 +21798,31 @@ refreshNotifBadge();
         await sb.rpc('mark_password_changed');
         box.classList.remove('open');
         resolve();
+      };
+    });
+  }
+
+  function forcePinChange(){
+    return new Promise(function(resolve){
+      var box = document.createElement('div');
+      box.id = 'acPinChange';
+      box.style.cssText = 'position:fixed;inset:0;z-index:9600;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(15,25,38,.6);';
+      box.innerHTML = '<div style="width:100%;max-width:360px;padding:22px;border-radius:24px;background:var(--panel);border:1px solid var(--panel-line);">' +
+        '<h3 style="margin:0 0 6px;font-size:17px;color:var(--ink);">ตั้ง PIN ของคุณเอง</h3>' +
+        '<p style="margin:0 0 14px;font-size:12.5px;color:var(--ink-dim);line-height:1.5;">PIN ตอนนี้เป็นวันเดือนปีเกิด กรุณาตั้ง PIN 6 หลักใหม่ (ห้ามใช้วันเกิด)</p>' +
+        '<div class="field"><label>PIN ใหม่ (6 หลัก)</label><input class="input" id="npPin1" type="password" inputmode="numeric" maxlength="6"></div>' +
+        '<div class="field"><label>ยืนยัน PIN ใหม่</label><input class="input" id="npPin2" type="password" inputmode="numeric" maxlength="6"></div>' +
+        '<div class="hint" id="npErr" style="color:#d64545;"></div>' +
+        '<button class="btn btn-primary" id="npGo" type="button" style="width:100%;margin-top:8px;">บันทึก PIN</button></div>';
+      document.body.appendChild(box);
+      document.getElementById('npGo').onclick = async function(){
+        var a = document.getElementById('npPin1').value.trim(), b2 = document.getElementById('npPin2').value.trim();
+        var e = document.getElementById('npErr');
+        if (!/^\d{6}$/.test(a)) { e.textContent = 'PIN ต้องเป็นตัวเลข 6 หลัก'; return; }
+        if (a !== b2) { e.textContent = 'PIN สองช่องไม่ตรงกัน'; return; }
+        var r = await sb.rpc('set_my_pin', { p_pin: a, p_current_password: '' });
+        if (r.error || !r.data || !r.data.ok) { e.textContent = (r.data && r.data.error) || (r.error && r.error.message) || 'บันทึกไม่สำเร็จ'; return; }
+        box.remove(); resolve();
       };
     });
   }
@@ -21811,7 +21847,7 @@ refreshNotifBadge();
     try {
       var auth = await loginPin(secret);
       var prof = await loadProfile(auth);
-      if (prof.must_change_password) await forceChange();
+      if (prof.must_change_pin) await forcePinChange();
       await finish(prof, auth);
     } catch (e) {
       err(e.message || 'เข้าสู่ระบบไม่สำเร็จ');
