@@ -90,6 +90,15 @@ function verifyLocalToken(token) {
   } catch (e) { return null; }
 }
 
+// บทบาทของผู้ใช้ปัจจุบันจากเซสชัน Supabase Auth (null ถ้าไม่มีเซสชันหรือบัญชีถูกปิด)
+async function currentRoleSb() {
+  const { data } = await sb.auth.getSession();
+  if (!data || !data.session) return null;
+  const { data: p } = await sb.from('profiles').select('role,active').eq('id', data.session.user.id).maybeSingle();
+  if (!p || !p.active) return null;
+  return p.role === 'admin' ? 'admin' : 'viewer';
+}
+
 async function supaLoginWithRole(role, password) {
   const { data, error } = await sb.rpc('login_with_role', { p_role: role, p_password: password });
   if (error) throw new Error(error.message || 'เข้าสู่ระบบไม่สำเร็จ');
@@ -343,11 +352,15 @@ async function supaApiGet(action, params) {
     case 'getActivityLog': return await sGetActivityLog();
     case 'getAuditRecords': return await sGetAuditRecords(params.year);
     case 'getSystemSettings': return await sGetSystemSettings();
-    case 'validateSession': return { valid: !!verifyLocalToken(params.token) };
+    case 'validateSession': {
+      // ตรวจจากเซสชัน Supabase Auth จริง (โทเค็นแบบเก่าใช้ไม่ได้แล้ว)
+      const role = await currentRoleSb();
+      return { valid: !!role, role };
+    }
     case 'getMonthlyChecks': return await sGetMonthlyChecks(params.year, params.month);
     case 'listTrash': {
       // อ่าน role จาก token ฝั่งเซิร์ฟเวอร์ ไม่รับจาก client
-      const role = verifyLocalToken(params.token);
+      const role = await currentRoleSb();
       return await sListTrash(role);
     }
     default: throw new Error('ไม่รู้จัก action: ' + action);
