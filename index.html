@@ -6831,11 +6831,6 @@ html, body{
 .topbar .role-pill.user-pill.viewer{
   background:var(--off-wash) !important; color:var(--off) !important; box-shadow:none !important;
 }
-/* ข้อความ rolePill ของระบบเดิมจะถูกแทนด้วยชื่อผู้ใช้ผ่าน JS (ดูข้อ 3) */
-
-/* ซ่อนชื่อผู้ใช้ตัวที่สองบน topbar (ยังอยู่ใน DOM สำหรับการ์ดผู้ใช้ในเมนู) */
-.topbar #profileName,
-.topbar .profile-name{ display:none !important; }
 
 /* ===== กระดิ่งแจ้งเตือน ===== */
 .notif-btn{ position:relative; }
@@ -6845,6 +6840,8 @@ html, body{
   font-family:var(--font-num); font-size:9px; font-weight:700; line-height:1;
   align-items:center; justify-content:center; pointer-events:none;
 }
+
+/* ===== rolePill (ไอคอนผู้ดูแล) ===== */
 .topbar .role-pill.role-icon .role-text{ display:none !important; }
 .topbar .role-pill.role-icon::before{
   content:""; width:14px; height:14px; background:currentColor; display:block;
@@ -6854,7 +6851,7 @@ html, body{
 .topbar .role-pill.role-icon:not(.viewer){ background:var(--navy) !important; color:#fff !important; box-shadow:0 4px 12px rgba(23,50,79,.25) !important; }
 .topbar .role-pill.role-icon.viewer{ background:var(--off-wash) !important; color:var(--off) !important; box-shadow:none !important; }
 
-/* ===== ซ่อนชื่อผู้ใช้บน topbar (ยังอยู่ใน DOM สำหรับการ์ดผู้ใช้ในเมนู) ===== */
+/* ซ่อนชื่อผู้ใช้ตัวที่สองบน topbar (ยังอยู่ใน DOM สำหรับการ์ดผู้ใช้ในเมนู) */
 .topbar #profileName,
 .topbar .profile-name{ display:none !important; }
 
