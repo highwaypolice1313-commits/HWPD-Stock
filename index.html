@@ -22174,9 +22174,9 @@ async function loadOfficerAdminInfo(u){
     line('PIN', pinText) +
     line('เลขบัตรประชาชน', pv.citizen_id ? fmtCitizen(pv.citizen_id) : '') +
     line('เบอร์โทร', pv.phone ? fmtPhone(pv.phone) : '') +
-    line('วัน/เดือน/ปีเกิด', pv.birth_date ? systemDate(pv.birth_date) : '') +
+    line('วัน/เดือน/ปีเกิด', pv.birth_date ? bdText(pv.birth_date) : '') +  
     line('กรุ๊ปเลือด', pv.blood_type) +
-    line('วันที่เพิ่มในระบบ', row.created_at ? systemDate(row.created_at) : '');
+    line('วันที่เพิ่มในระบบ', row.created_at ? systemDateLong(row.created_at) : '');
 }
 </script>
 <script id="bd-helpers">
