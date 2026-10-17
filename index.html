@@ -21029,6 +21029,8 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 </style>
  
  <style id="user-hide-badge-pull">
+html:has(.refresh-btn.loading) .tab-dot,
+html:has(.refresh-btn.loading) #notifCount{ display:none !important; animation:none !important; }
 html.ptr-pulling .tab-dot{ display:none !important; animation:none !important; }
 </style>
 <script id="user-hide-badge-pull-js">
