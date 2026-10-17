@@ -21073,6 +21073,19 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   if (vv) vv.addEventListener('resize', function(){ setTimeout(restore, 120); });
 })();
 </script>   
-   
+
+   <script id="user-overlay-align-reset">
+(function(){
+  var root = document.getElementById('modalRoot');
+  if (!root) return;
+  function clean(){
+    root.querySelectorAll('.overlay').forEach(function(o){
+      if (!o.querySelector('.ve-sheet')) o.style.alignItems = '';
+    });
+  }
+  new MutationObserver(clean).observe(root, { childList: true, subtree: true });
+})();
+</script>
+
 </body>
 </html>
