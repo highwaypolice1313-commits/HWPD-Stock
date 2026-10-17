@@ -21027,13 +21027,13 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
  
 <style id="user-hide-badge-pull">
 .tab-dot, #notifCount{ transition:opacity .25s ease; }
-html.ptr-pulling .tab-dot,
-html.ptr-pulling #notifCount,
-html.refresh-busy .tab-dot,
-html.refresh-busy #notifCount{
+html.booting .tab-dot, html.booting #notifCount,
+html.ptr-pulling .tab-dot, html.ptr-pulling #notifCount,
+html.refresh-busy .tab-dot, html.refresh-busy #notifCount{
   opacity:0 !important; visibility:hidden !important;
   animation:none !important; transition:none !important;
 }
+html.booting .tabbar .tab, html.booting .tabbar .tab *{ transition:none !important; }
 </style>
    
 <script id="user-hide-badge-pull-js">
@@ -21074,6 +21074,20 @@ html.refresh-busy #notifCount{
   var root = document.querySelector('.topbar') || document.body;
   new MutationObserver(sync).observe(root, { attributes: true, attributeFilter: ['class'], subtree: true });
   sync();
+})();
+</script>
+<script id="user-boot-badge-hold">
+(function(){
+  var html = document.documentElement;
+  html.classList.add('booting');
+  var t0 = Date.now();
+  var timer = setInterval(function(){
+    var synced = (typeof lastSyncAt !== 'undefined' && lastSyncAt);
+    if (synced || Date.now() - t0 > 8000) {
+      clearInterval(timer);
+      setTimeout(function(){ html.classList.remove('booting'); }, 700);
+    }
+  }, 150);
 })();
 </script>
 
