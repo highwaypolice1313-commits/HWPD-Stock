@@ -21853,11 +21853,26 @@ refreshNotifBadge();
     $('acBadgeWrap').style.display = 'none';
     $('acBadge').value = b;
     role = b === ADMIN_BADGE ? 'admin' : 'officer';
+
     var h = $('acHello');
     h.style.display = '';
-    h.innerHTML = '<div class="ac-hello" style="text-align:center;">เข้าสู่ระบบในชื่อ <b>' +
-      escapeHtml(b === ADMIN_BADGE ? 'แอดมิน' : b) + '</b></div>' +
-      '<div style="text-align:center;margin-top:4px;"><button type="button" class="ac-link" id="acSwitch">เปลี่ยนผู้ใช้</button></div>';
+    h.innerHTML =
+      // ✅ ข้อความต้นฉบับชัดเจนบนพื้นหลังเข้ม
+      '<div style="text-align:center;color:#ffffff;font-size:15px;line-height:1.5;margin:4px 0 10px;">' +
+        'เข้าสู่ระบบในชื่อ ' +
+        '<b style="color:#ffd21f;font-weight:700;">' + escapeHtml(b === ADMIN_BADGE ? 'แอดมิน' : b) + '</b>' +
+      '</div>' +
+      // ✅ ปุ่มเม็ดยาให้กดง่าย และเห็นชัดบนมือถือ
+      '<div style="text-align:center;">' +
+        '<button type="button" id="acSwitch" style="' +
+          'display:inline-flex;align-items:center;justify-content:center;' +
+          'min-height:42px;padding:8px 22px;border-radius:999px;' +
+          'border:1.5px solid rgba(255,210,31,.85);background:rgba(255,210,31,.12);' +
+          'color:#ffd21f;font-family:inherit;font-size:14.5px;font-weight:600;' +
+          'cursor:pointer;-webkit-tap-highlight-color:transparent;' +
+        '">เปลี่ยนผู้ใช้</button>' +
+      '</div>';
+
     $('acSwitch').onclick = function(){ setRemembered(''); showRoles(); };
   }
 
