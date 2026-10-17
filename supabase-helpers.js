@@ -685,6 +685,8 @@ async function sUpdateUserRole(p, actor) {
   if (!val && p.lineUserId) { col = 'line_user_id'; val = p.lineUserId; }
   if (!val && p.username) { col = 'username'; val = p.username; }
   if (!val) throw new Error('ไม่พบผู้ใช้ที่ต้องการแก้ไข');
+
+  // 1) ข้อมูลทั่วไปในตาราง users (บันทึกก่อนเสมอ)
   const upd = {};
   if (p.name !== undefined) upd.name = p.name;
   if (p.position !== undefined) upd.position = p.position;
@@ -695,26 +697,36 @@ async function sUpdateUserRole(p, actor) {
   if (p.photoData) upd.photo = (await gasUploadImageToDrive(p.photoData, 'user-' + val)).url;
   else if (p.photo !== undefined) upd.photo = p.photo;
   if (p.signature !== undefined) upd.signature = p.signature;
-  // ข้อมูลส่วนบุคคลเก็บในตาราง user_private (แอดมินและเจ้าของเท่านั้น)
-  const privUpd = {};
-  if (p.phone !== undefined) privUpd.phone = p.phone;
-  if (p.citizenId !== undefined) privUpd.citizen_id = String(p.citizenId || '').replace(/-/g, '');
-  if (p.birthDate !== undefined) privUpd.birth_date = p.birthDate || null;
-  if (p.bloodType !== undefined) privUpd.blood_type = p.bloodType;
-  if (Object.keys(privUpd).length) {
-    const { data: ur } = await sb.from('users').select('auth_user_id').eq(col, val).maybeSingle();
-    if (ur && ur.auth_user_id) {
-      const { error: pe } = await sb.from('user_private')
-        .upsert({ auth_user_id: ur.auth_user_id, ...privUpd, updated_at: new Date().toISOString() });
-      if (pe) throw new Error('บันทึกข้อมูลส่วนบุคคลไม่สำเร็จ: ' + pe.message);
-    } else if (Object.values(privUpd).some(v => v)) {
-      throw new Error('บัญชีนี้ยังไม่มีการเข้าสู่ระบบ จึงบันทึกเลขบัตร วันเกิด หรือกรุ๊ปเลือดไม่ได้');
-    }
-  }
+
   const { error } = await sb.from('users').update(upd).eq(col, val);
   if (error) throw new Error('แก้ไขไม่สำเร็จ: ' + error.message);
+
+  // 2) ข้อมูลส่วนบุคคลในตาราง user_private (ต้องมีบัญชีเข้าระบบก่อน)
+  const privUpd = {};
+  if (p.phone !== undefined) privUpd.phone = p.phone;
+  if (p.citizenId !== undefined) privUpd.citizen_id = String(p.citizenId || '').replace(/\D/g, ''); // ⚠️ ควรเข้ารหัสตามระบบเดิม
+  if (p.birthDate !== undefined) privUpd.birth_date = p.birthDate || null;
+  if (p.bloodType !== undefined) privUpd.blood_type = p.bloodType;
+
+  let personalSaved = false;
+  if (Object.keys(privUpd).length) {
+    const { data: ur, error: ue } = await sb.from('users')
+      .select('auth_user_id').eq(col, val).maybeSingle();
+    if (ue) throw new Error('อ่านข้อมูลผู้ใช้ไม่สำเร็จ: ' + ue.message);
+
+    if (ur && ur.auth_user_id) {
+      const { error: pe } = await sb.from('user_private').upsert(
+        { auth_user_id: ur.auth_user_id, ...privUpd, updated_at: new Date().toISOString() },
+        { onConflict: 'auth_user_id' }
+      );
+      if (pe) throw new Error('บันทึกข้อมูลส่วนบุคคลไม่สำเร็จ: ' + pe.message);
+      personalSaved = true;
+    }
+    // ถ้ายังไม่มีบัญชี ไม่ throw เพื่อให้ข้อมูลทั่วไปยังถูกบันทึก หน้าเว็บควรแจ้งเตือนให้บันทึกซ้ำหลังเปิดบัญชี
+  }
+
   await logActivitySb(actor, 'แก้ไขข้อมูล จนท.', p.name || val);
-  return { updated: true, photoUrl: upd.photo };
+  return { updated: true, photoUrl: upd.photo, personalSaved };
 }
 
 // ลบผู้ใช้ = ย้ายไปถังขยะ
