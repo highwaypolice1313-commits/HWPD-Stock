@@ -20990,24 +20990,35 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 
 <script id="user-ptr-refresh">
 (function(){
-  var THRESH = 70, startY = 0, pull = 0, tracking = false, busy = false;
+  var THRESH = 70, EDGE = 24;
+  var startX = 0, startY = 0, pull = 0, tracking = false, locked = false;
+
   var ind = document.createElement('div');
   ind.id = 'ptrIndicator';
   ind.innerHTML = '<div class="ptr-pill"><span class="ptr-spin"></span><span class="ptr-txt">ดึงลงเพื่อรีเฟรช</span></div>';
   document.body.appendChild(ind);
 
   function blocked(t){
-    return !t || !t.closest || !!t.closest('.sw-wrap, .sheet, .overlay, .command-overlay, input, textarea, select, .tabbar, .fab, .memo-quick, [data-noptr]');
+    return !t || !t.closest || !!t.closest('.sw-wrap, .sheet, .overlay, .command-overlay, input, textarea, select, .tabbar, .fab, .memo-quick, [data-noptr], .vp-list, .notif-pop');
   }
+  function cancel(){
+    tracking = false; pull = 0;
+    ind.classList.remove('show');
+  }
+
   window.addEventListener('touchstart', function(e){
-    if (busy || window.scrollY > 0 || document.body.classList.contains('modal-open') || blocked(e.target)) { tracking = false; return; }
-    startY = e.touches[0].clientY; pull = 0; tracking = true;
+    var t = e.touches[0];
+    if (locked || window.scrollY > 0 || document.body.classList.contains('modal-open') || blocked(e.target)
+        || t.clientX < EDGE || t.clientX > window.innerWidth - EDGE) { tracking = false; return; }
+    startX = t.clientX; startY = t.clientY; pull = 0; tracking = true;
   }, { passive: true });
 
   window.addEventListener('touchmove', function(e){
     if (!tracking) return;
-    var dy = e.touches[0].clientY - startY;
-    if (dy <= 0 || window.scrollY > 0) { pull = 0; ind.classList.remove('show'); return; }
+    var t = e.touches[0];
+    var dx = t.clientX - startX, dy = t.clientY - startY;
+    // ต้องลากลงในแนวตั้งเกือบทั้งหมด ถ้าเอียงหรือลากแนวนอนให้ยกเลิก
+    if (dy <= 0 || window.scrollY > 0 || Math.abs(dx) > Math.max(12, dy * 0.4)) { cancel(); return; }
     pull = Math.min(dy * 0.5, 120);
     ind.classList.add('show');
     ind.querySelector('.ptr-txt').textContent = pull >= THRESH ? 'ปล่อยเพื่อรีเฟรช' : 'ดึงลงเพื่อรีเฟรช';
@@ -21017,7 +21028,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
     if (!tracking) return;
     tracking = false;
     if (pull >= THRESH) {
-      busy = true;
+      locked = true;
       ind.classList.add('loading');
       ind.querySelector('.ptr-txt').textContent = 'กำลังรีเฟรช...';
       setTimeout(function(){ location.reload(); }, 650);
@@ -21025,6 +21036,8 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
       ind.classList.remove('show');
     }
   }, { passive: true });
+
+  window.addEventListener('touchcancel', cancel, { passive: true });
 })();
 </script>
 
