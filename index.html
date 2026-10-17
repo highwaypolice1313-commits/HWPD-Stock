@@ -21875,19 +21875,13 @@ refreshNotifBadge();
   var _clr = clearSession;
   clearSession = function(){ try { sb.auth.signOut(); } catch (e) {} return _clr.apply(this, arguments); };
 
-  // ---------- โปรไฟล์ของฉัน (แก้ได้ทุกช่อง ยกเว้นรหัสหมวกและสิทธิ์) ----------
-  function isoToBE(iso){
-    var p = String(iso || '').split('-');
-    return p.length === 3 ? p[2] + '/' + p[1] + '/' + (Number(p[0]) + 543) : '';
-  }
-  // ✅ รับวันเกิดเป็น พ.ศ. หรือ ค.ศ. แล้วแปลงเป็น YYYY-MM-DD; คืน '' ถ้าว่าง และ null ถ้ารูปแบบผิด
-  function beToIso(s){
-    var t = String(s || '').trim();
-    if (!t) return '';
-    var m = t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-    if (!m) return null;
-    var y = Number(m[3]); if (y > 2400) y -= 543;
-    return y + '-' + String(m[2]).padStart(2, '0') + '-' + String(m[1]).padStart(2, '0');
+    // ---------- โปรไฟล์ของฉัน (แก้ได้ทุกช่อง ยกเว้นรหัสหมวกและสิทธิ์) ----------
+  // ✅ แสดงข้อความสถานะใต้ปุ่ม ทั้งสีเขียว (สำเร็จ) และสีแดง (ผิดพลาด)
+  function setStatus(elId, msg, ok){
+    var el = $(elId); if (!el) return;
+    el.textContent = msg || '';
+    el.style.color = ok ? '#1f9d55' : '#d64545';
+    el.style.fontWeight = '600';
   }
 
   async function openProfile(){
@@ -21917,7 +21911,17 @@ refreshNotifBadge();
       '<div class="field"><label>หน่วยงาน</label><input class="input" id="pf_unit" value="' + escapeHtml(u.unit || '') + '"></div>' +
       '<div class="field"><label>เลขบัตรประชาชน</label><input class="input" id="pf_citizen" inputmode="numeric" value="' + escapeHtml(fmtCitizen(u.citizen_id || '')) + '"></div>' +
       '<div class="field"><label>เบอร์โทร</label><input class="input" id="pf_phone" inputmode="numeric" value="' + escapeHtml(fmtPhone(u.phone || '')) + '"></div>' +
-      '<div class="field"><label>วัน/เดือน/ปีเกิด (พ.ศ.) เช่น 16/12/2536</label><input class="input" id="pf_birth" value="' + escapeHtml(isoToBE(u.birth_date)) + '"></div>' +
+      // ✅ ช่องวัน/เดือน/พ.ศ. แบบเดียวกับฟอร์มแอดมิน ใช้ id เดียวกันเพื่อให้ bdSet / bdBind ทำงานได้
+      '<div class="field"><label>วัน/เดือน/ปีเกิด (พ.ศ.)</label>' +
+        '<div style="display:flex;gap:8px;">' +
+          '<input class="input" id="u_bd_d" inputmode="numeric" maxlength="2" placeholder="วัน" style="flex:0 0 26%;min-width:0;">' +
+          '<select class="input" id="u_bd_m" style="flex:1 1 auto;min-width:0;"><option value="">เดือน</option>' +
+            TH_MONTHS.map(function(m, i){ return '<option value="' + (i + 1) + '">' + m + '</option>'; }).join('') +
+          '</select>' +
+          '<input class="input" id="u_bd_y" inputmode="numeric" maxlength="4" placeholder="พ.ศ." style="flex:0 0 30%;min-width:0;">' +
+        '</div>' +
+        '<input type="hidden" id="u_birth" value="">' +
+      '</div>' +
       '<div class="field"><label>กรุ๊ปเลือด</label><select class="input" id="pf_blood">' +
         BLOOD.map(function(b){ return '<option value="' + b + '"' + ((u.blood_type || '') === b ? ' selected' : '') + '>' + (b || 'ไม่ระบุ') + '</option>'; }).join('') +
       '</select></div>' +
@@ -21926,14 +21930,18 @@ refreshNotifBadge();
         '<div class="hint" id="pf_sigState">' + (window.__pfSig ? 'เซ็นแล้ว กดบันทึกเพื่อยืนยัน' : (u.signature ? 'มีลายเซ็นอยู่แล้ว' : 'ยังไม่มีลายเซ็น')) + '</div>' +
       '</div>' +
       '<div class="btn-row"><button class="btn btn-primary" id="pf_save" type="button">บันทึกข้อมูล</button></div>' +
+      '<div class="hint" id="pf_status" style="min-height:20px;"></div>' +
       '<div class="section-title" style="margin-top:18px;font-size:14px;">เปลี่ยนรหัสผ่าน (ตัวเลข 6 หลัก)</div>' +
       '<div class="field"><label>รหัสผ่านใหม่</label><input class="input" id="pf_new1" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password"></div>' +
       '<div class="field"><label>ยืนยันรหัสผ่านใหม่</label><input class="input" id="pf_new2" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password"></div>' +
-      '<div class="btn-row"><button class="btn btn-ghost" id="pf_pw" type="button">เปลี่ยนรหัสผ่าน</button></div>'
+      '<div class="btn-row"><button class="btn btn-ghost" id="pf_pw" type="button">เปลี่ยนรหัสผ่าน</button></div>' +
+      '<div class="hint" id="pf_pw_status" style="min-height:20px;"></div>'
     );
 
     bindFmt($('pf_citizen'), fmtCitizen, 17);
     bindFmt($('pf_phone'), fmtPhone, 12);
+    bdBind();
+    bdSet(u.birth_date || '');
 
     $('pf_sig').onclick = function(){
       openSignatureSheet({
@@ -21947,13 +21955,19 @@ refreshNotifBadge();
     };
 
     $('pf_save').onclick = async function(){
+      setStatus('pf_status', '', true);
+
       var phone = g('pf_phone').replace(/\D/g, '');
-      if (phone && phone.length !== 10) return toast('เบอร์โทรกรอกไม่ครบ 10 หลัก');
+      if (phone && phone.length !== 10) return setStatus('pf_status', 'เบอร์โทรกรอกไม่ครบ 10 หลัก', false);
+
       var cit = g('pf_citizen').replace(/\D/g, '');
-      if (cit && cit.length !== 13) return toast('เลขบัตรประชาชนกรอกไม่ครบ 13 หลัก');
-      var birth = beToIso(g('pf_birth'));
-      if (birth === null) return toast('วันเกิดไม่ถูกต้อง ใช้รูปแบบ 16/12/2536');
-      if (!g('pf_name').trim()) return toast('กรุณากรอกชื่อ-สกุล');
+      if (cit && cit.length !== 13) return setStatus('pf_status', 'เลขบัตรประชาชนกรอกไม่ครบ 13 หลัก', false);
+
+      if (!g('pf_name').trim()) return setStatus('pf_status', 'กรุณากรอกชื่อ-สกุล', false);
+
+      // ✅ ถ้ากรอกวัน/เดือน/ปีไม่ครบ ให้หยุดก่อนบันทึก
+      var partialBirth = (g('u_bd_d') || g('u_bd_m') || g('u_bd_y')) && !g('u_birth');
+      if (partialBirth) return setStatus('pf_status', 'วัน/เดือน/ปีเกิดไม่ถูกต้องหรือกรอกไม่ครบ', false);
 
       var sig = u.signature || '';
       if (window.__pfSig) sig = await uploadSignature(window.__pfSig, 'user-' + id);
@@ -21966,30 +21980,40 @@ refreshNotifBadge();
         signature: sig,
         citizen_id: cit,
         phone: phone,
-        birth_date: birth,
+        birth_date: g('u_birth'),
         blood_type: g('pf_blood')
       }});
       if (up.error || !up.data || !up.data.ok) {
-        return toast('บันทึกไม่สำเร็จ: ' + ((up.data && up.data.error) || (up.error && up.error.message) || ''));
+        var msg = (up.data && up.data.error) || (up.error && up.error.message) || '';
+        return setStatus('pf_status', 'บันทึกไม่สำเร็จ: ' + msg, false);
       }
 
       window.__pfSig = '';
+      u.signature = sig;
+      u.birth_date = g('u_birth') || null;
       var pn = $('profileName'); if (pn) pn.textContent = g('pf_name').trim();
       if (window.__me) window.__me.name = g('pf_name').trim();
-      toast('บันทึกข้อมูลแล้ว');
+
+      setStatus('pf_status', '✓ บันทึกข้อมูลเรียบร้อยแล้ว', true);
+      toast('บันทึกข้อมูลเรียบร้อยแล้ว');
     };
 
     $('pf_pw').onclick = async function(){
       var a = g('pf_new1'), b = g('pf_new2');
-      if (!/^[0-9]{6}$/.test(a)) return toast('รหัสผ่านต้องเป็นตัวเลข 6 หลัก');
-      if (a !== b) return toast('รหัสสองช่องไม่ตรงกัน');
+      setStatus('pf_pw_status', '', true);
+      if (!/^[0-9]{6}$/.test(a)) return setStatus('pf_pw_status', 'รหัสผ่านต้องเป็นตัวเลข 6 หลัก', false);
+      if (a !== b) return setStatus('pf_pw_status', 'รหัสสองช่องไม่ตรงกัน', false);
+
       var res = await sb.auth.updateUser({ password: a });
-      if (res.error) return toast(res.error.message);
-      toast('เปลี่ยนรหัสผ่านแล้ว');
-      closeSheet();
+      if (res.error) return setStatus('pf_pw_status', res.error.message, false);
+
+      $('pf_new1').value = '';
+      $('pf_new2').value = '';
+      setStatus('pf_pw_status', '✓ เปลี่ยนรหัสผ่านเรียบร้อยแล้ว', true);
+      toast('เปลี่ยนรหัสผ่านเรียบร้อยแล้ว');
     };
   }
-
+      
   // ---------- เพิ่มเมนู "โปรไฟล์" ในป๊อปอัปบัญชี ----------
   document.addEventListener('click', function(e){
     if (e.target.closest && e.target.closest('#avatarBtn')) {
@@ -22108,5 +22132,55 @@ function bdText(iso){
 }
 
 </script>
+
+<script id="pw-eye-js">
+(function(){
+  var EYE = '<svg viewBox="0 0 24 24" fill="none" width="18" height="18" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.7"/></svg>';
+  var EYE_OFF = '<svg viewBox="0 0 24 24" fill="none" width="18" height="18" aria-hidden="true"><path d="M3 3l18 18M10.6 6.2A9.6 9.6 0 0112 6c6.4 0 10 6 10 6a17 17 0 01-3.2 3.9M6.6 6.7A17 17 0 002 12s3.6 6 10 6c1.6 0 3-.4 4.2-1" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>';
+
+  function enhance(input){
+    if (input.dataset.eye === '1') return;   // ✅ กันการเพิ่มซ้ำ
+    input.dataset.eye = '1';
+
+    var wrap = document.createElement('div');
+    wrap.className = 'pw-wrap';
+    wrap.style.cssText = 'position:relative;display:block;width:100%;';
+    input.parentNode.insertBefore(wrap, input);
+    wrap.appendChild(input);
+    input.style.paddingRight = '44px';
+
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'pw-eye';
+    btn.setAttribute('aria-label', 'แสดงหรือซ่อนรหัส');
+    btn.style.cssText = 'position:absolute;right:6px;top:50%;transform:translateY(-50%);width:34px;height:34px;border:0;background:transparent;color:inherit;opacity:.7;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;';
+    btn.innerHTML = EYE;
+    btn.onclick = function(){
+      var showing = input.type === 'text';
+      input.type = showing ? 'password' : 'text';
+      btn.innerHTML = showing ? EYE : EYE_OFF;
+      btn.setAttribute('aria-label', showing ? 'แสดงรหัส' : 'ซ่อนรหัส');
+    };
+    wrap.appendChild(btn);
+  }
+
+  function scan(root){
+    (root || document).querySelectorAll('input[type="password"]').forEach(enhance);
+  }
+  scan();
+
+  // ✅ ช่องที่ถูกสร้างทีหลัง (เช่นหน้าโปรไฟล์) ก็จะได้ปุ่มดวงตาด้วย
+  new MutationObserver(function(muts){
+    muts.forEach(function(m){
+      m.addedNodes.forEach(function(n){
+        if (n.nodeType !== 1) return;
+        if (n.matches && n.matches('input[type="password"]')) enhance(n);
+        else scan(n);
+      });
+    });
+  }).observe(document.body, { childList: true, subtree: true });
+})();
+</script>
+      
 </body>
 </html>
