@@ -20965,7 +20965,6 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 @keyframes ptrSpin{ to{ transform:rotate(360deg); } }
 </style>
 
-  // ดึงรีเฟรซ
 <script id="user-ptr-refresh">
 (function(){
   var THRESH = 70, startY = 0, pull = 0, tracking = false, busy = false;
@@ -21008,99 +21007,13 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 })();
 </script>
 
-// แก้ modal บันทึกครุภัณฑ์ใหม่
-<script id="user-kb-sheet-fix">
-(function(){
-  var vv = window.visualViewport;
-  if (!vv) return;
-
-  function sync(){
-    var ov = document.getElementById('overlayEl');
-    if (!ov) return;
-    var sheet = ov.querySelector('.sheet');
-    var kbOpen = (window.innerHeight - vv.height) > 80;
-
-    if (kbOpen) {
-      // ให้ overlay ตรงกับพื้นที่ที่เห็นจริง (เหนือแป้นพิมพ์) ส่วนบนของ modal จะไม่หลุดจอ
-      ov.style.top = vv.offsetTop + 'px';
-      ov.style.height = vv.height + 'px';
-      ov.style.bottom = 'auto';
-      if (sheet) sheet.style.maxHeight = Math.max(280, Math.floor(vv.height - 16)) + 'px';
-    } else {
-      // แป้นหายแล้ว คืนค่าเดิม เพื่อให้ modal เลื่อนได้ปกติ
-      ov.style.top = '';
-      ov.style.height = '';
-      ov.style.bottom = '';
-      if (sheet && !sheet.hasAttribute('data-vp')) sheet.style.maxHeight = '';
-    }
-  }
-
-  vv.addEventListener('resize', sync);
-  vv.addEventListener('scroll', sync);
-})();
-</script>
 <style id="user-ve-spacing">
 /* หน้าเพิ่มชื่อ/ยี่ห้อใหม่: ลดระยะห่างระหว่างช่องพิมพ์กับปุ่ม */
 .ve-sheet .ve-note:empty{ display:none; }
 .ve-sheet .ve-note{ min-height:0; margin:6px 2px 0; }
 .ve-sheet .btn-row{ margin-top:12px; }
 </style>
-
-<script id="user-kb-scroll-restore">
-(function(){
-  var vv = window.visualViewport;
-  var stableY = window.scrollY;
-  function kbOpen(){ return !!vv && (window.innerHeight - vv.height) > 80; }
-
-  // จำตำแหน่งการเลื่อนตอนที่ไม่มีแป้นพิมพ์
-  window.addEventListener('scroll', function(){
-    if (!kbOpen()) stableY = window.scrollY;
-  }, { passive: true });
-
-  function restore(){
-    if (kbOpen()) return;
-    if (window.scrollY !== stableY) window.scrollTo(0, stableY);
-    var ov = document.getElementById('overlayEl');
-    if (ov) { ov.style.top = ''; ov.style.height = ''; ov.style.bottom = ''; }
-  }
-
-  // เมื่อออกจากช่องพิมพ์ ให้รอให้แป้นพิมพ์หายก่อน แล้วคืนตำแหน่ง
-  document.addEventListener('focusout', function(e){
-    if (!e.target || !e.target.closest || !e.target.closest('#overlayEl')) return;
-    setTimeout(restore, 400);
-  }, true);
-
-  if (vv) vv.addEventListener('resize', function(){ setTimeout(restore, 120); });
-})();
-</script>   
-
-<script id="user-close-scroll-fix">
-(function(){
-  var vv = window.visualViewport;
-  var stableY = window.scrollY;
-  function kbOpen(){ return !!vv && (window.innerHeight - vv.height) > 80; }
-  function modalOpen(){ return !!document.querySelector('#modalRoot .overlay'); }
-
-  // จำตำแหน่งการเลื่อนของหน้าเว็บ เฉพาะตอนที่ไม่มีแป้นพิมพ์และไม่มี modal เปิดอยู่
-  window.addEventListener('scroll', function(){
-    if (!kbOpen() && !modalOpen()) stableY = window.scrollY;
-  }, { passive: true });
-
-  function settle(){
-    if (kbOpen()) return;
-    if (window.scrollY !== stableY) window.scrollTo(0, stableY);
-  }
-
-  // ทุกครั้งที่ปิด modal ให้คืนตำแหน่งการเลื่อนของหน้าเว็บ
-  var _close = closeSheet;
-  closeSheet = function(){
-    var r = _close.apply(this, arguments);
-    setTimeout(settle, 30);
-    setTimeout(settle, 350);
-    return r;
-  };
-})();
-</script>
+ 
  
 </body>
 </html>
