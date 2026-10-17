@@ -14561,9 +14561,9 @@ function openUserForm(u) {
       <input type="hidden" id="u_sig" value="${editing ? escapeHtml(u['ลายเซ็น'] || '') : ''}">
     </div>
     <div class="memo-two-col">
+      <div class="field"><label>รหัสเปรียบเทียบปรับ (ชื่อผู้ใช้เข้าระบบ ไม่ซ้ำกัน)</label><input class="input" id="u_badge" value="${editing ? escapeHtml(u['รหัสเปรียบเทียบปรับ'] || '') : ''}"></div>
       <div class="field" style="max-width:140px;"><label>ยศ</label><select class="input" id="u_rank"><option value="">-</option>${RANK_OPTIONS.map(r => `<option ${editing && u['ยศ']===r?'selected':''}>${r}</option>`).join('')}</select></div>
       <div class="field"><label>ชื่อ-สกุล</label><input class="input" id="u_name" value="${editing ? escapeHtml(u['ชื่อ-สกุล']) : ''}"></div>
-       <div class="field"><label>รหัสเปรียบเทียบปรับ (ชื่อผู้ใช้เข้าระบบ ไม่ซ้ำกัน)</label><input class="input" id="u_badge" value="${editing ? escapeHtml(u['รหัสเปรียบเทียบปรับ'] || '') : ''}"></div>
     </div>
     <div class="memo-two-col">
       <div class="field"><label>เลขบัตรประชาชน</label><input class="input" id="u_citizen" inputmode="numeric" maxlength="13"></div>
