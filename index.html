@@ -11559,33 +11559,53 @@ function openCategoryCreate(onCreated) {
   }
 }
 
-/* ---------- หน้าเลือกหมวดหมู่ด้วยไอคอน (มีปุ่มเพิ่มหมวดหมู่ใหม่ด้านบน) ---------- */
+/* ---------- หน้าเลือกหมวดหมู่ด้วยไอคอน (มีปุ่มเพิ่มหมวดหมู่ใหม่ด้านบน) ----------
+   วางรากของตัวเองนอก #modalRoot เหมือนหน้าเลือกครุภัณฑ์ของหน้ายืม-คืน */
 function openCategoryPicker(current, onPick) {
   ensureAssetFormCss();
   ensureValuePickerCss();
   const cats = getCategories();
-  showSheet(`
-    <div class="sheet-title">เลือกหมวดหมู่</div>
-    ${isAdmin() ? `<button type="button" class="vp-create" id="cat_create">${AF_ICON_PLUS}<span>เพิ่มหมวดหมู่ใหม่</span></button>` : ''}
-    <div class="cat-grid">
-      ${cats.map(c => `
-        <button type="button" class="cat-tile${c === current ? ' active' : ''}" data-cat="${escapeHtml(c)}">
-          <span class="cat-tile-icon">${catIcon(c)}</span>
-          <span class="cat-tile-name">${escapeHtml(c)}</span>
-        </button>`).join('')}
-    </div>
-  `);
 
-  document.querySelectorAll('#overlayEl .cat-tile').forEach(btn => {
+  const root = document.createElement('div');
+  document.body.appendChild(root);
+  const close = () => root.remove();
+
+  root.innerHTML = `
+    <div class="overlay" style="z-index:95;">
+      <div class="sheet vp-sheet" style="max-height:92vh;">
+        <button class="sheet-close" type="button" title="ปิด" aria-label="ปิด">${ICONS.close}</button>
+        <div class="sheet-handle"></div>
+        <div class="sheet-title">เลือกหมวดหมู่</div>
+        ${isAdmin() ? `<button type="button" class="vp-create" id="cat_create">${AF_ICON_PLUS}<span>เพิ่มหมวดหมู่ใหม่</span></button>` : ''}
+        <div style="flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;">
+          <div class="cat-grid">
+            ${cats.map(c => `
+              <button type="button" class="cat-tile${c === current ? ' active' : ''}" data-cat="${escapeHtml(c)}">
+                <span class="cat-tile-icon">${catIcon(c)}</span>
+                <span class="cat-tile-name">${escapeHtml(c)}</span>
+              </button>`).join('')}
+          </div>
+        </div>
+      </div>
+    </div>`;
+
+  root.querySelector('.sheet-close').onclick = close;
+
+  root.querySelectorAll('.cat-tile').forEach(btn => {
     btn.onclick = () => {
       const c = btn.dataset.cat;
-      closeSheet();
+      close();
       onPick(c);
     };
   });
 
-  const createBtn = document.getElementById('cat_create');
-  if (createBtn) createBtn.onclick = () => openCategoryCreate(onPick);
+  const createBtn = root.querySelector('#cat_create');
+  if (createBtn) {
+    createBtn.onclick = () => {
+      close();                       // เอาหน้าเลือกออกก่อน แล้วเปิดหน้าเพิ่มหมวดหมู่
+      openCategoryCreate(onPick);
+    };
+  }
 }
 
 /* ---------- ฟอร์มเพิ่ม/แก้ไขครุภัณฑ์ ---------- */
