@@ -21433,6 +21433,53 @@ refreshNotifBadge();
   };
 })();
 </script>
+
+<style id="user-pin-slots">
+#pinDots{ display:none !important; }
+.pin-field{ display:flex; justify-content:center; gap:10px; margin:6px 0 6px; }
+.pin-slot{
+  width:44px; height:52px; border-radius:14px; display:flex; align-items:center; justify-content:center;
+  background:rgba(255,255,255,.12); border:1.5px solid rgba(255,255,255,.35);
+  transition:border-color .18s ease, background-color .18s ease, transform .18s cubic-bezier(.3,1.4,.5,1);
+}
+.pin-slot.on{ border-color:#fff; background:rgba(255,255,255,.22); transform:translateY(-2px); }
+.pin-slot.on::before{ content:""; width:12px; height:12px; border-radius:50%; background:#fff; }
+.pin-count{ text-align:center; font-size:12.5px; color:rgba(255,255,255,.85); margin:4px 0 14px; min-height:18px; }
+</style>
+<script id="user-pin-slots-js">
+(function(){
+  var box = document.getElementById('pinBox');
+  var dotsWrap = document.getElementById('pinDots');
+  if (!box || !dotsWrap) return;
+
+  var field = document.createElement('div');
+  field.className = 'pin-field';
+  field.innerHTML = [0,1,2,3,4,5].map(function(){ return '<span class="pin-slot"></span>'; }).join('');
+
+  var count = document.createElement('div');
+  count.className = 'pin-count';
+  count.id = 'pinCount';
+
+  box.insertBefore(count, box.firstChild);
+  box.insertBefore(field, box.firstChild);
+
+  var dots = Array.prototype.slice.call(dotsWrap.querySelectorAll('i'));
+  var slots = field.querySelectorAll('.pin-slot');
+
+  function sync(){
+    var n = 0;
+    dots.forEach(function(d, i){
+      var on = d.classList.contains('on');
+      if (on) n++;
+      slots[i].classList.toggle('on', on);
+    });
+    count.textContent = n === 0 ? 'กรอก PIN 6 หลัก' : 'กรอกแล้ว ' + n + ' / 6 หลัก';
+  }
+
+  new MutationObserver(sync).observe(dotsWrap, { attributes:true, subtree:true, attributeFilter:['class'] });
+  sync();
+})();
+</script>
    
 </body>
 </html>
