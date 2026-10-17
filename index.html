@@ -21007,6 +21007,39 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   }, { passive: true });
 })();
 </script>
+
+// แก้ modal บันทึกครุภัณฑ์ใหม่
+<script id="user-kb-sheet-fix">
+(function(){
+  var vv = window.visualViewport;
+  if (!vv) return;
+
+  function sync(){
+    var ov = document.getElementById('overlayEl');
+    if (!ov) return;
+    var sheet = ov.querySelector('.sheet');
+    var kbOpen = (window.innerHeight - vv.height) > 80;
+
+    if (kbOpen) {
+      // ให้ overlay ตรงกับพื้นที่ที่เห็นจริง (เหนือแป้นพิมพ์) ส่วนบนของ modal จะไม่หลุดจอ
+      ov.style.top = vv.offsetTop + 'px';
+      ov.style.height = vv.height + 'px';
+      ov.style.bottom = 'auto';
+      if (sheet) sheet.style.maxHeight = Math.max(280, Math.floor(vv.height - 16)) + 'px';
+    } else {
+      // แป้นหายแล้ว คืนค่าเดิม เพื่อให้ modal เลื่อนได้ปกติ
+      ov.style.top = '';
+      ov.style.height = '';
+      ov.style.bottom = '';
+      if (sheet && !sheet.hasAttribute('data-vp')) sheet.style.maxHeight = '';
+    }
+  }
+
+  vv.addEventListener('resize', sync);
+  vv.addEventListener('scroll', sync);
+})();
+</script>
+
    
 </body>
 </html>
