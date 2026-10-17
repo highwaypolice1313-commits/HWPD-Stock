@@ -12986,6 +12986,15 @@ function openBorrowForm(presetId) {
     document.getElementById('f_sigIcon').innerHTML = ICONS.edit;
     document.getElementById('f_sigTitle').textContent = 'แตะเพื่อเซ็นชื่อ';
   }
+  if (!admin && window.__me && window.__me.name) {
+    const meRow = (state.users || []).find(x => x['ชื่อ-สกุล'] === window.__me.name) || {};
+    document.getElementById('f_borrower').value = window.__me.name;
+    document.getElementById('f_borrowerName').textContent = window.__me.name;
+    document.getElementById('f_borrowerSub').textContent = meRow['ตำแหน่ง'] || 'ผู้ยืม (ตัวคุณ)';
+    document.getElementById('f_borrowerIcon').innerHTML = meRow['รูปถ่าย']
+      ? `<img src="${meRow['รูปถ่าย']}" style="width:100%;height:100%;object-fit:cover;border-radius:13px;">` : ICONS.user;
+    document.getElementById('f_borrowerTrigger').style.pointerEvents = 'none';
+  }
   document.getElementById('f_borrowerTrigger').onclick = () =>
     openOfficerPickerSheet(val('f_borrower'), (name, u) => {
       if (name !== val('f_borrower')) resetBorrowerSig();   // เปลี่ยนคน = ลายเซ็นเดิมใช้ไม่ได้
@@ -21595,6 +21604,8 @@ refreshNotifBadge();
 #acLogin .ac-mode{ display:flex; gap:4px; padding:4px; border-radius:16px; background:var(--panel-soft); border:1px solid var(--panel-line); }
 #acLogin .ac-mode button{ flex:1; border:0; background:transparent; padding:9px; border-radius:12px; font:inherit; font-size:13px; font-weight:600; color:var(--ink-dim); cursor:pointer; }
 #acLogin .ac-mode button.on{ background:var(--navy); color:#fff; }
+.ac-hello{ text-align:center; font-size:14px; color:var(--ink); }
+.ac-link{ border:0; background:transparent; color:var(--gold); font:inherit; font-size:12.5px; text-decoration:underline; cursor:pointer; padding:0; }
 .ac-slots{ display:flex; justify-content:center; gap:8px; }
 .ac-slots span{ width:40px; height:44px; border-radius:12px; border:1.5px solid rgba(255,255,255,.35); background:rgba(255,255,255,.12); display:flex; align-items:center; justify-content:center; }
 .ac-slots span.on{ border-color:#fff; background:rgba(255,255,255,.22); }
@@ -21603,6 +21614,8 @@ refreshNotifBadge();
 .ac-pad button{ width:64px; height:64px; border-radius:50%; border:1px solid var(--panel-line); background:var(--panel); color:var(--ink); font:inherit; font-size:22px; font-weight:600; cursor:pointer; box-shadow:0 6px 14px -6px rgba(16,42,67,.28); transition:transform .12s ease, background-color .12s ease, color .12s ease; }
 .ac-pad button.is-down, .ac-pad button:active{ transform:scale(.9); background:var(--navy); color:#fff; }
 .ac-pad .ghost{ visibility:hidden; }
+.pin-shake{ animation:pinShake .36s; }
+@keyframes pinShake{ 20%,60%{ transform:translateX(-6px); } 40%,80%{ transform:translateX(6px); } }
 #acChange{ position:fixed; inset:0; z-index:9500; display:none; align-items:center; justify-content:center; padding:20px; background:rgba(15,25,38,.6); }
 #acChange.open{ display:flex; }
 #acChange .ac-card{ width:100%; max-width:360px; padding:22px; border-radius:24px; background:var(--panel); border:1px solid var(--panel-line); }
@@ -21628,6 +21641,7 @@ refreshNotifBadge();
   var loginScreen = document.getElementById('loginScreen');
   var sub = document.getElementById('loginSubText');
   if (!loginScreen || !sub) return;
+  var REMEMBER = 'acRememberUser';
 
   ['roleSelectBox', 'roleLoginForm'].forEach(function(id){
     var el = document.getElementById(id); if (el) el.style.display = 'none';
@@ -21636,8 +21650,9 @@ refreshNotifBadge();
   var wrap = document.createElement('div');
   wrap.id = 'acLogin';
   wrap.innerHTML =
-    '<div class="field"><label>ชื่อผู้ใช้</label><input class="input" id="acUser" autocomplete="username" autocapitalize="none" autocorrect="off"></div>' +
-    '<div class="ac-mode"><button type="button" data-m="pw" class="on">รหัสผ่าน</button><button type="button" data-m="pin">PIN 6 หลัก</button></div>' +
+    '<div id="acHello" style="display:none"></div>' +
+    '<div class="field" id="acUserWrap"><label>ชื่อผู้ใช้</label><input class="input" id="acUser" autocomplete="username" autocapitalize="none" autocorrect="off"></div>' +
+    '<div class="ac-mode"><button type="button" data-m="pw">รหัสผ่าน</button><button type="button" data-m="pin">PIN 6 หลัก</button></div>' +
     '<div class="field" id="acPwWrap"><label>รหัสผ่าน</label><input class="input" id="acPw" type="password" autocomplete="current-password"></div>' +
     '<div id="acPinWrap" style="display:none">' +
       '<div class="ac-slots" id="acSlots"><span></span><span></span><span></span><span></span><span></span><span></span></div>' +
@@ -21650,19 +21665,42 @@ refreshNotifBadge();
     '<div class="hint" id="acErr" style="color:#ffb4bd;"></div>';
   sub.insertAdjacentElement('afterend', wrap);
 
-  var mode = localStorage.getItem('acLoginMode') === 'pin' ? 'pin' : 'pw';
+  var remembered = localStorage.getItem(REMEMBER) || '';
+  var mode = localStorage.getItem('acLoginMode') === 'pw' ? 'pw' : (remembered ? 'pin' : 'pw');
   var pin = '';
+
+  function paintPin(){
+    document.querySelectorAll('#acSlots span').forEach(function(s, i){ s.classList.toggle('on', i < pin.length); });
+  }
+  function err(msg){ document.getElementById('acErr').textContent = msg || ''; }
   function setMode(m){
     mode = m; localStorage.setItem('acLoginMode', m);
     wrap.querySelectorAll('.ac-mode button').forEach(function(b){ b.classList.toggle('on', b.dataset.m === m); });
     document.getElementById('acPwWrap').style.display = m === 'pw' ? '' : 'none';
     document.getElementById('acPinWrap').style.display = m === 'pin' ? '' : 'none';
-    pin = ''; paintPin();
+    pin = ''; paintPin(); err('');
   }
-  function paintPin(){
-    document.querySelectorAll('#acSlots span').forEach(function(s, i){ s.classList.toggle('on', i < pin.length); });
+  function showRemembered(){
+    var h = document.getElementById('acHello');
+    if (remembered) {
+      document.getElementById('acUser').value = remembered;
+      document.getElementById('acUserWrap').style.display = 'none';
+      h.style.display = '';
+      h.innerHTML = '<div class="ac-hello">เข้าสู่ระบบในชื่อ <b>' + escapeHtml(remembered) + '</b></div>' +
+        '<div style="text-align:center;margin-top:4px;"><button type="button" class="ac-link" id="acSwitch">ไม่ใช่ฉัน / เปลี่ยนผู้ใช้</button></div>';
+      document.getElementById('acSwitch').onclick = function(){
+        localStorage.removeItem(REMEMBER); remembered = '';
+        document.getElementById('acUser').value = '';
+        document.getElementById('acUserWrap').style.display = '';
+        h.style.display = 'none';
+        setMode('pw');
+      };
+    } else {
+      h.style.display = 'none';
+      document.getElementById('acUserWrap').style.display = '';
+    }
   }
-  function err(msg){ document.getElementById('acErr').textContent = msg || ''; }
+  showRemembered();
   setMode(mode);
 
   function emailFor(u){
@@ -21670,12 +21708,31 @@ refreshNotifBadge();
     return 'u' + hex + '@hpd.local';
   }
 
-  async function login(username, secret){
-    var r = await sb.auth.signInWithPassword({ email: emailFor(username), password: secret });
+  // เข้าด้วยรหัสผ่าน
+  async function loginPw(username, password){
+    var r = await sb.auth.signInWithPassword({ email: emailFor(username), password: password });
     if (r.error) throw new Error('ชื่อผู้ใช้หรือรหัสไม่ถูกต้อง');
-    var p = await sb.from('profiles').select('role,display_name,active,must_change_password').eq('id', r.data.user.id).maybeSingle();
+    return r.data;
+  }
+
+  // เข้าด้วย PIN: เซิร์ฟเวอร์ตรวจ PIN แล้วออกลิงก์ชั่วคราวให้เบราว์เซอร์แลกเป็นเซสชัน
+  async function loginPin(username, pinCode){
+    var res = await fetch(SUPABASE_URL + '/functions/v1/pin-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY },
+      body: JSON.stringify({ username: username, pin: pinCode })
+    });
+    var j = await res.json().catch(function(){ return {}; });
+    if (!res.ok || !j.token_hash) throw new Error(j.error || 'ชื่อผู้ใช้หรือ PIN ไม่ถูกต้อง');
+    var v = await sb.auth.verifyOtp({ token_hash: j.token_hash, type: 'magiclink' });
+    if (v.error || !v.data.session) throw new Error('เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่');
+    return v.data;
+  }
+
+  async function loadProfile(auth){
+    var p = await sb.from('profiles').select('role,display_name,active,must_change_password').eq('id', auth.user.id).maybeSingle();
     if (!p.data || !p.data.active) { await sb.auth.signOut(); throw new Error('บัญชีนี้ยังไม่เปิดใช้งาน'); }
-    return { auth: r.data, prof: p.data };
+    return p.data;
   }
 
   function forceChange(){
@@ -21698,6 +21755,9 @@ refreshNotifBadge();
 
   async function finish(prof, auth){
     window.__acAuthId = auth.user.id;
+    // เก็บข้อมูลผู้ใช้ปัจจุบันไว้ให้หน้ายืมดึงชื่อไปกรอกให้อัตโนมัติ
+    var me = await sb.from('users').select('id,name,position').eq('auth_user_id', auth.user.id).maybeSingle();
+    window.__me = me.data || { name: prof.display_name };
     var role = prof.role === 'admin' ? 'admin' : 'viewer';
     saveSession({ role: role, token: auth.session.access_token, name: prof.display_name });
     await completeLogin({ role: role, name: prof.display_name, token: auth.session.access_token });
@@ -21706,7 +21766,7 @@ refreshNotifBadge();
   }
 
   async function submit(){
-    var u = document.getElementById('acUser').value.trim();
+    var u = (remembered || document.getElementById('acUser').value).trim();
     var secret = mode === 'pw' ? document.getElementById('acPw').value : pin;
     err('');
     if (!u) return err('กรอกชื่อผู้ใช้');
@@ -21714,9 +21774,11 @@ refreshNotifBadge();
     if (mode === 'pin' && secret.length !== 6) return err('กรอก PIN ให้ครบ 6 หลัก');
     var btn = document.getElementById('acGo'); btn.disabled = true; btn.textContent = 'กำลังเข้าสู่ระบบ...';
     try {
-      var res = await login(u, secret);
-      if (res.prof.must_change_password) await forceChange();
-      await finish(res.prof, res.auth);
+      var auth = mode === 'pw' ? await loginPw(u, secret) : await loginPin(u, secret);
+      var prof = await loadProfile(auth);
+      localStorage.setItem(REMEMBER, u); remembered = u;
+      if (prof.must_change_password) await forceChange();
+      await finish(prof, auth);
     } catch (e) {
       err(e.message || 'เข้าสู่ระบบไม่สำเร็จ');
       pin = ''; paintPin();
@@ -21798,28 +21860,10 @@ refreshNotifBadge();
       }, 0);
     }
     var pf = e.target.closest && e.target.closest('[data-act="myprofile"]');
-    if (pf) {
-      e.stopImmediatePropagation(); e.preventDefault();
-      closeAcctPop(); openProfile();
-    }
+    if (pf) { e.stopImmediatePropagation(); e.preventDefault(); closeAcctPop(); openProfile(); }
   }, true);
 })();
 </script>
-
-<style id="user-dash-dark-text">
-:root[data-theme="night"] #view-dashboard .dbx-h1,
-:root[data-theme="cibnight"] #view-dashboard .dbx-h1,
-:root[data-theme="night"] #view-dashboard .dbx-title,
-:root[data-theme="cibnight"] #view-dashboard .dbx-title{
-  color:#ffffff !important;
-}
-:root[data-theme="night"] #view-dashboard .dbx-date,
-:root[data-theme="cibnight"] #view-dashboard .dbx-date,
-:root[data-theme="night"] #view-dashboard .dbx-sub,
-:root[data-theme="cibnight"] #view-dashboard .dbx-sub{
-  color:#c9d6e8 !important;
-}
-</style>
 
 </body>
 </html>
