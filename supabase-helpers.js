@@ -157,7 +157,9 @@ const componentToThai = r => ({
 const userToThai = r => ({
   'รหัสจนท.': r.id, 'LINEUserId': r.line_user_id, 'ชื่อ-สกุล': r.name, 'ตำแหน่ง': r.position,
   'หน่วยงาน': r.unit, 'สิทธิ์': r.role, 'วันที่เพิ่ม': r.created_at, 'ชื่อผู้ใช้': r.username,
-  'ยศ': r.rank, 'บทบาทเบิก-ยืม': r.memo_role, 'รูปถ่าย': r.photo, 'ลายเซ็น': r.signature
+  'ยศ': r.rank, 'บทบาทเบิก-ยืม': r.memo_role, 'รูปถ่าย': r.photo, 'ลายเซ็น': r.signature,
+  'เลขบัตรประชาชน': r.citizen_id, 'เบอร์โทร': r.phone, 'วัน/เดือน/ปีเกิด': r.birth_date,
+  'กรุ๊ปเลือด': r.blood_type, 'auth_user_id': r.auth_user_id
 });
 const activityToThai = r => ({
   'รหัส': r.id, 'วันที่-เวลา': r.created_at, 'ผู้ทำรายการ': r.actor, 'การกระทำ': r.action, 'รายละเอียด': r.detail
@@ -680,6 +682,22 @@ async function sUpdateUserRole(p, actor) {
   if (p.photoData) upd.photo = (await gasUploadImageToDrive(p.photoData, 'user-' + val)).url;
   else if (p.photo !== undefined) upd.photo = p.photo;
   if (p.signature !== undefined) upd.signature = p.signature;
+  // ข้อมูลส่วนบุคคลเก็บในตาราง user_private (แอดมินและเจ้าของเท่านั้น)
+  const privUpd = {};
+  if (p.phone !== undefined) privUpd.phone = p.phone;
+  if (p.citizenId !== undefined) privUpd.citizen_id = String(p.citizenId || '').replace(/-/g, '');
+  if (p.birthDate !== undefined) privUpd.birth_date = p.birthDate || null;
+  if (p.bloodType !== undefined) privUpd.blood_type = p.bloodType;
+  if (Object.keys(privUpd).length) {
+    const { data: ur } = await sb.from('users').select('auth_user_id').eq(col, val).maybeSingle();
+    if (ur && ur.auth_user_id) {
+      const { error: pe } = await sb.from('user_private')
+        .upsert({ auth_user_id: ur.auth_user_id, ...privUpd, updated_at: new Date().toISOString() });
+      if (pe) throw new Error('บันทึกข้อมูลส่วนบุคคลไม่สำเร็จ: ' + pe.message);
+    } else if (Object.values(privUpd).some(v => v)) {
+      throw new Error('บัญชีนี้ยังไม่มีการเข้าสู่ระบบ จึงบันทึกเลขบัตร วันเกิด หรือกรุ๊ปเลือดไม่ได้');
+    }
+  }
   const { error } = await sb.from('users').update(upd).eq(col, val);
   if (error) throw new Error('แก้ไขไม่สำเร็จ: ' + error.message);
   await logActivitySb(actor, 'แก้ไขข้อมูล จนท.', p.name || val);
