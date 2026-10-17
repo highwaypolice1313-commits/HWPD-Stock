@@ -21029,10 +21029,14 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 </style>
  
 <style id="user-hide-badge-pull">
+.tab-dot, #notifCount{ transition:opacity .25s ease; }
 html.ptr-pulling .tab-dot,
 html.ptr-pulling #notifCount,
 html.refresh-busy .tab-dot,
-html.refresh-busy #notifCount{ display:none !important; animation:none !important; }
+html.refresh-busy #notifCount{
+  opacity:0 !important; visibility:hidden !important;
+  animation:none !important; transition:none !important;
+}
 </style>
    
 <script id="user-hide-badge-pull-js">
