@@ -14571,8 +14571,8 @@ function openUserForm(u) {
         : { data: null })
       .then(({ data }) => {
         if (!data) return;
-        document.getElementById('u_citizen').value = data.citizen_id || '';
-        document.getElementById('u_phone').value = data.phone || '';
+        document.getElementById('u_citizen').value = fmtCitizen(data.citizen_id || '');
+        document.getElementById('u_phone').value = fmtPhone(data.phone || '');
         document.getElementById('u_birth').value = data.birth_date || '';
         document.getElementById('u_blood').value = data.blood_type || '';
       });
@@ -14604,6 +14604,10 @@ function openUserForm(u) {
 
   // ---------- ยกเลิก / บันทึก ----------
   document.getElementById('btnCancel').onclick = closeSheet;
+  bindFmt(document.getElementById('u_citizen'), fmtCitizen, 17);
+  bindFmt(document.getElementById('u_phone'), fmtPhone, 12);
+  document.getElementById('u_citizen').placeholder = 'x-xxxx-xxxxx-xx-x';
+  document.getElementById('u_phone').placeholder = '0xx-xxx-xxxx';
   if (editing) {
     document.getElementById('btnResetPin').onclick = async function(){
       if (!await confirmSheet('รีเซ็ต PIN ของ ' + (u['ชื่อ-สกุล'] || '') + ' กลับเป็นวันเดือนปีเกิด? ผู้ใช้ต้องตั้ง PIN ใหม่ตอนเข้าครั้งถัดไป', {title:'รีเซ็ต PIN', okText:'รีเซ็ต', tone:'bad'})) return;
@@ -14615,6 +14619,10 @@ function openUserForm(u) {
     };
   }
   document.getElementById('btnSave').onclick = async () => {
+    const cit = val('u_citizen').replace(/\D/g, ''), ph = val('u_phone').replace(/\D/g, '');
+    if (!editing && cit.length !== 13) { toast('กรุณากรอกเลขบัตรประชาชนให้ครบ 13 หลัก'); return; }
+    if (cit && cit.length !== 13) { toast('เลขบัตรประชาชนกรอกไม่ครบ 13 หลัก'); return; }
+    if (ph && ph.length !== 10) { toast('เบอร์โทรกรอกไม่ครบ 10 หลัก'); return; }
     if (!val('u_name').trim()) { toast('กรุณากรอกชื่อ-สกุล'); return; }
     const saveBtn = document.getElementById('btnSave'); if (saveBtn.disabled) return; setButtonBusy(saveBtn, true); setLoading(true, 'กำลังบันทึกรายชื่อ จนท....');
     try {
@@ -21901,7 +21909,10 @@ refreshNotifBadge();
       '<div class="field"><label>ยืนยันรหัสผ่านใหม่</label><input class="input" id="pf_new2" type="password" autocomplete="new-password"></div>' +
       '<div class="btn-row"><button class="btn btn-ghost" id="pf_pw">เปลี่ยนรหัสผ่าน</button></div>'
     );
+    bindFmt(document.getElementById('pf_phone'), fmtPhone, 12);
     document.getElementById('pf_save').onclick = async function(){
+      var phd = document.getElementById('pf_phone').value.replace(/\D/g, '');
+      if (phd && phd.length !== 10) { toast('เบอร์โทรกรอกไม่ครบ 10 หลัก'); return; }
       var up = await sb.from('user_private').upsert({ auth_user_id: id, phone: document.getElementById('pf_phone').value.trim(), blood_type: document.getElementById('pf_blood').value, updated_at: new Date().toISOString() });
       toast(up.error ? 'บันทึกไม่สำเร็จ' : 'บันทึกข้อมูลแล้ว');
     };
@@ -21935,5 +21946,26 @@ refreshNotifBadge();
 })();
 </script>
 
+<script id="fmt-helpers">
+function fmtCitizen(v){
+  var d = String(v || '').replace(/\D/g, '').slice(0, 13), o = d.slice(0, 1);
+  if (d.length > 1) o += '-' + d.slice(1, 5);
+  if (d.length > 5) o += '-' + d.slice(5, 10);
+  if (d.length > 10) o += '-' + d.slice(10, 12);
+  if (d.length > 12) o += '-' + d.slice(12, 13);
+  return o;
+}
+function fmtPhone(v){
+  var d = String(v || '').replace(/\D/g, '').slice(0, 10), o = d.slice(0, 3);
+  if (d.length > 3) o += '-' + d.slice(3, 6);
+  if (d.length > 6) o += '-' + d.slice(6, 10);
+  return o;
+}
+function bindFmt(el, fn, maxLen){
+  if (!el) return;
+  el.maxLength = maxLen;
+  el.addEventListener('input', function(){ el.value = fn(el.value); });
+}
+</script>
 </body>
 </html>
