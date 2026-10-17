@@ -14686,13 +14686,18 @@ function openUserForm(u) {
           const { data: rr, error: re } = await sb.functions.invoke('admin-users', { body: { action: 'setRole', authId, role: newRole } });
           if (re || !rr || !rr.ok) throw new Error((rr && rr.error) || (re && re.message) || 'เปลี่ยนระดับไม่สำเร็จ');
         }
-        await apiPost('updateUserRole', {
-          officerId: officerId(u) || undefined,
-          lineUserId: (!officerId(u) && u['LINEUserId']) || undefined,
-          username: (!officerId(u) && u['ชื่อผู้ใช้']) || undefined,
-          name: val('u_name'), rank: val('u_rank'), position: val('u_position'), unit: val('u_unit'),
-          role: val('u_role'), memoRole: val('u_memorole'), ...photoPayload, signature: sigUrl
-        });
+await apiPost('updateUserRole', {
+  officerId: officerId(u) || undefined,
+  lineUserId: (!officerId(u) && u['LINEUserId']) || undefined,
+  username: (!officerId(u) && u['ชื่อผู้ใช้']) || undefined,
+  name: val('u_name'), rank: val('u_rank'), position: val('u_position'), unit: val('u_unit'),
+  role: val('u_role'), memoRole: val('u_memorole'), ...photoPayload, signature: sigUrl,
+  // ✅ เพิ่มฟิลด์ที่หายไป — ส่งทั้งตอนสร้างใหม่และตอนแก้ไข
+  citizenId: val('u_citizen').replace(/\D/g, '') || undefined,
+  phone: val('u_phone').replace(/\D/g, '') || undefined,
+  birthDate: val('u_birth') || undefined,
+  bloodType: val('u_blood') || undefined
+});
       }
       closeSheet();
       toast(editing ? 'แก้ไขรายชื่อและยศเรียบร้อยแล้ว' : 'บันทึกรายชื่อและยศเรียบร้อยแล้ว');
