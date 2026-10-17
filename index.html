@@ -14636,27 +14636,59 @@ function openUserForm(u) {
   bdBind();
   if (editing) {
 // ✅ แทนที่ handler เดิมของ btnResetPin ทั้งก้อน
-document.getElementById('btnResetPin').onclick = async function(){
-  if (!await confirmSheet('รีเซ็ต PIN ของ ' + (u['ชื่อ-สกุล'] || '') + ' กลับเป็นวันเกิด? ผู้ใช้ต้องตั้ง PIN ใหม่ตอนเข้าครั้งถัดไป', {title:'รีเซ็ต PIN', okText:'รีเซ็ต', tone:'bad'})) return;
+    document.getElementById('btnResetPin').onclick = async function(){
+      const name = u['ชื่อ-สกุล'] || '';
+      if (!await confirmSheet('รีเซ็ต PIN ของ ' + name + ' กลับเป็นวันเดือนปีเกิด? ผู้ใช้ต้องใช้รหัสนี้เข้าระบบครั้งถัดไป', {title:'รีเซ็ต PIN', okText:'รีเซ็ต', tone:'bad'})) return;
 
-  const { data: au } = await sb.from('users').select('auth_user_id').eq('id', officerId(u)).maybeSingle();
-  if (!au || !au.auth_user_id) return toast('บัญชีนี้ยังไม่มีการเข้าสู่ระบบ');
+      const btn = this;
+      if (btn.disabled) return;
 
-  const { data: rr, error: re } = await sb.functions.invoke('admin-users', {
-    body: { action: 'resetPin', authId: au.auth_user_id }
-  });
+      // ✅ แสดงสถานะกำลังทำงานทั้งที่ปุ่มและหน้าจอ
+      setButtonBusy(btn, true, 'กำลังรีเซ็ต...');
+      setLoading(true, 'กำลังรีเซ็ต PIN ของ ' + name + '...');
 
-  // ✅ อ่านข้อความ error จริงจาก response body ของ Edge Function
-  let detail = '';
-  if (re && re.context && typeof re.context.json === 'function') {
-    try { const j = await re.context.json(); detail = j.error || ''; } catch (_) {}
-  }
+      // ✅ ล้างข้อความผลลัพธ์เดิม (ถ้ามี)
+      const oldMsg = document.getElementById('resetPinMsg');
+      if (oldMsg) oldMsg.remove();
 
-  if (re || !rr || !rr.ok) {
-    return toast(detail || (rr && rr.error) || (re && re.message) || 'รีเซ็ต PIN ไม่สำเร็จ');
-  }
-  toast('รีเซ็ต PIN แล้ว');
-};
+      const showMsg = (text, ok) => {
+        const m = document.createElement('div');
+        m.id = 'resetPinMsg';
+        m.className = 'hint';
+        m.style.cssText = 'margin-top:8px;font-weight:600;color:' + (ok ? '#1f9d55' : '#d64545') + ';';
+        m.textContent = text;
+        btn.insertAdjacentElement('afterend', m);
+      };
+
+      try {
+        const { data: au, error: ae } = await sb.from('users')
+          .select('auth_user_id').eq('id', officerId(u)).maybeSingle();
+        if (ae) throw new Error(ae.message);
+        if (!au || !au.auth_user_id) throw new Error('บัญชีนี้ยังไม่มีการเข้าสู่ระบบ');
+
+        const { data: rr, error: re } = await sb.functions.invoke('admin-users', {
+          body: { action: 'resetPin', authId: au.auth_user_id }
+        });
+
+        if (re || !rr || !rr.ok) {
+          // ✅ อ่านข้อความ error จริงจาก response (ถ้ามี)
+          let detail = '';
+          if (re && re.context && typeof re.context.json === 'function') {
+            try { const j = await re.context.json(); detail = j.error || ''; } catch (_) {}
+          }
+          throw new Error(detail || (rr && rr.error) || (re && re.message) || 'รีเซ็ต PIN ไม่สำเร็จ');
+        }
+
+        showMsg('✓ รีเซ็ต PIN ของ ' + name + ' เรียบร้อยแล้ว', true);
+        toast('รีเซ็ต PIN เรียบร้อยแล้ว');
+      } catch (err) {
+        showMsg('✗ รีเซ็ต PIN ไม่สำเร็จ: ' + (err.message || ''), false);
+        toast('รีเซ็ต PIN ไม่สำเร็จ');
+      } finally {
+        setLoading(false);
+        setButtonBusy(btn, false, 'รีเซ็ต PIN เป็นวันเดือนปีเกิด');
+      }
+    };
   }
   document.getElementById('btnSave').onclick = async () => {
     const cit = val('u_citizen').replace(/\D/g, ''), ph = val('u_phone').replace(/\D/g, '');
