@@ -21749,15 +21749,23 @@ refreshNotifBadge();
   ['roleSelectBox', 'roleLoginForm'].forEach(function(id){ var el = $(id); if (el) el.style.display = 'none'; });
 
   // ---------- ส่วนหน้าล็อกอิน ----------
+  var ADMIN_BADGE = 'admin'; // ✅ รหัสหมวกของแอดมิน ต้องตรงกับที่ตั้งไว้ในฐานข้อมูล
+  var ROLE_BTN = 'flex:1;padding:10px 0;border-radius:12px;border:1.5px solid currentColor;background:transparent;color:inherit;font-size:15px;cursor:pointer;';
+
   var wrap = document.createElement('div');
   wrap.id = 'acLogin';
   wrap.innerHTML =
     '<div id="acHello" style="display:none"></div>' +
-    '<div class="field" id="acBadgeWrap"><label>รหัสหมวก</label>' +
-      '<input class="input" id="acBadge" autocomplete="username" autocapitalize="characters" autocorrect="off" spellcheck="false">' +
-      '<div class="hint" style="margin-top:6px;">รหัสหมวกคือชื่อผู้ใช้ของคุณ ระบบจะจำให้หลังเข้าระบบสำเร็จครั้งแรก</div>' +
+    '<div id="acRoles" style="display:flex;gap:10px;margin:4px 0 14px;">' +
+      '<button type="button" class="ac-role-btn" data-r="admin" style="' + ROLE_BTN + '">แอดมิน</button>' +
+      '<button type="button" class="ac-role-btn" data-r="officer" style="' + ROLE_BTN + '">เจ้าหน้าที่</button>' +
     '</div>' +
-    '<div class="hint" style="margin:6px 0 8px;">รหัสผ่าน 6 หลัก = วัน เดือน ปีเกิด (พ.ศ. 2 หลักท้าย) เช่น 16/12/2536 ใช้ 161236</div>' +
+    '<div class="field" id="acBadgeWrap" style="display:none;">' +
+      '<label style="display:block;text-align:center;">รหัสหมวก</label>' +
+      // ✅ inputmode=numeric ให้มือถือเปิดแป้นตัวเลข และตัวอักษรกึ่งกลาง
+      '<input class="input" id="acBadge" inputmode="numeric" pattern="[0-9]*" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false" style="text-align:center;font-size:18px;letter-spacing:2px;">' +
+    '</div>' +
+    '<div class="hint" style="text-align:center;margin:6px 0 10px;">รหัสผ่าน 6 หลัก = วัน เดือน ปีเกิด (พ.ศ. 2 หลักท้าย) เช่น 16/12/2536 ใช้ 161236</div>' +
     '<div id="acPinWrap">' +
       '<div class="ac-slots" id="acSlots"><span></span><span></span><span></span><span></span><span></span><span></span></div>' +
       '<div class="ac-pad">' +
@@ -21765,12 +21773,16 @@ refreshNotifBadge();
         '<span class="ghost"></span><button type="button" data-k="0">0</button><button type="button" data-k="del">⌫</button>' +
       '</div>' +
     '</div>' +
-    '<button class="btn btn-primary" id="acGo" type="button" style="width:100%;">เข้าสู่ระบบ</button>' +
-    '<div class="hint" id="acErr" style="color:#ffb4bd;"></div>';
+    // ✅ ปุ่มเข้าระบบขนาดพอดี อยู่กึ่งกลาง
+    '<div style="text-align:center;margin-top:12px;">' +
+      '<button class="btn btn-primary" id="acGo" type="button" style="width:auto;min-width:150px;padding:8px 22px;font-size:15px;">เข้าสู่ระบบ</button>' +
+    '</div>' +
+    '<div class="hint" id="acErr" style="color:#ffb4bd;text-align:center;"></div>';
   sub.insertAdjacentElement('afterend', wrap);
 
   var pin = '';
   var busy = false;
+  var role = ''; // 'admin' หรือ 'officer'
 
   function err(m){ $('acErr').textContent = m || ''; }
   function paintPin(){
@@ -21790,21 +21802,47 @@ refreshNotifBadge();
     return 'u' + hex + '@hpd.local';
   }
 
-  function showBadgeInput(){
-    $('acHello').style.display = 'none';
-    $('acBadgeWrap').style.display = '';
-    $('acBadge').value = '';
+  function paintRole(){
+    document.querySelectorAll('#acRoles .ac-role-btn').forEach(function(b){
+      var on = b.dataset.r === role;
+      b.style.opacity = on ? '1' : '.6';
+      b.style.background = on ? 'rgba(255,255,255,.18)' : 'transparent';
+      b.style.fontWeight = on ? '700' : '400';
+    });
   }
-  function showRemembered(b){
-    $('acBadge').value = b;
+
+  function chooseRole(r){
+    role = r; paintRole(); err('');
+    if (r === 'admin') {
+      $('acBadge').value = ADMIN_BADGE;
+      $('acBadgeWrap').style.display = 'none';
+    } else {
+      if ($('acBadge').value === ADMIN_BADGE) $('acBadge').value = '';
+      $('acBadgeWrap').style.display = '';
+      setTimeout(function(){ $('acBadge').focus(); }, 0);
+    }
+  }
+
+  function showRoles(){
+    role = ''; paintRole();
+    $('acHello').style.display = 'none';
+    $('acRoles').style.display = '';
     $('acBadgeWrap').style.display = 'none';
+    $('acBadge').value = '';
+    pin = ''; paintPin(); err('');
+  }
+
+  function showRemembered(b){
+    $('acRoles').style.display = 'none';
+    $('acBadgeWrap').style.display = 'none';
+    $('acBadge').value = b;
+    role = b === ADMIN_BADGE ? 'admin' : 'officer';
     var h = $('acHello');
     h.style.display = '';
-    h.innerHTML = '<div class="ac-hello">เข้าสู่ระบบในชื่อ <b>' + escapeHtml(b) + '</b></div>' +
-      '<div style="text-align:center;margin-top:4px;"><button type="button" class="ac-link" id="acSwitch">ใช้รหัสหมวกอื่น</button></div>';
-    $('acSwitch').onclick = function(){
-      setRemembered(''); pin = ''; paintPin(); err(''); showBadgeInput();
-    };
+    h.innerHTML = '<div class="ac-hello" style="text-align:center;">เข้าสู่ระบบในชื่อ <b>' +
+      escapeHtml(b === ADMIN_BADGE ? 'แอดมิน' : b) + '</b></div>' +
+      '<div style="text-align:center;margin-top:4px;"><button type="button" class="ac-link" id="acSwitch">เปลี่ยนผู้ใช้</button></div>';
+    $('acSwitch').onclick = function(){ setRemembered(''); showRoles(); };
   }
 
   async function loadProfile(auth){
@@ -21817,9 +21855,9 @@ refreshNotifBadge();
     window.__acAuthId = auth.user.id;
     var me = await sb.from('users').select('id,name,position').eq('auth_user_id', auth.user.id).maybeSingle();
     window.__me = me.data || { name: prof.display_name };
-    var role = prof.role === 'admin' ? 'admin' : 'viewer';
-    saveSession({ role: role, token: auth.session.access_token, name: prof.display_name });
-    await completeLogin({ role: role, name: prof.display_name, token: auth.session.access_token });
+    var r = prof.role === 'admin' ? 'admin' : 'viewer';
+    saveSession({ role: r, token: auth.session.access_token, name: prof.display_name });
+    await completeLogin({ role: r, name: prof.display_name, token: auth.session.access_token });
     var pill = $('rolePill');
     if (pill) pill.textContent = prof.role === 'admin' ? 'แอดมิน' : 'เจ้าหน้าที่';
   }
@@ -21828,10 +21866,8 @@ refreshNotifBadge();
     if (busy) return;
     err('');
     var badge = badgeValue();
-    if (!badge) {
-      showBadgeInput();
-      return err('กรุณากรอกรหัสหมวก');
-    }
+    if (!role) return err('กรุณาเลือกระดับผู้ใช้งานก่อน');
+    if (!badge) return err('กรุณากรอกรหัสหมวก');
     if (pin.length !== 6) return err('กรอกรหัสผ่าน 6 หลักให้ครบ');
 
     busy = true;
@@ -21850,6 +21886,9 @@ refreshNotifBadge();
     }
   }
 
+  wrap.querySelectorAll('#acRoles .ac-role-btn').forEach(function(b){
+    b.onclick = function(){ chooseRole(b.dataset.r); };
+  });
   wrap.querySelector('.ac-pad').addEventListener('click', function(e){
     var b = e.target.closest('[data-k]'); if (!b) return;
     if (b.dataset.k === 'del') pin = pin.slice(0, -1);
@@ -21858,7 +21897,9 @@ refreshNotifBadge();
     if (pin.length === 6) submit();
   });
   $('acGo').onclick = submit;
-  $('acBadge').addEventListener('keydown', function(e){ if (e.key === 'Enter') { e.preventDefault(); $('acGo').focus(); } });
+  $('acBadge').addEventListener('keydown', function(e){
+    if (e.key === 'Enter') { e.preventDefault(); $('acGo').focus(); }
+  });
 
   document.addEventListener('pointerdown', function(e){
     var b = e.target.closest && e.target.closest('.ac-pad button'); if (b) b.classList.add('is-down');
@@ -21867,10 +21908,8 @@ refreshNotifBadge();
     document.querySelectorAll('.is-down').forEach(function(b){ b.classList.remove('is-down'); });
   }, true);
 
-  // เริ่มต้น: มีรหัสหมวกที่จำไว้แล้วหรือไม่
   var remembered = getRemembered();
-  if (remembered) showRemembered(remembered); else showBadgeInput();
-  pin = ''; paintPin(); err('');
+  if (remembered) showRemembered(remembered); else showRoles();
 
   var _clr = clearSession;
   clearSession = function(){ try { sb.auth.signOut(); } catch (e) {} return _clr.apply(this, arguments); };
