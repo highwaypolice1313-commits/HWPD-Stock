@@ -18833,6 +18833,18 @@ function renderSettings() {
           <div class="field"><label>รหัสผ่านใหม่</label><input class="input" type="password" id="st_pwnew" placeholder="กรอกรหัสผ่านใหม่"></div>
         </div>
         <div class="btn-row" style="margin-top:6px;"><button class="btn btn-primary" id="btnChangePw">เปลี่ยนรหัสผ่าน</button></div>
+      <div class="section-title" style="margin-top:14px; font-size:14px;">PIN 6 หลักสำหรับแอดมิน</div>
+<div class="glass" style="padding:16px;">
+  <div class="hint" style="margin-top:0;">ตั้ง PIN เพื่อเข้าสู่ระบบแอดมินได้เร็วขึ้น ต้องยืนยันด้วยรหัสผ่านแอดมินปัจจุบันทุกครั้งที่ตั้งหรือปิดการใช้งาน</div>
+  <div class="memo-two-col" style="margin-top:10px;">
+    <div class="field"><label>PIN ใหม่ (6 หลัก)</label><input class="input" id="st_pinnew" type="password" inputmode="numeric" maxlength="6" placeholder="••••••"></div>
+    <div class="field"><label>รหัสผ่านแอดมินปัจจุบัน</label><input class="input" id="st_pinpw" type="password" placeholder="ยืนยันตัวตน"></div>
+  </div>
+  <div class="btn-row" style="margin-top:6px;">
+    <button class="btn btn-primary" id="btnSetPin">บันทึก PIN</button>
+    <button class="btn btn-ghost" id="btnDisablePin">ปิดการใช้ PIN</button>
+  </div>
+</div>
       </div>
     `)}
 
@@ -21208,6 +21220,132 @@ html.booting .tabbar .tab, html.booting .tabbar .tab *{ transition:none !importa
 }
 .np-item .np-body{ flex:1 1 auto; min-width:0; }
 </style>
+
+   <style id="user-pin-login">
+.pin-mode{ display:flex; background:var(--panel-soft); border-radius:14px; padding:4px; gap:4px; margin-bottom:12px; }
+.pin-mode button{ flex:1; border:0; background:transparent; padding:9px; border-radius:10px; font:inherit; font-size:13px; font-weight:600; color:var(--ink-dim); cursor:pointer; }
+.pin-mode button.on{ background:var(--navy); color:#fff; }
+.pin-dots{ display:flex; justify-content:center; gap:12px; margin:8px 0 16px; }
+.pin-dots i{ width:12px; height:12px; border-radius:50%; border:2px solid var(--navy); opacity:.35; }
+.pin-dots i.on{ background:var(--navy); opacity:1; }
+.pin-pad{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; max-width:260px; margin:0 auto; }
+.pin-pad button{ height:58px; border-radius:18px; border:1px solid var(--panel-line); background:var(--panel); font:inherit; font-size:22px; font-weight:600; color:var(--ink); cursor:pointer; transition:transform .12s ease; }
+.pin-pad button:active{ transform:scale(.95); }
+.pin-pad .ghost{ visibility:hidden; }
+.pin-shake{ animation:pinShake .36s; }
+@keyframes pinShake{ 20%,60%{ transform:translateX(-6px); } 40%,80%{ transform:translateX(6px); } }
+</style>
+
+<script id="user-pin-login-js">
+(function(){
+  var form = document.getElementById('roleLoginForm');
+  var pw = document.getElementById('rl_password');
+  var btn = document.getElementById('btnRoleLogin');
+  if (!form || !pw || !btn) return;
+
+  var wrap = document.createElement('div');
+  wrap.innerHTML =
+    '<div class="pin-mode" id="pinMode">' +
+      '<button type="button" data-m="pw">รหัสผ่าน</button>' +
+      '<button type="button" data-m="pin">PIN 6 หลัก</button>' +
+    '</div>' +
+    '<div id="pinBox" style="display:none">' +
+      '<div class="pin-dots" id="pinDots">' + '<i></i>'.repeat(6) + '</div>' +
+      '<div class="pin-pad">' +
+        [1,2,3,4,5,6,7,8,9].map(function(n){ return '<button type="button" data-k="' + n + '">' + n + '</button>'; }).join('') +
+        '<span class="ghost"></span><button type="button" data-k="0">0</button><button type="button" data-k="del">⌫</button>' +
+      '</div>' +
+    '</div>';
+  pw.closest('.field').before(wrap);
+
+  var pinBox = document.getElementById('pinBox');
+  var pinMode = document.getElementById('pinMode');
+  var pwField = pw.closest('.field');
+  var pin = '';
+  var mode = localStorage.getItem('hpAdminLoginMode') === 'pin' ? 'pin' : 'pw';
+
+  function paint(){
+    document.querySelectorAll('#pinDots i').forEach(function(d, i){ d.classList.toggle('on', i < pin.length); });
+  }
+  function sync(){
+    var isAdmin = (typeof selectedRole !== 'undefined') && selectedRole === 'admin';
+    var eff = isAdmin ? mode : 'pw';
+    var want = {
+      mode: isAdmin ? '' : 'none',
+      pw: eff === 'pw' ? '' : 'none',
+      pin: eff === 'pin' ? '' : 'none',
+      btn: eff === 'pw' ? '' : 'none'
+    };
+    if (pinMode.style.display !== want.mode) pinMode.style.display = want.mode;
+    if (pwField.style.display !== want.pw) pwField.style.display = want.pw;
+    if (pinBox.style.display !== want.pin) pinBox.style.display = want.pin;
+    if (btn.style.display !== want.btn) btn.style.display = want.btn;
+    pinMode.querySelectorAll('button').forEach(function(b){ b.classList.toggle('on', b.dataset.m === eff); });
+  }
+
+  pinMode.addEventListener('click', function(e){
+    var b = e.target.closest('[data-m]');
+    if (!b) return;
+    mode = b.dataset.m;
+    localStorage.setItem('hpAdminLoginMode', mode);
+    pin = ''; paint(); sync();
+  });
+
+  async function submitPin(){
+    var err = document.getElementById('roleLoginError');
+    err.textContent = '';
+    try {
+      var d = await supaLoginWithPin(pin);
+      saveSession({ role: d.role, token: d.token, name: d.displayName });
+      await completeLogin({ role: d.role, name: d.displayName, token: d.token });
+    } catch (e) {
+      err.textContent = e.message || 'PIN ไม่ถูกต้อง';
+      pinBox.classList.remove('pin-shake'); void pinBox.offsetWidth; pinBox.classList.add('pin-shake');
+    } finally { pin = ''; paint(); }
+  }
+
+  pinBox.addEventListener('click', function(e){
+    var b = e.target.closest('[data-k]');
+    if (!b) return;
+    var k = b.dataset.k;
+    if (k === 'del') pin = pin.slice(0, -1);
+    else if (pin.length < 6) pin += k;
+    paint();
+    if (pin.length === 6) submitPin();
+  });
+
+  new MutationObserver(sync).observe(form, { attributes:true, childList:true, subtree:true, characterData:true });
+  sync();
+})();
+</script>
+
+   <script id="user-pin-settings-js">
+document.addEventListener('click', async function(e){
+  var b = e.target.closest('#btnSetPin, #btnDisablePin');
+  if (!b) return;
+  var pw = val('st_pinpw');
+  if (!pw) { toast('กรุณากรอกรหัสผ่านแอดมินปัจจุบัน'); return; }
+  setButtonBusy(b, true);
+  try {
+    if (b.id === 'btnSetPin') {
+      var pin = val('st_pinnew');
+      if (!/^\d{6}$/.test(pin)) { toast('PIN ต้องเป็นตัวเลข 6 หลัก'); return; }
+      await supaSetAdminPin(pin, pw);
+      document.getElementById('st_pinnew').value = '';
+      toast('บันทึก PIN แล้ว');
+    } else {
+      await supaDisableAdminPin(pw);
+      toast('ปิดการใช้ PIN แล้ว');
+    }
+  } catch (err) {
+    toast(err.message || 'ทำรายการไม่สำเร็จ');
+  } finally {
+    setButtonBusy(b, false);
+    var pwEl = document.getElementById('st_pinpw');
+    if (pwEl) pwEl.value = '';
+  }
+});
+</script>
 
 </body>
 </html>
