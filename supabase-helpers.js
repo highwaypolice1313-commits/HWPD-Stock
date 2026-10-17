@@ -167,7 +167,7 @@ const userToThai = r => ({
   'รหัสจนท.': r.id, 'LINEUserId': r.line_user_id, 'ชื่อ-สกุล': r.name, 'ตำแหน่ง': r.position,
   'หน่วยงาน': r.unit, 'สิทธิ์': r.role, 'วันที่เพิ่ม': r.created_at, 'ชื่อผู้ใช้': r.username,
   'ยศ': r.rank, 'บทบาทเบิก-ยืม': r.memo_role, 'รูปถ่าย': r.photo, 'ลายเซ็น': r.signature,
-  'เลขบัตรประชาชน': r.citizen_id, 'เบอร์โทร': r.phone, 'วัน/เดือน/ปีเกิด': r.birth_date,
+  'เลขบัตรประชาชน': r.citizen_id, 'รหัสหมวก': r.badge_no, 'เบอร์โทร': r.phone, 'วัน/เดือน/ปีเกิด': r.birth_date,
   'กรุ๊ปเลือด': r.blood_type, 'auth_user_id': r.auth_user_id
 });
 const activityToThai = r => ({
