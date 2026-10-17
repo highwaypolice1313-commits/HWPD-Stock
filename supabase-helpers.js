@@ -273,7 +273,7 @@ async function sGetAll() {
     fetchAll('v_borrow', '*', 'created_at'),
     fetchAll('v_maint', '*', 'created_at'),
     fetchAll('v_components', '*', 'created_at'),
-   fetchAll('v_users', 'id,line_user_id,name,position,unit,role,rank,memo_role,photo,username,created_at,signature,badge_no', 'created_at')
+ fetchAll('v_users', 'id,line_user_id,name,position,unit,role,rank,memo_role,photo,username,created_at,signature,badge_no,birth_date', 'created_at')
   ]);
   const settings = await sGetSystemSettings();
   const assets = assetsD.map(assetToThai);
