@@ -22269,6 +22269,76 @@ function bdText(iso){
   }).observe(document.body, { childList: true, subtree: true });
 })();
 </script>
+
+<script id="backup-export-js">
+(function(){
+  async function exportAllData(){
+    var ok = await confirmSheet(
+      'ส่งออกข้อมูลทั้งหมดในระบบเป็นไฟล์สำรอง ไฟล์นี้มีข้อมูลส่วนบุคคล (เลขบัตร วันเกิด เบอร์โทร) ยืนยันหรือไม่?',
+      { title: 'ส่งออกข้อมูลทั้งหมด', okText: 'ส่งออก', tone: 'bad' }
+    );
+    if (!ok) return;
+
+    setLoading(true, 'กำลังเตรียมไฟล์สำรอง...');
+    try {
+      var s = await sb.auth.getSession();
+      var token = s.data.session && s.data.session.access_token;
+      if (!token) throw new Error('กรุณาเข้าสู่ระบบใหม่');
+
+      var res = await fetch(SUPABASE_URL + '/functions/v1/export-backup', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + token,
+          'apikey': SUPABASE_ANON_KEY,
+          'Content-Type': 'application/json'
+        },
+        body: '{}'
+      });
+
+      // ✅ ถ้าไม่มี Content-Disposition แปลว่าเป็นข้อความ error ไม่ใช่ไฟล์
+      if (!res.ok || !res.headers.get('Content-Disposition')) {
+        var j = await res.json().catch(function(){ return {}; });
+        throw new Error(j.error || 'ส่งออกไม่สำเร็จ (' + res.status + ')');
+      }
+
+      var blob = await res.blob();
+      var name = 'backup-hpd-' + new Date().toISOString().slice(0, 16).replace(/[-:T]/g, '') + '.json';
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+      toast('ส่งออกข้อมูลสำรองแล้ว');
+    } catch (e) {
+      toast(e.message || 'ส่งออกไม่สำเร็จ');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // ✅ วางการ์ดใต้ส่วนเปลี่ยนรหัสผ่าน และวางซ้ำเมื่อหน้าถูกเรนเดอร์ใหม่
+  function mount(){
+    if (document.getElementById('btnExportAll')) return;
+    var anchor = document.getElementById('btnChangePw');
+    if (!anchor) return;
+    var host = anchor.closest('.card') || anchor.parentElement;
+    var box = document.createElement('div');
+    box.className = 'card';
+    box.style.marginTop = '14px';
+    box.innerHTML =
+      '<div class="section-title" style="margin-bottom:6px;">สำรองข้อมูลทั้งหมด</div>' +
+      '<div class="hint" style="margin-bottom:10px;">ดาวน์โหลดข้อมูลทุกตารางรวมถังขยะ เพื่อนำไปลงระบบใหม่ ไม่รวมรหัสผ่านและไฟล์รูปใน Google Drive</div>' +
+      '<button class="btn btn-ghost" id="btnExportAll" type="button">ส่งออกข้อมูลทั้งหมด</button>';
+    host.insertAdjacentElement('afterend', box);
+    document.getElementById('btnExportAll').onclick = exportAllData;
+  }
+
+  new MutationObserver(mount).observe(document.body, { childList: true, subtree: true });
+  mount();
+})();
+</script>      
       
 </body>
 </html>
