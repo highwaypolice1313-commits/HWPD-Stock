@@ -14561,6 +14561,7 @@ function openUserForm(u) {
       <input type="hidden" id="u_sig" value="${editing ? escapeHtml(u['ลายเซ็น'] || '') : ''}">
     </div>
     <div class="memo-two-col">
+      <div class="field"><label>รหัสหมวก (ชื่อผู้ใช้เข้าระบบ ไม่ซ้ำกัน)</label><input class="input" id="u_badge" value="${editing ? escapeHtml(u['รหัสหมวก'] || '') : ''}"></div>
       <div class="field" style="max-width:140px;"><label>ยศ</label><select class="input" id="u_rank"><option value="">-</option>${RANK_OPTIONS.map(r => `<option ${editing && u['ยศ']===r?'selected':''}>${r}</option>`).join('')}</select></div>
       <div class="field"><label>ชื่อ-สกุล</label><input class="input" id="u_name" value="${editing ? escapeHtml(u['ชื่อ-สกุล']) : ''}"></div>
     </div>
@@ -14672,11 +14673,12 @@ document.getElementById('btnResetPin').onclick = async function(){
       const sigUrl = await uploadSignature(val('u_sig'), 'user-' + (editing ? (officerId(u) || 'x') : 'new'));
       if (!editing) {
         const { data: cr, error: ce } = await sb.functions.invoke('admin-users', { body: {
-          action: 'create', username: '', name: val('u_name'),
-          position: val('u_position'), unit: val('u_unit'), rank: val('u_rank'), role: val('u_role'),
-          memoRole: val('u_memorole'), phone: val('u_phone'), citizenId: val('u_citizen'),
-          birthDate: val('u_birth'), bloodType: val('u_blood')
-        } });
+  action: 'create', username: '', name: val('u_name'),
+  position: val('u_position'), unit: val('u_unit'), rank: val('u_rank'), role: val('u_role'),
+  memoRole: val('u_memorole'), phone: val('u_phone'), citizenId: val('u_citizen'),
+  birthDate: val('u_birth'), bloodType: val('u_blood'),
+  badge: val('u_badge')   // ✅ เพิ่มบรรทัดนี้
+} });
         if (ce || !cr || !cr.ok) throw new Error((cr && cr.error) || (ce && ce.message) || 'สร้างบัญชีไม่สำเร็จ');
         await apiPost('updateUserRole', { officerId: cr.id, ...photoPayload, signature: sigUrl });
       } else {
@@ -14688,12 +14690,21 @@ document.getElementById('btnResetPin').onclick = async function(){
           if (!bd) throw new Error('กรุณากรอกวัน/เดือน/ปีเกิดก่อนบันทึก เพื่อใช้สร้าง PIN เริ่มต้น');
           const { data: ac, error: ae } = await sb.functions.invoke('admin-users', { body: {
             action: 'activate', officerId: officerId(u), role: val('u_role'),
-            citizenId: val('u_citizen'), phone: val('u_phone'), birthDate: bd, bloodType: val('u_blood')
+            citizenId: val('u_citizen'), phone: val('u_phone'), birthDate: bd, bloodType: val('u_blood') , badge: val('u_badge')
           } });
           if (ae || !ac || !ac.ok) throw new Error((ac && ac.error) || (ae && ae.message) || 'สร้างบัญชีเข้าระบบไม่สำเร็จ');
           authId = ac.authId;
           toast('สร้างบัญชีเข้าระบบแล้ว PIN เริ่มต้นคือวันเกิด');
         }
+        // ✅ เปลี่ยนรหัสหมวก (ถ้าแก้ไข)
+const oldBadge = u['รหัสหมวก'] || '';
+const newBadge = val('u_badge').trim();
+if (newBadge && newBadge !== oldBadge) {
+  const { data: bd, error: be } = await sb.functions.invoke('admin-users', {
+    body: { action: 'setBadge', officerId: officerId(u) || undefined, badge: newBadge }
+  });
+  if (be || !bd || !bd.ok) throw new Error((bd && bd.error) || (be && be.message) || 'เปลี่ยนรหัสหมวกไม่สำเร็จ');
+}    
         const oldRole = u['สิทธิ์'] === 'admin' ? 'admin' : 'officer';
         const newRole = val('u_role');
         if (authId && newRole !== oldRole) {
