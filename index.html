@@ -22149,10 +22149,22 @@ async function loadOfficerAdminInfo(u){
     '<span style="color:var(--ink-dim);flex:none;">' + k + '</span>' +
     '<span style="text-align:right;word-break:break-word;">' + escapeHtml(v || '-') + '</span></div>';
       const pinText = row.auth_user_id ? 'มีบัญชีเข้าระบบแล้ว' : '-'; // ✅ ไม่บังคับเปลี่ยนแล้ว จึงไม่แสดงสถานะวันเกิด
+  // ✅ คำนวณอายุเป็นปีเต็มจากวันเกิด (ค.ศ. YYYY-MM-DD)
+  const ageOf = (iso) => {
+    if (!iso) return '';
+    const p = String(iso).slice(0, 10).split('-').map(Number);
+    const t = new Date();
+    let a = t.getFullYear() - p[0];
+    const dm = (t.getMonth() + 1) - p[1];
+    if (dm < 0 || (dm === 0 && t.getDate() < p[2])) a--;
+    return a + ' ปี';
+  };
+
   box.innerHTML =
     '<div style="margin-top:14px;font-weight:600;color:var(--ink);font-size:13.5px;">ข้อมูลทั้งหมด (เฉพาะแอดมิน)</div>' +
-    line('ยศ', row.rank) +
     line('ชื่อ-สกุล', row.name) +
+    line('รหัสเปรียบเทียบปรับ', row.badge_no) +        // ✅ เพิ่มใหม่
+    line('ยศ', row.rank) +
     line('ตำแหน่ง', row.position) +
     line('หน่วยงาน', row.unit) +
     line('บทบาทในบันทึกเบิก-ยืม', row.memo_role) +
@@ -22161,7 +22173,8 @@ async function loadOfficerAdminInfo(u){
     line('PIN', pinText) +
     line('เลขบัตรประชาชน', pv.citizen_id ? fmtCitizen(pv.citizen_id) : '') +
     line('เบอร์โทร', pv.phone ? fmtPhone(pv.phone) : '') +
-    line('วัน/เดือน/ปีเกิด', pv.birth_date ? bdText(pv.birth_date) : '') +  
+    line('วัน/เดือน/ปีเกิด', pv.birth_date ? bdText(pv.birth_date) : '') +
+    line('อายุ', ageOf(pv.birth_date)) +                  // ✅ เพิ่มใหม่
     line('กรุ๊ปเลือด', pv.blood_type) +
     line('วันที่เพิ่มในระบบ', row.created_at ? systemDateLong(row.created_at) : '');
 }
@@ -22437,46 +22450,8 @@ window.exportAllBackup = async function(){
     };
   };
 
-  // ---------- หน้าโปรไฟล์: แสดงรหัสเปรียบเทียบปรับ วันเกิด และอายุ ----------
-  var _openOfficerProfile = openOfficerProfile;
-  openOfficerProfile = function(u){
-    _openOfficerProfile(u);
 
-    var title = Array.prototype.slice.call(document.querySelectorAll('.sheet-title'))
-      .filter(function(el){ return el.textContent.indexOf('โปรไฟล์เจ้าหน้าที่') !== -1; })[0];
-    if (!title) return;
 
-    function row(k, v){
-      return '<div style="display:flex;justify-content:space-between;gap:12px;padding:4px 0;">' +
-        '<span style="opacity:.7;">' + escapeHtml(k) + '</span><b>' + escapeHtml(v) + '</b></div>';
-    }
-    var birth = u['วัน/เดือน/ปีเกิด'] ? bdText(u['วัน/เดือน/ปีเกิด']) : '-';
-
-    var box = document.createElement('div');
-    box.style.cssText = 'margin:0 0 14px;padding:10px 12px;border-radius:14px;border:1px solid rgba(128,128,128,.25);font-size:13.5px;';
-    box.innerHTML = row('รหัสเปรียบเทียบปรับ', badgeOf(u) || '-') + row('วันเกิด', birth) + row('อายุ', ageText(u));
-    title.insertAdjacentElement('afterend', box);
-  };
-
-  // ---------- รายการ: แสดงรหัสและอายุใต้ตำแหน่งของแต่ละคน ----------
-  function decorateRows(){
-    var list = document.getElementById('userList');
-    if (!list) return;
-    list.querySelectorAll('[data-id]').forEach(function(el){
-      if (el.getAttribute('data-dec') === '1') return;
-      var k = el.getAttribute('data-id');
-      var u = (state.users || []).find(function(x){ return offKey(x) === k; });
-      if (!u) return;
-      el.setAttribute('data-dec', '1');
-
-      var tag = document.createElement('div');
-      tag.className = 'off-meta';
-      tag.innerHTML = '<span class="off-pos">รหัส ' + escapeHtml(badgeOf(u) || '-') + ' · อายุ ' + escapeHtml(ageText(u)) + '</span>';
-      var pos = el.querySelector('.off-pos');
-      if (pos) pos.insertAdjacentElement('afterend', tag); else el.appendChild(tag);
-    });
-  }
-  new MutationObserver(decorateRows).observe(document.body, { childList: true, subtree: true });
 })();
 </script>      
       
