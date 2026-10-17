@@ -22164,8 +22164,8 @@ async function loadOfficerAdminInfo(u){
   const pinText = !row.auth_user_id ? '-' : (!pin ? '-' : (!pin.has_pin ? 'ยังไม่ได้ตั้ง' : (pin.must_change_pin ? 'ยังเป็นวันเกิด (ยังไม่เปลี่ยน)' : 'ตั้งแล้ว')));
   box.innerHTML =
     '<div style="margin-top:14px;font-weight:600;color:var(--ink);font-size:13.5px;">ข้อมูลทั้งหมด (เฉพาะแอดมิน)</div>' +
-    line('ชื่อ-สกุล', row.name) +
     line('ยศ', row.rank) +
+    line('ชื่อ-สกุล', row.name) +
     line('ตำแหน่ง', row.position) +
     line('หน่วยงาน', row.unit) +
     line('บทบาทในบันทึกเบิก-ยืม', row.memo_role) +
