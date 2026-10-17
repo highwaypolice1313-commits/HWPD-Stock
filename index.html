@@ -8287,9 +8287,11 @@ function clearSession() { try { localStorage.removeItem(SESSION_KEY); } catch (e
 let selectedRole = null;
 
 async function init() {
+  // ตรวจเซสชันจริงของ Supabase Auth (โทเค็นแบบเก่าใช้ไม่ได้แล้ว)
   const sess = loadSession();
-  if (!sess || !verifyLocalToken(sess.token)) { showRoleSelect(); return; }
-  await completeLogin({ role: sess.role, name: sess.name, token: sess.token });
+  const { data } = await sb.auth.getSession();
+  if (!sess || !data || !data.session) { clearSession(); return; }
+  await completeLogin({ role: sess.role, name: sess.name, token: data.session.access_token });
 }
 
 function sessionExpired() {
