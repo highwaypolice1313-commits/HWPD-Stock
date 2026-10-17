@@ -14554,8 +14554,15 @@ function openUserForm(u) {
       <div class="field"><label>เบอร์โทร</label><input class="input" id="u_phone" inputmode="tel"></div>
     </div>
     <div class="memo-two-col">
-      <div class="field"><label>วัน/เดือน/ปีเกิด</label><input class="input" type="date" id="u_birth"></div>
-      <div class="field"><label>กรุ๊ปเลือด</label><select class="input" id="u_blood">${['','A+','A-','B+','B-','AB+','AB-','O+','O-','ไม่ทราบ'].map(b => `<option value="${b}">${b || 'ไม่ระบุ'}</option>`).join('')}</select></div>
+      <div class="field"><label>วัน/เดือน/ปีเกิด (พ.ศ.)</label>
+        <div style="display:flex;gap:8px;">
+          <input class="input" id="u_bd_d" inputmode="numeric" maxlength="2" placeholder="วัน" style="flex:0 0 26%;min-width:0;">
+          <select class="input" id="u_bd_m" style="flex:1 1 auto;min-width:0;"><option value="">เดือน</option>${TH_MONTHS.map((m, i) => `<option value="${i + 1}">${m}</option>`).join('')}</select>
+          <input class="input" id="u_bd_y" inputmode="numeric" maxlength="4" placeholder="พ.ศ." style="flex:0 0 30%;min-width:0;">
+        </div>
+        <input type="hidden" id="u_birth" value="">
+      </div>
+      <div class="field"><label>กรุ๊ปเลือด</label><select class="input" id="u_blood">${['','A','B','AB','O','ไม่ทราบ'].map(b => `<option value="${b}">${b || 'ไม่ระบุ'}</option>`).join('')}</select></div>
     </div>
     <div class="field"><label>ตำแหน่ง</label><input class="input" id="u_position" value="${editing ? escapeHtml(u['ตำแหน่ง'])||'' : ''}" placeholder="เช่น ผบ.หมู่ ส.ทล.3 กก.1 บก.ทล."></div>
     <div class="field"><label>หน่วยงาน</label><input class="input" id="u_unit" value="${editing ? escapeHtml(u['หน่วยงาน'])||'' : ''}"></div>
@@ -14575,7 +14582,7 @@ function openUserForm(u) {
         if (!data) return;
         document.getElementById('u_citizen').value = fmtCitizen(data.citizen_id || '');
         document.getElementById('u_phone').value = fmtPhone(data.phone || '');
-        document.getElementById('u_birth').value = data.birth_date || '';
+        bdSet(data.birth_date || '');
         document.getElementById('u_blood').value = data.blood_type || '';
       });
   }
@@ -14610,6 +14617,7 @@ function openUserForm(u) {
   bindFmt(document.getElementById('u_phone'), fmtPhone, 12);
   document.getElementById('u_citizen').placeholder = 'x-xxxx-xxxxx-xx-x';
   document.getElementById('u_phone').placeholder = '0xx-xxx-xxxx';
+  bdBind();
   if (editing) {
     document.getElementById('btnResetPin').onclick = async function(){
       if (!await confirmSheet('รีเซ็ต PIN ของ ' + (u['ชื่อ-สกุล'] || '') + ' กลับเป็นวันเดือนปีเกิด? ผู้ใช้ต้องตั้ง PIN ใหม่ตอนเข้าครั้งถัดไป', {title:'รีเซ็ต PIN', okText:'รีเซ็ต', tone:'bad'})) return;
@@ -14625,6 +14633,7 @@ function openUserForm(u) {
     if (!editing && cit.length !== 13) { toast('กรุณากรอกเลขบัตรประชาชนให้ครบ 13 หลัก'); return; }
     if (cit && cit.length !== 13) { toast('เลขบัตรประชาชนกรอกไม่ครบ 13 หลัก'); return; }
     if (ph && ph.length !== 10) { toast('เบอร์โทรกรอกไม่ครบ 10 หลัก'); return; }
+    if ((val('u_bd_d') || val('u_bd_y')) && !val('u_birth')) { toast('วัน/เดือน/ปีเกิด (พ.ศ.) ไม่ถูกต้อง'); return; }
     if (!val('u_name').trim()) { toast('กรุณากรอกชื่อ-สกุล'); return; }
     const saveBtn = document.getElementById('btnSave'); if (saveBtn.disabled) return; setButtonBusy(saveBtn, true); setLoading(true, 'กำลังบันทึกรายชื่อ จนท....');
     try {
@@ -21904,14 +21913,14 @@ refreshNotifBadge();
     var r = await sb.from('users').select('*').eq('auth_user_id', id).maybeSingle();
     var pv = await sb.from('user_private').select('*').eq('auth_user_id', id).maybeSingle();
     var u = Object.assign({}, r.data || {}, pv.data || {});
-    var BLOOD = ['', 'A+','A-','B+','B-','AB+','AB-','O+','O-','ไม่ทราบ'];
+    var BLOOD = ['', 'A', 'B', 'AB', 'O', 'ไม่ทราบ'];
     showSheet(
       '<div class="sheet-title">โปรไฟล์ของฉัน</div>' +
       '<div id="acProfile">' +
         '<div class="ac-row"><span>ชื่อ-สกุล</span><span>' + escapeHtml(u.name || '-') + '</span></div>' +
         '<div class="ac-row"><span>ตำแหน่ง / หน่วยงาน</span><span>' + escapeHtml([u.position, u.unit].filter(Boolean).join(' / ') || '-') + '</span></div>' +
         '<div class="ac-row"><span>เลขบัตรประชาชน</span><span>' + escapeHtml(u.citizen_id || '-') + '</span></div>' +
-        '<div class="ac-row"><span>วัน/เดือน/ปีเกิด</span><span>' + escapeHtml(u.birth_date || '-') + '</span></div>' +
+        '<div class="ac-row"><span>วัน/เดือน/ปีเกิด</span><span>' + escapeHtml(bdText(u.birth_date)) + '</span></div>' +
       '</div>' +
       '<div class="field" style="margin-top:14px"><label>เบอร์โทร</label><input class="input" id="pf_phone" value="' + escapeHtml(u.phone || '') + '"></div>' +
       '<div class="field"><label>กรุ๊ปเลือด</label><select class="input" id="pf_blood">' +
@@ -22016,6 +22025,46 @@ async function loadOfficerAdminInfo(u){
     line('วัน/เดือน/ปีเกิด', pv.birth_date ? systemDate(pv.birth_date) : '') +
     line('กรุ๊ปเลือด', pv.blood_type) +
     line('วันที่เพิ่มในระบบ', row.created_at ? systemDate(row.created_at) : '');
+}
+</script>
+<script id="bd-helpers">
+const TH_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+function bdToIso(d, m, y){
+  d = String(d || '').trim(); m = String(m || '').trim(); y = String(y || '').trim();
+  if (!/^\d{1,2}$/.test(d) || !/^\d{1,2}$/.test(m) || !/^\d{4}$/.test(y)) return '';
+  var day = +d, mon = +m, ce = +y - 543;
+  if (mon < 1 || mon > 12 || ce < 1800 || ce > new Date().getFullYear()) return '';
+  var dt = new Date(Date.UTC(ce, mon - 1, day));
+  if (dt.getUTCFullYear() !== ce || dt.getUTCMonth() !== mon - 1 || dt.getUTCDate() !== day) return '';
+  return ce + '-' + String(mon).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+}
+function bdSet(iso){
+  var hid = document.getElementById('u_birth');
+  if (!iso) {
+    ['u_bd_d','u_bd_y'].forEach(function(id){ document.getElementById(id).value = ''; });
+    document.getElementById('u_bd_m').value = '';
+    if (hid) hid.value = '';
+    return;
+  }
+  var p = String(iso).slice(0, 10).split('-').map(Number);
+  document.getElementById('u_bd_d').value = String(p[2]);
+  document.getElementById('u_bd_m').value = String(p[1]);
+  document.getElementById('u_bd_y').value = String(p[0] + 543);
+  if (hid) hid.value = String(iso).slice(0, 10);
+}
+function bdBind(){
+  var d = document.getElementById('u_bd_d'), m = document.getElementById('u_bd_m'), y = document.getElementById('u_bd_y');
+  function sync(){
+    document.getElementById('u_birth').value = bdToIso(d.value, m.value, y.value);
+  }
+  d.addEventListener('input', function(){ d.value = d.value.replace(/\D/g, ''); sync(); });
+  y.addEventListener('input', function(){ y.value = y.value.replace(/\D/g, ''); sync(); });
+  m.addEventListener('change', sync);
+}
+function bdText(iso){
+  if (!iso) return '-';
+  var p = String(iso).slice(0, 10).split('-').map(Number);
+  return p[2] + ' ' + TH_MONTHS[p[1] - 1] + ' ' + (p[0] + 543);
 }
 </script>
 </body>
