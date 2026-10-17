@@ -21413,6 +21413,20 @@ html.booting .tabbar .tab, html.booting .tabbar .tab *{ transition:none !importa
   var btn = document.getElementById('btnRoleLogin');
   if (!form || !pw || !btn) return;
 
+    // ✅ สไตล์แถบสไลด์สำหรับเลือกระดับผู้ใช้งาน (แบบ A)
+  var segCss = document.createElement('style');
+  segCss.textContent =
+    '.ac-seg{position:relative;display:flex;width:100%;max-width:280px;height:52px;margin:0 auto 14px;padding:4px;' +
+      'border-radius:999px;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.12);box-sizing:border-box;}' +
+    '.ac-seg-thumb{position:absolute;top:4px;bottom:4px;left:4px;width:calc(50% - 4px);border-radius:999px;' +
+      'background:#ffd21f;box-shadow:0 4px 12px rgba(0,0,0,.25);transition:transform .28s cubic-bezier(.3,.7,.3,1),opacity .2s;}' +
+    '.ac-seg.officer .ac-seg-thumb{transform:translateX(100%);}' +
+    '.ac-seg.none .ac-seg-thumb{opacity:0;}' +
+    '.ac-seg .ac-role-btn{flex:1;position:relative;z-index:1;border:0;background:none;color:#fff;font-family:inherit;' +
+      'font-size:16px;font-weight:600;cursor:pointer;min-height:44px;transition:color .2s;}' +
+    '.ac-seg .ac-role-btn.on{color:#0d2a52;}';
+  document.head.appendChild(segCss);
+      
   var wrap = document.createElement('div');
   wrap.innerHTML =
     '<div class="pin-mode" id="pinMode">' +
@@ -21758,10 +21772,10 @@ refreshNotifBadge();
   wrap.innerHTML =
     '<div id="acHello" style="display:none"></div>' +
     // ✅ ปุ่มเลือกระดับแบบ segment ให้พอดีและไม่ล้นกรอบ
-    '<div id="acRoles" style="display:flex;width:100%;max-width:300px;margin:0 auto 14px;padding:4px;' +
-      'border-radius:14px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);box-sizing:border-box;">' +
-      '<button type="button" class="ac-role-btn" data-r="admin" style="flex:1;padding:10px 8px;border:0;border-radius:10px;background:transparent;color:inherit;font-size:15px;white-space:nowrap;cursor:pointer;">แอดมิน</button>' +
-      '<button type="button" class="ac-role-btn" data-r="officer" style="flex:1;padding:10px 8px;border:0;border-radius:10px;background:transparent;color:inherit;font-size:15px;white-space:nowrap;cursor:pointer;">เจ้าหน้าที่</button>' +
+    '<div id="acRoles" class="ac-seg none">' +
+      '<div class="ac-seg-thumb"></div>' +
+      '<button type="button" class="ac-role-btn" data-r="admin">แอดมิน</button>' +
+      '<button type="button" class="ac-role-btn" data-r="officer">เจ้าหน้าที่</button>' +
     '</div>' +
     '<div class="field" id="acBadgeWrap" style="display:none;max-width:300px;margin:0 auto;">' +
       '<label style="display:block;text-align:center;">รหัสหมวก</label>' +
@@ -21816,14 +21830,15 @@ refreshNotifBadge();
   function minutesText(ms){ return Math.max(1, Math.ceil(ms / 60000)) + ' นาที'; }
 
   function paintRole(){
+    var box = $('acRoles');
+    if (box) {
+      box.classList.toggle('none', role === '');        // ยังไม่เลือก: ซ่อนสไลด์
+      box.classList.toggle('officer', role === 'officer'); // เลื่อนไปขวาเมื่อเลือกเจ้าหน้าที่
+    }
     document.querySelectorAll('#acRoles .ac-role-btn').forEach(function(b){
-      var on = b.dataset.r === role;
-      b.style.background = on ? 'rgba(255,255,255,.22)' : 'transparent';
-      b.style.fontWeight = on ? '700' : '400';
-      b.style.opacity = on ? '1' : '.75';
+      b.classList.toggle('on', b.dataset.r === role);
     });
   }
-
   function chooseRole(r){
     role = r; paintRole(); err('');
     pin = ''; paintPin();
