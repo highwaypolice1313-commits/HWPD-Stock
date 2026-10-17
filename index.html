@@ -21730,23 +21730,27 @@ refreshNotifBadge();
   var loginScreen = document.getElementById('loginScreen');
   var sub = document.getElementById('loginSubText');
   if (!loginScreen || !sub) return;
-  var REMEMBER = 'acRememberUser';
 
-  ['roleSelectBox', 'roleLoginForm'].forEach(function(id){
-    var el = document.getElementById(id); if (el) el.style.display = 'none';
-  });
+  var REMEMBER = 'acRememberBadge'; // ✅ จำรหัสหมวกหลังเข้าสำเร็จครั้งแรก
+  var BLOOD = ['', 'A', 'B', 'AB', 'O', 'ไม่ทราบ'];
+  var $ = function(id){ return document.getElementById(id); };
 
+  ['roleSelectBox', 'roleLoginForm'].forEach(function(id){ var el = $(id); if (el) el.style.display = 'none'; });
+
+  // ---------- ส่วนหน้าล็อกอิน ----------
   var wrap = document.createElement('div');
   wrap.id = 'acLogin';
   wrap.innerHTML =
     '<div id="acHello" style="display:none"></div>' +
-    '<div class="field" id="acUserWrap"><label>ชื่อผู้ใช้</label><input class="input" id="acUser" autocomplete="username" autocapitalize="none" autocorrect="off"></div>' +
-    '<div class="ac-mode"><button type="button" data-m="pw">รหัสผ่าน</button><button type="button" data-m="pin">PIN 6 หลัก</button></div>' +
-    '<div class="field" id="acPwWrap"><label>รหัสผ่าน</label><input class="input" id="acPw" type="password" autocomplete="current-password"></div>' +
-    '<div id="acPinWrap" style="display:none">' +
+    '<div class="field" id="acBadgeWrap"><label>รหัสหมวก</label>' +
+      '<input class="input" id="acBadge" autocomplete="username" autocapitalize="characters" autocorrect="off" spellcheck="false">' +
+      '<div class="hint" style="margin-top:6px;">รหัสหมวกคือชื่อผู้ใช้ของคุณ ระบบจะจำให้หลังเข้าระบบสำเร็จครั้งแรก</div>' +
+    '</div>' +
+    '<div class="hint" style="margin:6px 0 8px;">รหัสผ่าน 6 หลัก = วัน เดือน ปีเกิด (พ.ศ. 2 หลักท้าย) เช่น 16/12/2536 ใช้ 161236</div>' +
+    '<div id="acPinWrap">' +
       '<div class="ac-slots" id="acSlots"><span></span><span></span><span></span><span></span><span></span><span></span></div>' +
       '<div class="ac-pad">' +
-        [1,2,3,4,5,6,7,8,9].map(function(n){ return '<button type="button" data-k="'+n+'">'+n+'</button>'; }).join('') +
+        [1,2,3,4,5,6,7,8,9].map(function(n){ return '<button type="button" data-k="' + n + '">' + n + '</button>'; }).join('') +
         '<span class="ghost"></span><button type="button" data-k="0">0</button><button type="button" data-k="del">⌫</button>' +
       '</div>' +
     '</div>' +
@@ -21754,185 +21758,87 @@ refreshNotifBadge();
     '<div class="hint" id="acErr" style="color:#ffb4bd;"></div>';
   sub.insertAdjacentElement('afterend', wrap);
 
-  function getAccounts(){ try { return JSON.parse(localStorage.getItem('acAccounts') || '[]'); } catch (e) { return []; } }
-  function rememberAccount(u, n){
-    var l = getAccounts().filter(function(a){ return a.u !== u; });
-    l.unshift({ u: u, n: n || u });
-    localStorage.setItem('acAccounts', JSON.stringify(l.slice(0, 6)));
-  }
-  var accounts = getAccounts();
-  var remembered = '';
-  var mode = localStorage.getItem('acLoginMode') === 'pw' ? 'pw' : 'pin';
   var pin = '';
+  var busy = false;
 
+  function err(m){ $('acErr').textContent = m || ''; }
   function paintPin(){
     document.querySelectorAll('#acSlots span').forEach(function(s, i){ s.classList.toggle('on', i < pin.length); });
   }
-  function err(msg){ document.getElementById('acErr').textContent = msg || ''; }
-  function setMode(m){
-    mode = m; localStorage.setItem('acLoginMode', m);
-    wrap.querySelectorAll('.ac-mode button').forEach(function(b){ b.classList.toggle('on', b.dataset.m === m); });
-    document.getElementById('acPwWrap').style.display = m === 'pw' ? '' : 'none';
-    document.getElementById('acPinWrap').style.display = m === 'pin' ? '' : 'none';
-    pin = ''; paintPin(); err('');
+  function shake(){
+    var pw = $('acPinWrap'); pw.classList.remove('pin-shake'); void pw.offsetWidth; pw.classList.add('pin-shake');
   }
-  function showPanel(on){
-    ['acPwWrap', 'acPinWrap', 'acGo'].forEach(function(id){
-      var el = document.getElementById(id);
-      if (!el) return;
-      if (!on) el.style.display = 'none';
-    });
-    wrap.querySelector('.ac-mode').style.display = on ? '' : 'none';
-    if (on) setMode(mode);
-  }
-  function showTiles(){
-    var h = document.getElementById('acHello');
-    document.getElementById('acUserWrap').style.display = 'none';
-    showPanel(false);
-    h.style.display = '';
-    h.innerHTML = '<div class="ac-tiles">' + accounts.map(function(a){
-        var ini = escapeHtml(String(a.n || a.u).trim().charAt(0).toUpperCase());
-        return '<button type="button" class="ac-tile" data-u="' + escapeHtml(a.u) + '"><span class="ac-av">' + ini + '</span><span class="ac-nm">' + escapeHtml(a.n || a.u) + '</span></button>';
-      }).join('') + '</div>' +
-      '<div style="text-align:center;margin-top:10px;"><button type="button" class="ac-link" id="acOther">ใช้ผู้ใช้อื่น</button></div>';
-    h.querySelectorAll('.ac-tile').forEach(function(b){ b.onclick = function(){ pick(b.dataset.u); }; });
-    document.getElementById('acOther').onclick = function(){
-      remembered = ''; document.getElementById('acUser').value = '';
-      h.style.display = 'none';
-      document.getElementById('acUserWrap').style.display = '';
-      showPanel(true); setMode('pw');
-    };
-  }
-  function pick(u){
-    remembered = u;
-    var a = accounts.filter(function(x){ return x.u === u; })[0];
-    var h = document.getElementById('acHello');
-    document.getElementById('acUser').value = u;
-    document.getElementById('acUserWrap').style.display = 'none';
-    h.style.display = '';
-    h.innerHTML = '<div class="ac-hello">เข้าสู่ระบบในชื่อ <b>' + escapeHtml((a && a.n) || u) + '</b></div>' +
-      '<div style="text-align:center;margin-top:4px;"><button type="button" class="ac-link" id="acSwitch">เปลี่ยนผู้ใช้</button></div>';
-    document.getElementById('acSwitch').onclick = function(){ remembered = ''; showTiles(); };
-    showPanel(true);
-    setMode('pin');
-  }
+  function getRemembered(){ try { return localStorage.getItem(REMEMBER) || ''; } catch (e) { return ''; } }
+  function setRemembered(b){ try { if (b) localStorage.setItem(REMEMBER, b); else localStorage.removeItem(REMEMBER); } catch (e) {} }
+  function badgeValue(){ return String($('acBadge').value || '').trim(); }
 
-  // ไม่มีช่องชื่อผู้ใช้: แสดงเฉพาะแป้น PIN
-  document.getElementById('acHello').style.display = 'none';
-  document.getElementById('acUserWrap').style.display = 'none';
-  wrap.querySelector('.ac-mode').style.display = 'none';
-  document.getElementById('acPwWrap').style.display = 'none';
-  document.getElementById('acGo').style.display = 'none';
-  document.getElementById('acPinWrap').style.display = '';
-
-  function emailFor(u){
-    var hex = Array.from(new TextEncoder().encode(u.trim().toLowerCase())).map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+  // ✅ ต้องตรงกับ emailFor() ฝั่ง Edge Function ทุกตัวอักษร
+  function emailFor(badge){
+    var hex = Array.from(new TextEncoder().encode(String(badge).trim().toLowerCase()))
+      .map(function(b){ return b.toString(16).padStart(2, '0'); }).join('');
     return 'u' + hex + '@hpd.local';
   }
 
-  // เข้าด้วยรหัสผ่าน
-  async function loginPw(username, password){
-    var r = await sb.auth.signInWithPassword({ email: emailFor(username), password: password });
-    if (r.error) throw new Error('ชื่อผู้ใช้หรือรหัสไม่ถูกต้อง');
-    return r.data;
+  function showBadgeInput(){
+    $('acHello').style.display = 'none';
+    $('acBadgeWrap').style.display = '';
+    $('acBadge').value = '';
   }
-
-  // เข้าด้วย PIN: เซิร์ฟเวอร์ตรวจ PIN แล้วออกลิงก์ชั่วคราวให้เบราว์เซอร์แลกเป็นเซสชัน
-  async function loginPin(pinCode){
-    var res = await fetch(SUPABASE_URL + '/functions/v1/pin-login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY },
-      body: JSON.stringify({ pin: pinCode })
-    });
-    var j = await res.json().catch(function(){ return {}; });
-    if (!res.ok || !j.token_hash) throw new Error(j.error || 'ชื่อผู้ใช้หรือ PIN ไม่ถูกต้อง');
-    var v = await sb.auth.verifyOtp({ token_hash: j.token_hash, type: 'magiclink' });
-    if (v.error || !v.data.session) throw new Error('เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่');
-    return v.data;
+  function showRemembered(b){
+    $('acBadge').value = b;
+    $('acBadgeWrap').style.display = 'none';
+    var h = $('acHello');
+    h.style.display = '';
+    h.innerHTML = '<div class="ac-hello">เข้าสู่ระบบในชื่อ <b>' + escapeHtml(b) + '</b></div>' +
+      '<div style="text-align:center;margin-top:4px;"><button type="button" class="ac-link" id="acSwitch">ใช้รหัสหมวกอื่น</button></div>';
+    $('acSwitch').onclick = function(){
+      setRemembered(''); pin = ''; paintPin(); err(''); showBadgeInput();
+    };
   }
 
   async function loadProfile(auth){
-    var p = await sb.from('profiles').select('role,display_name,active,must_change_password,must_change_pin').eq('id', auth.user.id).maybeSingle();
+    var p = await sb.from('profiles').select('role,display_name,active').eq('id', auth.user.id).maybeSingle();
     if (!p.data || !p.data.active) { await sb.auth.signOut(); throw new Error('บัญชีนี้ยังไม่เปิดใช้งาน'); }
     return p.data;
   }
 
-  function forceChange(){
-    return new Promise(function(resolve){
-      var box = document.getElementById('acChange');
-      box.classList.add('open');
-      document.getElementById('acChangeGo').onclick = async function(){
-        var a = document.getElementById('acNew1').value, b2 = document.getElementById('acNew2').value;
-        var e = document.getElementById('acChangeErr');
-        if (a.length < 6) { e.textContent = 'รหัสต้องมีอย่างน้อย 6 ตัว'; return; }
-        if (a !== b2) { e.textContent = 'รหัสสองช่องไม่ตรงกัน'; return; }
-        var up = await sb.auth.updateUser({ password: a });
-        if (up.error) { e.textContent = up.error.message; return; }
-        await sb.rpc('mark_password_changed');
-        box.classList.remove('open');
-        resolve();
-      };
-    });
-  }
-
-  function forcePinChange(){
-    return new Promise(function(resolve){
-      var box = document.createElement('div');
-      box.id = 'acPinChange';
-      box.style.cssText = 'position:fixed;inset:0;z-index:9600;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(15,25,38,.6);';
-      box.innerHTML = '<div style="width:100%;max-width:360px;padding:22px;border-radius:24px;background:var(--panel);border:1px solid var(--panel-line);">' +
-        '<h3 style="margin:0 0 6px;font-size:17px;color:var(--ink);">ตั้ง PIN ของคุณเอง</h3>' +
-        '<p style="margin:0 0 14px;font-size:12.5px;color:var(--ink-dim);line-height:1.5;">PIN ตอนนี้เป็นวันเดือนปีเกิด กรุณาตั้ง PIN 6 หลักใหม่ (ห้ามใช้วันเกิด)</p>' +
-        '<div class="field"><label>PIN ใหม่ (6 หลัก)</label><input class="input" id="npPin1" type="password" inputmode="numeric" maxlength="6"></div>' +
-        '<div class="field"><label>ยืนยัน PIN ใหม่</label><input class="input" id="npPin2" type="password" inputmode="numeric" maxlength="6"></div>' +
-        '<div class="hint" id="npErr" style="color:#d64545;"></div>' +
-        '<button class="btn btn-primary" id="npGo" type="button" style="width:100%;margin-top:8px;">บันทึก PIN</button></div>';
-      document.body.appendChild(box);
-      document.getElementById('npGo').onclick = async function(){
-        var a = document.getElementById('npPin1').value.trim(), b2 = document.getElementById('npPin2').value.trim();
-        var e = document.getElementById('npErr');
-        if (!/^\d{6}$/.test(a)) { e.textContent = 'PIN ต้องเป็นตัวเลข 6 หลัก'; return; }
-        if (a !== b2) { e.textContent = 'PIN สองช่องไม่ตรงกัน'; return; }
-        var r = await sb.rpc('set_my_pin', { p_pin: a, p_current_password: '' });
-        if (r.error || !r.data || !r.data.ok) { e.textContent = (r.data && r.data.error) || (r.error && r.error.message) || 'บันทึกไม่สำเร็จ'; return; }
-        box.remove(); resolve();
-      };
-    });
-  }
-
   async function finish(prof, auth){
     window.__acAuthId = auth.user.id;
-    // เก็บข้อมูลผู้ใช้ปัจจุบันไว้ให้หน้ายืมดึงชื่อไปกรอกให้อัตโนมัติ
     var me = await sb.from('users').select('id,name,position').eq('auth_user_id', auth.user.id).maybeSingle();
     window.__me = me.data || { name: prof.display_name };
     var role = prof.role === 'admin' ? 'admin' : 'viewer';
     saveSession({ role: role, token: auth.session.access_token, name: prof.display_name });
     await completeLogin({ role: role, name: prof.display_name, token: auth.session.access_token });
-    var pill = document.getElementById('rolePill');
+    var pill = $('rolePill');
     if (pill) pill.textContent = prof.role === 'admin' ? 'แอดมิน' : 'เจ้าหน้าที่';
   }
 
   async function submit(){
-    var secret = pin;
+    if (busy) return;
     err('');
-    if (mode === 'pin' && secret.length !== 6) return err('กรอก PIN ให้ครบ 6 หลัก');
-    var btn = document.getElementById('acGo'); btn.disabled = true; btn.textContent = 'กำลังเข้าสู่ระบบ...';
+    var badge = badgeValue();
+    if (!badge) {
+      showBadgeInput();
+      return err('กรุณากรอกรหัสหมวก');
+    }
+    if (pin.length !== 6) return err('กรอกรหัสผ่าน 6 หลักให้ครบ');
+
+    busy = true;
+    var btn = $('acGo'); btn.disabled = true; btn.textContent = 'กำลังเข้าสู่ระบบ...';
     try {
-      var auth = await loginPin(secret);
-      var prof = await loadProfile(auth);
-      if (prof.must_change_pin) await forcePinChange();
-      await finish(prof, auth);
+      var r = await sb.auth.signInWithPassword({ email: emailFor(badge), password: pin });
+      if (r.error || !r.data || !r.data.session) throw new Error('รหัสหมวกหรือรหัสผ่านไม่ถูกต้อง');
+      var prof = await loadProfile(r.data);
+      setRemembered(badge);
+      await finish(prof, r.data);
     } catch (e) {
       err(e.message || 'เข้าสู่ระบบไม่สำเร็จ');
-      pin = ''; paintPin();
-      var pw = document.getElementById('acPinWrap');
-      if (pw && mode === 'pin') { pw.classList.remove('pin-shake'); void pw.offsetWidth; pw.classList.add('pin-shake'); }
-    } finally { btn.disabled = false; btn.textContent = 'เข้าสู่ระบบ'; }
+      pin = ''; paintPin(); shake();
+    } finally {
+      busy = false; btn.disabled = false; btn.textContent = 'เข้าสู่ระบบ';
+    }
   }
 
-  wrap.querySelectorAll('.ac-mode button').forEach(function(b){ b.onclick = function(){ setMode(b.dataset.m); }; });
-  document.getElementById('acGo').onclick = submit;
-  document.getElementById('acPw').addEventListener('keydown', function(e){ if (e.key === 'Enter') submit(); });
   wrap.querySelector('.ac-pad').addEventListener('click', function(e){
     var b = e.target.closest('[data-k]'); if (!b) return;
     if (b.dataset.k === 'del') pin = pin.slice(0, -1);
@@ -21940,62 +21846,144 @@ refreshNotifBadge();
     paintPin();
     if (pin.length === 6) submit();
   });
+  $('acGo').onclick = submit;
+  $('acBadge').addEventListener('keydown', function(e){ if (e.key === 'Enter') { e.preventDefault(); $('acGo').focus(); } });
+
   document.addEventListener('pointerdown', function(e){
     var b = e.target.closest && e.target.closest('.ac-pad button'); if (b) b.classList.add('is-down');
   }, true);
-  document.addEventListener('pointerup', function(){ document.querySelectorAll('.is-down').forEach(function(b){ b.classList.remove('is-down'); }); }, true);
+  document.addEventListener('pointerup', function(){
+    document.querySelectorAll('.is-down').forEach(function(b){ b.classList.remove('is-down'); });
+  }, true);
+
+  // เริ่มต้น: มีรหัสหมวกที่จำไว้แล้วหรือไม่
+  var remembered = getRemembered();
+  if (remembered) showRemembered(remembered); else showBadgeInput();
+  pin = ''; paintPin(); err('');
 
   var _clr = clearSession;
   clearSession = function(){ try { sb.auth.signOut(); } catch (e) {} return _clr.apply(this, arguments); };
 
+  // ---------- โปรไฟล์ของฉัน (แก้ได้ทุกช่อง ยกเว้นรหัสหมวกและสิทธิ์) ----------
+  function isoToBE(iso){
+    var p = String(iso || '').split('-');
+    return p.length === 3 ? p[2] + '/' + p[1] + '/' + (Number(p[0]) + 543) : '';
+  }
+  // ✅ รับวันเกิดเป็น พ.ศ. หรือ ค.ศ. แล้วแปลงเป็น YYYY-MM-DD; คืน '' ถ้าว่าง และ null ถ้ารูปแบบผิด
+  function beToIso(s){
+    var t = String(s || '').trim();
+    if (!t) return '';
+    var m = t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (!m) return null;
+    var y = Number(m[3]); if (y > 2400) y -= 543;
+    return y + '-' + String(m[2]).padStart(2, '0') + '-' + String(m[1]).padStart(2, '0');
+  }
+
   async function openProfile(){
-    var id = window.__acAuthId || (await sb.auth.getSession()).data.session?.user?.id;
+    var id = window.__acAuthId;
+    if (!id) {
+      var s = await sb.auth.getSession();
+      id = s.data.session && s.data.session.user.id;
+    }
     if (!id) return toast('กรุณาเข้าสู่ระบบใหม่');
-    var r = await sb.from('users').select('*').eq('auth_user_id', id).maybeSingle();
-    var pv = await sb.from('user_private').select('*').eq('auth_user_id', id).maybeSingle();
+
+    var r = await sb.from('users').select('name,rank,position,unit,badge_no,signature').eq('auth_user_id', id).maybeSingle();
+    var pv = await sb.from('user_private').select('citizen_id,phone,birth_date,blood_type').eq('auth_user_id', id).maybeSingle();
     var u = Object.assign({}, r.data || {}, pv.data || {});
-    var BLOOD = ['', 'A', 'B', 'AB', 'O', 'ไม่ทราบ'];
+    var ranks = (typeof RANK_OPTIONS !== 'undefined' && RANK_OPTIONS) ? RANK_OPTIONS : [];
+    var g = function(k){ var el = $(k); return el ? el.value : ''; };
+
     showSheet(
       '<div class="sheet-title">โปรไฟล์ของฉัน</div>' +
-      '<div id="acProfile">' +
-        '<div class="ac-row"><span>ชื่อ-สกุล</span><span>' + escapeHtml(u.name || '-') + '</span></div>' +
-        '<div class="ac-row"><span>ตำแหน่ง / หน่วยงาน</span><span>' + escapeHtml([u.position, u.unit].filter(Boolean).join(' / ') || '-') + '</span></div>' +
-        '<div class="ac-row"><span>เลขบัตรประชาชน</span><span>' + escapeHtml(u.citizen_id || '-') + '</span></div>' +
-        '<div class="ac-row"><span>วัน/เดือน/ปีเกิด</span><span>' + escapeHtml(bdText(u.birth_date)) + '</span></div>' +
+      '<div class="field"><label>รหัสหมวก (ชื่อผู้ใช้ เปลี่ยนได้ที่แอดมิน)</label><input class="input" value="' + escapeHtml(u.badge_no || '-') + '" disabled></div>' +
+      '<div class="memo-two-col">' +
+        '<div class="field" style="max-width:140px;"><label>ยศ</label><select class="input" id="pf_rank"><option value="">-</option>' +
+          ranks.map(function(x){ return '<option' + (x === u.rank ? ' selected' : '') + '>' + escapeHtml(x) + '</option>'; }).join('') +
+        '</select></div>' +
+        '<div class="field"><label>ชื่อ-สกุล</label><input class="input" id="pf_name" value="' + escapeHtml(u.name || '') + '"></div>' +
       '</div>' +
-      '<div class="field" style="margin-top:14px"><label>เบอร์โทร</label><input class="input" id="pf_phone" value="' + escapeHtml(u.phone || '') + '"></div>' +
+      '<div class="field"><label>ตำแหน่ง</label><input class="input" id="pf_position" value="' + escapeHtml(u.position || '') + '"></div>' +
+      '<div class="field"><label>หน่วยงาน</label><input class="input" id="pf_unit" value="' + escapeHtml(u.unit || '') + '"></div>' +
+      '<div class="field"><label>เลขบัตรประชาชน</label><input class="input" id="pf_citizen" inputmode="numeric" value="' + escapeHtml(fmtCitizen(u.citizen_id || '')) + '"></div>' +
+      '<div class="field"><label>เบอร์โทร</label><input class="input" id="pf_phone" inputmode="numeric" value="' + escapeHtml(fmtPhone(u.phone || '')) + '"></div>' +
+      '<div class="field"><label>วัน/เดือน/ปีเกิด (พ.ศ.) เช่น 16/12/2536</label><input class="input" id="pf_birth" value="' + escapeHtml(isoToBE(u.birth_date)) + '"></div>' +
       '<div class="field"><label>กรุ๊ปเลือด</label><select class="input" id="pf_blood">' +
-        BLOOD.map(function(b){ return '<option value="' + b + '"' + (u.blood_type === b ? ' selected' : '') + '>' + (b || 'ไม่ระบุ') + '</option>'; }).join('') +
+        BLOOD.map(function(b){ return '<option value="' + b + '"' + ((u.blood_type || '') === b ? ' selected' : '') + '>' + (b || 'ไม่ระบุ') + '</option>'; }).join('') +
       '</select></div>' +
-      '<div class="btn-row"><button class="btn btn-primary" id="pf_save">บันทึกข้อมูล</button></div>' +
-      '<div class="section-title" style="margin-top:18px;font-size:14px;">เปลี่ยนรหัสผ่าน</div>' +
-      '<div class="field"><label>รหัสผ่านใหม่ (อย่างน้อย 6 ตัว)</label><input class="input" id="pf_new1" type="password" autocomplete="new-password"></div>' +
-      '<div class="field"><label>ยืนยันรหัสผ่านใหม่</label><input class="input" id="pf_new2" type="password" autocomplete="new-password"></div>' +
-      '<div class="btn-row"><button class="btn btn-ghost" id="pf_pw">เปลี่ยนรหัสผ่าน</button></div>'
+      '<div class="field"><label>ลายเซ็นประจำตัว</label>' +
+        '<div class="btn-row"><button class="btn btn-ghost" id="pf_sig" type="button">' + (u.signature ? 'เซ็นใหม่' : 'เซ็นลายเซ็น') + '</button></div>' +
+        '<div class="hint" id="pf_sigState">' + (window.__pfSig ? 'เซ็นแล้ว กดบันทึกเพื่อยืนยัน' : (u.signature ? 'มีลายเซ็นอยู่แล้ว' : 'ยังไม่มีลายเซ็น')) + '</div>' +
+      '</div>' +
+      '<div class="btn-row"><button class="btn btn-primary" id="pf_save" type="button">บันทึกข้อมูล</button></div>' +
+      '<div class="section-title" style="margin-top:18px;font-size:14px;">เปลี่ยนรหัสผ่าน (ตัวเลข 6 หลัก)</div>' +
+      '<div class="field"><label>รหัสผ่านใหม่</label><input class="input" id="pf_new1" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password"></div>' +
+      '<div class="field"><label>ยืนยันรหัสผ่านใหม่</label><input class="input" id="pf_new2" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password"></div>' +
+      '<div class="btn-row"><button class="btn btn-ghost" id="pf_pw" type="button">เปลี่ยนรหัสผ่าน</button></div>'
     );
-    bindFmt(document.getElementById('pf_phone'), fmtPhone, 12);
-    document.getElementById('pf_save').onclick = async function(){
-      var phd = document.getElementById('pf_phone').value.replace(/\D/g, '');
-      if (phd && phd.length !== 10) { toast('เบอร์โทรกรอกไม่ครบ 10 หลัก'); return; }
-      var up = await sb.from('user_private').upsert({ auth_user_id: id, phone: document.getElementById('pf_phone').value.trim(), blood_type: document.getElementById('pf_blood').value, updated_at: new Date().toISOString() });
-      toast(up.error ? 'บันทึกไม่สำเร็จ' : 'บันทึกข้อมูลแล้ว');
+
+    bindFmt($('pf_citizen'), fmtCitizen, 17);
+    bindFmt($('pf_phone'), fmtPhone, 12);
+
+    $('pf_sig').onclick = function(){
+      openSignatureSheet({
+        title: 'ลายเซ็นประจำตัว',
+        name: g('pf_name'),
+        onDone: function(d){
+          window.__pfSig = d;
+          var st = $('pf_sigState'); if (st) st.textContent = 'เซ็นแล้ว กดบันทึกเพื่อยืนยัน';
+        }
+      });
     };
-    document.getElementById('pf_pw').onclick = async function(){
-      var a = document.getElementById('pf_new1').value, b2 = document.getElementById('pf_new2').value;
-      if (a.length < 6) return toast('รหัสต้องมีอย่างน้อย 6 ตัว');
-      if (a !== b2) return toast('รหัสสองช่องไม่ตรงกัน');
-      var up = await sb.auth.updateUser({ password: a });
-      if (up.error) return toast(up.error.message);
-      await sb.rpc('mark_password_changed');
+
+    $('pf_save').onclick = async function(){
+      var phone = g('pf_phone').replace(/\D/g, '');
+      if (phone && phone.length !== 10) return toast('เบอร์โทรกรอกไม่ครบ 10 หลัก');
+      var cit = g('pf_citizen').replace(/\D/g, '');
+      if (cit && cit.length !== 13) return toast('เลขบัตรประชาชนกรอกไม่ครบ 13 หลัก');
+      var birth = beToIso(g('pf_birth'));
+      if (birth === null) return toast('วันเกิดไม่ถูกต้อง ใช้รูปแบบ 16/12/2536');
+      if (!g('pf_name').trim()) return toast('กรุณากรอกชื่อ-สกุล');
+
+      var sig = u.signature || '';
+      if (window.__pfSig) sig = await uploadSignature(window.__pfSig, 'user-' + id);
+
+      var up = await sb.rpc('update_my_profile', { p_data: {
+        name: g('pf_name').trim(),
+        rank: g('pf_rank'),
+        position: g('pf_position').trim(),
+        unit: g('pf_unit').trim(),
+        signature: sig,
+        citizen_id: cit,
+        phone: phone,
+        birth_date: birth,
+        blood_type: g('pf_blood')
+      }});
+      if (up.error || !up.data || !up.data.ok) {
+        return toast('บันทึกไม่สำเร็จ: ' + ((up.data && up.data.error) || (up.error && up.error.message) || ''));
+      }
+
+      window.__pfSig = '';
+      var pn = $('profileName'); if (pn) pn.textContent = g('pf_name').trim();
+      if (window.__me) window.__me.name = g('pf_name').trim();
+      toast('บันทึกข้อมูลแล้ว');
+    };
+
+    $('pf_pw').onclick = async function(){
+      var a = g('pf_new1'), b = g('pf_new2');
+      if (!/^[0-9]{6}$/.test(a)) return toast('รหัสผ่านต้องเป็นตัวเลข 6 หลัก');
+      if (a !== b) return toast('รหัสสองช่องไม่ตรงกัน');
+      var res = await sb.auth.updateUser({ password: a });
+      if (res.error) return toast(res.error.message);
       toast('เปลี่ยนรหัสผ่านแล้ว');
       closeSheet();
     };
   }
 
+  // ---------- เพิ่มเมนู "โปรไฟล์" ในป๊อปอัปบัญชี ----------
   document.addEventListener('click', function(e){
     if (e.target.closest && e.target.closest('#avatarBtn')) {
       setTimeout(function(){
-        var pop = document.getElementById('acctPop');
+        var pop = $('acctPop');
         if (!pop || pop.querySelector('[data-act="myprofile"]')) return;
         var first = pop.querySelector('.ap-item');
         var item = document.createElement('button');
