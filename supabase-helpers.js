@@ -116,14 +116,14 @@ async function supaLoginWithPin(pin) {
 }
 
 async function supaSetAdminPin(pin, currentPassword) {
-  const { data, error } = await sb.rpc('set_admin_pin', { p_pin: pin, p_current_password: currentPassword });
+  const { data, error } = await sb.rpc('set_my_pin', { p_pin: pin, p_current_password: currentPassword });
   if (error) throw new Error(error.message);
   if (!data || !data.ok) throw new Error((data && data.error) || 'บันทึก PIN ไม่สำเร็จ');
   return true;
 }
 
 async function supaDisableAdminPin(currentPassword) {
-  const { data, error } = await sb.rpc('disable_admin_pin', { p_current_password: currentPassword });
+  const { data, error } = await sb.rpc('clear_my_pin', { p_current_password: currentPassword });
   if (error) throw new Error(error.message);
   if (!data || !data.ok) throw new Error((data && data.error) || 'ปิดการใช้ PIN ไม่สำเร็จ');
   return true;
