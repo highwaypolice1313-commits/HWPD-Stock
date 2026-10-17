@@ -21347,5 +21347,68 @@ document.addEventListener('click', async function(e){
 });
 </script>
 
+   <style id="user-pin-style-v2">
+.pin-mode{
+  display:flex !important; gap:4px; padding:4px; margin:0 0 16px;
+  background:var(--panel-soft); border:1px solid var(--panel-line); border-radius:16px;
+}
+.pin-mode button{
+  flex:1; border:0; background:transparent; padding:10px 8px; border-radius:12px;
+  font:inherit; font-size:13px; font-weight:600; color:var(--ink-dim); cursor:pointer;
+  transition:background .2s ease, color .2s ease, transform .12s ease;
+  -webkit-tap-highlight-color:transparent;
+}
+.pin-mode button.on{ background:var(--navy); color:#fff; box-shadow:0 4px 12px rgba(16,42,67,.25); }
+.pin-mode button.is-down{ transform:scale(.96); }
+
+.pin-dots{ display:flex !important; justify-content:center; gap:14px; margin:6px 0 20px; }
+.pin-dots i{
+  width:14px; height:14px; border-radius:50%; display:block;
+  border:2px solid var(--navy); background:transparent; opacity:.35;
+  transition:background .18s ease, transform .18s cubic-bezier(.3,1.4,.5,1), opacity .18s ease;
+}
+.pin-dots i.on{ background:var(--navy); opacity:1; transform:scale(1.15); }
+
+.pin-pad{
+  display:grid !important; grid-template-columns:repeat(3, 76px); justify-content:center;
+  gap:14px; margin:0 auto; max-width:280px;
+}
+.pin-pad button{
+  width:76px !important; height:76px !important; padding:0 !important; margin:0 !important;
+  border-radius:50% !important; border:1px solid var(--panel-line) !important;
+  background:var(--panel) !important; color:var(--ink) !important;
+  font:inherit !important; font-size:26px !important; font-weight:600 !important; line-height:1 !important;
+  display:flex !important; align-items:center !important; justify-content:center !important;
+  box-shadow:0 6px 14px -6px rgba(16,42,67,.28), inset 0 1px 0 rgba(255,255,255,.6) !important;
+  cursor:pointer; user-select:none; -webkit-user-select:none;
+  -webkit-tap-highlight-color:transparent; touch-action:manipulation;
+  transition:transform .12s ease, background-color .12s ease, color .12s ease, box-shadow .12s ease !important;
+}
+.pin-pad button svg{ width:24px; height:24px; }
+.pin-pad button.is-down,
+.pin-pad button:active{
+  transform:scale(.9) !important;
+  background:var(--navy) !important; color:#fff !important;
+  box-shadow:0 2px 6px -2px rgba(16,42,67,.35) !important;
+}
+.pin-pad .ghost{ visibility:hidden; }
+</style>
+
+<script id="user-pin-press-js">
+(function(){
+  function down(e){
+    var b = e.target.closest && e.target.closest('.pin-pad button, .pin-mode button');
+    if (b) b.classList.add('is-down');
+  }
+  function up(){
+    document.querySelectorAll('.is-down').forEach(function(b){ b.classList.remove('is-down'); });
+  }
+  document.addEventListener('pointerdown', down, true);
+  document.addEventListener('pointerup', up, true);
+  document.addEventListener('pointercancel', up, true);
+  document.addEventListener('pointerleave', up, true);
+})();
+</script>
+
 </body>
 </html>
