@@ -11729,14 +11729,20 @@ function openValuePicker({ title, placeholder, current, options, onPick }) {
   const fit = () => {
     if (!sheet || !document.body.contains(sheet)) { cleanup(); return; }
     const h = vv ? vv.height : window.innerHeight;
-    sheet.style.maxHeight = Math.max(280, Math.floor(h - 16)) + 'px';
+    const tb = document.querySelector('.topbar');
+    const floor = tb ? tb.getBoundingClientRect().bottom : 0;
+    const fitH = Math.min(h - 16, window.innerHeight - floor - 8);
+    sheet.style.maxHeight = Math.max(280, Math.floor(fitH)) + 'px';
   };
   const cleanup = () => {
     if (vv) { vv.removeEventListener('resize', fit); vv.removeEventListener('scroll', fit); }
     window.removeEventListener('resize', fit);
   };
-  if (vv) { vv.addEventListener('resize', fit); vv.addEventListener('scroll', fit); }
-  window.addEventListener('resize', fit);
+  const attach = () => {
+    if (vv) { vv.addEventListener('resize', fit); vv.addEventListener('scroll', fit); }
+    window.addEventListener('resize', fit);
+  };
+  attach();
   fit();
 
   // ปิดหน้าเลือก แล้วส่งค่ากลับไปที่ฟอร์ม
@@ -11783,9 +11789,9 @@ function openValuePicker({ title, placeholder, current, options, onPick }) {
     inp.oninput = refreshNote;
     inp.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); saveEntry(); } };
     document.getElementById('ve_ok').onclick = saveEntry;
-    document.getElementById('ve_back').onclick = () => closeSheet();
+    document.getElementById('ve_back').onclick = () => { closeSheet(); attach(); fit(); };
     refreshNote();
-    setTimeout(() => inp.focus({ preventScroll: true }), 250);
+    setTimeout(() => inp.focus(), 250);
   };
 
   document.getElementById('vp_create').onclick = () => openEntry(q.value.trim());
