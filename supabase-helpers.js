@@ -169,7 +169,7 @@ const userToThai = r => ({
   'ยศ': r.rank, 'บทบาทเบิก-ยืม': r.memo_role, 'รูปถ่าย': r.photo, 'ลายเซ็น': r.signature,
   'เลขบัตรประชาชน': r.citizen_id, 'เบอร์โทร': r.phone, 'วัน/เดือน/ปีเกิด': r.birth_date,
   'กรุ๊ปเลือด': r.blood_type, 'auth_user_id': r.auth_user_id,
-  'รหัสหมวก': r.badge_no // ✅ เพิ่มบรรทัดนี้
+  'รหัสเปรียบเทียบปรับ': r.badge_no // ✅ เพิ่มบรรทัดนี้
 });
 const activityToThai = r => ({
   'รหัส': r.id, 'วันที่-เวลา': r.created_at, 'ผู้ทำรายการ': r.actor, 'การกระทำ': r.action, 'รายละเอียด': r.detail
