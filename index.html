@@ -22148,7 +22148,7 @@ async function loadOfficerAdminInfo(u){
   const line = (k, v) => '<div style="display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--panel-line);font-size:13px;">' +
     '<span style="color:var(--ink-dim);flex:none;">' + k + '</span>' +
     '<span style="text-align:right;word-break:break-word;">' + escapeHtml(v || '-') + '</span></div>';
-  const pinText = !row.auth_user_id ? '-' : (!pin ? '-' : (!pin.has_pin ? 'ยังไม่ได้ตั้ง' : (pin.must_change_pin ? 'ยังเป็นวันเกิด (ยังไม่เปลี่ยน)' : 'ตั้งแล้ว')));
+      const pinText = row.auth_user_id ? 'มีบัญชีเข้าระบบแล้ว' : '-'; // ✅ ไม่บังคับเปลี่ยนแล้ว จึงไม่แสดงสถานะวันเกิด
   box.innerHTML =
     '<div style="margin-top:14px;font-weight:600;color:var(--ink);font-size:13.5px;">ข้อมูลทั้งหมด (เฉพาะแอดมิน)</div>' +
     line('ยศ', row.rank) +
