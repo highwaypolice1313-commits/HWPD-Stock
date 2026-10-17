@@ -21410,5 +21410,18 @@ document.addEventListener('click', async function(e){
 })();
 </script>
 
+   <script id="user-notif-signature-v2">
+notifSignature = function(list){
+  var borrowIds = (state.borrow || [])
+    .filter(function(b){ return b['สถานะ'] === 'รออนุมัติ'; })
+    .map(function(b){ return b['รหัสรายการ']; }).sort().join(',');
+  var maintIds = (state.maint || [])
+    .filter(function(m){ return m['สถานะ'] !== 'ซ่อมเสร็จ'; })
+    .map(function(m){ return m['รหัสรายการ']; }).sort().join(',');
+  return list.map(function(a){ return a.title; }).join('|') + '#' + borrowIds + '#' + maintIds;
+};
+refreshNotifBadge();
+</script>
+
 </body>
 </html>
