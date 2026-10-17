@@ -20916,7 +20916,97 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   setInterval(safeRefresh, 15000);
 })();
 </script>
-</body>   
+
+   <style id="user-notif-style">
+.notif-sub{ font-size:13px; color:var(--ink-dim); margin:4px 0 14px; }
+.notif-list{
+  display:flex; flex-direction:column; gap:10px; margin-bottom:14px;
+  max-height:56vh; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
+}
+.notif-item{
+  display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:16px;
+  background:var(--panel-soft, var(--panel)); border:1px solid var(--panel-line);
+}
+.notif-dot{
+  width:10px; height:10px; border-radius:50%; flex:none;
+  background:var(--navy); box-shadow:0 0 0 4px rgba(16,42,67,.10);
+}
+.notif-body{ flex:1; min-width:0; }
+.notif-title{ font-size:14.5px; font-weight:700; color:var(--ink); line-height:1.35; }
+.notif-subt{ font-size:12.5px; color:var(--ink-dim); margin-top:2px; line-height:1.4; }
+.notif-go{
+  flex:none; border:none; border-radius:999px; padding:7px 14px; font:inherit;
+  font-size:12.5px; font-weight:700; background:var(--navy); color:#fff; cursor:pointer;
+}
+.notif-go:active{ transform:scale(.97); }
+.notif-item.tone-bad .notif-dot{ background:#d64545; box-shadow:0 0 0 4px rgba(214,69,69,.14); }
+.notif-item.tone-bad .notif-go{ background:#d64545; }
+.notif-item.tone-warn .notif-dot{ background:#e0a100; box-shadow:0 0 0 4px rgba(224,161,0,.16); }
+.notif-item.tone-warn .notif-go{ background:#b98300; }
+</style>
+
+<style id="user-ptr-style">
+#ptrIndicator{
+  position:fixed; left:0; right:0; top:calc(env(safe-area-inset-top,0px) + 8px); z-index:9000;
+  display:flex; justify-content:center; pointer-events:none;
+  opacity:0; transform:translateY(-12px); transition:opacity .2s, transform .2s;
+}
+#ptrIndicator.show{ opacity:1; transform:none; }
+#ptrIndicator .ptr-pill{
+  display:flex; align-items:center; gap:8px; padding:8px 14px; border-radius:999px;
+  background:var(--panel); color:var(--ink); border:1px solid var(--panel-line);
+  box-shadow:0 6px 18px rgba(0,0,0,.12); font-size:13px; font-weight:600;
+}
+#ptrIndicator .ptr-spin{
+  width:14px; height:14px; border-radius:50%;
+  border:2px solid var(--panel-line); border-top-color:var(--gold);
+}
+#ptrIndicator.loading .ptr-spin{ animation:ptrSpin .8s linear infinite; }
+@keyframes ptrSpin{ to{ transform:rotate(360deg); } }
+</style>
+
+  // ดึงรีเฟรซ
+<script id="user-ptr-refresh">
+(function(){
+  var THRESH = 70, startY = 0, pull = 0, tracking = false, busy = false;
+  var ind = document.createElement('div');
+  ind.id = 'ptrIndicator';
+  ind.innerHTML = '<div class="ptr-pill"><span class="ptr-spin"></span><span class="ptr-txt">ดึงลงเพื่อรีเฟรช</span></div>';
+  document.body.appendChild(ind);
+
+  function blocked(t){
+    return !t || !t.closest || !!t.closest('.sw-wrap, .sheet, .overlay, .command-overlay, input, textarea, select, .tabbar, .fab, .memo-quick, [data-noptr]');
+  }
+  window.addEventListener('touchstart', function(e){
+    if (busy || window.scrollY > 0 || document.body.classList.contains('modal-open') || blocked(e.target)) { tracking = false; return; }
+    startY = e.touches[0].clientY; pull = 0; tracking = true;
+  }, { passive: true });
+
+  window.addEventListener('touchmove', function(e){
+    if (!tracking) return;
+    var dy = e.touches[0].clientY - startY;
+    if (dy <= 0 || window.scrollY > 0) { pull = 0; ind.classList.remove('show'); return; }
+    pull = Math.min(dy * 0.5, 120);
+    ind.classList.add('show');
+    ind.querySelector('.ptr-txt').textContent = pull >= THRESH ? 'ปล่อยเพื่อรีเฟรช' : 'ดึงลงเพื่อรีเฟรช';
+  }, { passive: true });
+
+  window.addEventListener('touchend', function(){
+    if (!tracking) return;
+    tracking = false;
+    if (pull >= THRESH && typeof refreshData === 'function') {
+      busy = true;
+      ind.classList.add('loading');
+      ind.querySelector('.ptr-txt').textContent = 'กำลังรีเฟรช...';
+      Promise.resolve(refreshData()).catch(function(){}).then(function(){
+        busy = false; ind.classList.remove('loading', 'show');
+      });
+    } else {
+      ind.classList.remove('show');
+    }
+  }, { passive: true });
+})();
+</script>
    
 </body>
 </html>
