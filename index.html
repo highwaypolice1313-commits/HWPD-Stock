@@ -20896,6 +20896,27 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <style id="user-ap-toggle-hover">
 .ap-item.ap-toggle:hover svg{ transform:translateX(2px) !important; }
 </style>
+
+<script id="user-notif-badge-boot">
+(function(){
+  function safeRefresh(){
+    try { if (typeof refreshNotifBadge === 'function') refreshNotifBadge(); } catch (e) {}
+  }
+  // อัปเดตตัวเลขทุกครั้งที่เปลี่ยนหน้า ไม่ว่าจะเปิดแอปที่หน้าไหน
+  if (typeof renderTabNow === 'function') {
+    var _rtn = renderTabNow;
+    renderTabNow = function(){
+      var r = _rtn.apply(this, arguments);
+      setTimeout(safeRefresh, 0);
+      return r;
+    };
+  }
+  // ตอนเปิดแอปครั้งแรก รอข้อมูลโหลดเสร็จแล้วอัปเดตอีกครั้ง และตรวจซ้ำทุก 15 วินาที
+  setTimeout(safeRefresh, 800);
+  setInterval(safeRefresh, 15000);
+})();
+</script>
+</body>   
    
 </body>
 </html>
