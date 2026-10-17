@@ -21028,11 +21028,13 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 .ve-sheet .btn-row{ margin-top:12px; }
 </style>
  
- <style id="user-hide-badge-pull">
-html:has(.refresh-btn.loading) .tab-dot,
-html:has(.refresh-btn.loading) #notifCount{ display:none !important; animation:none !important; }
-html.ptr-pulling .tab-dot{ display:none !important; animation:none !important; }
+<style id="user-hide-badge-pull">
+html.ptr-pulling .tab-dot,
+html.ptr-pulling #notifCount,
+html.refresh-busy .tab-dot,
+html.refresh-busy #notifCount{ display:none !important; animation:none !important; }
 </style>
+   
 <script id="user-hide-badge-pull-js">
 (function(){
   var html = document.documentElement;
@@ -21056,6 +21058,21 @@ html.ptr-pulling .tab-dot{ display:none !important; animation:none !important; }
   }
   window.addEventListener('touchend', end, { passive: true });
   window.addEventListener('touchcancel', end, { passive: true });
+})();
+</script>
+
+   <script id="user-refresh-busy-flag">
+(function(){
+  var html = document.documentElement;
+  var last = null;
+  function sync(){
+    var b = document.getElementById('refreshBtn');
+    var busy = !!(b && b.classList.contains('loading'));
+    if (busy !== last) { last = busy; html.classList.toggle('refresh-busy', busy); }
+  }
+  var root = document.querySelector('.topbar') || document.body;
+  new MutationObserver(sync).observe(root, { attributes: true, attributeFilter: ['class'], subtree: true });
+  sync();
 })();
 </script>
 
