@@ -7586,6 +7586,21 @@ html, body{
   }
 }
 </style>
+
+<style id="user-dash-dark-text">
+:root[data-theme="night"] #view-dashboard .dbx-h1,
+:root[data-theme="cibnight"] #view-dashboard .dbx-h1,
+:root[data-theme="night"] #view-dashboard .dbx-title,
+:root[data-theme="cibnight"] #view-dashboard .dbx-title{
+  color:#ffffff !important;
+}
+:root[data-theme="night"] #view-dashboard .dbx-date,
+:root[data-theme="cibnight"] #view-dashboard .dbx-date,
+:root[data-theme="night"] #view-dashboard .dbx-sub,
+:root[data-theme="cibnight"] #view-dashboard .dbx-sub{
+  color:#c9d6e8 !important;
+}
+</style>
       
 </head>
 
@@ -22067,21 +22082,6 @@ function bdText(iso){
   return p[2] + ' ' + TH_MONTHS[p[1] - 1] + ' ' + (p[0] + 543);
 }
 
-<style id="user-dash-dark-text">
-:root[data-theme="night"] #view-dashboard .dbx-h1,
-:root[data-theme="cibnight"] #view-dashboard .dbx-h1,
-:root[data-theme="night"] #view-dashboard .dbx-title,
-:root[data-theme="cibnight"] #view-dashboard .dbx-title{
-  color:#ffffff !important;
-}
-:root[data-theme="night"] #view-dashboard .dbx-date,
-:root[data-theme="cibnight"] #view-dashboard .dbx-date,
-:root[data-theme="night"] #view-dashboard .dbx-sub,
-:root[data-theme="cibnight"] #view-dashboard .dbx-sub{
-  color:#c9d6e8 !important;
-}
-</style>
-</body>
 </script>
 </body>
 </html>
