@@ -24,15 +24,6 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#17324f">
 
-<!-- ไอคอนหลักสำหรับ iPhone และ iPad ทั่วไป (180x180) -->
-<link rel="apple-touch-icon" sizes="180x180" href="https://highwaypolice1313-commits.github.io/HWPD-Stock/apple-touch-icon.png?v=3">
-
-<!-- รองรับ iPad ขนาดมาตรฐาน (รุ่นเก่าและรุ่นจอปกติ) -->
-<link rel="apple-touch-icon" sizes="152x152" href="https://highwaypolice1313-commits.github.io/HWPD-Stock/apple-touch-icon-152x152.png?v=3">
-
-<!-- รองรับ iPad Pro รุ่นจอใหญ่ -->
-<link rel="apple-touch-icon" sizes="167x167" href="https://highwaypolice1313-commits.github.io/HWPD-Stock/apple-touch-icon-167x167.png?v=3">
-
 <title>ระบบพัสดุครุภัณฑ์ - ตำรวจทางหลวง</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14545,13 +14536,36 @@ function openUserForm(u) {
       <div class="field" style="max-width:140px;"><label>ยศ</label><select class="input" id="u_rank"><option value="">-</option>${RANK_OPTIONS.map(r => `<option ${editing && u['ยศ']===r?'selected':''}>${r}</option>`).join('')}</select></div>
       <div class="field"><label>ชื่อ-สกุล</label><input class="input" id="u_name" value="${editing ? escapeHtml(u['ชื่อ-สกุล']) : ''}"></div>
     </div>
+    <div class="field"><label>ชื่อผู้ใช้ (ใช้เข้าระบบ)</label><input class="input" id="u_username" autocapitalize="none" value="${editing ? escapeHtml(u['ชื่อผู้ใช้'] || '') : ''}" ${editing ? 'disabled' : ''}></div>
+    <div class="memo-two-col">
+      <div class="field"><label>เลขบัตรประชาชน</label><input class="input" id="u_citizen" inputmode="numeric" maxlength="13"></div>
+      <div class="field"><label>เบอร์โทร</label><input class="input" id="u_phone" inputmode="tel"></div>
+    </div>
+    <div class="memo-two-col">
+      <div class="field"><label>วัน/เดือน/ปีเกิด</label><input class="input" type="date" id="u_birth"></div>
+      <div class="field"><label>กรุ๊ปเลือด</label><select class="input" id="u_blood">${['','A+','A-','B+','B-','AB+','AB-','O+','O-','ไม่ทราบ'].map(b => `<option value="${b}">${b || 'ไม่ระบุ'}</option>`).join('')}</select></div>
+    </div>
     <div class="field"><label>ตำแหน่ง</label><input class="input" id="u_position" value="${editing ? escapeHtml(u['ตำแหน่ง'])||'' : ''}" placeholder="เช่น ผบ.หมู่ ส.ทล.3 กก.1 บก.ทล."></div>
     <div class="field"><label>หน่วยงาน</label><input class="input" id="u_unit" value="${editing ? escapeHtml(u['หน่วยงาน'])||'' : ''}"></div>
     <div class="field"><label>บทบาทในบันทึกเบิก-ยืม</label><select class="input" id="u_memorole">${MEMO_ROLES.map(r => `<option ${editing && u['บทบาทเบิก-ยืม']===r?'selected':''}>${r}</option>`).join('')}</select></div>
-    <div class="field"><label>ระดับผู้ใช้งาน (อ้างอิงเท่านั้น ไม่ผูกกับรหัสผ่านเข้าระบบ)</label><select class="input" id="u_role"><option value="viewer" ${editing && u['สิทธิ์']==='viewer'?'selected':''}>ดูอย่างเดียว</option><option value="admin" ${editing && u['สิทธิ์']==='admin'?'selected':''}>แอดมิน</option></select></div>
+    <div class="field"><label>ระดับผู้ใช้งาน (อ้างอิงเท่านั้น ไม่ผูกกับรหัสผ่านเข้าระบบ)</label><select class="input" id="u_role"><option value="officer" ${editing && u['สิทธิ์']!=='admin'?'selected':''}>เจ้าหน้าที่</option><option value="admin" ${editing && u['สิทธิ์']==='admin'?'selected':''}>แอดมิน</option></select></div>
     <div class="btn-row"><button class="btn btn-ghost" id="btnCancel">ยกเลิก</button><button class="btn btn-primary" id="btnSave">บันทึก</button></div>
     ${editing ? `<div class="btn-row"><button class="btn btn-danger" id="btnDeleteUser">ลบรายชื่อนี้</button></div>` : ''}
   `);
+
+  if (editing) {
+    sb.from('users').select('auth_user_id').eq('id', officerId(u)).maybeSingle()
+      .then(({ data }) => (data && data.auth_user_id)
+        ? sb.from('user_private').select('citizen_id,phone,birth_date,blood_type').eq('auth_user_id', data.auth_user_id).maybeSingle()
+        : { data: null })
+      .then(({ data }) => {
+        if (!data) return;
+        document.getElementById('u_citizen').value = data.citizen_id || '';
+        document.getElementById('u_phone').value = data.phone || '';
+        document.getElementById('u_birth').value = data.birth_date || '';
+        document.getElementById('u_blood').value = data.blood_type || '';
+      });
+  }
 
   // ---------- รูปถ่ายประจำตัว ----------
   document.getElementById('u_photoFile').onchange = (e) => {
@@ -14588,11 +14602,23 @@ function openUserForm(u) {
       const photoPayload = isInlineImage(userPhoto) ? { photoData: userPhoto } : { photo: userPhoto };
       const sigUrl = await uploadSignature(val('u_sig'), 'user-' + (editing ? (officerId(u) || 'x') : 'new'));
       if (!editing) {
-        await apiPost('addUser', {
-          name: val('u_name'), rank: val('u_rank'), position: val('u_position'), unit: val('u_unit'),
-          role: val('u_role'), memoRole: val('u_memorole'), ...photoPayload, signature: sigUrl
-        });
+        const { data: cr, error: ce } = await sb.functions.invoke('admin-users', { body: {
+          action: 'create', username: val('u_username').trim(), name: val('u_name'),
+          position: val('u_position'), unit: val('u_unit'), rank: val('u_rank'), role: val('u_role'),
+          memoRole: val('u_memorole'), phone: val('u_phone'), citizenId: val('u_citizen'),
+          birthDate: val('u_birth'), bloodType: val('u_blood')
+        } });
+        if (ce || !cr || !cr.ok) throw new Error((cr && cr.error) || (ce && ce.message) || 'สร้างบัญชีไม่สำเร็จ');
+        await apiPost('updateUserRole', { officerId: cr.id, ...photoPayload, signature: sigUrl });
       } else {
+        const { data: au } = await sb.from('users').select('auth_user_id').eq('id', officerId(u)).maybeSingle();
+        const authId = au && au.auth_user_id;
+        const oldRole = u['สิทธิ์'] === 'admin' ? 'admin' : 'officer';
+        const newRole = val('u_role');
+        if (authId && newRole !== oldRole) {
+          const { data: rr, error: re } = await sb.functions.invoke('admin-users', { body: { action: 'setRole', authId, role: newRole } });
+          if (re || !rr || !rr.ok) throw new Error((rr && rr.error) || (re && re.message) || 'เปลี่ยนระดับไม่สำเร็จ');
+        }
         await apiPost('updateUserRole', {
           officerId: officerId(u) || undefined,
           lineUserId: (!officerId(u) && u['LINEUserId']) || undefined,
@@ -21564,5 +21590,221 @@ refreshNotifBadge();
 </style>
 
    
+<style id="ac-login-style">
+#acLogin{ display:flex; flex-direction:column; gap:12px; width:100%; max-width:320px; margin:0 auto; }
+#acLogin .ac-mode{ display:flex; gap:4px; padding:4px; border-radius:16px; background:var(--panel-soft); border:1px solid var(--panel-line); }
+#acLogin .ac-mode button{ flex:1; border:0; background:transparent; padding:9px; border-radius:12px; font:inherit; font-size:13px; font-weight:600; color:var(--ink-dim); cursor:pointer; }
+#acLogin .ac-mode button.on{ background:var(--navy); color:#fff; }
+.ac-slots{ display:flex; justify-content:center; gap:8px; }
+.ac-slots span{ width:40px; height:44px; border-radius:12px; border:1.5px solid rgba(255,255,255,.35); background:rgba(255,255,255,.12); display:flex; align-items:center; justify-content:center; }
+.ac-slots span.on{ border-color:#fff; background:rgba(255,255,255,.22); }
+.ac-slots span.on::before{ content:""; width:11px; height:11px; border-radius:50%; background:#fff; }
+.ac-pad{ display:grid; grid-template-columns:repeat(3, 64px); gap:10px; justify-content:center; margin-top:10px; }
+.ac-pad button{ width:64px; height:64px; border-radius:50%; border:1px solid var(--panel-line); background:var(--panel); color:var(--ink); font:inherit; font-size:22px; font-weight:600; cursor:pointer; box-shadow:0 6px 14px -6px rgba(16,42,67,.28); transition:transform .12s ease, background-color .12s ease, color .12s ease; }
+.ac-pad button.is-down, .ac-pad button:active{ transform:scale(.9); background:var(--navy); color:#fff; }
+.ac-pad .ghost{ visibility:hidden; }
+#acChange{ position:fixed; inset:0; z-index:9500; display:none; align-items:center; justify-content:center; padding:20px; background:rgba(15,25,38,.6); }
+#acChange.open{ display:flex; }
+#acChange .ac-card{ width:100%; max-width:360px; padding:22px; border-radius:24px; background:var(--panel); border:1px solid var(--panel-line); }
+#acChange h3{ margin:0 0 6px; font-size:17px; color:var(--ink); }
+#acChange p{ margin:0 0 14px; font-size:12.5px; color:var(--ink-dim); line-height:1.5; }
+#acProfile .ac-row{ display:flex; justify-content:space-between; gap:12px; padding:10px 0; border-bottom:1px solid var(--panel-line); font-size:13.5px; }
+#acProfile .ac-row span:first-child{ color:var(--ink-dim); }
+</style>
+
+<div id="acChange">
+  <div class="ac-card">
+    <h3>ตั้งรหัสผ่านใหม่</h3>
+    <p>เพื่อความปลอดภัย กรุณาเปลี่ยนรหัสตั้งต้นก่อนใช้งาน (อย่างน้อย 6 ตัว)</p>
+    <div class="field"><label>รหัสผ่านใหม่</label><input class="input" id="acNew1" type="password" autocomplete="new-password"></div>
+    <div class="field"><label>ยืนยันรหัสผ่านใหม่</label><input class="input" id="acNew2" type="password" autocomplete="new-password"></div>
+    <div class="hint" id="acChangeErr" style="color:#d64545;"></div>
+    <button class="btn btn-primary" id="acChangeGo" type="button" style="width:100%;margin-top:8px;">บันทึกรหัสใหม่</button>
+  </div>
+</div>
+
+<script id="ac-login-js">
+(function(){
+  var loginScreen = document.getElementById('loginScreen');
+  var sub = document.getElementById('loginSubText');
+  if (!loginScreen || !sub) return;
+
+  ['roleSelectBox', 'roleLoginForm'].forEach(function(id){
+    var el = document.getElementById(id); if (el) el.style.display = 'none';
+  });
+
+  var wrap = document.createElement('div');
+  wrap.id = 'acLogin';
+  wrap.innerHTML =
+    '<div class="field"><label>ชื่อผู้ใช้</label><input class="input" id="acUser" autocomplete="username" autocapitalize="none" autocorrect="off"></div>' +
+    '<div class="ac-mode"><button type="button" data-m="pw" class="on">รหัสผ่าน</button><button type="button" data-m="pin">PIN 6 หลัก</button></div>' +
+    '<div class="field" id="acPwWrap"><label>รหัสผ่าน</label><input class="input" id="acPw" type="password" autocomplete="current-password"></div>' +
+    '<div id="acPinWrap" style="display:none">' +
+      '<div class="ac-slots" id="acSlots"><span></span><span></span><span></span><span></span><span></span><span></span></div>' +
+      '<div class="ac-pad">' +
+        [1,2,3,4,5,6,7,8,9].map(function(n){ return '<button type="button" data-k="'+n+'">'+n+'</button>'; }).join('') +
+        '<span class="ghost"></span><button type="button" data-k="0">0</button><button type="button" data-k="del">⌫</button>' +
+      '</div>' +
+    '</div>' +
+    '<button class="btn btn-primary" id="acGo" type="button" style="width:100%;">เข้าสู่ระบบ</button>' +
+    '<div class="hint" id="acErr" style="color:#ffb4bd;"></div>';
+  sub.insertAdjacentElement('afterend', wrap);
+
+  var mode = localStorage.getItem('acLoginMode') === 'pin' ? 'pin' : 'pw';
+  var pin = '';
+  function setMode(m){
+    mode = m; localStorage.setItem('acLoginMode', m);
+    wrap.querySelectorAll('.ac-mode button').forEach(function(b){ b.classList.toggle('on', b.dataset.m === m); });
+    document.getElementById('acPwWrap').style.display = m === 'pw' ? '' : 'none';
+    document.getElementById('acPinWrap').style.display = m === 'pin' ? '' : 'none';
+    pin = ''; paintPin();
+  }
+  function paintPin(){
+    document.querySelectorAll('#acSlots span').forEach(function(s, i){ s.classList.toggle('on', i < pin.length); });
+  }
+  function err(msg){ document.getElementById('acErr').textContent = msg || ''; }
+  setMode(mode);
+
+  function emailFor(u){
+    var hex = Array.from(new TextEncoder().encode(u.trim().toLowerCase())).map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+    return 'u' + hex + '@hpd.local';
+  }
+
+  async function login(username, secret){
+    var r = await sb.auth.signInWithPassword({ email: emailFor(username), password: secret });
+    if (r.error) throw new Error('ชื่อผู้ใช้หรือรหัสไม่ถูกต้อง');
+    var p = await sb.from('profiles').select('role,display_name,active,must_change_password').eq('id', r.data.user.id).maybeSingle();
+    if (!p.data || !p.data.active) { await sb.auth.signOut(); throw new Error('บัญชีนี้ยังไม่เปิดใช้งาน'); }
+    return { auth: r.data, prof: p.data };
+  }
+
+  function forceChange(){
+    return new Promise(function(resolve){
+      var box = document.getElementById('acChange');
+      box.classList.add('open');
+      document.getElementById('acChangeGo').onclick = async function(){
+        var a = document.getElementById('acNew1').value, b2 = document.getElementById('acNew2').value;
+        var e = document.getElementById('acChangeErr');
+        if (a.length < 6) { e.textContent = 'รหัสต้องมีอย่างน้อย 6 ตัว'; return; }
+        if (a !== b2) { e.textContent = 'รหัสสองช่องไม่ตรงกัน'; return; }
+        var up = await sb.auth.updateUser({ password: a });
+        if (up.error) { e.textContent = up.error.message; return; }
+        await sb.rpc('mark_password_changed');
+        box.classList.remove('open');
+        resolve();
+      };
+    });
+  }
+
+  async function finish(prof, auth){
+    window.__acAuthId = auth.user.id;
+    var role = prof.role === 'admin' ? 'admin' : 'viewer';
+    saveSession({ role: role, token: auth.session.access_token, name: prof.display_name });
+    await completeLogin({ role: role, name: prof.display_name, token: auth.session.access_token });
+    var pill = document.getElementById('rolePill');
+    if (pill) pill.textContent = prof.role === 'admin' ? 'แอดมิน' : 'เจ้าหน้าที่';
+  }
+
+  async function submit(){
+    var u = document.getElementById('acUser').value.trim();
+    var secret = mode === 'pw' ? document.getElementById('acPw').value : pin;
+    err('');
+    if (!u) return err('กรอกชื่อผู้ใช้');
+    if (mode === 'pw' && !secret) return err('กรอกรหัสผ่าน');
+    if (mode === 'pin' && secret.length !== 6) return err('กรอก PIN ให้ครบ 6 หลัก');
+    var btn = document.getElementById('acGo'); btn.disabled = true; btn.textContent = 'กำลังเข้าสู่ระบบ...';
+    try {
+      var res = await login(u, secret);
+      if (res.prof.must_change_password) await forceChange();
+      await finish(res.prof, res.auth);
+    } catch (e) {
+      err(e.message || 'เข้าสู่ระบบไม่สำเร็จ');
+      pin = ''; paintPin();
+      var pw = document.getElementById('acPinWrap');
+      if (pw && mode === 'pin') { pw.classList.remove('pin-shake'); void pw.offsetWidth; pw.classList.add('pin-shake'); }
+    } finally { btn.disabled = false; btn.textContent = 'เข้าสู่ระบบ'; }
+  }
+
+  wrap.querySelectorAll('.ac-mode button').forEach(function(b){ b.onclick = function(){ setMode(b.dataset.m); }; });
+  document.getElementById('acGo').onclick = submit;
+  document.getElementById('acPw').addEventListener('keydown', function(e){ if (e.key === 'Enter') submit(); });
+  wrap.querySelector('.ac-pad').addEventListener('click', function(e){
+    var b = e.target.closest('[data-k]'); if (!b) return;
+    if (b.dataset.k === 'del') pin = pin.slice(0, -1);
+    else if (pin.length < 6) pin += b.dataset.k;
+    paintPin();
+    if (pin.length === 6) submit();
+  });
+  document.addEventListener('pointerdown', function(e){
+    var b = e.target.closest && e.target.closest('.ac-pad button'); if (b) b.classList.add('is-down');
+  }, true);
+  document.addEventListener('pointerup', function(){ document.querySelectorAll('.is-down').forEach(function(b){ b.classList.remove('is-down'); }); }, true);
+
+  var _clr = clearSession;
+  clearSession = function(){ try { sb.auth.signOut(); } catch (e) {} return _clr.apply(this, arguments); };
+
+  async function openProfile(){
+    var id = window.__acAuthId || (await sb.auth.getSession()).data.session?.user?.id;
+    if (!id) return toast('กรุณาเข้าสู่ระบบใหม่');
+    var r = await sb.from('users').select('*').eq('auth_user_id', id).maybeSingle();
+    var pv = await sb.from('user_private').select('*').eq('auth_user_id', id).maybeSingle();
+    var u = Object.assign({}, r.data || {}, pv.data || {});
+    var BLOOD = ['', 'A+','A-','B+','B-','AB+','AB-','O+','O-','ไม่ทราบ'];
+    showSheet(
+      '<div class="sheet-title">โปรไฟล์ของฉัน</div>' +
+      '<div id="acProfile">' +
+        '<div class="ac-row"><span>ชื่อ-สกุล</span><span>' + escapeHtml(u.name || '-') + '</span></div>' +
+        '<div class="ac-row"><span>ชื่อผู้ใช้</span><span>' + escapeHtml(u.username || '-') + '</span></div>' +
+        '<div class="ac-row"><span>ตำแหน่ง / หน่วยงาน</span><span>' + escapeHtml([u.position, u.unit].filter(Boolean).join(' / ') || '-') + '</span></div>' +
+        '<div class="ac-row"><span>เลขบัตรประชาชน</span><span>' + escapeHtml(u.citizen_id || '-') + '</span></div>' +
+        '<div class="ac-row"><span>วัน/เดือน/ปีเกิด</span><span>' + escapeHtml(u.birth_date || '-') + '</span></div>' +
+      '</div>' +
+      '<div class="field" style="margin-top:14px"><label>เบอร์โทร</label><input class="input" id="pf_phone" value="' + escapeHtml(u.phone || '') + '"></div>' +
+      '<div class="field"><label>กรุ๊ปเลือด</label><select class="input" id="pf_blood">' +
+        BLOOD.map(function(b){ return '<option value="' + b + '"' + (u.blood_type === b ? ' selected' : '') + '>' + (b || 'ไม่ระบุ') + '</option>'; }).join('') +
+      '</select></div>' +
+      '<div class="btn-row"><button class="btn btn-primary" id="pf_save">บันทึกข้อมูล</button></div>' +
+      '<div class="section-title" style="margin-top:18px;font-size:14px;">เปลี่ยนรหัสผ่าน</div>' +
+      '<div class="field"><label>รหัสผ่านใหม่ (อย่างน้อย 6 ตัว)</label><input class="input" id="pf_new1" type="password" autocomplete="new-password"></div>' +
+      '<div class="field"><label>ยืนยันรหัสผ่านใหม่</label><input class="input" id="pf_new2" type="password" autocomplete="new-password"></div>' +
+      '<div class="btn-row"><button class="btn btn-ghost" id="pf_pw">เปลี่ยนรหัสผ่าน</button></div>'
+    );
+    document.getElementById('pf_save').onclick = async function(){
+      var up = await sb.from('user_private').upsert({ auth_user_id: id, phone: document.getElementById('pf_phone').value.trim(), blood_type: document.getElementById('pf_blood').value, updated_at: new Date().toISOString() });
+      toast(up.error ? 'บันทึกไม่สำเร็จ' : 'บันทึกข้อมูลแล้ว');
+    };
+    document.getElementById('pf_pw').onclick = async function(){
+      var a = document.getElementById('pf_new1').value, b2 = document.getElementById('pf_new2').value;
+      if (a.length < 6) return toast('รหัสต้องมีอย่างน้อย 6 ตัว');
+      if (a !== b2) return toast('รหัสสองช่องไม่ตรงกัน');
+      var up = await sb.auth.updateUser({ password: a });
+      if (up.error) return toast(up.error.message);
+      await sb.rpc('mark_password_changed');
+      toast('เปลี่ยนรหัสผ่านแล้ว');
+      closeSheet();
+    };
+  }
+
+  document.addEventListener('click', function(e){
+    if (e.target.closest && e.target.closest('#avatarBtn')) {
+      setTimeout(function(){
+        var pop = document.getElementById('acctPop');
+        if (!pop || pop.querySelector('[data-act="myprofile"]')) return;
+        var first = pop.querySelector('.ap-item');
+        var item = document.createElement('button');
+        item.type = 'button'; item.className = 'ap-item'; item.dataset.act = 'myprofile';
+        item.innerHTML = '<svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="7" r="3.5" stroke="currentColor" stroke-width="1.5"/><path d="M3.5 17c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>โปรไฟล์</span>';
+        if (first) pop.insertBefore(item, first); else pop.appendChild(item);
+      }, 0);
+    }
+    var pf = e.target.closest && e.target.closest('[data-act="myprofile"]');
+    if (pf) {
+      e.stopImmediatePropagation(); e.preventDefault();
+      closeAcctPop(); openProfile();
+    }
+  }, true);
+})();
+</script>
+
 </body>
 </html>
