@@ -13653,11 +13653,13 @@ function openOfficerProfile(u) {
         </div>
       </div>`;
     }).join('') : `<div class="hint">ไม่มีพัสดุในความครอบครองขณะนี้</div>`}
+    ${isAdmin() ? '<div id="opAdmin"></div>' : ''}
     <div class="btn-row">
       <button class="btn btn-ghost" id="btnPrintPortfolio">พิมพ์รายงาน A4</button>
       ${isAdmin() ? `<button class="btn btn-primary" id="btnEditOfficer">แก้ไขข้อมูล</button>` : ''}
     </div>
   `);
+  if (isAdmin()) loadOfficerAdminInfo(u);
   document.getElementById('btnPrintPortfolio').onclick = () => printOfficerPortfolio(u, holdings);
   const editBtn = document.getElementById('btnEditOfficer');
   if (editBtn) editBtn.onclick = () => { closeSheet(); openUserForm(u); };
@@ -21965,6 +21967,43 @@ function bindFmt(el, fn, maxLen){
   if (!el) return;
   el.maxLength = maxLen;
   el.addEventListener('input', function(){ el.value = fn(el.value); });
+}
+</script>
+<script id="officer-admin-info">
+async function loadOfficerAdminInfo(u){
+  const box = document.getElementById('opAdmin');
+  if (!box) return;
+  box.innerHTML = '<div class="hint">กำลังโหลดข้อมูลทั้งหมด...</div>';
+  const { data: row, error } = await sb.from('users').select('*').eq('id', officerId(u)).maybeSingle();
+  if (error || !row) { box.innerHTML = '<div class="hint">โหลดข้อมูลไม่สำเร็จ</div>'; return; }
+  let pv = {}, pf = {}, pin = null;
+  if (row.auth_user_id) {
+    const a = await sb.from('user_private').select('*').eq('auth_user_id', row.auth_user_id).maybeSingle();
+    pv = a.data || {};
+    const p = await sb.from('profiles').select('role,active,created_at').eq('id', row.auth_user_id).maybeSingle();
+    pf = p.data || {};
+    const st = await sb.rpc('admin_pin_status', { p_uid: row.auth_user_id });
+    pin = st.data || null;
+  }
+  const line = (k, v) => '<div style="display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--panel-line);font-size:13px;">' +
+    '<span style="color:var(--ink-dim);flex:none;">' + k + '</span>' +
+    '<span style="text-align:right;word-break:break-word;">' + escapeHtml(v || '-') + '</span></div>';
+  const pinText = !row.auth_user_id ? '-' : (!pin ? '-' : (!pin.has_pin ? 'ยังไม่ได้ตั้ง' : (pin.must_change_pin ? 'ยังเป็นวันเกิด (ยังไม่เปลี่ยน)' : 'ตั้งแล้ว')));
+  box.innerHTML =
+    '<div style="margin-top:14px;font-weight:600;color:var(--ink);font-size:13.5px;">ข้อมูลทั้งหมด (เฉพาะแอดมิน)</div>' +
+    line('ชื่อ-สกุล', row.name) +
+    line('ยศ', row.rank) +
+    line('ตำแหน่ง', row.position) +
+    line('หน่วยงาน', row.unit) +
+    line('บทบาทในบันทึกเบิก-ยืม', row.memo_role) +
+    line('ระดับสิทธิ์เข้าระบบ', !row.auth_user_id ? 'ยังไม่มีบัญชีเข้าระบบ' : (pf.role === 'admin' ? 'แอดมิน' : 'เจ้าหน้าที่')) +
+    line('สถานะบัญชี', !row.auth_user_id ? '-' : (pf.active === false ? 'ปิดใช้งาน' : 'เปิดใช้งาน')) +
+    line('PIN', pinText) +
+    line('เลขบัตรประชาชน', pv.citizen_id ? fmtCitizen(pv.citizen_id) : '') +
+    line('เบอร์โทร', pv.phone ? fmtPhone(pv.phone) : '') +
+    line('วัน/เดือน/ปีเกิด', pv.birth_date ? systemDate(pv.birth_date) : '') +
+    line('กรุ๊ปเลือด', pv.blood_type) +
+    line('วันที่เพิ่มในระบบ', row.created_at ? systemDate(row.created_at) : '');
 }
 </script>
 </body>
