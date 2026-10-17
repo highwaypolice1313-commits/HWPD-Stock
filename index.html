@@ -21623,6 +21623,11 @@ refreshNotifBadge();
 #acChange p{ margin:0 0 14px; font-size:12.5px; color:var(--ink-dim); line-height:1.5; }
 #acProfile .ac-row{ display:flex; justify-content:space-between; gap:12px; padding:10px 0; border-bottom:1px solid var(--panel-line); font-size:13.5px; }
 #acProfile .ac-row span:first-child{ color:var(--ink-dim); }
+.ac-tiles{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.ac-tile{ display:flex; flex-direction:column; align-items:center; gap:8px; padding:14px 8px; border-radius:18px; border:1px solid rgba(255,255,255,.22); background:rgba(255,255,255,.1); color:#fff; font:inherit; cursor:pointer; transition:transform .12s ease, background-color .12s ease; }
+.ac-tile:active{ transform:scale(.96); background:rgba(255,255,255,.2); }
+.ac-av{ width:52px; height:52px; border-radius:50%; background:#ffd400; color:#002a5c; font-weight:700; font-size:20px; display:flex; align-items:center; justify-content:center; }
+.ac-nm{ font-size:13.5px; font-weight:600; text-align:center; line-height:1.3; color:#fff; }
 </style>
 
 <div id="acChange">
@@ -21665,8 +21670,15 @@ refreshNotifBadge();
     '<div class="hint" id="acErr" style="color:#ffb4bd;"></div>';
   sub.insertAdjacentElement('afterend', wrap);
 
-  var remembered = localStorage.getItem(REMEMBER) || '';
-  var mode = localStorage.getItem('acLoginMode') === 'pw' ? 'pw' : (remembered ? 'pin' : 'pw');
+  function getAccounts(){ try { return JSON.parse(localStorage.getItem('acAccounts') || '[]'); } catch (e) { return []; } }
+  function rememberAccount(u, n){
+    var l = getAccounts().filter(function(a){ return a.u !== u; });
+    l.unshift({ u: u, n: n || u });
+    localStorage.setItem('acAccounts', JSON.stringify(l.slice(0, 6)));
+  }
+  var accounts = getAccounts();
+  var remembered = '';
+  var mode = localStorage.getItem('acLoginMode') === 'pw' ? 'pw' : 'pin';
   var pin = '';
 
   function paintPin(){
@@ -21680,28 +21692,54 @@ refreshNotifBadge();
     document.getElementById('acPinWrap').style.display = m === 'pin' ? '' : 'none';
     pin = ''; paintPin(); err('');
   }
-  function showRemembered(){
+  function showPanel(on){
+    ['acPwWrap', 'acPinWrap', 'acGo'].forEach(function(id){
+      var el = document.getElementById(id);
+      if (!el) return;
+      if (!on) el.style.display = 'none';
+    });
+    wrap.querySelector('.ac-mode').style.display = on ? '' : 'none';
+    if (on) setMode(mode);
+  }
+  function showTiles(){
     var h = document.getElementById('acHello');
-    if (remembered) {
-      document.getElementById('acUser').value = remembered;
-      document.getElementById('acUserWrap').style.display = 'none';
-      h.style.display = '';
-      h.innerHTML = '<div class="ac-hello">เข้าสู่ระบบในชื่อ <b>' + escapeHtml(remembered) + '</b></div>' +
-        '<div style="text-align:center;margin-top:4px;"><button type="button" class="ac-link" id="acSwitch">ไม่ใช่ฉัน / เปลี่ยนผู้ใช้</button></div>';
-      document.getElementById('acSwitch').onclick = function(){
-        localStorage.removeItem(REMEMBER); remembered = '';
-        document.getElementById('acUser').value = '';
-        document.getElementById('acUserWrap').style.display = '';
-        h.style.display = 'none';
-        setMode('pw');
-      };
-    } else {
+    document.getElementById('acUserWrap').style.display = 'none';
+    showPanel(false);
+    h.style.display = '';
+    h.innerHTML = '<div class="ac-tiles">' + accounts.map(function(a){
+        var ini = escapeHtml(String(a.n || a.u).trim().charAt(0).toUpperCase());
+        return '<button type="button" class="ac-tile" data-u="' + escapeHtml(a.u) + '"><span class="ac-av">' + ini + '</span><span class="ac-nm">' + escapeHtml(a.n || a.u) + '</span></button>';
+      }).join('') + '</div>' +
+      '<div style="text-align:center;margin-top:10px;"><button type="button" class="ac-link" id="acOther">ใช้ผู้ใช้อื่น</button></div>';
+    h.querySelectorAll('.ac-tile').forEach(function(b){ b.onclick = function(){ pick(b.dataset.u); }; });
+    document.getElementById('acOther').onclick = function(){
+      remembered = ''; document.getElementById('acUser').value = '';
       h.style.display = 'none';
       document.getElementById('acUserWrap').style.display = '';
-    }
+      showPanel(true); setMode('pw');
+    };
   }
-  showRemembered();
-  setMode(mode);
+  function pick(u){
+    remembered = u;
+    var a = accounts.filter(function(x){ return x.u === u; })[0];
+    var h = document.getElementById('acHello');
+    document.getElementById('acUser').value = u;
+    document.getElementById('acUserWrap').style.display = 'none';
+    h.style.display = '';
+    h.innerHTML = '<div class="ac-hello">เข้าสู่ระบบในชื่อ <b>' + escapeHtml((a && a.n) || u) + '</b></div>' +
+      '<div style="text-align:center;margin-top:4px;"><button type="button" class="ac-link" id="acSwitch">เปลี่ยนผู้ใช้</button></div>';
+    document.getElementById('acSwitch').onclick = function(){ remembered = ''; showTiles(); };
+    showPanel(true);
+    setMode('pin');
+  }
+
+  // ไม่มีช่องชื่อผู้ใช้: แสดงเฉพาะแป้น PIN
+  document.getElementById('acHello').style.display = 'none';
+  document.getElementById('acUserWrap').style.display = 'none';
+  wrap.querySelector('.ac-mode').style.display = 'none';
+  document.getElementById('acPwWrap').style.display = 'none';
+  document.getElementById('acGo').style.display = 'none';
+  document.getElementById('acPinWrap').style.display = '';
 
   function emailFor(u){
     var hex = Array.from(new TextEncoder().encode(u.trim().toLowerCase())).map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
@@ -21716,11 +21754,11 @@ refreshNotifBadge();
   }
 
   // เข้าด้วย PIN: เซิร์ฟเวอร์ตรวจ PIN แล้วออกลิงก์ชั่วคราวให้เบราว์เซอร์แลกเป็นเซสชัน
-  async function loginPin(username, pinCode){
+  async function loginPin(pinCode){
     var res = await fetch(SUPABASE_URL + '/functions/v1/pin-login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY },
-      body: JSON.stringify({ username: username, pin: pinCode })
+      body: JSON.stringify({ pin: pinCode })
     });
     var j = await res.json().catch(function(){ return {}; });
     if (!res.ok || !j.token_hash) throw new Error(j.error || 'ชื่อผู้ใช้หรือ PIN ไม่ถูกต้อง');
@@ -21766,17 +21804,13 @@ refreshNotifBadge();
   }
 
   async function submit(){
-    var u = (remembered || document.getElementById('acUser').value).trim();
-    var secret = mode === 'pw' ? document.getElementById('acPw').value : pin;
+    var secret = pin;
     err('');
-    if (!u) return err('กรอกชื่อผู้ใช้');
-    if (mode === 'pw' && !secret) return err('กรอกรหัสผ่าน');
     if (mode === 'pin' && secret.length !== 6) return err('กรอก PIN ให้ครบ 6 หลัก');
     var btn = document.getElementById('acGo'); btn.disabled = true; btn.textContent = 'กำลังเข้าสู่ระบบ...';
     try {
-      var auth = mode === 'pw' ? await loginPw(u, secret) : await loginPin(u, secret);
+      var auth = await loginPin(secret);
       var prof = await loadProfile(auth);
-      localStorage.setItem(REMEMBER, u); remembered = u;
       if (prof.must_change_password) await forceChange();
       await finish(prof, auth);
     } catch (e) {
@@ -21864,12 +21898,6 @@ refreshNotifBadge();
   }, true);
 })();
 </script>
-
-<style id="user-ac-hello-color">
-#acHello .ac-hello{ color:#ffffff !important; font-size:14.5px; }
-#acHello .ac-hello b{ color:#ffd400 !important; font-weight:700; }
-#acHello .ac-link{ color:#ffd400 !important; }
-</style>
 
 </body>
 </html>
