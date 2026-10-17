@@ -14561,7 +14561,7 @@ function openUserForm(u) {
       <input type="hidden" id="u_sig" value="${editing ? escapeHtml(u['ลายเซ็น'] || '') : ''}">
     </div>
     <div class="memo-two-col">
-      <div class="field"><label>รหัสหมวก (ชื่อผู้ใช้เข้าระบบ ไม่ซ้ำกัน)</label><input class="input" id="u_badge" value="${editing ? escapeHtml(u['รหัสหมวก'] || '') : ''}"></div>
+      <div class="field"><label>รหัสเปรียบเทียบปรับ (ชื่อผู้ใช้เข้าระบบ ไม่ซ้ำกัน)</label><input class="input" id="u_badge" value="${editing ? escapeHtml(u['รหัสเปรียบเทียบปรับ'] || '') : ''}"></div>
       <div class="field" style="max-width:140px;"><label>ยศ</label><select class="input" id="u_rank"><option value="">-</option>${RANK_OPTIONS.map(r => `<option ${editing && u['ยศ']===r?'selected':''}>${r}</option>`).join('')}</select></div>
       <div class="field"><label>ชื่อ-สกุล</label><input class="input" id="u_name" value="${editing ? escapeHtml(u['ชื่อ-สกุล']) : ''}"></div>
     </div>
@@ -14696,14 +14696,14 @@ document.getElementById('btnResetPin').onclick = async function(){
           authId = ac.authId;
           toast('สร้างบัญชีเข้าระบบแล้ว PIN เริ่มต้นคือวันเกิด');
         }
-        // ✅ เปลี่ยนรหัสหมวก (ถ้าแก้ไข)
-const oldBadge = u['รหัสหมวก'] || '';
+        // ✅ เปลี่ยนรหัสเปรียบเทียบปรับ (ถ้าแก้ไข)
+const oldBadge = u['รหัสเปรียบเทียบปรับ'] || '';
 const newBadge = val('u_badge').trim();
 if (newBadge && newBadge !== oldBadge) {
   const { data: bd, error: be } = await sb.functions.invoke('admin-users', {
     body: { action: 'setBadge', officerId: officerId(u) || undefined, badge: newBadge }
   });
-  if (be || !bd || !bd.ok) throw new Error((bd && bd.error) || (be && be.message) || 'เปลี่ยนรหัสหมวกไม่สำเร็จ');
+  if (be || !bd || !bd.ok) throw new Error((bd && bd.error) || (be && be.message) || 'เปลี่ยนรหัสเปรียบเทียบปรับไม่สำเร็จ');
 }    
         const oldRole = u['สิทธิ์'] === 'admin' ? 'admin' : 'officer';
         const newRole = val('u_role');
@@ -21743,14 +21743,14 @@ refreshNotifBadge();
   var sub = document.getElementById('loginSubText');
   if (!loginScreen || !sub) return;
 
-  var REMEMBER = 'acRememberBadge'; // ✅ จำรหัสหมวกหลังเข้าสำเร็จครั้งแรก
+  var REMEMBER = 'acRememberBadge'; // ✅ จำรหัสเปรียบเทียบปรับหลังเข้าสำเร็จครั้งแรก
   var BLOOD = ['', 'A', 'B', 'AB', 'O', 'ไม่ทราบ'];
   var $ = function(id){ return document.getElementById(id); };
 
   ['roleSelectBox', 'roleLoginForm'].forEach(function(id){ var el = $(id); if (el) el.style.display = 'none'; });
 
     // ---------- ส่วนหน้าล็อกอิน ----------
-  var ADMIN_BADGE = 'admin';          // ✅ รหัสหมวกของแอดมิน
+  var ADMIN_BADGE = 'admin';          // ✅ รหัสเปรียบเทียบปรับของแอดมิน
   var MAX_FAIL = 5;                   // ✅ กรอกผิดได้กี่ครั้ง
   var LOCK_MS = 15 * 60 * 1000;       // ✅ ล็อกกี่นาทีเมื่อผิดครบ
 
@@ -21765,7 +21765,7 @@ refreshNotifBadge();
       '<button type="button" class="ac-role-btn" data-r="officer">เจ้าหน้าที่</button>' +
     '</div>' +
     '<div class="field" id="acBadgeWrap" style="display:none;max-width:300px;margin:0 auto;">' +
-      '<label style="display:block;text-align:center;">รหัสหมวก</label>' +
+      '<label style="display:block;text-align:center;">รหัสเปรียบเทียบปรับ</label>' +
       '<input class="input" id="acBadge" inputmode="numeric" pattern="[0-9]*" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false" style="text-align:center;font-size:18px;letter-spacing:2px;">' +
     '</div>' +
     '<div class="hint" style="text-align:center;margin:10px 0 10px;">รหัสผ่าน 6 หลัก = วัน เดือน ปีเกิด (พ.ศ. 2 หลักท้าย)<br>เช่น 16/12/2536 ใช้ 161236</div>' +
@@ -21802,7 +21802,7 @@ refreshNotifBadge();
     return 'u' + hex + '@hpd.local';
   }
 
-  // ---------- นับจำนวนครั้งที่กรอกผิด (เก็บในเครื่องนี้ ต่อรหัสหมวก) ----------
+  // ---------- นับจำนวนครั้งที่กรอกผิด (เก็บในเครื่องนี้ ต่อรหัสเปรียบเทียบปรับ) ----------
   function failKey(b){ return 'acFail:' + String(b).toLowerCase(); }
   function getFail(b){
     try { return JSON.parse(localStorage.getItem(failKey(b)) || '{}'); } catch (e) { return {}; }
@@ -21896,7 +21896,7 @@ refreshNotifBadge();
     err('');
     var badge = badgeValue();
     if (!role) return err('กรุณาเลือกระดับผู้ใช้งานก่อน');
-    if (!badge) return err('กรุณากรอกรหัสหมวก');
+    if (!badge) return err('กรุณากรอกรหัสเปรียบเทียบปรับ');
     if (pin.length !== 6) return;
 
     var left = lockLeft(badge);
@@ -21950,7 +21950,7 @@ refreshNotifBadge();
   var _clr = clearSession;
   clearSession = function(){ try { sb.auth.signOut(); } catch (e) {} return _clr.apply(this, arguments); };
 
-    // ---------- โปรไฟล์ของฉัน (แก้ได้ทุกช่อง ยกเว้นรหัสหมวกและสิทธิ์) ----------
+    // ---------- โปรไฟล์ของฉัน (แก้ได้ทุกช่อง ยกเว้นรหัสเปรียบเทียบปรับและสิทธิ์) ----------
   // ✅ แสดงข้อความสถานะใต้ปุ่ม ทั้งสีเขียว (สำเร็จ) และสีแดง (ผิดพลาด)
   function setStatus(elId, msg, ok){
     var el = $(elId); if (!el) return;
@@ -21975,7 +21975,7 @@ refreshNotifBadge();
 
     showSheet(
       '<div class="sheet-title">โปรไฟล์ของฉัน</div>' +
-      '<div class="field"><label>รหัสหมวก (ชื่อผู้ใช้ เปลี่ยนได้ที่แอดมิน)</label><input class="input" value="' + escapeHtml(u.badge_no || '-') + '" disabled></div>' +
+      '<div class="field"><label>รหัสเปรียบเทียบปรับ (ชื่อผู้ใช้ เปลี่ยนได้ที่แอดมิน)</label><input class="input" value="' + escapeHtml(u.badge_no || '-') + '" disabled></div>' +
       '<div class="memo-two-col">' +
         '<div class="field" style="max-width:140px;"><label>ยศ</label><select class="input" id="pf_rank"><option value="">-</option>' +
           ranks.map(function(x){ return '<option' + (x === u.rank ? ' selected' : '') + '>' + escapeHtml(x) + '</option>'; }).join('') +
