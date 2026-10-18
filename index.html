@@ -23301,28 +23301,6 @@ window.exportAllBackup = async function(){
     .sx-top-pad{ height:0; }
   }
 </style>
-
-      <!-- ===== วางก่อน </body> ใน index_1.html (ไม่ต้องลบของเดิม) ===== -->
-<style id="officer-tabbar">
-  /* ✅ เจ้าหน้าที่: แถบล่างเหลือ 5 ปุ่ม คือ หน้าหลัก ครุภัณฑ์ จนท. รายงาน เพิ่มเติม
-     แอดมิน (ไม่มีคลาส viewer-mode) ไม่ถูกกระทบ */
-
-  /* ซ่อนยืม-คืนทั้งในแถบล่างและในเมนูเพิ่มเติม */
-  body.viewer-mode .tabbar .tab[data-tab="borrow"],
-  body.viewer-mode .tabbar .tab[data-tab="maint"],
-  body.viewer-mode .tabbar .tab[data-tab="memos"],
-  body.viewer-mode [data-go="borrow"]{ display:none !important; }
-
-  /* แสดง จนท. และ รายงาน บนแถบหลักทุกขนาดหน้าจอ */
-  body.viewer-mode .tabbar .tab[data-tab="users"]{ display:flex !important; }
-  body.viewer-mode .tabbar .tab.tab-secondary[data-tab="reports"]{ display:flex !important; }
-
-  /* ซ่อนปุ่มรองอื่นที่เหลือ เพื่อไม่ให้แถบเกิน 5 ปุ่ม */
-  body.viewer-mode .tabbar .tab.tab-secondary:not([data-tab="reports"]){ display:none !important; }
-
-  /* ปุ่มเพิ่มเติมแสดงทุกขนาดหน้าจอสำหรับเจ้าหน้าที่ */
-  body.viewer-mode .tabbar .tab-more{ display:flex !important; }
-</style>
       
 </body>
 </html>
