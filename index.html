@@ -22917,6 +22917,17 @@ window.exportAllBackup = async function(){
   placeQrBeforeTransfer();
 })();
 </script>
+
+<style id="officer-avatar-shadow">
+  /* ✅ เงานุ่มเหมือนไอคอนครุภัณฑ์ (ค่าเดียวกับ .asset-card-icon) */
+  #view-users .off-av{
+    box-shadow:0 8px 18px color-mix(in srgb, var(--navy-deep) 28%, transparent);
+  }
+  /* การ์ดแบบขยายมีวงแหวนอยู่แล้ว จึงคงวงแหวนไว้และเพิ่มเงาด้านนอก */
+  #view-users .off-card .off-av{
+    box-shadow:0 0 0 3px var(--panel), 0 8px 18px color-mix(in srgb, var(--navy-deep) 28%, transparent);
+  }
+</style>
       
 </body>
 </html>
