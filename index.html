@@ -22975,7 +22975,7 @@ window.exportAllBackup = async function(){
 })();
 </script>      
 
-      <style id="shop-view-css">
+<style id="shop-view-css">
   /* ✅ เจ้าหน้าที่: ซ่อนเมนูยืม-คืน */
   body.viewer-mode [data-go="borrow"],
   body.viewer-mode [data-tab="borrow"],
@@ -23062,7 +23062,7 @@ window.exportAllBackup = async function(){
   .sx-go{ flex:1; height:56px; border:0; border-radius:18px; background:#0d2a52; color:#fff; font:inherit; font-size:16px; font-weight:700; cursor:pointer; box-shadow:0 12px 24px rgba(13,42,82,.25); }
   .sx-go:disabled{ background:#eef0f4; color:#7a8496; box-shadow:none; cursor:not-allowed; }
 </style>
-
+      
 <script id="shop-view-js">
 (function(){
   var BACK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>';
@@ -23173,6 +23173,15 @@ window.exportAllBackup = async function(){
     if (k === 'วันที่รับเข้า') return systemDate(v);
     return String(v);
   }
+      
+  var _openAssetDetail = openAssetDetail;
+  openAssetDetail = function(id, opts){
+    if (isAdmin()) return _openAssetDetail(id, opts);
+    var a = (state.assets || []).find(function(x){ return x['รหัสครุภัณฑ์'] === id; });
+    if (!a) return _openAssetDetail(id, opts);
+    openAssetPage(a);
+  };
+})();
 
 <script id="sx-fullscreen-js">
 (function(){
@@ -23291,8 +23300,8 @@ window.exportAllBackup = async function(){
   };
 })();
 </script>
-  
-<style id="sx-fullscreen-css">
+
+      <style id="sx-fullscreen-css">
   /* ✅ ซ่อนแถบเมนูล่างและปุ่มเพิ่มระหว่างเปิดหน้ารายละเอียด */
   body.sx-open .tabbar,
   body.sx-open #fabBtn,
