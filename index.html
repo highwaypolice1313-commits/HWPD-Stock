@@ -23263,47 +23263,7 @@ window.exportAllBackup = async function(){
 })();
 </script>     
       
-      <style id="sx-fullscreen-css">
-  /* ✅ ซ่อนแถบเมนูล่างและปุ่มเพิ่มระหว่างเปิดหน้ารายละเอียด */
-  body.sx-open .tabbar,
-  body.sx-open #fabBtn,
-  body.sx-open .fab{ display:none !important; }
- 
-  /* ✅ เต็มจอทุกอุปกรณ์ เลื่อนได้ในตัวเอง ปุ่มกลับอยู่ด้านบนเสมอ */
-  .sx-page{ position:fixed !important; inset:0 !important; z-index:200 !important; background:#e9ecf2; display:block !important; }
-  .sx-scroll{ position:absolute; inset:0; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; background:#fff; }
-  .sx-phone{ max-width:760px; margin:0 auto; min-height:100%; display:flex; flex-direction:column; padding-bottom:0 !important; background:#fff; }
- 
-  /* ✅ หัวหน้าแบบติดด้านบน */
-  .sx-bar{
-    position:sticky; top:0; z-index:5;
-    display:flex; align-items:center; justify-content:space-between; gap:10px;
-    padding:calc(env(safe-area-inset-top,0px) + 10px) 16px 10px;
-    background:rgba(255,255,255,.94); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
-    border-bottom:1px solid #e8ecf3;
-  }
-  .sx-bar .sx-label{ font-size:14px; font-weight:700; opacity:.75; }
- 
-  /* ✅ แถบยืมติดด้านล่างของหน้า ไม่ทับเนื้อหา */
-  .sx-dock{
-    position:sticky; bottom:0; z-index:5; left:auto; transform:none; width:auto; max-width:none; margin-top:auto;
-    padding:12px 16px calc(env(safe-area-inset-bottom,0px) + 14px);
-    background:rgba(255,255,255,.96); border-top:1px solid #e8ecf3;
-  }
- 
-  /* ✅ ขนาดรูปและตัวอักษรบนจอใหญ่ */
-  @media (min-width:700px){
-    .sx-gallery{ height:340px; margin:12px 24px 0; }
-    .sx-head{ padding:22px 24px 0; }
-    .sx-title{ font-size:28px; }
-    .sx-pane{ padding:18px 24px 0; }
-    .sx-tabs{ margin:24px 24px 0; }
-    .sx-dock{ padding-left:24px; padding-right:24px; }
-    .sx-top-pad{ height:0; }
-  }
-</style>
-
-      <script id="borrow-lock-me">
+<script id="borrow-lock-me">
 (function(){
   // ✅ ทุกครั้งที่เปิดฟอร์มยืม ถ้าเป็นเจ้าหน้าที่ ให้ล็อกผู้ยืมเป็นชื่อของตัวเอง
   var _openBorrowForm = openBorrowForm;
@@ -23340,6 +23300,133 @@ window.exportAllBackup = async function(){
       trig.style.pointerEvents = 'none';
     } catch (e) { /* ถ้าดึงไม่ได้ ฟอร์มยังทำงานตามเดิม */ }
   }
+})();
+</script>
+
+      <style id="asset-modal-css">
+  .ad-wrap{ display:flex; flex-direction:column; gap:16px; max-width:620px; margin:0 auto; color:inherit; }
+  .ad-stage{
+    position:relative; height:200px; border-radius:24px; overflow:hidden;
+    background:color-mix(in srgb, currentColor 6%, transparent);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .ad-art{
+    width:110px; height:110px; border-radius:30px; display:flex; align-items:center; justify-content:center;
+    background:color-mix(in srgb, currentColor 10%, transparent);
+    box-shadow:0 16px 34px rgba(0,0,0,.18);
+  }
+  .ad-art svg{ width:52px; height:52px; }
+  .ad-flag{ position:absolute; top:14px; left:14px; font-size:12px; font-weight:700; padding:6px 12px; border-radius:999px; }
+  .ad-flag.ok{ background:rgba(31,157,85,.18); color:#34c46d; }
+  .ad-flag.off{ background:color-mix(in srgb, currentColor 12%, transparent); color:inherit; }
+  .ad-title{ font-size:22px; font-weight:700; line-height:1.25; }
+  .ad-sub{ font-size:13px; opacity:.7; margin-top:-8px; }
+  .ad-tabs{ display:flex; gap:22px; border-bottom:1px solid color-mix(in srgb, currentColor 14%, transparent); }
+  .ad-tabs button{
+    border:0; background:none; padding:0 0 10px; font:inherit; font-size:15px; font-weight:700;
+    color:inherit; opacity:.55; cursor:pointer; position:relative;
+  }
+  .ad-tabs button.on{ opacity:1; }
+  .ad-tabs button.on::after{
+    content:""; position:absolute; left:0; right:0; bottom:-1px; height:3px; border-radius:3px; background:currentColor;
+  }
+  .ad-spec{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .ad-spec div{ padding:12px 14px; border-radius:18px; background:color-mix(in srgb, currentColor 6%, transparent); }
+  .ad-spec small{ display:block; font-size:12px; opacity:.6; font-weight:600; }
+  .ad-spec b{ display:block; font-size:15px; margin-top:4px; font-weight:700; }
+  .ad-log{ display:flex; flex-direction:column; gap:10px; }
+  .ad-log div{ display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:18px; background:color-mix(in srgb, currentColor 6%, transparent); }
+  .ad-log i{ width:38px; height:38px; border-radius:13px; display:flex; align-items:center; justify-content:center; flex:none; background:color-mix(in srgb, currentColor 10%, transparent); }
+  .ad-log i svg{ width:18px; height:18px; }
+  .ad-log b{ display:block; font-size:14.5px; }
+  .ad-log small{ display:block; font-size:12.5px; opacity:.6; margin-top:2px; }
+  .ad-empty{ text-align:center; opacity:.65; padding:18px 0; }
+  .ad-go{
+    width:100%; height:54px; border:0; border-radius:18px; font:inherit; font-size:16px; font-weight:700;
+    background:var(--navy,#0d2a52); color:#fff; cursor:pointer; box-shadow:0 12px 24px rgba(0,0,0,.2);
+  }
+  .ad-go:disabled{ background:color-mix(in srgb, currentColor 12%, transparent); color:inherit; opacity:.6; box-shadow:none; cursor:not-allowed; }
+  @media (min-width:700px){
+    .ad-stage{ height:260px; }
+    .ad-title{ font-size:26px; }
+  }
+</style>
+
+<script id="asset-modal-js">
+(function(){
+  var UP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>';
+  var DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>';
+
+  var SPEC = [
+    ['ยี่ห้อ/รุ่น', 'ยี่ห้อ/รุ่น'],
+    ['หมายเลขเครื่อง', 'หมายเลขเครื่อง'],
+    ['มูลค่า', 'มูลค่า'],
+    ['วันที่รับเข้า', 'วันที่รับเข้า'],
+    ['หน่วยงาน', 'หน่วยงาน'],
+    ['ผู้ครอบครอง/หน่วยงาน', 'ผู้ครอบครอง']
+  ];
+  function fmtVal(k, v){
+    if (v === '' || v == null) return '';
+    if (k === 'มูลค่า') return Number(v).toLocaleString('th-TH') + ' บาท';
+    if (k === 'วันที่รับเข้า') return systemDate(v);
+    return String(v);
+  }
+
+  window.openAssetPage = function(a){
+    var id = a['รหัสครุภัณฑ์'];
+    var ok = isAssetBorrowable(a);
+
+    var specs = [
+      '<div><small>หมวดหมู่</small><b>' + escapeHtml(a['หมวดหมู่'] || '-') + '</b></div>',
+      '<div><small>สถานะ</small><b>' + escapeHtml(a['สถานะ'] || '-') + '</b></div>'
+    ].concat(SPEC.filter(function(s){
+      return a[s[0]] !== undefined && a[s[0]] !== null && String(a[s[0]]).trim() !== '';
+    }).map(function(s){
+      return '<div><small>' + escapeHtml(s[1]) + '</small><b>' + escapeHtml(fmtVal(s[0], a[s[0]])) + '</b></div>';
+    }));
+
+    var hist = (state.borrow || [])
+      .filter(function(b){ return b['รหัสครุภัณฑ์'] === id; })
+      .sort(function(x, y){ return String(y['วันที่ยืม'] || '').localeCompare(String(x['วันที่ยืม'] || '')); })
+      .slice(0, 20);
+    var logHtml = hist.length ? hist.map(function(b){
+      var back = !!b['วันที่คืนจริง'];
+      return '<div><i>' + (back ? DOWN : UP) + '</i><div><b>' + escapeHtml(b['ผู้ยืม'] || '-') + '</b>' +
+        '<small>' + (back ? 'คืนแล้ว ' + escapeHtml(systemDate(b['วันที่คืนจริง'])) :
+          'กำหนดคืน ' + escapeHtml(systemDate(b['กำหนดคืน']))) + '</small></div></div>';
+    }).join('') : '<div class="ad-empty">ยังไม่มีประวัติการยืม</div>';
+
+    showSheet(
+      '<div class="sheet-title">รายละเอียดครุภัณฑ์</div>' +
+      '<div class="ad-wrap">' +
+        '<div class="ad-stage"><span class="ad-flag ' + (ok ? 'ok' : 'off') + '">' +
+          (ok ? 'พร้อมยืม' : escapeHtml(a['สถานะ'] || 'ไม่ว่าง')) + '</span>' +
+          '<div class="ad-art">' + catIcon(a['หมวดหมู่']) + '</div></div>' +
+        '<div><div class="ad-title">' + escapeHtml(a['ชื่อครุภัณฑ์'] || '-') + '</div>' +
+          '<div class="ad-sub">' + escapeHtml(a['หมวดหมู่'] || '-') + ' · ' + escapeHtml(id) + '</div></div>' +
+        '<div class="ad-tabs"><button class="on" type="button" data-t="0">รายละเอียด</button>' +
+          '<button type="button" data-t="1">ประวัติการยืม</button></div>' +
+        '<div data-p="0"><div class="ad-spec">' + specs.join('') + '</div></div>' +
+        '<div data-p="1" hidden><div class="ad-log">' + logHtml + '</div></div>' +
+        '<button class="ad-go" type="button" data-borrow="1"' + (ok ? '' : ' disabled') + '>' +
+          (ok ? 'ยืมรายการนี้' : 'ไม่ว่าง') + '</button>' +
+      '</div>',
+      'asset-detail-sheet'
+    );
+
+    var wrap = document.querySelector('.ad-wrap');
+    if (!wrap) return;
+
+    wrap.querySelectorAll('.ad-tabs button').forEach(function(b){
+      b.onclick = function(){
+        wrap.querySelectorAll('.ad-tabs button').forEach(function(x){ x.classList.toggle('on', x === b); });
+        wrap.querySelectorAll('[data-p]').forEach(function(p){ p.hidden = p.dataset.p !== b.dataset.t; });
+      };
+    });
+
+    var go = wrap.querySelector('[data-borrow]');
+    if (go) go.onclick = function(){ closeSheet(); openBorrowForm(id); };
+  };
 })();
 </script>
       
