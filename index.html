@@ -22823,9 +22823,8 @@ window.exportAllBackup = async function(){
   }
 
   function menuItem(label, icon, act){
-    return '<button type="button" data-act="' + act + '" style="display:flex;align-items:center;gap:12px;width:100%;' +
-      'min-height:46px;padding:10px 12px;border:0;border-radius:12px;background:transparent;color:inherit;' +
-      'font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;text-align:left;">' +
+    // ✅ ใช้คลาส ap-item เดียวกับเมนูบัญชี ให้ได้การตอบสนองเมื่อชี้เหมือนกัน
+    return '<button type="button" class="ap-item" data-act="' + act + '" style="width:100%;">' +
       icon + '<span>' + label + '</span></button>';
   }
 
