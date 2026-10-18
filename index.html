@@ -22832,12 +22832,23 @@ window.exportAllBackup = async function(){
 
   function togglePop(btn, kind, exp){
     if (openPop){ closePop(); return; }
+
     var r = btn.getBoundingClientRect();
+
+    // ✅ อ่านสไตล์จากกล่องเมนูบัญชี เพื่อให้ตรงกับธีมทั้งโหมดสว่างและมืด
+    var ref = document.getElementById('acctPop');
+    var cs = ref ? getComputedStyle(ref) : null;
+
     var pop = document.createElement('div');
     pop.setAttribute('role', 'menu');
-    pop.style.cssText = 'position:fixed;z-index:9999;min-width:200px;padding:6px;border-radius:16px;' +
-      'background:var(--surface,#ffffff);color:var(--ink,#0d2a52);border:1px solid var(--line,#dfe5ef);' +
-      'box-shadow:0 14px 34px rgba(0,0,0,.2);';
+    pop.style.cssText = 'position:fixed;z-index:9999;min-width:200px;padding:6px;border-radius:' +
+      (cs ? cs.borderRadius : '16px') + ';' +
+      'background:' + (cs ? cs.backgroundColor : '#ffffff') + ';' +
+      'color:' + (cs ? cs.color : '#0d2a52') + ';' +
+      'border:' + (cs ? cs.border : '1px solid #dfe5ef') + ';' +
+      'box-shadow:' + (cs && cs.boxShadow !== 'none' ? cs.boxShadow : '0 14px 34px rgba(0,0,0,.2)') + ';' +
+      'backdrop-filter:' + (cs ? cs.backdropFilter : 'none') + ';' +
+      '-webkit-backdrop-filter:' + (cs ? cs.webkitBackdropFilter || cs.backdropFilter : 'none') + ';';
     pop.style.top = (r.bottom + 8) + 'px';
     pop.style.right = Math.max(8, window.innerWidth - r.right) + 'px';
     pop.innerHTML = menuItem('นำเข้าข้อมูล', UP_ICON, 'import') + menuItem('ส่งออก CSV', DOWN_ICON, 'export');
@@ -22850,7 +22861,6 @@ window.exportAllBackup = async function(){
       if (exp) exp.click(); else toast('หน้านี้ยังไม่มีการส่งออก');
     };
   }
-
   function mountButtons(){
     [['view-assets', 'assets'], ['view-users', 'officers']].forEach(function(p){
       var view = document.getElementById(p[0]);
