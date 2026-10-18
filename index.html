@@ -23498,8 +23498,20 @@ window.exportAllBackup = async function(){
     };
   }
 
-  new MutationObserver(mountSettingsButton).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['style'] });
-  mountSettingsButton();
+  // ✅ วางปุ่มทุกครั้งหลังหน้าตั้งค่าถูกวาดเสร็จ (รอให้แถบแท็บสร้างเสร็จก่อน)
+  if (typeof renderSettings === 'function') {
+    var _renderSettingsOrig = renderSettings;
+    renderSettings = function(){
+      var r = _renderSettingsOrig.apply(this, arguments);
+      setTimeout(mountSettingsButton, 0);
+      setTimeout(mountSettingsButton, 300);
+      return r;
+    };
+  }
+
+  // ✅ สำรอง: ถ้าแท็บถูกวาดใหม่โดยไม่ผ่านฟังก์ชันข้างบน
+  new MutationObserver(function(){ setTimeout(mountSettingsButton, 0); })
+    .observe(document.body, { childList: true, subtree: true });
 })();
 </script>
       
