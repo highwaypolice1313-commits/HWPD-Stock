@@ -23429,17 +23429,27 @@ window.exportAllBackup = async function(){
   // ---------- ปุ่มในหน้าตั้งค่า ----------
   function mountSettingsButton(){
     var view = document.getElementById('view-settings');
-    if (!view || view.style.display === 'none' || view.querySelector('[data-pos-btn]')) return;
-    var head = view.querySelector('.section-title') || view.querySelector('h1,h2') || view.firstElementChild;
-    if (!head) return;
+    if (!view || view.style.display === 'none') return;
+
+    // ✅ ลบปุ่มแบบเดิมที่อยู่บนหัวข้อออกไป
+    view.querySelectorAll('[data-pos-btn]').forEach(function(el){ el.remove(); });
+
+    // ✅ ถ้าแถบแท็บมีปุ่มตำแหน่งอยู่แล้ว ไม่ต้องเพิ่มซ้ำ
+    if (view.querySelector('[data-pos-tab]')) return;
+
+    // ✅ หาปุ่มแท็บตัวแรกของหน้าตั้งค่า ("ทั่วไป") เพื่อใช้สไตล์เดียวกัน
+    var firstTab = Array.prototype.slice.call(view.querySelectorAll('button'))
+      .find(function(b){ return b.textContent.trim() === 'ทั่วไป'; });
+    if (!firstTab) return;
+
     var b = document.createElement('button');
     b.type = 'button';
-    b.className = 'btn btn-ghost';
-    b.dataset.posBtn = '1';
+    b.className = firstTab.className.replace(/\bactive\b|\bon\b|\bselected\b/g, '').trim();
+    b.dataset.posTab = '1';
     b.textContent = 'ตำแหน่งและสิทธิ์';
-    b.style.cssText = 'margin-left:10px;padding:6px 12px;font-size:13px;';
-    b.onclick = openPositionsSheet;
-    head.appendChild(b);
+    b.onclick = function(e){ e.preventDefault(); openPositionsSheet(); };
+
+    firstTab.parentElement.appendChild(b);
   }
 
   // ---------- ช่องตำแหน่งในฟอร์มรายชื่อเจ้าหน้าที่ ----------
