@@ -22790,35 +22790,88 @@ window.exportAllBackup = async function(){
     document.getElementById('biDone').onclick = function(){ location.reload(); };
   }
 
-  // ✅ ไอคอนนำเข้า: เมฆพร้อมลูกศรชี้ขึ้น (อัปโหลดขึ้นระบบ)
-  var IMPORT_ICON =
-    '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" ' +
-    'stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-    '<path d="M7 18a4.5 4.5 0 0 1-.9-8.9A6 6 0 0 1 17.7 8 4 4 0 0 1 18 18z"/>' +
-    '<polyline points="9 13 12 10 15 13"/>' +
-    '<line x1="12" y1="10" x2="12" y2="18"/></svg>';
-      
-  function mountButtons(){
-    // ✅ ลบปุ่มแบบยาวเดิมออก
-    document.querySelectorAll('[data-bulk-import]:not(.icon-btn)').forEach(function(el){ el.remove(); });
+   // ✅ ไอคอนปุ่มรวม: ลูกศรสองทาง แสดงการถ่ายโอนข้อมูล
+  var TRANSFER_ICON =
+    '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" ' +
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M8 3v14"/><path d="M4 7l4-4 4 4"/><path d="M16 21V7"/><path d="M12 17l4 4 4-4"/></svg>';
 
+  // ✅ ไอคอนในเมนู
+  var UP_ICON =
+    '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" ' +
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M12 15V4"/><path d="M7 9l5-5 5 5"/><path d="M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></svg>';
+  var DOWN_ICON =
+    '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" ' +
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></svg>';
+
+  var openPop = null;
+  function closePop(){ if (openPop){ openPop.remove(); openPop = null; } }
+  document.addEventListener('click', function(e){
+    if (openPop && !openPop.contains(e.target) && !(e.target.closest && e.target.closest('[data-transfer]'))) closePop();
+  }, true);
+  window.addEventListener('scroll', closePop, true);
+
+  // หาปุ่มส่งออก CSV เดิมของหน้า (ซ่อนไว้ แล้วเรียกผ่านเมนูแทน)
+  function findExport(view){
+    var found = Array.prototype.slice.call(view.querySelectorAll('button')).filter(function(b){
+      var t = (b.getAttribute('title') || '') + (b.getAttribute('aria-label') || '');
+      return t.indexOf('ส่งออก') !== -1 || t.indexOf('ดาวน์โหลด') !== -1;
+    });
+    return found[0] || null;
+  }
+
+  function menuItem(label, icon, act){
+    return '<button type="button" data-act="' + act + '" style="display:flex;align-items:center;gap:12px;width:100%;' +
+      'min-height:46px;padding:10px 12px;border:0;border-radius:12px;background:transparent;color:inherit;' +
+      'font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;text-align:left;">' +
+      icon + '<span>' + label + '</span></button>';
+  }
+
+  function togglePop(btn, kind, exp){
+    if (openPop){ closePop(); return; }
+    var r = btn.getBoundingClientRect();
+    var pop = document.createElement('div');
+    pop.setAttribute('role', 'menu');
+    pop.style.cssText = 'position:fixed;z-index:9999;min-width:200px;padding:6px;border-radius:16px;' +
+      'background:var(--surface,#ffffff);color:var(--ink,#0d2a52);border:1px solid var(--line,#dfe5ef);' +
+      'box-shadow:0 14px 34px rgba(0,0,0,.2);';
+    pop.style.top = (r.bottom + 8) + 'px';
+    pop.style.right = Math.max(8, window.innerWidth - r.right) + 'px';
+    pop.innerHTML = menuItem('นำเข้าข้อมูล', UP_ICON, 'import') + menuItem('ส่งออก CSV', DOWN_ICON, 'export');
+    document.body.appendChild(pop);
+    openPop = pop;
+
+    pop.querySelector('[data-act="import"]').onclick = function(){ closePop(); openImport(kind); };
+    pop.querySelector('[data-act="export"]').onclick = function(){
+      closePop();
+      if (exp) exp.click(); else toast('หน้านี้ยังไม่มีการส่งออก');
+    };
+  }
+
+  function mountButtons(){
     [['view-assets', 'assets'], ['view-users', 'officers']].forEach(function(p){
       var view = document.getElementById(p[0]);
       if (!view || view.style.display === 'none') return;
-      if (view.querySelector('[data-bulk-import]')) return;
+      if (view.querySelector('[data-transfer]')) return;
 
-      // ✅ วางไว้ก่อนปุ่มพิมพ์ ให้อยู่แถวเดียวกับไอคอนอื่น
       var anchor = view.querySelector('[data-pp]') || view.querySelector('.icon-btn');
       if (!anchor) return;
+
+      // ✅ ซ่อนปุ่มนำเข้าแยกและปุ่มส่งออกเดิม ให้ไปอยู่ในเมนูแทน
+      view.querySelectorAll('[data-bulk-import]').forEach(function(el){ el.style.display = 'none'; });
+      var exp = findExport(view);
+      if (exp) exp.style.display = 'none';
 
       var b = document.createElement('button');
       b.type = 'button';
       b.className = 'icon-btn';
-      b.dataset.bulkImport = p[1];
-      b.title = 'นำเข้าข้อมูล';                 // ✅ tooltip เมื่อเอาเมาส์ชี้
-      b.setAttribute('aria-label', 'นำเข้าข้อมูล');
-      b.innerHTML = IMPORT_ICON;
-      b.onclick = function(){ openImport(p[1]); };
+      b.dataset.transfer = p[1];
+      b.title = 'นำเข้า / ส่งออกข้อมูล';
+      b.setAttribute('aria-label', 'นำเข้า หรือ ส่งออกข้อมูล');
+      b.innerHTML = TRANSFER_ICON;
+      b.onclick = function(e){ e.stopPropagation(); togglePop(b, p[1], exp); };
       anchor.parentNode.insertBefore(b, anchor);
     });
   }
