@@ -8513,8 +8513,7 @@ async function completeLogin({ role, name, token }) {
   document.getElementById('profileName').textContent = state.user.name;
   document.getElementById('usersTabBtn').style.display = 'flex';
   document.getElementById('settingsTabBtn').style.display = 'flex';
-  document.getElementById('auditTabBtn').style.display = isAdmin() ? 'flex' : 'none';
-  document.getElementById('monthlyTabBtn').style.display = isAdmin() ? 'flex' : 'none';
+  if (window.applyTabPerms) window.applyTabPerms();
   document.getElementById('loginScreen').style.display = 'none';
   const appEl = document.getElementById('app');
   appEl.style.display = 'block';
@@ -9137,7 +9136,7 @@ function renderTab(name) {
 }
 
 function renderTabNow(name) {
-if ((name === 'audit' || name === 'monthly') && !isAdmin()) name = 'dashboard';
+if ((name === 'audit' || name === 'monthly') && !(window.canOpenTab && window.canOpenTab(name))) name = 'dashboard';
   state.tab = name;
   saveUi({ tab: name, scrollY: renderTabNow._restore ? (loadUi().scrollY || 0) : 0 });
   window.__countStat = true;   // [เพิ่ม] เพิ่งเปิดหน้าจากเมนู -> อนุญาตให้ stat-num นับขึ้น
@@ -23505,7 +23504,9 @@ window.exportAllBackup = async function(){
     if (!need) return false;
     return need.some(function(p){ return perms.indexOf(p) !== -1; });
   }
-
+      
+  window.canOpenTab = tabAllowed;
+      
   // ✅ ซ่อน/แสดงแต่ละปุ่มในแถบตามสิทธิ์
   window.applyTabPerms = function(tabs){
     var list = tabs || Array.prototype.slice.call(document.querySelectorAll('.tabbar .tab'));
