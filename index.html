@@ -23072,12 +23072,12 @@ window.exportAllBackup = async function(){
   .sx-fav.on svg{ fill:#e0b400; }
   .sx-go{ flex:1; height:56px; border:0; border-radius:18px; background:#0d2a52; color:#fff; font:inherit; font-size:16px; font-weight:700; cursor:pointer; box-shadow:0 12px 24px rgba(13,42,82,.25); }
   .sx-go:disabled{ background:#eef0f4; color:#7a8496; box-shadow:none; cursor:not-allowed; }
+  .sx-card:active{ transform:scale(.97); transition:transform .12s ease; }
 </style>
 
  <script id="shop-view-js">
 (function(){
   var BACK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>';
-  var HEART = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.4-9.3-8.6C1.2 9.6 3 6 6.5 6c2.1 0 3.4 1.2 4 2.2.6-1 1.9-2.2 4-2.2 3.5 0 5.3 3.6 3.8 6.4C19 16.6 12 21 12 21z"/></svg>';
   var UP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>';
   var DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>';
 
@@ -23110,11 +23110,12 @@ window.exportAllBackup = async function(){
     return _viewToggleHtml(key, current);
   };
 
-  function shopCardHtml(a){
+  function shopCardHtml(a, i){
     var id = escapeHtml(a['รหัสครุภัณฑ์']);
     var ok = isAssetBorrowable(a);
     var place = a['หน่วยงาน'] || a['ผู้ครอบครอง/หน่วยงาน'] || '-';
-    return '<div class="sx-card asset-item' + (ok ? '' : ' off') + '" data-id="' + id + '">' +
+    return '<div class="sx-card asset-item premium-stagger-item' + (ok ? '' : ' off') + '" data-id="' + id +
+      '" style="--stagger-index:' + (i || 0) + ';">' +
       '<div class="sx-stage"><div class="sx-disc">' + catIcon(a['หมวดหมู่']) + '</div>' +
         '<span class="sx-pill ' + (ok ? 'ok' : 'off') + '">' + (ok ? 'ว่าง' : escapeHtml(a['สถานะ'] || '-')) + '</span></div>' +
       '<div class="sx-name">' + escapeHtml(a['ชื่อครุภัณฑ์'] || '-') + '</div>' +
@@ -23146,7 +23147,7 @@ window.exportAllBackup = async function(){
 
     listEl.className = 'asset-shop';
     listEl.innerHTML = shown.length
-      ? shown.map(shopCardHtml).join('')
+      ? shown.map(function(a, i){ return shopCardHtml(a, i); }).join('')
       : '<div class="glass empty-state">ไม่พบครุภัณฑ์ตามตัวกรองที่เลือก</div>';
 
     listEl.querySelectorAll('.asset-item').forEach(function(it){
@@ -23166,13 +23167,6 @@ window.exportAllBackup = async function(){
 
   // ---------- รายละเอียดครุภัณฑ์ (เจ้าหน้าที่) ----------
   var FAV_KEY = 'hpFavAssets';
-  function favs(){ try { return JSON.parse(localStorage.getItem(FAV_KEY) || '[]'); } catch (e) { return []; } }
-  function toggleFav(id){
-    var f = favs(), i = f.indexOf(id);
-    if (i === -1) f.push(id); else f.splice(i, 1);
-    try { localStorage.setItem(FAV_KEY, JSON.stringify(f)); } catch (e) {}
-    return i === -1;
-  }
 
   // ✅ ป้ายภาษาไทยของข้อมูลที่แสดง (แสดงเฉพาะที่มีค่า)
   var SPEC = [
@@ -23193,7 +23187,6 @@ window.exportAllBackup = async function(){
   function openAssetPage(a){
     var id = a['รหัสครุภัณฑ์'];
     var ok = isAssetBorrowable(a);
-    var fav = favs().indexOf(id) !== -1;
 
     var specs = [
       '<div><small>หมวดหมู่</small><b>' + escapeHtml(a['หมวดหมู่'] || '-') + '</b></div>',
@@ -23235,9 +23228,6 @@ window.exportAllBackup = async function(){
         '<div class="sx-pane" data-p="0"><div class="sx-spec">' + specs.join('') + '</div></div>' +
         '<div class="sx-pane" data-p="1" hidden><div class="sx-log">' + logHtml + '</div></div>' +
         '<div class="sx-dock">' +
-          '<button class="sx-fav' + (fav ? ' on' : '') + '" type="button" data-x="fav" aria-label="เก็บไว้ดูภายหลัง">' + HEART + '</button>' +
-          '<button class="sx-go" type="button" data-x="borrow"' + (ok ? '' : ' disabled') + '>' +
-            (ok ? 'ยืมรายการนี้' : 'ไม่ว่าง') + '</button>' +
         '</div>' +
       '</div>';
     document.body.appendChild(ov);
@@ -23257,12 +23247,6 @@ window.exportAllBackup = async function(){
         ov.querySelectorAll('.sx-pane').forEach(function(p){ p.hidden = p.dataset.p !== b.dataset.t; });
       };
     });
-
-    ov.querySelector('[data-x="fav"]').onclick = function(){
-      var on = toggleFav(id);
-      this.classList.toggle('on', on);
-      toast(on ? 'เก็บไว้ดูภายหลังแล้ว' : 'นำออกจากรายการที่เก็บไว้แล้ว');
-    };
 
     var go = ov.querySelector('[data-x="borrow"]');
     if (go) go.onclick = function(){ close(); openBorrowForm(id); };
