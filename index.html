@@ -23166,7 +23166,6 @@ window.exportAllBackup = async function(){
   };
 
   // ---------- รายละเอียดครุภัณฑ์ (เจ้าหน้าที่) ----------
-  var FAV_KEY = 'hpFavAssets';
 
   // ✅ ป้ายภาษาไทยของข้อมูลที่แสดง (แสดงเฉพาะที่มีค่า)
   var SPEC = [
@@ -23301,6 +23300,46 @@ window.exportAllBackup = async function(){
     .sx-top-pad{ height:0; }
   }
 </style>
+
+      <script id="borrow-lock-me">
+(function(){
+  // ✅ ทุกครั้งที่เปิดฟอร์มยืม ถ้าเป็นเจ้าหน้าที่ ให้ล็อกผู้ยืมเป็นชื่อของตัวเอง
+  var _openBorrowForm = openBorrowForm;
+  openBorrowForm = function(presetId){
+    _openBorrowForm(presetId);
+    if (!isAdmin()) lockBorrowerToMe();
+  };
+
+  async function lockBorrowerToMe(){
+    try {
+      // ✅ ถ้ายังไม่มีข้อมูลผู้ใช้ในหน่วยความจำ (เช่นเปิดหน้าใหม่ด้วยเซสชันเดิม) ให้ดึงจากฐานข้อมูล
+      if (!window.__me || !window.__me.name){
+        var s = await sb.auth.getSession();
+        var uid = s.data.session && s.data.session.user.id;
+        if (!uid) return;
+        var r = await sb.from('users').select('name,position,photo').eq('auth_user_id', uid).maybeSingle();
+        if (!r.data || !r.data.name) return;
+        window.__me = { name: r.data.name, position: r.data.position, photo: r.data.photo };
+      }
+
+      var me = window.__me;
+      var trig = document.getElementById('f_borrowerTrigger');
+      if (!trig) return;
+
+      document.getElementById('f_borrower').value = me.name;
+      document.getElementById('f_borrowerName').textContent = me.name;
+      document.getElementById('f_borrowerSub').textContent = me.position || 'ผู้ยืม (ตัวคุณ)';
+      document.getElementById('f_borrowerIcon').innerHTML = me.photo
+        ? '<img src="' + me.photo + '" style="width:100%;height:100%;object-fit:cover;border-radius:13px;">'
+        : ICONS.user;
+
+      // ✅ ตัดการเลือกผู้ยืมออกทั้งหมด
+      trig.onclick = null;
+      trig.style.pointerEvents = 'none';
+    } catch (e) { /* ถ้าดึงไม่ได้ ฟอร์มยังทำงานตามเดิม */ }
+  }
+})();
+</script>
       
 </body>
 </html>
