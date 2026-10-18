@@ -18917,6 +18917,7 @@ function renderSettings() {
     { id: 'units',     label: 'หมวดหมู่ & หน่วยนับ' },
     { id: 'org',       label: 'หน่วยงาน & เอกสาร' },
     { id: 'security',  label: 'รหัสผ่าน' },
+    { id: 'positions', label: 'ตำแหน่งและสิทธิ์' },
     { id: 'activity',  label: 'บันทึกกิจกรรม' },
     { id: 'trash',     label: 'ถังขยะ' },
     { id: 'data',      label: 'ข้อมูล & สำรอง' }
@@ -19040,6 +19041,8 @@ function renderSettings() {
 </div>
       </div>
     `)}
+   
+    ${panel('positions', '<div id="posPanel"></div>')}
 
     ${panel('activity', `
       <div class="section-title" style="margin-top:6px; font-size:14px;">บันทึกกิจกรรมล่าสุด</div>
@@ -19083,6 +19086,7 @@ function renderSettings() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
       if (state.settingsTab === 'activity') loadActivityPanel();
       if (state.settingsTab === 'trash') loadTrashPanel();
+      if (state.settingsTab === 'positions' && window.loadPositionsPanel) window.loadPositionsPanel();
     };
   });
 
@@ -19218,6 +19222,7 @@ function renderSettings() {
   // โหลดข้อมูลของแท็บที่เปิดค้างอยู่ (กรณีรีเฟรช/วาดซ้ำ)
   if (state.settingsTab === 'activity') loadActivityPanel();
   if (state.settingsTab === 'trash') loadTrashPanel();
+  if (state.settingsTab === 'positions' && window.loadPositionsPanel) window.loadPositionsPanel();    
 }
 
    /* ===== [แก้ไขพิมพ์เปล่า] ย้าย #printArea ให้เป็นลูกตรงของ <body> =====
@@ -23412,7 +23417,7 @@ window.exportAllBackup = async function(){
         return toast((r.data && r.data.error) || (r.error && r.error.message) || 'บันทึกไม่สำเร็จ');
       }
       toast('บันทึกตำแหน่งแล้ว');
-      openPositionsSheet();
+      refreshPositions();
     };
 
     var delBtn = document.getElementById('posDel');
@@ -23422,96 +23427,46 @@ window.exportAllBackup = async function(){
       var r = await sb.rpc('admin_delete_position', { p_id: p.id });
       if (r.error || !r.data || !r.data.ok) return toast((r.data && r.data.error) || (r.error && r.error.message) || 'ลบไม่สำเร็จ');
       toast('ลบตำแหน่งแล้ว');
-      openPositionsSheet();
+      refreshPositions();
     };
   }
-
-  // ---------- ปุ่มในหน้าตั้งค่า ----------
-  function mountSettingsButton(){
-    var view = document.getElementById('view-settings');
-    if (!view || view.style.display === 'none') return;
-
-    // ✅ ลบปุ่มแบบเดิมที่อยู่บนหัวข้อออกไป
-    view.querySelectorAll('[data-pos-btn]').forEach(function(el){ el.remove(); });
-
-    // ✅ ถ้าแถบแท็บมีปุ่มตำแหน่งอยู่แล้ว ไม่ต้องเพิ่มซ้ำ
-    if (view.querySelector('[data-pos-tab]')) return;
-
-    // ✅ หาปุ่มแท็บตัวแรกของหน้าตั้งค่า ("ทั่วไป") เพื่อใช้สไตล์เดียวกัน
-    var firstTab = Array.prototype.slice.call(view.querySelectorAll('button'))
-      .find(function(b){ return b.textContent.trim() === 'ทั่วไป'; });
-    if (!firstTab) return;
-
-    var b = document.createElement('button');
-    b.type = 'button';
-    b.className = firstTab.className.replace(/\bactive\b|\bon\b|\bselected\b/g, '').trim();
-    b.dataset.posTab = '1';
-    b.textContent = 'ตำแหน่งและสิทธิ์';
-    b.onclick = function(e){ e.preventDefault(); openPositionsSheet(); };
-
-    firstTab.parentElement.appendChild(b);
+  // ---------- รีเฟรชหลังบันทึกหรือลบ (แสดงในแท็บตั้งค่าถ้ามี ไม่มีให้เปิดกล่องข้อความ) ----------
+  function refreshPositions(){
+    if (document.getElementById('posPanel')) loadPositionsPanel();
+    else openPositionsSheet();
   }
 
-  // ---------- ช่องตำแหน่งในฟอร์มรายชื่อเจ้าหน้าที่ ----------
-  var _openUserForm = openUserForm;
-  openUserForm = function(u){
-    _openUserForm(u);
-    mountPositionField(u);
-  };
+  // ---------- แสดงรายการในแท็บ "ตำแหน่งและสิทธิ์" ของหน้าตั้งค่า ----------
+  async function loadPositionsPanel(){
+    var box = document.getElementById('posPanel');
+    if (!box) return;
+    var admin = isAdmin();
+    var list;
+    try { list = await loadPositions(); }
+    catch (e) { box.innerHTML = '<div class="hint">' + escapeHtml(e.message) + '</div>'; return; }
 
-  async function mountPositionField(u){
-    var memo = document.getElementById('u_memorole');
-    if (!memo || document.getElementById('u_position_id')) return;
-    var field = memo.closest('.field');
-    if (!field) return;
-    if (u && u['สิทธิ์'] === 'admin') return; // แอดมินไม่ผูกกับตำแหน่ง
+    box.innerHTML =
+      '<div class="section-title" style="margin-top:6px;font-size:14px;">ตำแหน่งและสิทธิ์</div>' +
+      '<div class="hint" style="margin:6px 0 12px;">' +
+        (admin ? 'แอดมินเพิ่ม แก้ชื่อ แก้สิทธิ์ และลบตำแหน่งได้' : 'ดูได้อย่างเดียว การแก้ไขเป็นของแอดมิน') + '</div>' +
+      (admin ? '<div class="btn-row" style="margin-bottom:12px;"><button class="btn btn-primary" id="posAdd" type="button">+ เพิ่มตำแหน่ง</button></div>' : '') +
+      (list.length ? list.map(function(p){
+        return '<div class="pos-row"><div><b>' + escapeHtml(p.name) + '</b><small>' + (p.perms || []).length + ' สิทธิ์</small></div>' +
+          '<button class="btn btn-ghost" type="button" data-pid="' + p.id + '">' + (admin ? 'แก้ไข' : 'ดู') + '</button></div>';
+      }).join('') : '<div class="hint">ยังไม่มีตำแหน่ง</div>');
 
-    var authId = u ? u['auth_user_id'] : null;
-    var wrap = document.createElement('div');
-    wrap.className = 'field';
-    wrap.innerHTML =
-      '<label>ตำแหน่ง (ชุดสิทธิ์)</label>' +
-      '<select class="input" id="u_position_id"' + (authId && isAdmin() ? '' : ' disabled') + '>' +
-        '<option value="">กำลังโหลด...</option></select>' +
-      '<div class="hint">' + (authId ? '' : 'กำหนดตำแหน่งได้หลังเปิดบัญชีเข้าระบบ') + '</div>';
-    field.insertAdjacentElement('afterend', wrap);
-
-    var pos = [];
-    try { pos = await loadPositions(); } catch (e) { pos = []; }
-    var prof = { data: null };
-    if (authId) prof = await sb.from('profiles').select('position_id').eq('id', authId).maybeSingle();
-
-    var sel = document.getElementById('u_position_id');
-    if (!sel) return;
-    sel.innerHTML = '<option value="">ไม่มี</option>' + pos.map(function(p){
-      return '<option value="' + p.id + '"' + (prof.data && prof.data.position_id === p.id ? ' selected' : '') + '>' +
-        escapeHtml(p.name) + '</option>';
-    }).join('');
-
-    sel.onchange = async function(){
-      var r = await sb.rpc('admin_set_user_position', { p_profile: authId, p_position: sel.value || null });
-      if (r.error || !r.data || !r.data.ok) {
-        toast((r.data && r.data.error) || (r.error && r.error.message) || 'บันทึกตำแหน่งไม่สำเร็จ');
-      } else {
-        toast('บันทึกตำแหน่งแล้ว');
-      }
-    };
+    var add = document.getElementById('posAdd');
+    if (add) add.onclick = function(){ openPositionEdit(null); };
+    box.querySelectorAll('[data-pid]').forEach(function(b){
+      b.onclick = function(){
+        var p = list.find(function(x){ return x.id === b.dataset.pid; });
+        if (p) openPositionEdit(p);
+      };
+    });
   }
 
-  // ✅ วางปุ่มทุกครั้งหลังหน้าตั้งค่าถูกวาดเสร็จ (รอให้แถบแท็บสร้างเสร็จก่อน)
-  if (typeof renderSettings === 'function') {
-    var _renderSettingsOrig = renderSettings;
-    renderSettings = function(){
-      var r = _renderSettingsOrig.apply(this, arguments);
-      setTimeout(mountSettingsButton, 0);
-      setTimeout(mountSettingsButton, 300);
-      return r;
-    };
-  }
+  window.loadPositionsPanel = loadPositionsPanel;
 
-  // ✅ สำรอง: ถ้าแท็บถูกวาดใหม่โดยไม่ผ่านฟังก์ชันข้างบน
-  new MutationObserver(function(){ setTimeout(mountSettingsButton, 0); })
-    .observe(document.body, { childList: true, subtree: true });
 })();
 </script>
       
