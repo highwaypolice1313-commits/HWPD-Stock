@@ -23227,6 +23227,8 @@ window.exportAllBackup = async function(){
         '<div class="sx-pane" data-p="0"><div class="sx-spec">' + specs.join('') + '</div></div>' +
         '<div class="sx-pane" data-p="1" hidden><div class="sx-log">' + logHtml + '</div></div>' +
         '<div class="sx-dock">' +
+          '<button class="sx-go" type="button" data-x="borrow"' + (ok ? '' : ' disabled') + '>' +
+            (ok ? 'ยืมรายการนี้' : 'ไม่ว่าง') + '</button>' +
         '</div>' +
       '</div>';
     document.body.appendChild(ov);
