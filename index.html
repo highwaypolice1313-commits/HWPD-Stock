@@ -9187,12 +9187,12 @@ function layoutNav() {
   if (!bar || !pill) return;
   const tabs = [...bar.querySelectorAll('.tab')];
 
-  // ✅ แถบล่างตามสิทธิ์ของตำแหน่ง รอโหลดสิทธิ์ก่อนจัดแถบ
-  if (window.__perms === undefined) {
+  // ✅ โหลดสิทธิ์ก่อนจัดแถบ ถ้าสคริปต์สิทธิ์ยังไม่พร้อม ให้จัดแถบตามค่าเดิมไปก่อน
+  if (window.__perms === undefined && typeof loadMyPerms === 'function') {
     loadMyPerms().then(function(){ layoutNav(); });
     return;
   }
-  applyTabPerms(tabs);
+  if (typeof applyTabPerms === 'function') applyTabPerms(tabs);
 
   // เดสก์ท็อปใช้ sidebar: ล้างค่าที่ JS เคยตั้ง
   if (!window.matchMedia('(max-width:899px)').matches) {
