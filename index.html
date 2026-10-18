@@ -22948,6 +22948,12 @@ window.exportAllBackup = async function(){
     box-sizing:content-box;
   }
   #view-users .off-card .off-av.has-acct::after{ width:14px; height:14px; }
+
+        /* ✅ ให้จุดสถานะยื่นออกจากขอบรูปได้ และให้รูปยังเป็นวงกลม */
+  #view-users .off-av{ overflow:visible !important; }
+  #view-users .off-av img{ border-radius:50%; }
+  #view-users .off-av.has-acct::after{ right:-2px; bottom:-2px; }
+      
 </style>
 
 <script id="avatar-status-js">
