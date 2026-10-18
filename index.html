@@ -22883,27 +22883,29 @@ window.exportAllBackup = async function(){
 })();
 </script>      
 
-      <style id="transfer-hover">
-  /* ✅ ปุ่มนำเข้า/ส่งออก (ไอคอนลูกศรสองทาง) */
-  [data-transfer]{
-    transition:background .18s ease, transform .18s ease, box-shadow .18s ease, color .18s ease;
-    cursor:pointer;
-  }
-  [data-transfer]:hover{
-    background:rgba(13,42,82,.08);
-    transform:translateY(-1px);
-    box-shadow:0 6px 16px rgba(0,0,0,.12);
-    color:var(--ink,#0d2a52);
-  }
-  [data-transfer]:active{ transform:translateY(0) scale(.96); }
-  [data-transfer]:focus-visible{ outline:2px solid #ffd21f; outline-offset:2px; }
+<script id="qr-front-js">
+(function(){
+  // ✅ ย้ายปุ่มสแกน QR ให้อยู่ก่อนปุ่มนำเข้า/ส่งออกข้อมูล
+  function placeQrBeforeTransfer(){
+    var view = document.getElementById('view-assets');
+    if (!view || view.style.display === 'none') return;
 
-  /* ✅ รายการในเมนู */
-  [data-act]{ transition:background .15s ease; }
-  [data-act]:hover{ background:rgba(127,127,127,.14) !important; }
-  [data-act]:active{ background:rgba(127,127,127,.24) !important; }
-  [data-act]:focus-visible{ outline:2px solid #ffd21f; outline-offset:-2px; }
-</style>
+    var qr = document.getElementById('btnScanQr');
+    var transfer = view.querySelector('[data-transfer]');
+    if (!qr || !transfer) return;
+
+    // ✅ ถ้าอยู่ตรงหน้าปุ่มนำเข้า/ส่งออกอยู่แล้ว ไม่ต้องย้าย
+    if (qr.nextElementSibling === transfer) return;
+
+    transfer.parentNode.insertBefore(qr, transfer);
+  }
+
+  new MutationObserver(placeQrBeforeTransfer).observe(document.body, {
+    childList: true, subtree: true, attributes: true, attributeFilter: ['style']
+  });
+  placeQrBeforeTransfer();
+})();
+</script>
       
 </body>
 </html>
