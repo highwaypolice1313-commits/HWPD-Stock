@@ -23228,55 +23228,6 @@ window.exportAllBackup = async function(){
   }
 </style>
 
-      <style id="asset-modal-css">
-  .ad-wrap{ display:flex; flex-direction:column; gap:16px; max-width:620px; margin:0 auto; color:inherit; }
-  .ad-stage{
-    position:relative; height:200px; border-radius:24px; overflow:hidden;
-    background:color-mix(in srgb, currentColor 6%, transparent);
-    display:flex; align-items:center; justify-content:center;
-  }
-  .ad-art{
-    width:110px; height:110px; border-radius:30px; display:flex; align-items:center; justify-content:center;
-    background:color-mix(in srgb, currentColor 10%, transparent);
-    box-shadow:0 16px 34px rgba(0,0,0,.18);
-  }
-  .ad-art svg{ width:52px; height:52px; }
-  .ad-flag{ position:absolute; top:14px; left:14px; font-size:12px; font-weight:700; padding:6px 12px; border-radius:999px; }
-  .ad-flag.ok{ background:rgba(31,157,85,.18); color:#34c46d; }
-  .ad-flag.off{ background:color-mix(in srgb, currentColor 12%, transparent); color:inherit; }
-  .ad-title{ font-size:22px; font-weight:700; line-height:1.25; }
-  .ad-sub{ font-size:13px; opacity:.7; margin-top:-8px; }
-  .ad-tabs{ display:flex; gap:22px; border-bottom:1px solid color-mix(in srgb, currentColor 14%, transparent); }
-  .ad-tabs button{
-    border:0; background:none; padding:0 0 10px; font:inherit; font-size:15px; font-weight:700;
-    color:inherit; opacity:.55; cursor:pointer; position:relative;
-  }
-  .ad-tabs button.on{ opacity:1; }
-  .ad-tabs button.on::after{
-    content:""; position:absolute; left:0; right:0; bottom:-1px; height:3px; border-radius:3px; background:currentColor;
-  }
-  .ad-spec{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-  .ad-spec div{ padding:12px 14px; border-radius:18px; background:color-mix(in srgb, currentColor 6%, transparent); }
-  .ad-spec small{ display:block; font-size:12px; opacity:.6; font-weight:600; }
-  .ad-spec b{ display:block; font-size:15px; margin-top:4px; font-weight:700; }
-  .ad-log{ display:flex; flex-direction:column; gap:10px; }
-  .ad-log div{ display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:18px; background:color-mix(in srgb, currentColor 6%, transparent); }
-  .ad-log i{ width:38px; height:38px; border-radius:13px; display:flex; align-items:center; justify-content:center; flex:none; background:color-mix(in srgb, currentColor 10%, transparent); }
-  .ad-log i svg{ width:18px; height:18px; }
-  .ad-log b{ display:block; font-size:14.5px; }
-  .ad-log small{ display:block; font-size:12.5px; opacity:.6; margin-top:2px; }
-  .ad-empty{ text-align:center; opacity:.65; padding:18px 0; }
-  .ad-go{
-    width:100%; height:54px; border:0; border-radius:18px; font:inherit; font-size:16px; font-weight:700;
-    background:var(--navy,#0d2a52); color:#fff; cursor:pointer; box-shadow:0 12px 24px rgba(0,0,0,.2);
-  }
-  .ad-go:disabled{ background:color-mix(in srgb, currentColor 12%, transparent); color:inherit; opacity:.6; box-shadow:none; cursor:not-allowed; }
-  @media (min-width:700px){
-    .ad-stage{ height:260px; }
-    .ad-title{ font-size:26px; }
-  }
-</style>
-
 <script id="asset-modal-js">
 (function(){
   var UP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>';
