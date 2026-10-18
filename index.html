@@ -23025,17 +23025,42 @@ window.exportAllBackup = async function(){
       
   window.canOpenTab = tabAllowed;
       
-  // ✅ ซ่อน/แสดงแต่ละปุ่มในแถบตามสิทธิ์
+  // ✅ แถบหลักของทุกคน (ที่เหลือจะไปอยู่ในเมนูเพิ่มเติม)
+  var PRIMARY = ['dashboard', 'assets', 'borrow', 'users', 'reports'];
+  // ✅ ปุ่มรองตามค่าเดิมของระบบ (ใช้กับแอดมิน)
+  var ORIG_SECONDARY = ['maint', 'memos', 'reports', 'audit', 'monthly', 'settings', 'official'];
+
   window.applyTabPerms = function(tabs){
     var list = tabs || Array.prototype.slice.call(document.querySelectorAll('.tabbar .tab'));
     var admin = isAdmin();
+    var more = document.getElementById('tabMore');
+    var anySecondary = false;
+
     list.forEach(function(t){
       var k = t.dataset.tab;
-      if (!k || t.id === 'tabMore') return;     // ปุ่มเพิ่มเติมคงตามการทำงานเดิม
-      var base = (t.id === 'usersTabBtn' || t.id === 'settingsTabBtn') ? 'flex' : '';
-      t.style.display = tabAllowed(k) ? base : 'none';
-      if (k === 'reports') t.classList.toggle('tab-secondary', admin);   // เจ้าหน้าที่: รายงานอยู่แถบหลัก
+      if (!k || t.id === 'tabMore') return;
+
+      if (admin) {
+        // ✅ แอดมิน: จัดเหมือนค่าเดิมของระบบ
+        t.classList.toggle('tab-secondary', ORIG_SECONDARY.indexOf(k) !== -1);
+        if (['borrow', 'maint', 'memos', 'monthly', 'audit', 'reports'].indexOf(k) !== -1) t.style.display = '';
+        return;
+      }
+
+      // ✅ เจ้าหน้าที่ / ผู้ตรวจสอบ: แสดงตามสิทธิ์ที่ตำแหน่งกำหนด
+      var allowed = tabAllowed(k);
+      var isPrimary = PRIMARY.indexOf(k) !== -1;
+      t.classList.toggle('tab-secondary', !isPrimary);
+      if (t.id === 'usersTabBtn' || t.id === 'settingsTabBtn') {
+        t.style.display = allowed ? 'flex' : 'none';
+      } else {
+        t.style.display = allowed ? '' : 'none';
+      }
+      if (!isPrimary && allowed) anySecondary = true;
     });
+
+    // ✅ ปุ่มเพิ่มเติมแสดงเมื่อมีเมนูรองที่สิทธิ์เข้าได้
+    if (more && !admin) more.style.display = anySecondary ? 'flex' : 'none';
   };
 
   // ✅ เมื่อผู้ใช้เข้า/ออกจากระบบ ให้โหลดสิทธิ์ใหม่และจัดแถบ
