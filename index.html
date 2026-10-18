@@ -23041,8 +23041,8 @@ window.exportAllBackup = async function(){
   .ad-flag{ position:absolute; top:14px; left:14px; font-size:12px; font-weight:700; padding:6px 12px; border-radius:999px; }
   .ad-flag.ok{ background:rgba(31,157,85,.18); color:#34c46d; }
   .ad-flag.off{ background:color-mix(in srgb, currentColor 12%, transparent); color:inherit; }
-  .ad-title{ font-size:22px; font-weight:700; line-height:1.25; }
-  .ad-sub{ font-size:13px; opacity:.7; margin-top:-8px; }
+  .ad-title{ font-size:22px; font-weight:700; line-height:1.3; margin-bottom:2px; }
+  .ad-sub{ font-size:13px; opacity:.7; margin-top:6px; }
   .ad-tabs{ display:flex; gap:22px; border-bottom:1px solid color-mix(in srgb, currentColor 14%, transparent); }
   .ad-tabs button{
     border:0; background:none; padding:0 0 10px; font:inherit; font-size:15px; font-weight:700;
@@ -23289,6 +23289,34 @@ window.exportAllBackup = async function(){
     var go = wrap.querySelector('[data-borrow]');
     if (go) go.onclick = function(){ closeSheet(); openBorrowForm(id); };
   };
+})();
+</script>
+
+      <style id="asset-modal-scroll">
+  /* ✅ modal เลื่อนได้เฉพาะในตัวเอง ไม่ส่งการเลื่อนไปหน้าด้านหลัง */
+  #modalRoot .overlay{ overscroll-behavior:contain; }
+  #modalRoot .overlay > .sheet:has(.ad-wrap){
+    max-height:min(90vh, 900px);
+    max-height:min(90dvh, 900px);
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+    touch-action:pan-y;
+  }
+  /* ✅ ขณะเปิดรายละเอียด ล็อกการเลื่อนของหน้าหลัก */
+  body.ad-lock{ overflow:hidden; overscroll-behavior:none; }
+</style>
+
+<script id="asset-modal-scroll-js">
+(function(){
+  // ✅ ล็อกการเลื่อนหน้าหลักตอนเปิด modal รายละเอียด และปลดล็อกเมื่อปิด
+  var root = document.getElementById('modalRoot');
+  if (!root) return;
+  function sync(){
+    document.body.classList.toggle('ad-lock', !!root.querySelector('.ad-wrap'));
+  }
+  new MutationObserver(sync).observe(root, { childList: true, subtree: true });
+  sync();
 })();
 </script>
       
