@@ -22928,6 +22928,46 @@ window.exportAllBackup = async function(){
     box-shadow:0 0 0 3px var(--panel), 0 8px 18px color-mix(in srgb, var(--navy-deep) 28%, transparent);
   }
 </style>
+
+<style id="avatar-a-c">
+  /* ✅ เงานุ่มอย่างเดียว ไม่มีกรอบสี */
+  #view-users .off-av{
+    position:relative;
+    border:none !important;
+    box-shadow:0 8px 18px color-mix(in srgb, var(--navy-deep) 28%, transparent) !important;
+  }
+  /* ✅ จุดเขียวมุมขวาล่าง แสดงเฉพาะคนที่มีบัญชีเข้าระบบแล้ว */
+  #view-users .off-av.has-acct::after{
+    content:"";
+    position:absolute;
+    right:0; bottom:1px;
+    width:12px; height:12px;
+    border-radius:50%;
+    background:var(--ok, #1f9d55);
+    border:2px solid var(--panel, #ffffff);
+    box-sizing:content-box;
+  }
+  #view-users .off-card .off-av.has-acct::after{ width:14px; height:14px; }
+</style>
+
+<script id="avatar-status-js">
+(function(){
+  // ✅ ใส่คลาส has-acct ให้รูปของคนที่มีบัญชีเข้าระบบแล้ว
+  function markAccounts(){
+    var list = document.getElementById('userList');
+    if (!list) return;
+    list.querySelectorAll('[data-id]').forEach(function(row){
+      var av = row.querySelector('.off-av');
+      if (!av) return;
+      var k = row.getAttribute('data-id');
+      var u = (state.users || []).find(function(x){ return offKey(x) === k; });
+      av.classList.toggle('has-acct', !!(u && u['auth_user_id']));
+    });
+  }
+  new MutationObserver(markAccounts).observe(document.body, { childList: true, subtree: true });
+  markAccounts();
+})();
+</script>      
       
 </body>
 </html>
