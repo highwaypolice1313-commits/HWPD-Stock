@@ -22986,6 +22986,66 @@ window.exportAllBackup = async function(){
 })();
 </script>      
 
+      
+      <script id="tab-perms-js">
+(function(){
+  // ✅ สิทธิ์ที่ต้องมีเพื่อเห็นแต่ละเมนู (ถ้าเมนูไหนไม่อยู่ในรายการ จะซ่อนสำหรับผู้ที่ไม่ใช่แอดมิน)
+  var TAB_PERMS = {
+    assets:   ['view_assets'],
+    borrow:   ['request_borrow', 'approve_borrow'],
+    users:    ['manage_users'],
+    reports:  ['reports'],
+    maint:    ['maint'],
+    memos:    ['memo_docs', 'view_all_memos'],
+    monthly:  ['monthly_check'],
+    audit:    ['annual_count'],
+    settings: ['settings']
+  };
+  var ALWAYS = ['dashboard'];
+
+  // ✅ โหลดสิทธิ์ของตัวเองจากฐานข้อมูล (ยังไม่มีเซสชันให้ใช้ค่าว่าง)
+  window.loadMyPerms = async function(){
+    var s = await sb.auth.getSession();
+    if (!s.data.session) { window.__perms = { admin: false, perms: [] }; return window.__perms; }
+    var r = await sb.rpc('my_permissions');
+    window.__perms = (r.data && typeof r.data === 'object')
+      ? { admin: !!r.data.admin, perms: r.data.perms || [] }
+      : { admin: false, perms: [] };
+    return window.__perms;
+  };
+
+  function tabAllowed(key){
+    if (ALWAYS.indexOf(key) !== -1) return true;
+    if (isAdmin()) return true;
+    var perms = (window.__perms && window.__perms.perms) || [];
+    var need = TAB_PERMS[key];
+    if (!need) return false;
+    return need.some(function(p){ return perms.indexOf(p) !== -1; });
+  }
+      
+  window.canOpenTab = tabAllowed;
+      
+  // ✅ ซ่อน/แสดงแต่ละปุ่มในแถบตามสิทธิ์
+  window.applyTabPerms = function(tabs){
+    var list = tabs || Array.prototype.slice.call(document.querySelectorAll('.tabbar .tab'));
+    var admin = isAdmin();
+    list.forEach(function(t){
+      var k = t.dataset.tab;
+      if (!k || t.id === 'tabMore') return;     // ปุ่มเพิ่มเติมคงตามการทำงานเดิม
+      var base = (t.id === 'usersTabBtn' || t.id === 'settingsTabBtn') ? 'flex' : '';
+      t.style.display = tabAllowed(k) ? base : 'none';
+      if (k === 'reports') t.classList.toggle('tab-secondary', admin);   // เจ้าหน้าที่: รายงานอยู่แถบหลัก
+    });
+  };
+
+  // ✅ เมื่อผู้ใช้เข้า/ออกจากระบบ ให้โหลดสิทธิ์ใหม่และจัดแถบ
+  sb.auth.onAuthStateChange(function(){
+    window.__perms = undefined;
+    setTimeout(function(){ if (typeof layoutNav === 'function') layoutNav(); }, 0);
+  });
+})();
+</script>
+
 <style id="shop-view-css">
   /* ✅ การ์ดร้านค้า (เจ้าหน้าที่) */
   #assetList.asset-shop{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
@@ -23469,64 +23529,6 @@ window.exportAllBackup = async function(){
 })();
 </script>
 
-      <script id="tab-perms-js">
-(function(){
-  // ✅ สิทธิ์ที่ต้องมีเพื่อเห็นแต่ละเมนู (ถ้าเมนูไหนไม่อยู่ในรายการ จะซ่อนสำหรับผู้ที่ไม่ใช่แอดมิน)
-  var TAB_PERMS = {
-    assets:   ['view_assets'],
-    borrow:   ['request_borrow', 'approve_borrow'],
-    users:    ['manage_users'],
-    reports:  ['reports'],
-    maint:    ['maint'],
-    memos:    ['memo_docs', 'view_all_memos'],
-    monthly:  ['monthly_check'],
-    audit:    ['annual_count'],
-    settings: ['settings']
-  };
-  var ALWAYS = ['dashboard'];
-
-  // ✅ โหลดสิทธิ์ของตัวเองจากฐานข้อมูล (ยังไม่มีเซสชันให้ใช้ค่าว่าง)
-  window.loadMyPerms = async function(){
-    var s = await sb.auth.getSession();
-    if (!s.data.session) { window.__perms = { admin: false, perms: [] }; return window.__perms; }
-    var r = await sb.rpc('my_permissions');
-    window.__perms = (r.data && typeof r.data === 'object')
-      ? { admin: !!r.data.admin, perms: r.data.perms || [] }
-      : { admin: false, perms: [] };
-    return window.__perms;
-  };
-
-  function tabAllowed(key){
-    if (ALWAYS.indexOf(key) !== -1) return true;
-    if (isAdmin()) return true;
-    var perms = (window.__perms && window.__perms.perms) || [];
-    var need = TAB_PERMS[key];
-    if (!need) return false;
-    return need.some(function(p){ return perms.indexOf(p) !== -1; });
-  }
-      
-  window.canOpenTab = tabAllowed;
-      
-  // ✅ ซ่อน/แสดงแต่ละปุ่มในแถบตามสิทธิ์
-  window.applyTabPerms = function(tabs){
-    var list = tabs || Array.prototype.slice.call(document.querySelectorAll('.tabbar .tab'));
-    var admin = isAdmin();
-    list.forEach(function(t){
-      var k = t.dataset.tab;
-      if (!k || t.id === 'tabMore') return;     // ปุ่มเพิ่มเติมคงตามการทำงานเดิม
-      var base = (t.id === 'usersTabBtn' || t.id === 'settingsTabBtn') ? 'flex' : '';
-      t.style.display = tabAllowed(k) ? base : 'none';
-      if (k === 'reports') t.classList.toggle('tab-secondary', admin);   // เจ้าหน้าที่: รายงานอยู่แถบหลัก
-    });
-  };
-
-  // ✅ เมื่อผู้ใช้เข้า/ออกจากระบบ ให้โหลดสิทธิ์ใหม่และจัดแถบ
-  sb.auth.onAuthStateChange(function(){
-    window.__perms = undefined;
-    setTimeout(function(){ if (typeof layoutNav === 'function') layoutNav(); }, 0);
-  });
-})();
-</script>
       
 </body>
 </html>
