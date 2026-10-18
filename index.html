@@ -22501,6 +22501,24 @@ window.exportAllBackup = async function(){
 
 })();
 </script>      
+
+<style id="mc-clear-solid">
+  /* ✅ ปุ่มล้างผล: ตัวหนังสือทึบ ใช้สีจากธีมที่เลือก */
+  #view-monthly .mc-clear,
+  #view-monthly .link-btn.mc-clear{
+    color:var(--bad) !important;
+    opacity:1 !important;
+    font-weight:600;
+    background:var(--bad-wash);
+  }
+  #view-monthly .mc-clear:hover,
+  #view-monthly .link-btn.mc-clear:hover{
+    color:var(--bad) !important;
+    opacity:1 !important;
+    filter:brightness(.9);
+    background:var(--bad-wash);
+  }
+</style>      
       
 </body>
 </html>
