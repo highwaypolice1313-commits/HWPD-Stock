@@ -9188,20 +9188,15 @@ function layoutNav() {
   if (!bar || !pill) return;
   const tabs = [...bar.querySelectorAll('.tab')];
 
-        // ✅ ตั้งปุ่มแถบล่างตามสิทธิ์ (เจ้าหน้าที่: หน้าหลัก ครุภัณฑ์ จนท. รายงาน เพิ่มเติม)
+  // ✅ ตั้งปุ่มแถบล่างตามสิทธิ์ (เจ้าหน้าที่: ซ่อนยืม-คืน ให้รายงานอยู่แถบหลัก ที่เหลือคงไว้ในเมนูเพิ่มเติม)
   const viewerTabs = !isAdmin();
-  const VIEWER_KEEP = ['dashboard', 'assets', 'users', 'reports'];
   const moreBtn = document.getElementById('tabMore');
   tabs.forEach(t => {
     const k = t.dataset.tab;
     if (t === moreBtn) { t.style.display = viewerTabs ? 'flex' : ''; return; }
-    if (k === 'reports') t.classList.toggle('tab-secondary', !viewerTabs); // เจ้าหน้าที่: รายงานอยู่แถบหลัก
-    if (viewerTabs) {
-      if (t.id === 'usersTabBtn') t.style.display = 'flex';
-      else t.style.display = VIEWER_KEEP.includes(k) ? '' : 'none';
-    } else if (['borrow', 'maint', 'memos'].includes(k)) {
-      t.style.display = ''; // แอดมิน: คืนปุ่มที่เคยซ่อน ส่วนอื่นไม่แตะ
-    }
+    if (k === 'reports') t.classList.toggle('tab-secondary', !viewerTabs); // เจ้าหน้าที่: รายงานขึ้นแถบหลัก
+    if (k === 'borrow') t.style.display = viewerTabs ? 'none' : '';        // เจ้าหน้าที่: ซ่อนยืม-คืน
+    if (t.id === 'usersTabBtn' && viewerTabs) t.style.display = 'flex';    // เจ้าหน้าที่: แสดง จนท.
   });
 
   // เดสก์ท็อปใช้ sidebar: ล้างค่าที่ JS เคยตั้ง
