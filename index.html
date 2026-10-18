@@ -21166,7 +21166,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 
 <script id="user-ptr-refresh">
 (function(){
-  var THRESH = 70, EDGE = 24;
+  var THRESH = 130, EDGE = 24; // ✅ ต้องดึงเยอะขึ้นก่อนจะรีเฟรช (ประมาณ 260 พิกเซลบนหน้าจอ)
   var startX = 0, startY = 0, pull = 0, tracking = false, locked = false;
 
   var ind = document.createElement('div');
@@ -21195,7 +21195,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
     var dx = t.clientX - startX, dy = t.clientY - startY;
     // ต้องลากลงในแนวตั้งเกือบทั้งหมด ถ้าเอียงหรือลากแนวนอนให้ยกเลิก
     if (dy <= 0 || window.scrollY > 0 || Math.abs(dx) > Math.max(12, dy * 0.4)) { cancel(); return; }
-    pull = Math.min(dy * 0.5, 120);
+    pull = Math.min(dy * 0.5, 160); // ✅ เพิ่มขีดจำกัดให้สูงกว่าเกณฑ์ใหม่
     ind.classList.add('show');
     ind.querySelector('.ptr-txt').textContent = pull >= THRESH ? 'ปล่อยเพื่อรีเฟรช' : 'ดึงลงเพื่อรีเฟรช';
   }, { passive: true });
