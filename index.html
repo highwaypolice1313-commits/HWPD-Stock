@@ -9188,6 +9188,22 @@ function layoutNav() {
   if (!bar || !pill) return;
   const tabs = [...bar.querySelectorAll('.tab')];
 
+        // ✅ ตั้งปุ่มแถบล่างตามสิทธิ์ (เจ้าหน้าที่: หน้าหลัก ครุภัณฑ์ จนท. รายงาน เพิ่มเติม)
+  const viewerTabs = !isAdmin();
+  const VIEWER_KEEP = ['dashboard', 'assets', 'users', 'reports'];
+  const moreBtn = document.getElementById('tabMore');
+  tabs.forEach(t => {
+    const k = t.dataset.tab;
+    if (t === moreBtn) { t.style.display = viewerTabs ? 'flex' : ''; return; }
+    if (k === 'reports') t.classList.toggle('tab-secondary', !viewerTabs); // เจ้าหน้าที่: รายงานอยู่แถบหลัก
+    if (viewerTabs) {
+      if (t.id === 'usersTabBtn') t.style.display = 'flex';
+      else t.style.display = VIEWER_KEEP.includes(k) ? '' : 'none';
+    } else if (['borrow', 'maint', 'memos'].includes(k)) {
+      t.style.display = ''; // แอดมิน: คืนปุ่มที่เคยซ่อน ส่วนอื่นไม่แตะ
+    }
+  });
+
   // เดสก์ท็อปใช้ sidebar: ล้างค่าที่ JS เคยตั้ง
   if (!window.matchMedia('(max-width:899px)').matches) {
     tabs.forEach(t => { t.style.width = ''; t.classList.remove('promoted', 'nav-hide'); });
@@ -23071,7 +23087,12 @@ window.exportAllBackup = async function(){
   var DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>';
 
   // ✅ ซิงค์คลาส viewer-mode ให้ตรงกับสิทธิ์ที่ล็อกอินอยู่ (แอดมินไม่ถูกกระทบ)
-  function syncRole(){ document.body.classList.toggle('viewer-mode', !isAdmin()); }
+  var lastViewer = null;
+  function syncRole(){
+    var v = !isAdmin();
+    document.body.classList.toggle('viewer-mode', v);
+    if (v !== lastViewer) { lastViewer = v; if (typeof layoutNav === 'function') layoutNav(); }
+  }
   new MutationObserver(syncRole).observe(document.body, { childList: true, subtree: true });
   syncRole();
 
