@@ -22519,6 +22519,301 @@ window.exportAllBackup = async function(){
     background:var(--bad-wash);
   }
 </style>      
+
+<script id="bulk-import-js">
+(function(){
+  var BOM = '\uFEFF';
+
+  // ✅ หัวคอลัมน์ต้องตรงกับที่ระบบอ่าน (ห้ามเปลี่ยนชื่อ)
+  var KINDS = {
+    assets: {
+      label: 'ครุภัณฑ์',
+      file: 'template-assets.csv',
+      required: ['ชื่อครุภัณฑ์', 'หมวดหมู่'],
+      cols: [
+        { h: 'ชื่อครุภัณฑ์', k: 'name', req: true },
+        { h: 'หมวดหมู่', k: 'category', req: true },
+        { h: 'ยี่ห้อ/รุ่น', k: 'brand' },
+        { h: 'หมายเลขเครื่อง', k: 'serial' },
+        { h: 'วันที่รับเข้า', k: 'receivedDate', date: true },
+        { h: 'มูลค่า(บาท)', k: 'value', num: true },
+        { h: 'สถานะ', k: 'status' },
+        { h: 'ผู้ครอบครอง/หน่วยงาน', k: 'holder' },
+        { h: 'หน่วยงาน', k: 'unit' },
+        { h: 'หมายเหตุ', k: 'note' },
+        { h: 'วันครบกำหนดตรวจสภาพ/ต่อทะเบียน', k: 'renewalDue', date: true },
+        { h: 'ทะเบียนรถ', k: 'licensePlate' },
+        { h: 'หมายเลขตัวถัง', k: 'chassisNo' },
+        { h: 'หมายเลขเครื่องยนต์', k: 'engineNo' },
+        { h: 'ขนาดยาง', k: 'tireSize' }
+      ],
+      example: ['(ตัวอย่าง) เครื่องคอมพิวเตอร์ตั้งโต๊ะ', 'คอมพิวเตอร์', 'Dell OptiPlex', 'SN12345',
+        '2026-01-15', '25000', 'พร้อมใช้งาน', '', 'ส.ทล.3 กก.1 บก.ทล.', '', '2027-01-15', '', '', '', '']
+    },
+    officers: {
+      label: 'เจ้าหน้าที่',
+      file: 'template-officers.csv',
+      required: ['ชื่อ-สกุล', 'รหัสเปรียบเทียบปรับ'],
+      cols: [
+        { h: 'ชื่อ-สกุล', k: 'name', req: true },
+        { h: 'ยศ', k: 'rank' },
+        { h: 'ตำแหน่ง', k: 'position' },
+        { h: 'หน่วยงาน', k: 'unit' },
+        { h: 'รหัสเปรียบเทียบปรับ', k: 'badge', req: true },
+        { h: 'วันเกิด', k: 'birthDate', date: true },
+        { h: 'เลขบัตรประชาชน', k: 'citizenId' },
+        { h: 'เบอร์โทร', k: 'phone' },
+        { h: 'กรุ๊ปเลือด', k: 'bloodType' },
+        { h: 'สิทธิ์', k: 'role' },
+        { h: 'บทบาทในบันทึกเบิก-ยืม', k: 'memoRole' }
+      ],
+      example: ['(ตัวอย่าง) สมชาย ใจดี', 'ด.ต.', 'ผบ.หมู่ ส.ทล.3 กก.1 บก.ทล.', 'ส.ทล.3 กก.1 บก.ทล.',
+        'EX0001', '1993-12-16', '', '0812345678', 'O', 'officer', 'ผู้ขอเบิก/ยืม (ค่าเริ่มต้น)']
+    }
+  };
+
+  // ---------- CSV ----------
+  function csvEscape(v){
+    var s = v == null ? '' : String(v);
+    return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+  function toCsv(headers, rows){
+    return BOM + [headers].concat(rows).map(function(r){
+      return r.map(csvEscape).join(',');
+    }).join('\r\n') + '\r\n';
+  }
+  function parseCsv(text){
+    text = String(text).replace(/^\uFEFF/, '');
+    var rows = [], row = [], cur = '', q = false;
+    for (var i = 0; i < text.length; i++){
+      var c = text[i];
+      if (q){
+        if (c === '"'){
+          if (text[i + 1] === '"'){ cur += '"'; i++; } else { q = false; }
+        } else cur += c;
+      } else if (c === '"') { q = true; }
+      else if (c === ',') { row.push(cur); cur = ''; }
+      else if (c === '\n' || c === '\r'){
+        if (c === '\r' && text[i + 1] === '\n') i++;
+        row.push(cur); cur = ''; rows.push(row); row = [];
+      } else cur += c;
+    }
+    if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
+    return rows.filter(function(r){ return r.some(function(x){ return String(x).trim() !== ''; }); });
+  }
+
+  // ---------- วันที่: รับ YYYY-MM-DD หรือ DD/MM/YYYY (พ.ศ. หรือ ค.ศ.) ----------
+  function pad(x){ return String(x).padStart(2, '0'); }
+  function normDate(s){
+    s = String(s || '').trim();
+    if (!s) return '';
+    var m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    if (m) return m[1] + '-' + pad(m[2]) + '-' + pad(m[3]);
+    m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (m){
+      var y = Number(m[3]); if (y > 2400) y -= 543;
+      return y + '-' + pad(m[2]) + '-' + pad(m[1]);
+    }
+    return null; // รูปแบบผิด
+  }
+
+  // ---------- ตรวจแต่ละแถว ----------
+  function mapRows(kind, rows){
+    var K = KINDS[kind];
+    var head = rows[0].map(function(h){ return String(h).trim(); });
+    var missing = K.cols.filter(function(c){ return c.req && head.indexOf(c.h) === -1; }).map(function(c){ return c.h; });
+    if (missing.length) return { fatal: 'ไม่พบคอลัมน์: ' + missing.join(', ') };
+
+    var out = [], errs = [], total = 0;
+    rows.slice(1).forEach(function(r, idx){
+      var lineNo = idx + 2;
+      var firstIdx = head.indexOf(K.cols[0].h);
+      var firstVal = String(r[firstIdx] || '').trim();
+      if (firstVal.indexOf('(ตัวอย่าง)') === 0) return; // ข้ามแถวตัวอย่าง
+
+      total++;
+      var o = { _line: lineNo }, e = [];
+      K.cols.forEach(function(c){
+        var j = head.indexOf(c.h);
+        var v = j === -1 ? '' : String(r[j] == null ? '' : r[j]).trim();
+        if (c.date){
+          var iso = normDate(v);
+          if (iso === null) e.push(c.h + ' รูปแบบวันที่ไม่ถูกต้อง');
+          else v = iso;
+        }
+        if (c.num && v !== ''){
+          var n = Number(v.replace(/,/g, ''));
+          if (isNaN(n)) e.push(c.h + ' ต้องเป็นตัวเลข');
+          else v = n;
+        }
+        if (c.req && (v === '' || v === undefined)) e.push('ต้องกรอก ' + c.h);
+        o[c.k] = v;
+      });
+
+      if (kind === 'officers'){
+        o.role = ['admin', 'แอดมิน'].indexOf(String(o.role).trim()) !== -1 ? 'admin' : 'officer';
+        if (typeof RANK_OPTIONS !== 'undefined' && RANK_OPTIONS && o.rank && RANK_OPTIONS.indexOf(o.rank) === -1){
+          e.push('ยศ "' + o.rank + '" ไม่อยู่ในรายการ');
+        }
+      }
+
+      if (e.length) errs.push({ line: lineNo, msg: e.join(', ') });
+      else out.push(o);
+    });
+    return { rows: out, errs: errs, total: total };
+  }
+
+  // ---------- นำเข้าทีละแถว ----------
+  async function runImport(kind, rows){
+    var ok = 0, fail = [];
+    for (var i = 0; i < rows.length; i++){
+      var r = rows[i];
+      setLoading(true, 'กำลังนำเข้า ' + (i + 1) + ' / ' + rows.length + ' ...');
+      try {
+        if (kind === 'assets'){
+          await apiPost('addAsset', {
+            name: r.name, category: r.category, brand: r.brand, serial: r.serial,
+            receivedDate: r.receivedDate, value: r.value === '' ? undefined : r.value,
+            status: r.status, holder: r.holder, unit: r.unit, note: r.note,
+            renewalDue: r.renewalDue, licensePlate: r.licensePlate,
+            chassisNo: r.chassisNo, engineNo: r.engineNo, tireSize: r.tireSize
+          });
+        } else {
+          var res = await sb.functions.invoke('admin-users', {
+            body: {
+              action: 'create', name: r.name, rank: r.rank, position: r.position, unit: r.unit,
+              role: r.role, memoRole: r.memoRole, badge: r.badge, birthDate: r.birthDate,
+              citizenId: r.citizenId, phone: r.phone, bloodType: r.bloodType
+            }
+          });
+          if (res.error || !res.data || !res.data.ok){
+            throw new Error((res.data && res.data.error) || (res.error && res.error.message) || 'ไม่สำเร็จ');
+          }
+        }
+        ok++;
+      } catch (e) {
+        fail.push({ line: r._line, msg: e.message || 'ไม่สำเร็จ' });
+      }
+    }
+    setLoading(false);
+    return { ok: ok, fail: fail };
+  }
+
+  // ---------- ดาวน์โหลด template ----------
+  function downloadTemplate(kind){
+    var K = KINDS[kind];
+    var csv = toCsv(K.cols.map(function(c){ return c.h; }), [K.example]);
+    var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = K.file;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+  }
+
+  // ---------- หน้าต่างนำเข้า ----------
+  function openImport(kind){
+    var K = KINDS[kind];
+    var pending = [];
+
+    showSheet(
+      '<div class="sheet-title">นำเข้าข้อมูล' + K.label + '</div>' +
+      '<div class="hint">1) ดาวน์โหลด template แล้วกรอกข้อมูลตามหัวคอลัมน์ ห้ามเปลี่ยนชื่อหัวคอลัมน์ ลบแถว (ตัวอย่าง) ออก</div>' +
+      '<div class="btn-row"><button class="btn btn-ghost" id="biTpl" type="button">ดาวน์โหลด template (CSV)</button></div>' +
+      '<div class="hint" style="margin-top:12px;">2) คอลัมน์ที่ต้องกรอก: ' + escapeHtml(K.required.join(', ')) + '<br>' +
+        'วันที่ใช้ได้ทั้ง 2026-01-31 หรือ 31/01/2569 (พ.ศ.)</div>' +
+      '<div class="field" style="margin-top:12px;"><label>3) เลือกไฟล์ CSV ที่กรอกแล้ว</label>' +
+        '<input class="input" type="file" id="biFile" accept=".csv,text/csv"></div>' +
+      '<div id="biPreview" class="hint" style="min-height:20px;"></div>' +
+      '<div class="btn-row"><button class="btn btn-primary" id="biGo" type="button" disabled>นำเข้า</button></div>'
+    );
+
+    document.getElementById('biTpl').onclick = function(){ downloadTemplate(kind); };
+
+    var preview = document.getElementById('biPreview');
+    var go = document.getElementById('biGo');
+
+    document.getElementById('biFile').onchange = function(){
+      var f = this.files && this.files[0];
+      if (!f) return;
+      var rd = new FileReader();
+      rd.onload = function(){
+        var rows = parseCsv(rd.result);
+        if (rows.length < 2){
+          preview.innerHTML = '<span style="color:#d64545;">ไม่พบข้อมูลในไฟล์</span>';
+          pending = []; go.disabled = true; return;
+        }
+        var res = mapRows(kind, rows);
+        if (res.fatal){
+          preview.innerHTML = '<span style="color:#d64545;">' + escapeHtml(res.fatal) + '</span>';
+          pending = []; go.disabled = true; return;
+        }
+        pending = res.rows;
+        var html = 'พบ ' + res.total + ' แถว · ถูกต้อง <b>' + res.rows.length + '</b> · มีข้อผิดพลาด <b>' + res.errs.length + '</b>';
+        if (res.errs.length){
+          html += '<div style="color:#d64545;margin-top:8px;text-align:left;">' +
+            res.errs.slice(0, 15).map(function(x){ return 'แถว ' + x.line + ': ' + escapeHtml(x.msg); }).join('<br>') +
+            (res.errs.length > 15 ? '<br>และอีก ' + (res.errs.length - 15) + ' แถว' : '') +
+            '<div style="margin-top:6px;">แถวที่มีข้อผิดพลาดจะถูกข้าม แก้ไฟล์แล้วเลือกใหม่ได้</div></div>';
+        }
+        preview.innerHTML = html;
+        go.disabled = pending.length === 0;
+        go.textContent = 'นำเข้า ' + pending.length + ' รายการ';
+      };
+      rd.readAsText(f, 'utf-8');
+    };
+
+    go.onclick = async function(){
+      if (!pending.length) return;
+      if (!await confirmSheet('นำเข้า ' + pending.length + ' รายการ ระบบจะบันทึกทีละแถว ยืนยันหรือไม่?',
+          { title: 'นำเข้าข้อมูล', okText: 'นำเข้า' })) return;
+      go.disabled = true;
+      var result = await runImport(kind, pending);
+      showReport(kind, result);
+    };
+  }
+
+  function showReport(kind, result){
+    var K = KINDS[kind];
+    var list = result.fail.slice(0, 30).map(function(x){
+      return 'แถว ' + x.line + ': ' + escapeHtml(x.msg);
+    }).join('<br>');
+    showSheet(
+      '<div class="sheet-title">ผลการนำเข้าข้อมูล' + K.label + '</div>' +
+      '<div class="hint" style="font-size:14px;">สำเร็จ <b style="color:#1f9d55;">' + result.ok + '</b> รายการ · ไม่สำเร็จ <b style="color:#d64545;">' + result.fail.length + '</b> รายการ</div>' +
+      (result.fail.length ? '<div class="hint" style="color:#d64545;text-align:left;margin-top:10px;">' + list +
+        (result.fail.length > 30 ? '<br>และอีก ' + (result.fail.length - 30) + ' แถว' : '') + '</div>' : '') +
+      '<div class="btn-row"><button class="btn btn-primary" id="biDone" type="button">ปิดและโหลดข้อมูลใหม่</button></div>'
+    );
+    document.getElementById('biDone').onclick = function(){ location.reload(); };
+  }
+
+  // ---------- ใส่ปุ่มในหัวข้อของหน้าครุภัณฑ์และรายชื่อเจ้าหน้าที่ ----------
+  function mountButtons(){
+    [['view-assets', 'assets'], ['view-users', 'officers']].forEach(function(p){
+      var view = document.getElementById(p[0]);
+      if (!view || view.style.display === 'none') return;
+      if (view.querySelector('[data-bulk-import]')) return;
+      var title = view.querySelector('.section-title');
+      if (!title) return;
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'btn btn-ghost';
+      b.dataset.bulkImport = p[1];
+      b.style.cssText = 'padding:6px 12px;font-size:13px;margin-left:8px;';
+      b.textContent = 'นำเข้าข้อมูล';
+      b.onclick = function(){ openImport(p[1]); };
+      title.appendChild(b);
+    });
+  }
+  new MutationObserver(mountButtons).observe(document.body, {
+    childList: true, subtree: true, attributes: true, attributeFilter: ['style']
+  });
+  mountButtons();
+})();
+</script>      
       
 </body>
 </html>
