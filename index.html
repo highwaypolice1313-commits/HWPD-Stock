@@ -23301,45 +23301,6 @@ window.exportAllBackup = async function(){
 })();
 </script>
 
-      <style id="sx-fullscreen-css">
-  /* ✅ ซ่อนแถบเมนูล่างและปุ่มเพิ่มระหว่างเปิดหน้ารายละเอียด */
-  body.sx-open .tabbar,
-  body.sx-open #fabBtn,
-  body.sx-open .fab{ display:none !important; }
- 
-  /* ✅ เต็มจอทุกอุปกรณ์ เลื่อนได้ในตัวเอง ปุ่มกลับอยู่ด้านบนเสมอ */
-  .sx-page{ position:fixed !important; inset:0 !important; z-index:200 !important; background:#e9ecf2; display:block !important; }
-  .sx-scroll{ position:absolute; inset:0; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; background:#fff; }
-  .sx-phone{ max-width:760px; margin:0 auto; min-height:100%; display:flex; flex-direction:column; padding-bottom:0 !important; background:#fff; }
- 
-  /* ✅ หัวหน้าแบบติดด้านบน */
-  .sx-bar{
-    position:sticky; top:0; z-index:5;
-    display:flex; align-items:center; justify-content:space-between; gap:10px;
-    padding:calc(env(safe-area-inset-top,0px) + 10px) 16px 10px;
-    background:rgba(255,255,255,.94); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
-    border-bottom:1px solid #e8ecf3;
-  }
-  .sx-bar .sx-label{ font-size:14px; font-weight:700; opacity:.75; }
- 
-  /* ✅ แถบยืมติดด้านล่างของหน้า ไม่ทับเนื้อหา */
-  .sx-dock{
-    position:sticky; bottom:0; z-index:5; left:auto; transform:none; width:auto; max-width:none; margin-top:auto;
-    padding:12px 16px calc(env(safe-area-inset-bottom,0px) + 14px);
-    background:rgba(255,255,255,.96); border-top:1px solid #e8ecf3;
-  }
- 
-  /* ✅ ขนาดรูปและตัวอักษรบนจอใหญ่ */
-  @media (min-width:700px){
-    .sx-gallery{ height:340px; margin:12px 24px 0; }
-    .sx-head{ padding:22px 24px 0; }
-    .sx-title{ font-size:28px; }
-    .sx-pane{ padding:18px 24px 0; }
-    .sx-tabs{ margin:24px 24px 0; }
-    .sx-dock{ padding-left:24px; padding-right:24px; }
-    .sx-top-pad{ height:0; }
-  }
-</style>
       
 </body>
 </html>
