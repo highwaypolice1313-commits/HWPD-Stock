@@ -23826,6 +23826,64 @@ window.exportAllBackup = async function(){
   @media (prefers-reduced-motion: reduce){ .sk, .sk-item, .page > *{ animation:none !important; } }
   @media (min-width:600px){ .sk-wrap{ max-width:none; } }
 </style>
+
+      <style id="tabbar-collapse">
+  /* ✅ แถบล่างย่อ/ขยายตอนเลื่อน */
+  .tabbar{
+    transform-origin:50% 100%;
+    transition:transform .28s cubic-bezier(.3,.7,.3,1);
+    will-change:transform;
+  }
+  .tabbar .lbl{
+    transition:opacity .18s ease, max-width .22s ease;
+    max-width:80px;
+  }
+  .tabbar.tabbar-compact{ transform:translateY(4px) scale(.92); }
+  .tabbar.tabbar-compact .lbl{ opacity:0; max-width:0; overflow:hidden; }
+</style>
+
+<script id="tabbar-collapse-js">
+(function(){
+  var THRESH = 8;          // ระยะเลื่อนขั้นต่ำก่อนเปลี่ยนสถานะ (พิกเซล)
+  var lastY = 0;
+  var compact = false;
+  var ticking = false;
+
+  function bar(){ return document.querySelector('.tabbar'); }
+
+  function setCompact(on){
+    if (compact === on) return;
+    compact = on;
+    var b = bar();
+    if (b) b.classList.toggle('tabbar-compact', on);
+  }
+
+  // ✅ อ่านตำแหน่งเลื่อนของหน้าหลัก หรือของ element ที่เลื่อนอยู่
+  function readY(target){
+    if (!target || target === document || target === window || target === document.documentElement || target === document.body) {
+      return window.scrollY || document.documentElement.scrollTop || 0;
+    }
+    return target.scrollTop || 0;
+  }
+
+  function update(y){
+    if (y < 10) { setCompact(false); lastY = y; return; }   // อยู่บนสุดให้ขยายเต็ม
+    var dy = y - lastY;
+    if (Math.abs(dy) < THRESH) return;
+    setCompact(dy > 0);                                      // เลื่อนลง = ย่อ, เลื่อนขึ้น = ขยาย
+    lastY = y;
+  }
+
+  document.addEventListener('scroll', function(e){
+    // ✅ ไม่ให้การเลื่อนในหน้าต่างซ้อน (modal, sheet, หน้าเต็มจอ) ไปย่อแถบ
+    if (e.target instanceof Element && e.target.closest('#modalRoot, .sx-page, .sheet, .overlay')) return;
+    var y = readY(e.target);
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(function(){ ticking = false; update(y); });
+  }, { capture: true, passive: true });
+})();
+</script>
       
 </body>
 </html>
