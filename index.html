@@ -9178,7 +9178,7 @@ requestAnimationFrame(function(){ layoutNav(); }); // ✅ จัดแถบห�
     if (name === 'memos' && isAdmin()) openPrintMemoForm({});
   };
   if (name === 'dashboard') renderDashboard();
-  if (name === 'assets') renderAssets();
+  if (name === 'assets') setTimeout(renderAssets, 460);   // รอให้ pill เลื่อนจบ (0.42s) ก่อนเรนเดอร์ข้อมูลหนัก ๆ
   if (name === 'borrow') renderBorrow();
   if (name === 'maint') renderMaint();
   if (name === 'memos') renderMemos();
