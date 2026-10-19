@@ -10087,13 +10087,12 @@ async function deleteBorrowItem(b) {
     ? 'รายการนี้ยังไม่ได้คืน หากย้ายไปถังขยะ ครุภัณฑ์ "' + (b['ชื่อครุภัณฑ์'] || '') + '" จะถูกปรับสถานะกลับเป็น "พร้อมใช้งาน" ทันที ยืนยันหรือไม่? (กู้คืนได้ภายใน 30 วัน)'
     : 'ย้ายรายการยืม-คืนนี้ไปถังขยะ? กู้คืนได้ภายใน 30 วันที่ตั้งค่า > ถังขยะ';
   if (!await confirmSheet(msg, { title: 'ลบรายการยืม-คืน', okText: 'ย้ายไปถังขยะ', tone: 'bad' })) return;
-  setLoading(true, 'กำลังลบรายการ...');
+
   try {
     await apiPost('deleteBorrow', { id: b['รหัสรายการ'] });
     toast('ลบรายการยืม-คืนแล้ว');
     await reloadThen(renderBorrow);
   } catch (err) { toast(err.message || 'ลบไม่สำเร็จ'); }
-  finally { setLoading(false); }
 }
 
 async function deleteUserItem(u) {
@@ -12686,12 +12685,12 @@ function openBorrowDetail(id) {
       if (!await confirmSheet(confirmMsg, {title:'ลบรายการยืม-คืน', okText:'ย้ายไปถังขยะ', tone:'bad'})) return;
       const btn = deleteBorrowBtn;
       if (btn.disabled) return;
-      setButtonBusy(btn, true, 'กำลังลบ...'); setLoading(true, 'กำลังลบรายการ...');
+      setButtonBusy(btn, true, 'กำลังลบ...');
       try {
         await apiPost('deleteBorrow', { id });
         closeSheet(); toast('ลบรายการยืม-คืนแล้ว'); await reloadThen(renderBorrow);
       } catch (err) { toast(err.message || 'ลบไม่สำเร็จ'); }
-      finally { setLoading(false); setButtonBusy(btn, false, 'ลบรายการนี้'); }
+      finally { setButtonBusy(btn, false, 'ลบรายการนี้'); }
     };
   }
   if (isAdmin() && status === 'รออนุมัติ') {
