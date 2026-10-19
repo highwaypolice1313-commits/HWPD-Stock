@@ -7696,6 +7696,13 @@ html, body{
 
   var badge = '', pin = '', step = 'badge', role = '', busy = false;
 
+  // ใช้ตัวช่วยของตัวเองเพราะสคริปต์นี้ทำงานก่อนสคริปต์หลักประกาศ escapeHtml
+  function loginEsc(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(m){
+      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[m];
+    });
+  }
+
   function err(m){ $('lgErr').textContent = m || ''; }
   function getRemembered(){ try { return localStorage.getItem(REMEMBER) || ''; } catch (e) { return ''; } }
   function setRemembered(b){ try { if (b) localStorage.setItem(REMEMBER, b); else localStorage.removeItem(REMEMBER); } catch (e) {} }
@@ -7771,7 +7778,7 @@ html, body{
     $('lgRoles').hidden = true;
     var h = $('lgHello');
     h.hidden = false;
-    h.innerHTML = 'เข้าสู่ระบบในชื่อ <b>' + escapeHtml(b === ADMIN_BADGE ? 'แอดมิน' : b) + '</b>' +
+    h.innerHTML = 'เข้าสู่ระบบในชื่อ <b>' + loginEsc(b === ADMIN_BADGE ? 'แอดมิน' : b) + '</b>' +
       '<br><button type="button" class="lg-switch" id="lgSwitch">เปลี่ยนผู้ใช้</button>';
     $('lgSwitch').onclick = function(){ setRemembered(''); showRoles(); };
     paintRole(); paintScreen();
