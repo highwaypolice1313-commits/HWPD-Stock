@@ -11883,15 +11883,34 @@ function openCategoryPicker(current, onPick) {
 
   const root = document.createElement('div');
   document.body.appendChild(root);
-  const close = () => root.remove();
 
-  // กันการลากพื้นหลังบน iPad ยกเว้นตัวเลื่อนหมวดหมู่
-  root.addEventListener('touchmove', e => {
-    if (!e.target.closest('.cat-scroll')) e.preventDefault();
-  }, { passive: false });
+  // ล็อกหน้าหลักขณะเปิด picker (ตำแหน่งเลื่อนเดิมจะถูกคืนตอนปิด)
+  const scrollY = window.scrollY;
+  const prevBody = {
+    position: document.body.style.position,
+    top: document.body.style.top,
+    left: document.body.style.left,
+    right: document.body.style.right,
+    width: document.body.style.width
+  };
+  document.body.style.position = 'fixed';
+  document.body.style.top = (-scrollY) + 'px';
+  document.body.style.left = '0';
+  document.body.style.right = '0';
+  document.body.style.width = '100%';
+
+  const close = () => {
+    root.remove();
+    document.body.style.position = prevBody.position;
+    document.body.style.top = prevBody.top;
+    document.body.style.left = prevBody.left;
+    document.body.style.right = prevBody.right;
+    document.body.style.width = prevBody.width;
+    window.scrollTo(0, scrollY);
+  };
 
   root.innerHTML = `
-    <div class="vp-overlay">
+    <div class="vp-overlay vp-overlay-cat">
       <div class="sheet vp-sheet">
         <button class="sheet-close" type="button" title="ปิด" aria-label="ปิด">${ICONS.close}</button>
         <div class="sheet-handle"></div>
@@ -12030,7 +12049,12 @@ function ensureValuePickerCss() {
   position:fixed; inset:0; z-index:95;
   display:flex; align-items:flex-end; justify-content:center;
   background:rgba(15,25,38,.46); backdrop-filter:blur(4px);
-  overscroll-behavior:contain; touch-action:none;
+  overscroll-behavior:contain;
+}
+.vp-sheet .cat-scroll{
+  flex:1 1 0; min-height:0;
+  overflow-y:auto; -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain; touch-action:pan-y;
 }
 /* กล่องหน้าต่าง: จำกัดความสูง แบ่งเป็นหัว / ค้นหา / รายการ (เลื่อนได้) */
 .vp-sheet{
