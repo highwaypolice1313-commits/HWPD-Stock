@@ -9292,8 +9292,6 @@ if (document.fonts && document.fonts.ready) document.fonts.ready.then(layoutNav)
 /* ---------- sheet เมนูทั้งหมด ---------- */
 function openMoreMenu() {
   const items = [...document.querySelectorAll('.tab-secondary')].filter(b => b.style.display !== 'none');
-  const userName = state.user?.name || document.getElementById('navUserName')?.textContent || 'ผู้ใช้งาน';
-  const userRole = state.user?.role || document.getElementById('navUserRole')?.textContent || '';
   showSheet(`
     <div class="sheet-title">เมนูทั้งหมด</div>
     <div class="more-grid">
@@ -9302,20 +9300,38 @@ function openMoreMenu() {
           <span class="more-ico">${b.querySelector('.ico svg').outerHTML}</span>
           <span>${escapeHtml(b.querySelector('.lbl').textContent)}</span>
         </button>`).join('')}
-    </div>
-</div>`, 'nav-more-sheet');
-const moreOpenedAt = Date.now();
-document.querySelectorAll('.more-item').forEach(x => x.onclick = () => {
-  // กัน click สังเคราะห์ที่ตกค้างจากการแตะปุ่ม "เมนู" (ทำให้เด้งไปหน้าที่อยู่ใต้นิ้ว เช่น ตั้งค่า)
-  if (Date.now() - moreOpenedAt < 700) return;
-  closeSheet();
-  renderTab(x.dataset.go);
-});
+    </div>`, 'nav-more-sheet');
+
+  const sheetEl = document.querySelector('#modalRoot .nav-more-sheet');
+  let downItem = null, downX = 0, downY = 0, handled = false;
+  const go = (btn) => { closeSheet(); renderTab(btn.dataset.go); };
+
+  // รับการแตะจากจุดที่นิ้วแตะลงจริงเท่านั้น ไม่มีการรอเวลา
+  sheetEl?.addEventListener('pointerdown', e => {
+    downItem = e.target.closest('.more-item');
+    downX = e.clientX; downY = e.clientY; handled = false;
+  });
+  sheetEl?.addEventListener('pointercancel', () => { downItem = null; });
+  sheetEl?.addEventListener('pointerup', e => {
+    const b = e.target.closest('.more-item');
+    if (!b || b !== downItem) return;
+    if (Math.abs(e.clientX - downX) > 10 || Math.abs(e.clientY - downY) > 10) return;   // ลากเลื่อนไม่นับ
+    handled = true;
+    go(b);
+  });
+  // click ที่ไม่ได้เริ่มจากการแตะลงบนรายการนั้น (click ที่ตกค้างจากปุ่มเมนู) จะถูกข้าม
+  sheetEl?.addEventListener('click', e => {
+    const b = e.target.closest('.more-item');
+    if (!b || handled || b !== downItem) return;
+    go(b);
+  });
+
   document.getElementById('mobileMoreLogout')?.addEventListener('click', () => {
     closeSheet();
     document.getElementById('btnLogout')?.click();
   });
 }
+      
 const moreBtn = document.getElementById('tabMore');
 let moreTouchAt = 0;
 const moreSheetOpen = () => !!document.querySelector('#modalRoot .nav-more-sheet');
