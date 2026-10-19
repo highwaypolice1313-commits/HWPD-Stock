@@ -8531,6 +8531,8 @@ if (window.applyTabPerms) applyTabPerms();
   try {
     await loadAll(true);
     renderTabNow._restore = true;
+    if (!isAdmin() && window.loadMyPerms) await loadMyPerms();
+    if (window.applyTabPerms) applyTabPerms();     
     renderTab(startTab);
     restoreScroll();
   } catch (err) {
@@ -22988,7 +22990,7 @@ window.exportAllBackup = async function(){
   var TAB_RULE = {
     dashboard: null,
     assets:    null,
-    borrow: ['approve_borrow', 'request_borrow'],
+    borrow:    ['approve_borrow', 'request_borrow'],
     users:     null,
     reports:   null,
     maint:     null,
