@@ -8760,11 +8760,12 @@ async function loadAll(showLoader = false) {
 async function reloadThen(renderFn) {
   const y = window.scrollY;
   try { await loadAll(); } catch (e) { /* loadAll แจ้ง toast แล้ว */ }
-  // ✅ วาดหน้าด้วยวิธีเดียวกับปุ่มรีเฟรช เพื่อให้จุดแดงและตัวกรองอัปเดตตามข้อมูลล่าสุด
-  try {
-    if (typeof renderTab === 'function') renderTab(state.tab || 'dashboard');
-    else if (renderFn) renderFn();
-  } catch (e) { console.error(e); }
+  // ✅ บันทึกสถานะที่เพิ่งโหลด เพื่อให้ตัวรับเรียลไทม์ไม่วาดซ้ำกับการเปลี่ยนแปลงนี้
+  window.__lastBorrowSig = (state.borrow || []).map(b => b.id + ':' + b['สถานะ']).join('|');
+  window.__quietRender = true;                 // ✅ วาดแบบเงียบ ไม่เล่นอนิเมชันซ้ำ
+  try { if (typeof renderTab === 'function') renderTab(state.tab || 'dashboard'); else if (renderFn) renderFn(); }
+  catch (e) { console.error(e); }
+  finally { window.__quietRender = false; }
   requestAnimationFrame(() => window.scrollTo(0, y));
 }
       
@@ -23958,11 +23959,11 @@ window.exportAllBackup = async function(){
     try {
       await loadAll();
       var sig = sigOf();
-      if (sig !== lastSig) {    // ✅ วาดใหม่เฉพาะเมื่อข้อมูลเปลี่ยนจริง
-        lastSig = sig;
+      if (sig !== window.__lastBorrowSig) {
+        window.__lastBorrowSig = sig;
         var sheetOpen = document.querySelector('#modalRoot .overlay');
         if (state.tab === 'borrow' && !sheetOpen) {
-          window.__quietRender = true;          // ✅ วาดแบบเงียบ ไม่เล่นอนิเมชันซ้ำ
+          window.__quietRender = true;
           try { renderTab('borrow'); }
           finally { window.__quietRender = false; }
         }
@@ -23979,7 +23980,7 @@ window.exportAllBackup = async function(){
 
   function subscribe(){
     if (chan) return;
-    lastSig = sigOf();
+    window.__lastBorrowSig = sigOf();
     chan = sb.channel('borrow-live')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'borrow' }, function(payload){
         var r = payload.new || {};
