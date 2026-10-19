@@ -21881,56 +21881,55 @@ refreshNotifBadge();
 
   ['roleSelectBox', 'roleLoginForm'].forEach(function(id){ var el = $(id); if (el) el.style.display = 'none'; });
 
-   // ---------- หน้าล็อกอิน (รหัสหมวก -> รหัสผ่าน) ----------
+  // ---------- หน้าล็อกอิน (ใช้สีของธีมที่เลือก) ----------
   var ADMIN_BADGE = 'admin';
   var MAX_FAIL = 5;
   var LOCK_MS = 15 * 60 * 1000;
   var BADGE_MAX = 6;
-  var GOLD = '#ffd21f';
+  var ACC = 'var(--gold, #ffd21f)';
+  var ON_ACC = 'var(--navy, #0d2a52)';
+  var SOFT = 'color-mix(in srgb, currentColor 10%, transparent)';
+  var LINE = 'color-mix(in srgb, currentColor 35%, transparent)';
 
   var wrap = document.createElement('div');
   wrap.id = 'acLogin';
+  wrap.style.color = 'inherit';
   wrap.innerHTML =
     '<div id="acHello" style="display:none"></div>' +
 
-    // สลับระดับผู้ใช้งาน
-    '<div id="acRoles" style="display:flex;width:100%;max-width:280px;margin:0 auto 22px;padding:4px;border-radius:999px;background:rgba(255,255,255,.08);box-sizing:border-box;">' +
+    '<div id="acRoles" style="display:flex;width:100%;max-width:280px;margin:0 auto 22px;padding:4px;border-radius:999px;background:' + SOFT + ';box-sizing:border-box;">' +
       '<button type="button" class="ac-role-btn" data-r="admin" style="flex:1;padding:10px 8px;border:0;border-radius:999px;background:transparent;color:inherit;font:inherit;font-size:15px;cursor:pointer;">แอดมิน</button>' +
       '<button type="button" class="ac-role-btn" data-r="officer" style="flex:1;padding:10px 8px;border:0;border-radius:999px;background:transparent;color:inherit;font:inherit;font-size:15px;cursor:pointer;">เจ้าหน้าที่</button>' +
     '</div>' +
 
-    // ขั้นตอน (จุด)
     '<div id="acSteps" style="display:none;justify-content:center;gap:8px;margin:0 auto 18px;">' +
-      '<span id="acDot1" style="width:8px;height:8px;border-radius:50%;background:' + GOLD + ';transition:all .25s;"></span>' +
-      '<span id="acDot2" style="width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.3);transition:all .25s;"></span>' +
+      '<span id="acDot1" style="height:8px;border-radius:999px;transition:all .25s;"></span>' +
+      '<span id="acDot2" style="height:8px;border-radius:999px;transition:all .25s;"></span>' +
     '</div>' +
 
-    // ขั้นที่ 1: รหัสหมวก (แสดงเป็นตัวหนังสือใหญ่ ไม่มีช่อง)
     '<div id="acBadgeWrap" style="display:none;text-align:center;">' +
       '<div style="font-size:13px;opacity:.7;margin-bottom:6px;">รหัสหมวก</div>' +
-      '<div id="acBadgeText" style="font-size:40px;font-weight:700;letter-spacing:6px;min-height:52px;line-height:52px;color:#ffffff;"></div>' +
+      '<div id="acBadgeText" style="font-size:40px;font-weight:700;letter-spacing:6px;min-height:52px;line-height:52px;color:inherit;"></div>' +
       '<div id="acBadgeHint" style="font-size:13px;opacity:.55;margin-top:4px;">กรอกอย่างน้อย 2 ตัว</div>' +
-      '<button type="button" id="acNext" style="display:none;margin-top:18px;min-width:160px;padding:11px 28px;border:0;border-radius:999px;background:linear-gradient(150deg,#ffd21f,#e0b400);color:#0d2a52;font:inherit;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 10px 22px rgba(224,180,0,.3);">ถัดไป</button>' +
+      '<button type="button" id="acNext" style="display:none;margin-top:18px;min-width:160px;padding:11px 28px;border:0;border-radius:999px;background:' + ACC + ';color:' + ON_ACC + ';font:inherit;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 10px 22px rgba(0,0,0,.2);">ถัดไป</button>' +
     '</div>' +
 
-    // ขั้นที่ 2: รหัสผ่าน (จุด 6 จุด)
     '<div id="acPinWrap" style="display:none;text-align:center;">' +
       '<div style="font-size:13px;opacity:.7;margin-bottom:14px;">รหัสผ่าน 6 หลัก</div>' +
       '<div id="acDots" style="display:flex;justify-content:center;gap:14px;"></div>' +
       '<div style="font-size:12px;opacity:.55;margin-top:14px;">วัน เดือน ปีเกิด (พ.ศ. 2 หลักท้าย)<br>เช่น 16/12/2536 ใช้ 161236</div>' +
     '</div>' +
 
-    // แป้นตัวเลข
     '<div id="acPad" style="display:none;grid-template-columns:repeat(3,72px);justify-content:center;gap:14px;margin:26px auto 0;">' +
       [1,2,3,4,5,6,7,8,9].map(function(n){ return padBtn(String(n)); }).join('') +
       '<span></span>' + padBtn('0') + padBtn('del') +
     '</div>' +
 
-    '<div id="acErr" style="color:#ffb4bd;text-align:center;min-height:20px;margin-top:16px;font-weight:600;font-size:14px;"></div>';
+    '<div id="acErr" style="color:#e5484d;text-align:center;min-height:20px;margin-top:16px;font-weight:600;font-size:14px;"></div>';
 
   function padBtn(k){
     var label = k === 'del' ? '⌫' : k;
-    return '<button type="button" data-k="' + k + '" style="width:72px;height:72px;border:0;border-radius:50%;background:rgba(255,255,255,.12);color:#ffffff;font:inherit;font-size:26px;font-weight:600;cursor:pointer;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);box-shadow:inset 0 1px 0 rgba(255,255,255,.12);">' + label + '</button>';
+    return '<button type="button" data-k="' + k + '" style="width:72px;height:72px;border:0;border-radius:50%;background:' + SOFT + ';color:inherit;font:inherit;font-size:26px;font-weight:600;cursor:pointer;">' + label + '</button>';
   }
 
   sub.insertAdjacentElement('afterend', wrap);
@@ -21964,7 +21963,7 @@ refreshNotifBadge();
     for (var i = 0; i < 6; i++) {
       var on = i < pin.length;
       html += '<span style="width:14px;height:14px;border-radius:50%;transition:all .18s;' +
-        (on ? 'background:#ffffff;transform:scale(1.05);' : 'background:transparent;border:1.5px solid rgba(255,255,255,.4);') + '"></span>';
+        (on ? 'background:currentColor;transform:scale(1.05);' : 'background:transparent;border:1.5px solid ' + LINE + ';') + '"></span>';
     }
     $('acDots').innerHTML = html;
   }
@@ -21972,12 +21971,11 @@ refreshNotifBadge();
   function paintSteps(){
     var show = role === 'officer';
     $('acSteps').style.display = show ? 'flex' : 'none';
-    $('acDot1').style.background = step === 'badge' ? GOLD : 'rgba(255,255,255,.3)';
-    $('acDot1').style.width = step === 'badge' ? '22px' : '8px';
-    $('acDot1').style.borderRadius = '999px';
-    $('acDot2').style.background = step === 'pin' ? GOLD : 'rgba(255,255,255,.3)';
-    $('acDot2').style.width = step === 'pin' ? '22px' : '8px';
-    $('acDot2').style.borderRadius = '999px';
+    var d1 = $('acDot1'), d2 = $('acDot2');
+    d1.style.width = step === 'badge' ? '22px' : '8px';
+    d1.style.background = step === 'badge' ? ACC : LINE;
+    d2.style.width = step === 'pin' ? '22px' : '8px';
+    d2.style.background = step === 'pin' ? ACC : LINE;
   }
 
   function paintScreen(){
@@ -21993,7 +21991,7 @@ refreshNotifBadge();
   function paintRole(){
     document.querySelectorAll('#acRoles .ac-role-btn').forEach(function(b){
       var on = b.dataset.r === role;
-      b.style.background = on ? 'rgba(255,255,255,.22)' : 'transparent';
+      b.style.background = on ? SOFT : 'transparent';
       b.style.fontWeight = on ? '700' : '400';
       b.style.opacity = on ? '1' : '.7';
     });
@@ -22026,9 +22024,9 @@ refreshNotifBadge();
     $('acRoles').style.display = 'none';
     var h = $('acHello');
     h.style.display = '';
-    h.innerHTML = '<div style="text-align:center;color:#ffffff;font-size:15px;margin:4px 0 14px;">' +
-      'เข้าสู่ระบบในชื่อ <b style="color:' + GOLD + ';font-weight:700;">' + escapeHtml(b === ADMIN_BADGE ? 'แอดมิน' : b) + '</b></div>' +
-      '<div style="text-align:center;"><button type="button" id="acSwitch" style="display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:7px 20px;border-radius:999px;border:1px solid rgba(255,210,31,.7);background:transparent;color:' + GOLD + ';font:inherit;font-size:14px;font-weight:600;cursor:pointer;">เปลี่ยนผู้ใช้</button></div>';
+    h.innerHTML = '<div style="text-align:center;color:inherit;font-size:15px;margin:4px 0 14px;">' +
+      'เข้าสู่ระบบในชื่อ <b style="color:' + ACC + ';font-weight:700;">' + escapeHtml(b === ADMIN_BADGE ? 'แอดมิน' : b) + '</b></div>' +
+      '<div style="text-align:center;"><button type="button" id="acSwitch" style="display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:7px 20px;border-radius:999px;border:1px solid ' + LINE + ';background:transparent;color:inherit;font:inherit;font-size:14px;font-weight:600;cursor:pointer;">เปลี่ยนผู้ใช้</button></div>';
     $('acSwitch').onclick = function(){ setRemembered(''); showRoles(); };
     paintRole(); paintScreen();
   }
@@ -22135,8 +22133,7 @@ refreshNotifBadge();
 
   var remembered = getRemembered();
   if (remembered) showRemembered(remembered); else showRoles();
-  var remembered = getRemembered();
-  if (remembered) showRemembered(remembered); else showRoles();
+      
   var _clr = clearSession;
   clearSession = function(){ try { sb.auth.signOut(); } catch (e) {} return _clr.apply(this, arguments); };
 
@@ -24076,6 +24073,21 @@ window.exportAllBackup = async function(){
   }, 2000);
 })();
 </script>
+
+      <style id="notif-fit">
+  /* ✅ หน้าการแจ้งเตือน: จำกัดความสูง เลื่อนได้ในตัวเอง ไม่ล้นจอ */
+  .notif-sheet{
+    max-height:82vh;
+    max-height:82dvh;
+    overflow-y:auto;
+    overflow-x:hidden;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+    box-sizing:border-box;
+    width:min(100%, 520px);
+  }
+  .notif-sheet *{ max-width:100%; word-break:break-word; }
+</style>
       
 </body>
 </html>
