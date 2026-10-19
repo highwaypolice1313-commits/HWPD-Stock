@@ -23367,7 +23367,7 @@ window.exportAllBackup = async function(){
   function shopCardHtml(a, i){
     var id = escapeHtml(a['รหัสครุภัณฑ์']);
     var ok = isAssetBorrowable(a);
-    var place = a['หน่วยงาน'] || a['ผู้ครอบครอง/หน่วยงาน'] || '-';
+    var place = a['ผู้ครอบครอง/หน่วยงาน'] || a['หน่วยงาน'] || '-';
     return '<div class="sx-card asset-item premium-stagger-item' + (ok ? '' : ' off') + '" data-id="' + id +
       '" style="--stagger-index:' + (i || 0) + ';">' +
       '<div class="sx-stage"><div class="sx-disc">' + catIcon(a['หมวดหมู่']) + '</div>' +
