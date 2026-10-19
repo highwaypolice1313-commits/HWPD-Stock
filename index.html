@@ -19078,7 +19078,7 @@ function renderSettings() {
       state.settingsTab = c.dataset.stab;
       document.querySelectorAll('#settingsTabRow [data-stab]').forEach(x => x.classList.toggle('active', x.dataset.stab === state.settingsTab));
       document.querySelectorAll('.settings-panel').forEach(p => { p.style.display = (p.dataset.panel === state.settingsTab) ? 'block' : 'none'; });
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo(0, 0);
       if (state.settingsTab === 'activity') loadActivityPanel();
       if (state.settingsTab === 'trash') loadTrashPanel();
       if (state.settingsTab === 'positions' && window.loadPositionsPanel) window.loadPositionsPanel();
