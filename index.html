@@ -23533,6 +23533,7 @@ window.exportAllBackup = async function(){
 
 })();
 </script>
+      
 <script id="maint-lock-me">
 (function(){
   // ✅ เปิดฟอร์มซ่อมบำรุง: ถ้าไม่ใช่แอดมิน ให้ล็อกผู้แจ้งเป็นชื่อของตัวเอง
@@ -23547,11 +23548,20 @@ window.exportAllBackup = async function(){
     var trig = document.getElementById('f_reporterTrigger');
     if (!trig || !me) return;
 
+    // ✅ หารูปจากรายชื่อที่โหลดอยู่ (เหมือนตัวเลือกผู้แจ้งปกติ)
+    var u = (state.users || []).find(function(x){ return x['ชื่อ-สกุล'] === me; });
+
     document.getElementById('f_reporter').value = me;
     document.getElementById('f_reporterName').textContent = me;
     document.getElementById('f_reporterSub').textContent = 'ผู้แจ้ง (ตัวคุณ)';
+    document.getElementById('f_reporterIcon').innerHTML = (u && u['รูปถ่าย'])
+      ? '<img src="' + u['รูปถ่าย'] + '" style="width:100%;height:100%;object-fit:cover;border-radius:13px;">'
+      : ICONS.user;
 
-    // ✅ ตัดการเลือกผู้แจ้งออกทั้งหมด
+    // ✅ ซ่อนป้าย "เลือก" และตัดการแตะเปลี่ยนผู้แจ้งทั้งหมด
+    Array.prototype.forEach.call(trig.querySelectorAll('*'), function(el){
+      if (el.children.length === 0 && el.textContent.trim() === 'เลือก') el.style.display = 'none';
+    });
     trig.onclick = null;
     trig.style.pointerEvents = 'none';
   }
