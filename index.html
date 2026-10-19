@@ -9907,7 +9907,7 @@ function drawAssetList() {
   }
 
   listEl.querySelectorAll('.asset-item').forEach(it => it.onclick = () => openAssetDetail(it.dataset.id));
-  if (!isGrid) wireSwipeRows(listEl);
+  // if (!isGrid) wireSwipeRows(listEl);   // ปิดชั่วคราวเพื่อทดสอบ
 }
 
 /* ========== ปัดแถวครุภัณฑ์: ปัดซ้ายเพื่อเลือกคำสั่ง ========== */
