@@ -9257,15 +9257,30 @@ function layoutNav() {
   if (first) bar.classList.add('no-anim');
 
   // --- คำนวณความกว้าง: ปุ่มที่เลือก = ไอคอน + ป้าย, ปุ่มอื่นแบ่งเท่า ๆ กัน แต่ไม่แคบกว่า MIN_W (กดง่าย) ---
-  const ICON = 21, GAP = 7, PAD = 24, MIN_W = 46;
+  const ICON = 20, GAP = 6, PAD = 16, MIN_W = 40;
   const n = vis.length;
   const inner = bar.clientWidth - 12;
-  const labelW = Math.ceil(act.querySelector('.lbl').scrollWidth);
-  let aw = ICON + GAP + labelW + PAD;
-  let iw = n > 1 ? (inner - aw) / (n - 1) : 0;
-  if (n === 1) aw = inner;
-  else if (iw < MIN_W) { iw = MIN_W; aw = Math.max(ICON + PAD, inner - MIN_W * (n - 1)); }
-  const labelRoom = Math.max(0, Math.floor(aw - ICON - GAP - PAD));   // พื้นที่ป้ายที่เหลือจริง
+  const lbl = act.querySelector('.lbl');
+  lbl.style.maxWidth = '';
+  lbl.style.fontSize = '';                                  // เริ่มจากขนาดปกติทุกครั้ง
+  let fs = parseFloat(getComputedStyle(lbl).fontSize) || 13;
+
+  const fitCalc = () => {
+    const labelW = Math.ceil(lbl.scrollWidth);
+    let aw = ICON + GAP + labelW + PAD;
+    let iw = n > 1 ? (inner - aw) / (n - 1) : 0;
+    if (n === 1) aw = inner;
+    else if (iw < MIN_W) { iw = MIN_W; aw = Math.max(ICON + PAD, inner - MIN_W * (n - 1)); }
+    return { labelW, aw, iw, room: Math.max(0, Math.floor(aw - ICON - GAP - PAD)) };
+  };
+  let m = fitCalc();
+  // ถ้าชื่อเมนูยาวเกินพื้นที่ ย่อตัวอักษรเฉพาะปุ่มที่เลือก (ไม่ต่ำกว่า 11px)
+  while (m.labelW > m.room && fs > 11) {
+    fs -= 0.5;
+    lbl.style.fontSize = fs + 'px';
+    m = fitCalc();
+  }
+  const { labelW, aw, iw, room: labelRoom } = m;
 
   let x = 6;
   vis.forEach(t => {
@@ -9273,6 +9288,7 @@ function layoutNav() {
     t.style.width = w + 'px';
     const l = t.querySelector('.lbl');
     if (l) {                                     // ป้ายต้องไม่เกินความกว้างปุ่ม (เดิมตัดที่ 110px แต่ pill กว้างตามข้อความเต็ม)
+      if (l && t !== act) l.style.fontSize = '';
       l.style.maxWidth = (t === act) ? Math.min(labelW, labelRoom) + 'px' : '';
       l.style.textOverflow = 'ellipsis';
     }
