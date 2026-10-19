@@ -9112,7 +9112,21 @@ function exportCsv(filename, headers, rows) {
 }
 
 /* ========================================================= TABS */
-document.querySelectorAll('.tab[data-tab]').forEach(btn => { btn.addEventListener('click', () => renderTab(btn.dataset.tab)); });
+window.__navTouchAt = 0;   // เวลาที่เมนูถูกแตะผ่าน pointerup ล่าสุด (กัน click ซ้ำ)
+function bindNavTap(btn, action) {
+  let sx = 0, sy = 0, down = false;
+  btn.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse') return; down = true; sx = e.clientX; sy = e.clientY; });
+  btn.addEventListener('pointercancel', () => { down = false; });
+  btn.addEventListener('pointerup', e => {
+    if (e.pointerType === 'mouse' || !down) return;
+    down = false;
+    if (Math.abs(e.clientX - sx) > 10 || Math.abs(e.clientY - sy) > 10) return;   // ลาก/เลื่อน ไม่นับเป็นการกด
+    window.__navTouchAt = Date.now();
+    action();
+  });
+  btn.addEventListener('click', () => { if (Date.now() - window.__navTouchAt < 700) return; action(); });
+}
+document.querySelectorAll('.tab[data-tab]').forEach(btn => bindNavTap(btn, () => renderTab(btn.dataset.tab)));
 document.getElementById('refreshBtn')?.addEventListener('click', e => {
   const b = e.currentTarget;
   if (b.classList.contains('is-refreshing')) return;
@@ -9153,7 +9167,7 @@ requestAnimationFrame(function(){ layoutNav(); }); // ✅ จัดแถบห�
   if (renderTabNow._restore) {
     renderTabNow._restore = false;   // ตอนกู้คืนหลังรีเฟรช ไม่ต้องเลื่อนขึ้นบน
   } else {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: window.matchMedia('(pointer:coarse)').matches ? 'instant' : 'smooth' });
   }
   const fab = document.getElementById('fabBtn');
   fab.style.display = (['assets','borrow','maint','memos','users'].includes(name) && (isAdmin() || name === 'borrow' || name === 'maint')) ? 'flex' : 'none';
@@ -9297,7 +9311,7 @@ function openMoreMenu() {
     document.getElementById('btnLogout')?.click();
   });
 }
-document.getElementById('tabMore').addEventListener('click', openMoreMenu);
+bindNavTap(document.getElementById('tabMore'), openMoreMenu);
 
 /* ---------- desktop navbar: ย่อ / ขยาย ---------- */
 (function initDesktopNavCollapse(){
@@ -23007,6 +23021,39 @@ window.exportAllBackup = async function(){
 </script>      
 
       
+<style id="touch-scroll-fix">
+/* จอสัมผัส: ไม่ใช้ smooth scroll ทั้งหน้า (การเลื่อนค้างทำให้แตะเมนูแรกไม่ติดบน iPhone/iPad) */
+@media (hover:none) and (pointer:coarse), (max-width:899px){
+  html{ scroll-behavior:auto !important; }
+}
+/* จอสัมผัส: หน้ารายการยาว (ครุภัณฑ์) ไม่ทำแอนิเมชันทยอยขึ้นและไม่ใช้ content-visibility
+   ลดงานวาดตอนเข้าหน้า เพื่อให้แตะเมนูตอบสนองทันที */
+@media (hover:none) and (pointer:coarse){
+  #view-assets .premium-stagger-item{ animation:none !important; opacity:1 !important; transform:none !important; }
+  #view-assets .list-item{ content-visibility:visible !important; }
+}
+</style>
+
+<script id="nav-debug-js">
+(function(){
+  // โหมดตรวจปัญหาแตะเมนู: เปิดด้วยการใส่ ?navdebug=1 ท้าย URL (ไม่มีผลถ้าไม่ใส่)
+  var on = false;
+  try { on = /[?&]navdebug=1/.test(location.search) || localStorage.getItem('navdebug') === '1'; } catch(e){}
+  if (!on) return;
+  var box = document.createElement('div');
+  box.style.cssText = 'position:fixed;top:env(safe-area-inset-top,0);left:0;right:0;z-index:99999;background:rgba(0,0,0,.78);color:#0f0;font:11px/1.35 monospace;padding:4px 6px;pointer-events:none;max-height:34vh;overflow:hidden;white-space:pre-wrap;';
+  document.body.appendChild(box);
+  var lines = [], t0 = Date.now();
+  function d(e){
+    var tg = e.target, top = (e.clientX != null) ? document.elementFromPoint(e.clientX, e.clientY) : null;
+    function nm(el){ return el ? (el.tagName.toLowerCase() + (el.id ? '#' + el.id : '') + (el.className && el.className.baseVal === undefined ? '.' + String(el.className).split(' ').slice(0,2).join('.') : '')) : '-'; }
+    lines.push(((Date.now() - t0) / 1000).toFixed(2) + 's ' + e.type + ' ' + (e.pointerType || '') + ' tgt=' + nm(tg) + ' top=' + nm(top) + (tg.closest && tg.closest('.tabbar') ? ' [TABBAR]' : '') + ' tab=' + (window.state && state.tab));
+    if (lines.length > 9) lines.shift();
+    box.textContent = lines.join('\n');
+  }
+  ['pointerdown','pointerup','pointercancel','click'].forEach(function(t){ document.addEventListener(t, d, true); });
+})();
+</script>
 <script id="nav-perms-js">
 (function(){
   // ✅ แหล่งความจริงเดียวของการมองเห็นเมนูแถบล่าง
