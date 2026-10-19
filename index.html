@@ -23691,6 +23691,52 @@ window.exportAllBackup = async function(){
 
   window.loadPositionsPanel = loadPositionsPanel;
 
+        // ---------- ช่องตำแหน่ง (ชุดสิทธิ์) ในฟอร์มรายชื่อเจ้าหน้าที่ ----------
+  var _openUserFormBase = openUserForm;
+  openUserForm = function(u){
+    _openUserFormBase(u);
+    mountPositionField(u);
+  };
+
+  async function mountPositionField(u){
+    var memo = document.getElementById('u_memorole');
+    if (!memo || document.getElementById('u_position_id')) return;
+    var field = memo.closest('.field');
+    if (!field) return;
+    if (u && u['สิทธิ์'] === 'admin') return;          // แอดมินไม่ผูกกับตำแหน่ง
+
+    var authId = u ? u['auth_user_id'] : null;
+    var wrap = document.createElement('div');
+    wrap.className = 'field';
+    wrap.innerHTML =
+      '<label>ตำแหน่ง (ชุดสิทธิ์)</label>' +
+      '<select class="input" id="u_position_id"' + (authId && isAdmin() ? '' : ' disabled') + '>' +
+        '<option value="">กำลังโหลด...</option></select>' +
+      '<div class="hint">' + (authId ? '' : 'กำหนดตำแหน่งได้หลังเปิดบัญชีเข้าระบบ') + '</div>';
+    field.insertAdjacentElement('afterend', wrap);
+
+    var pos = [];
+    try { pos = await loadPositions(); } catch (e) { pos = []; }
+    var prof = { data: null };
+    if (authId) prof = await sb.from('profiles').select('position_id').eq('id', authId).maybeSingle();
+
+    var sel = document.getElementById('u_position_id');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">ไม่มี</option>' + pos.map(function(p){
+      return '<option value="' + p.id + '"' + (prof.data && prof.data.position_id === p.id ? ' selected' : '') + '>' +
+        escapeHtml(p.name) + '</option>';
+    }).join('');
+
+    sel.onchange = async function(){
+      var r = await sb.rpc('admin_set_user_position', { p_profile: authId, p_position: sel.value || null });
+      if (r.error || !r.data || !r.data.ok) {
+        toast((r.data && r.data.error) || (r.error && r.error.message) || 'บันทึกตำแหน่งไม่สำเร็จ');
+      } else {
+        toast('บันทึกตำแหน่งแล้ว');
+      }
+    };
+  }
+
 })();
 </script>
       
