@@ -12016,15 +12016,17 @@ function assetValueOptions(field, selCat) {
 const AF_ICON_PLUS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
 
 /* ---------- สไตล์หน้าเลือกค่าและหน้ากรอกค่าใหม่ ---------- */
+/* ---------- สไตล์หน้าเลือกค่าและหน้ากรอกค่าใหม่ ---------- */
 function ensureValuePickerCss() {
   if (document.getElementById('valuePickerCss')) return;
   const s = document.createElement('style');
   s.id = 'valuePickerCss';
   s.textContent = `
-/* ตัวหุ้มนอกสุด: ล็อกการเลื่อนพื้นหลัง เลื่อนได้เฉพาะในกล่อง */
-
+/* รากนอกสุด: fixed ตัวเดียว ไม่มี touch-action และไม่มี backdrop-filter */
 .vp-root{ position:fixed; inset:0; z-index:95; }
 .vp-backdrop{ position:absolute; inset:0; background:rgba(15,25,38,.46); }
+
+/* แผงหน้าต่าง: จำกัดความสูง แบ่งเป็นหัว / ค้นหา / รายการ (เลื่อนได้) */
 .vp-panel{
   position:absolute; left:0; right:0; bottom:0;
   margin:0 auto; width:100%; max-width:640px;
@@ -12037,20 +12039,27 @@ function ensureValuePickerCss() {
   box-shadow:0 -16px 48px rgba(20,32,45,.2);
 }
 .vp-panel .sheet-close{ position:absolute; top:14px; right:14px; }
+.vp-panel .sheet-handle{ flex:none; }
 .vp-panel .sheet-title{ flex:none; padding-right:34px; }
 .vp-panel .vp-create{ flex:none; }
+.vp-panel .vp-search{ flex:none; }
+
+/* ตัวเลื่อนจริง: เฉพาะส่วนรายการ / หมวดหมู่ */
+.vp-panel .vp-list,
 .vp-panel .cat-scroll{
   flex:1 1 0; min-height:0;
   overflow-y:auto; -webkit-overflow-scrolling:touch;
-  overscroll-behavior:contain;
+  overscroll-behavior:contain; touch-action:pan-y;
 }
+
+/* จอกว้าง: กลางจอ */
 @media (min-width:900px){
   .vp-root{ display:flex; align-items:center; justify-content:center; padding:28px; }
   .vp-panel{ position:relative; height:min(80vh, 760px); border-radius:24px; }
   .vp-backdrop{ position:fixed; }
 }
 
-/* ปุ่มกรอกชื่อใหม่: ใช้สีเดียวกับ menubar ของธีมที่เลือก */
+/* ปุ่มกรอกชื่อใหม่ */
 .vp-create{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:50px;margin-bottom:12px;border:0;border-radius:16px;font:inherit;font-size:14.5px;font-weight:600;color:#fff;background:linear-gradient(135deg,var(--navy),var(--navy-deep));box-shadow:0 6px 16px color-mix(in srgb,var(--navy) 38%,transparent);cursor:pointer;transition:transform .15s ease,box-shadow .15s ease}
 .vp-create:hover{transform:translateY(-1px);box-shadow:0 10px 22px color-mix(in srgb,var(--navy) 46%,transparent);filter:brightness(1.12)}
 .vp-create:active{transform:scale(.98)}
@@ -12070,47 +12079,41 @@ function ensureValuePickerCss() {
 }
 
 
-/* ---------- หน้าเลือกค่า: โครงเดียวกับหน้าเลือกครุภัณฑ์ของหน้ายืม-คืน ----------
-   วางรากของตัวเองนอก #modalRoot จึงไม่ซ้อนกับระบบหน้าต่างหลัก
-   ปิดด้วยการเอารากนี้ออกเท่านั้น และกันการลากพื้นหลังบน iPad */
+/* ---------- หน้าเลือกค่า (ชื่อ / ยี่ห้อ) ---------- */
 function openValuePicker({ title, placeholder, current, options, onPick }) {
   ensureAssetFormCss();
   ensureValuePickerCss();
 
   const root = document.createElement('div');
+  root.className = 'vp-root';
   document.body.appendChild(root);
-  const close = () => {
-    root.removeEventListener('touchmove', blockBgScroll);
-    root.remove();
-  };
+  const close = () => root.remove();
 
-  // ลากนิ้วนอกรายการให้หยุด เพื่อไม่ให้หน้าหลักเลื่อนไปด้านหลัง
-  // รายการ (.vp-list) และช่องพิมพ์ยังเลื่อนได้ตามปกติ
-  function blockBgScroll(e) {
-    if (e.target.closest('.vp-list')) return;
-    e.preventDefault();
-  }
-  root.addEventListener('touchmove', blockBgScroll, { passive: false });
-
-  const wrap = (inner, extra) => `
-    <div class="vp-overlay">
-      <div class="sheet vp-sheet ${extra || ''}">
-        <button class="sheet-close" type="button" title="ปิด" aria-label="ปิด">${ICONS.close}</button>
-        <div class="sheet-handle"></div>
-        ${inner}
-      </div>
+  // รูปแบบเดียวกับหน้าเลือกครุภัณฑ์ยืม-คืน: ไม่ล็อก body และไม่ดัก touchmove
+  const frame = (inner, extra) => `
+    <div class="vp-backdrop"></div>
+    <div class="vp-panel ${extra || ''}" role="dialog" aria-modal="true">
+      <button class="sheet-close" type="button" title="ปิด" aria-label="ปิด">${ICONS.close}</button>
+      <div class="sheet-handle"></div>
+      ${inner}
     </div>`;
 
+  const bindCommon = () => {
+    root.querySelector('.vp-backdrop').onclick = close;
+    root.querySelector('.sheet-close').onclick = close;
+  };
+
   const pick = (value) => { close(); onPick(value); };
+
   function showEntry(prefill) {
-    root.innerHTML = wrap(`
+    root.innerHTML = frame(`
       <div class="sheet-title">${escapeHtml(title)}ใหม่</div>
       <div class="ve-hint">พิมพ์${escapeHtml(title)}ที่ยังไม่มีในระบบ เมื่อบันทึกแล้วจะขึ้นให้เลือกในครั้งถัดไป</div>
       <input class="input ve-input" id="ve_input" placeholder="${escapeHtml(placeholder)}" autocomplete="off" enterkeyhint="done" value="${escapeHtml(prefill || '')}">
       <div class="ve-note" id="ve_note"></div>
       <div class="btn-row"><button class="btn btn-ghost" id="ve_back" type="button">ย้อนกลับ</button><button class="btn btn-primary" id="ve_ok" type="button">ใช้ค่านี้</button></div>
     `, 've-sheet');
-    root.querySelector('.sheet-close').onclick = close;
+    bindCommon();
 
     const inp = root.querySelector('#ve_input');
     const note = root.querySelector('#ve_note');
@@ -12140,13 +12143,13 @@ function openValuePicker({ title, placeholder, current, options, onPick }) {
   }
 
   function showList() {
-    root.innerHTML = wrap(`
+    root.innerHTML = frame(`
       <div class="sheet-title">${escapeHtml(title)}</div>
       <button type="button" class="vp-create" id="vp_create">${AF_ICON_PLUS}<span>กรอก${escapeHtml(title)}ใหม่</span></button>
       <div class="vp-search">${AF_ICON_SEARCH}<input class="input" id="vp_q" placeholder="${escapeHtml(placeholder)}" autocomplete="off" enterkeyhint="done"></div>
       <div class="vp-list" id="vp_list"></div>
     `);
-    root.querySelector('.sheet-close').onclick = close;
+    bindCommon();
 
     const q = root.querySelector('#vp_q');
     const list = root.querySelector('#vp_list');
