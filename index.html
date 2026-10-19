@@ -23894,6 +23894,31 @@ window.exportAllBackup = async function(){
   }, { capture: true, passive: true });
 })();
 </script>
+
+      <script id="borrow-autoclear-filter">
+(function(){
+  // ✅ หน้ายืม-คืนของแอดมิน: ถ้าหน้าว่างเพราะตัวกรองที่เลือกไว้ ให้ล้างตัวกรองแล้วแสดงทั้งหมด
+  var _renderBorrow = renderBorrow;
+  renderBorrow = function(){
+    var r = _renderBorrow.apply(this, arguments);
+    if (!isAdmin()) return r;
+
+    var hasFilter = state.borrowCat !== 'all' || state.borrowOverdue;
+    if (!hasFilter) return r;
+
+    var bk = borrowBuckets();
+    var list = state.borrowOverdue
+      ? bk.active.filter(function(b){ return effectiveBorrowStatus(b) === 'เกินกำหนด'; })
+      : (bk[state.borrowTab] || []);
+    if (list.length > 0) return r;
+
+    // ✅ หน้าว่างเพราะตัวกรอง: ล้างตัวกรองแล้ววาดใหม่
+    state.borrowCat = 'all';
+    state.borrowOverdue = false;
+    return _renderBorrow.apply(this, arguments);
+  };
+})();
+</script>
       
 </body>
 </html>
