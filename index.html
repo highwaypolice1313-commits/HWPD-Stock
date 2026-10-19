@@ -22280,8 +22280,12 @@ async function loadOfficerAdminInfo(u){
   if (row.auth_user_id) {
     const a = await sb.from('user_private').select('*').eq('auth_user_id', row.auth_user_id).maybeSingle();
     pv = a.data || {};
-    const p = await sb.from('profiles').select('role,active,created_at').eq('id', row.auth_user_id).maybeSingle();
+    const p = await sb.from('profiles').select('role,active,created_at,position_id').eq('id', row.auth_user_id).maybeSingle();
     pf = p.data || {};
+    if (pf.position_id) {
+      const pos = await sb.from('positions').select('name').eq('id', pf.position_id).maybeSingle();
+      pf.position_name = pos.data ? pos.data.name : '';
+    }
     const st = await sb.rpc('admin_pin_status', { p_uid: row.auth_user_id });
     pin = st.data || null;
   }
@@ -22308,7 +22312,7 @@ async function loadOfficerAdminInfo(u){
     line('ตำแหน่ง', row.position) +
     line('หน่วยงาน', row.unit) +
     line('บทบาทในบันทึกเบิก-ยืม', row.memo_role) +
-    line('ระดับสิทธิ์เข้าระบบ', !row.auth_user_id ? 'ยังไม่มีบัญชีเข้าระบบ' : (pf.role === 'admin' ? 'แอดมิน' : 'เจ้าหน้าที่')) +
+    line('ตำแหน่ง (ชุดสิทธิ์)', !row.auth_user_id ? '-' : (pf.role === 'admin' ? 'ไม่ต้องมีตำแหน่ง (แอดมิน)' : (pf.position_name || 'ยังไม่กำหนด'))) +
     line('สถานะบัญชี', !row.auth_user_id ? '-' : (pf.active === false ? 'ปิดใช้งาน' : 'เปิดใช้งาน')) +
     line('PIN', pinText) +
     line('เลขบัตรประชาชน', pv.citizen_id ? fmtCitizen(pv.citizen_id) : '') +
