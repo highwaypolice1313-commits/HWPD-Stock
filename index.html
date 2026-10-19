@@ -23895,28 +23895,43 @@ window.exportAllBackup = async function(){
 })();
 </script>
 
-      <script id="borrow-autoclear-filter">
+<script id="borrow-sync-js">
 (function(){
-  // ✅ หน้ายืม-คืนของแอดมิน: ถ้าหน้าว่างเพราะตัวกรองที่เลือกไว้ ให้ล้างตัวกรองแล้วแสดงทั้งหมด
-  var _renderBorrow = renderBorrow;
-  renderBorrow = function(){
-    var r = _renderBorrow.apply(this, arguments);
-    if (!isAdmin()) return r;
+  var timer = null;
 
-    var hasFilter = state.borrowCat !== 'all' || state.borrowOverdue;
-    if (!hasFilter) return r;
+  function sync(){
+    try {
+      // ✅ จุดแดงบนเมนูยืม-คืน ให้ตรงกับจำนวนรออนุมัติล่าสุดเสมอ
+      var dot = document.getElementById('borrowTabDot');
+      if (dot) {
+        var pending = (state.borrow || []).filter(function(b){ return b['สถานะ'] === 'รออนุมัติ'; }).length;
+        var show = isAdmin() && pending > 0;
+        var txt = pending > 99 ? '99+' : String(pending);
+        if (dot.textContent !== txt) dot.textContent = txt;      // เปลี่ยนเฉพาะเมื่อค่าต่างจริง กันวนซ้ำ
+        var disp = show ? 'inline-flex' : 'none';
+        if (dot.style.display !== disp) dot.style.display = disp;
+      }
 
-    var bk = borrowBuckets();
-    var list = state.borrowOverdue
-      ? bk.active.filter(function(b){ return effectiveBorrowStatus(b) === 'เกินกำหนด'; })
-      : (bk[state.borrowTab] || []);
-    if (list.length > 0) return r;
+      // ✅ หน้ายืม-คืนของแอดมินว่างเพราะตัวกรอง: ล้างตัวกรองแล้ววาดใหม่
+      if (!isAdmin() || state.tab !== 'borrow') return;
+      if (state.borrowCat === 'all' && !state.borrowOverdue) return;
 
-    // ✅ หน้าว่างเพราะตัวกรอง: ล้างตัวกรองแล้ววาดใหม่
-    state.borrowCat = 'all';
-    state.borrowOverdue = false;
-    return _renderBorrow.apply(this, arguments);
-  };
+      var bk = borrowBuckets();
+      var list = state.borrowOverdue
+        ? bk.active.filter(function(b){ return effectiveBorrowStatus(b) === 'เกินกำหนด'; })
+        : (bk[state.borrowTab] || []);
+      if (list.length > 0) return;
+
+      state.borrowCat = 'all';
+      state.borrowOverdue = false;
+      renderBorrow();
+    } catch (e) { /* ไม่ให้ error ของการตรวจทำให้หน้าพัง */ }
+  }
+
+  function schedule(){ clearTimeout(timer); timer = setTimeout(sync, 60); }
+
+  new MutationObserver(schedule).observe(document.body, { childList: true, subtree: true });
+  sync();
 })();
 </script>
       
