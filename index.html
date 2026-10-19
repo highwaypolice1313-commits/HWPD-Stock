@@ -12013,7 +12013,7 @@ function assetValueOptions(field, selCat) {
 /* ---------- ไอคอนเครื่องหมายบวกสำหรับปุ่มกรอกใหม่ ---------- */
 const AF_ICON_PLUS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
 
-* ---------- สไตล์เฉพาะส่วนของหน้าเลือกค่า (ไม่แตะโครงหน้าต่าง) ---------- */
+/* ---------- สไตล์เฉพาะส่วนของหน้าเลือกค่า (ไม่แตะโครงหน้าต่าง) ---------- */
 function ensureValuePickerCss() {
   if (document.getElementById('valuePickerCss')) return;
   const s = document.createElement('style');
@@ -12160,7 +12160,7 @@ function openValuePicker({ title, placeholder, current, options, onPick }) {
   }
  
   showList();
-}      
+}
 
 /* ---------- ฟอร์มเพิ่ม/แก้ไขครุภัณฑ์ ---------- */
 function openAssetForm(a) {
