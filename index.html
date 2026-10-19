@@ -9907,7 +9907,7 @@ function drawAssetList() {
   }
 
   listEl.querySelectorAll('.asset-item').forEach(it => it.onclick = () => openAssetDetail(it.dataset.id));
-  // if (!isGrid) wireSwipeRows(listEl);   // ปิดชั่วคราวเพื่อทดสอบ
+  if (!isGrid) wireSwipeRows(listEl);
 }
 
 /* ========== ปัดแถวครุภัณฑ์: ปัดซ้ายเพื่อเลือกคำสั่ง ========== */
@@ -10321,7 +10321,7 @@ function renderAssets() {
 
   wireViewToggle(renderAssets, '#view-assets', 'assetView');
   drawAssetList();
-  //requestAnimationFrame(() => applyPremiumMotion(el));
+  requestAnimationFrame(() => applyPremiumMotion(el));
 }
 
 function emptyState(msg) {
@@ -19078,7 +19078,7 @@ function renderSettings() {
       state.settingsTab = c.dataset.stab;
       document.querySelectorAll('#settingsTabRow [data-stab]').forEach(x => x.classList.toggle('active', x.dataset.stab === state.settingsTab));
       document.querySelectorAll('.settings-panel').forEach(p => { p.style.display = (p.dataset.panel === state.settingsTab) ? 'block' : 'none'; });
-      window.scrollTo(0, 0);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       if (state.settingsTab === 'activity') loadActivityPanel();
       if (state.settingsTab === 'trash') loadTrashPanel();
       if (state.settingsTab === 'positions' && window.loadPositionsPanel) window.loadPositionsPanel();
