@@ -9134,7 +9134,7 @@ function renderTab(name) {
 }
 
 function renderTabNow(name) {
-if ((name === 'audit' || name === 'monthly') && !(window.canOpenTab && window.canOpenTab(name))) name = 'dashboard';
+if (!isAdmin() && window.__perms !== undefined && window.canOpenTab && !window.canOpenTab(name)) name = 'dashboard';   // ✅ ทุกหน้าต้องมีสิทธิ์ (รู้สิทธิ์แล้วเท่านั้น กันเด้งตอนโหลด)
   state.tab = name;
   saveUi({ tab: name, scrollY: renderTabNow._restore ? (loadUi().scrollY || 0) : 0 });
   window.__countStat = true;   // [เพิ่ม] เพิ่งเปิดหน้าจากเมนู -> อนุญาตให้ stat-num นับขึ้น
@@ -9185,16 +9185,17 @@ function layoutNav() {
   if (!bar || !pill) return;
   const tabs = [...bar.querySelectorAll('.tab')];
 
-  // ✅ โหลดสิทธิ์ก่อนจัดแถบ ถ้าสคริปต์สิทธิ์ยังไม่พร้อม ให้จัดแถบตามค่าเดิมไปก่อน
-  if (window.__perms === undefined && typeof loadMyPerms === 'function' && !layoutNav._loading) {
-    layoutNav._loading = true;
-    loadMyPerms().then(function(){ layoutNav._loading = false; layoutNav(); });
-  }
+  // ✅ ให้ nav-perms-js โหลดสิทธิ์เอง (ไม่แคชผลตอนยังไม่ล็อกอิน) แล้วค่อยจัดแถบตามสิทธิ์
+  if (typeof ensureMyPerms === 'function') ensureMyPerms();
   if (typeof applyTabPerms === 'function') applyTabPerms();
 
   // เดสก์ท็อปใช้ sidebar: ล้างค่าที่ JS เคยตั้ง
   if (!window.matchMedia('(max-width:899px)').matches) {
-    tabs.forEach(t => { t.style.width = ''; t.classList.remove('promoted', 'nav-hide'); });
+    tabs.forEach(t => {
+      t.style.width = '';
+      t.classList.remove('promoted', 'nav-hide');
+      const l = t.querySelector('.lbl'); if (l) { l.style.maxWidth = ''; l.style.textOverflow = ''; }
+    });
     return;
   }
   if (!bar.clientWidth) return;
@@ -9202,6 +9203,9 @@ function layoutNav() {
   const more = document.getElementById('tabMore');
   const primary = tabs.filter(t => !t.classList.contains('tab-secondary') && t !== more && t.style.display !== 'none');
   const secondary = tabs.filter(t => t.classList.contains('tab-secondary') && t.style.display !== 'none');
+
+  // ปุ่มรองที่ถูกซ่อนด้วยสิทธิ์ ต้องไม่มีคลาส promoted ค้าง (CSS .promoted ใช้ !important ชนะ display:none)
+  tabs.forEach(t => { if (t.style.display === 'none') t.classList.remove('promoted'); });
 
   // --- ตัดสินใจว่าจะดึงปุ่มรองขึ้นมากี่ปุ่ม (เฉพาะจอ >= 600px เช่น iPad) ---
   let extra = 0;
@@ -9223,25 +9227,41 @@ function layoutNav() {
   const vis = tabs.filter(t => t.style.display !== 'none'
     && !t.classList.contains('nav-hide')
     && (!t.classList.contains('tab-secondary') || t.classList.contains('promoted')));
-  const act = vis.find(t => t.classList.contains('active')) || vis[0];
-  if (!act) return;
+  if (!vis.length) return;
 
   if (more && !allShown) {
     const cur = document.querySelector('.tab-secondary[data-tab="' + state.tab + '"] .lbl');
     more.querySelector('.lbl').textContent = (more.classList.contains('active') && cur) ? cur.textContent : 'เมนู';
   }
 
+  // ปุ่ม active ต้องมีอันเดียวและมองเห็นจริง (ถ้าไม่เจอให้ใช้ปุ่มที่ตรงกับหน้าปัจจุบัน แล้วค่อยถอยไปปุ่มแรก)
+  const act = vis.find(t => t.classList.contains('active'))
+    || vis.find(t => t.dataset.tab === state.tab)
+    || vis[0];
+
   const first = !layoutNav.done;
   if (first) bar.classList.add('no-anim');
 
-  const aw = Math.ceil(21 + 7 + act.querySelector('.lbl').scrollWidth + 28);
+  // --- คำนวณความกว้าง: ปุ่มที่เลือก = ไอคอน + ป้าย, ปุ่มอื่นแบ่งเท่า ๆ กัน แต่ไม่แคบกว่า MIN_W (กดง่าย) ---
+  const ICON = 21, GAP = 7, PAD = 24, MIN_W = 46;
+  const n = vis.length;
   const inner = bar.clientWidth - 12;
-  const iw = (inner - aw) / Math.max(1, vis.length - 1);
+  const labelW = Math.ceil(act.querySelector('.lbl').scrollWidth);
+  let aw = ICON + GAP + labelW + PAD;
+  let iw = n > 1 ? (inner - aw) / (n - 1) : 0;
+  if (n === 1) aw = inner;
+  else if (iw < MIN_W) { iw = MIN_W; aw = Math.max(ICON + PAD, inner - MIN_W * (n - 1)); }
+  const labelRoom = Math.max(0, Math.floor(aw - ICON - GAP - PAD));   // พื้นที่ป้ายที่เหลือจริง
 
   let x = 6;
   vis.forEach(t => {
     const w = (t === act) ? aw : iw;
     t.style.width = w + 'px';
+    const l = t.querySelector('.lbl');
+    if (l) {                                     // ป้ายต้องไม่เกินความกว้างปุ่ม (เดิมตัดที่ 110px แต่ pill กว้างตามข้อความเต็ม)
+      l.style.maxWidth = (t === act) ? Math.min(labelW, labelRoom) + 'px' : '';
+      l.style.textOverflow = 'ellipsis';
+    }
     if (t === act) { pill.style.left = x + 'px'; pill.style.width = w + 'px'; }
     x += w;
   });
@@ -23003,29 +23023,64 @@ window.exportAllBackup = async function(){
     audit:     ['annual_count'],
     settings:  null,
   };
+  // ปุ่มหลักของเจ้าหน้าที่ (ที่เหลือไปอยู่ใน "เพิ่มเติม")
   var PRIMARY = ['dashboard', 'assets', 'borrow', 'users', 'reports'];
 
-  window.loadMyPerms = async function(){
-    var s = await sb.auth.getSession();
-    if (!s.data.session) { window.__perms = { admin: false, perms: [] }; return window.__perms; }
-    var r = await sb.rpc('my_permissions');
-    window.__perms = (r.data && typeof r.data === 'object')
-      ? { admin: !!r.data.admin, perms: r.data.perms || [] }
-      : { admin: false, perms: [] };
-    return window.__perms;
+  // ✅ จำค่าตั้งต้นจาก HTML ว่าปุ่มไหนเป็นปุ่มรอง เพื่อคืนค่าให้แอดมิน (เดิมเจ้าหน้าที่แก้คลาสแล้วไม่คืน)
+  var DEFAULT_SECONDARY = {};
+  document.querySelectorAll('.tabbar .tab[data-tab]').forEach(function(t){
+    DEFAULT_SECONDARY[t.dataset.tab] = t.classList.contains('tab-secondary');
+  });
+
+  var inflight = null;
+  var failAt = 0;
+
+  // ✅ โหลดสิทธิ์ของบัญชีที่ล็อกอินอยู่
+  //    ยังไม่ล็อกอิน = ไม่แคชอะไร (เดิมแคช {perms:[]} ทำให้เจ้าหน้าที่ไม่เห็นเมนูตามสิทธิ์ไปตลอด)
+  //    ถ้า RPC ผิดพลาด ไม่แคชเช่นกัน และพักก่อนลองใหม่
+  window.loadMyPerms = function(force){
+    if (inflight && !force) return inflight;
+    var p = (async function(){
+      var s = await sb.auth.getSession();
+      var uid = (s.data && s.data.session) ? s.data.session.user.id : null;
+      if (!uid) { window.__perms = undefined; window.__permsUid = null; failAt = Date.now(); return null; }
+      var r = await sb.rpc('my_permissions');
+      if (r.error || !r.data || typeof r.data !== 'object') { failAt = Date.now(); return window.__perms || null; }
+      window.__perms = { admin: !!r.data.admin, perms: r.data.perms || [] };
+      window.__permsUid = uid;
+      failAt = 0;
+      return window.__perms;
+    })().catch(function(){ failAt = Date.now(); return window.__perms || null; });
+    inflight = p;
+    p.then(function(){ if (inflight === p) inflight = null; });
+    return p;
   };
 
-  // ✅ ยังไม่มีข้อมูลสิทธิ์ ให้เปิดไว้ก่อน (ฐานข้อมูลยังบังคับจริงอยู่เสมอ)
+  // ✅ เรียกจาก layoutNav: ถ้ายังไม่รู้สิทธิ์ ให้โหลด แล้วจัดแถบ/หน้าปัจจุบันใหม่ครั้งเดียว
+  window.ensureMyPerms = function(){
+    if (inflight || window.__perms !== undefined) return;
+    if (failAt && Date.now() - failAt < 5000) return;
+    if (typeof sb === 'undefined') return;
+    window.loadMyPerms().then(function(p){
+      if (!p || window.__perms === undefined) return;
+      if (typeof layoutNav === 'function') layoutNav();
+      if (!isAdmin() && state.tab && !canOpenTab(state.tab) && typeof renderTab === 'function') renderTab('dashboard');
+    });
+  };
+
+  // ✅ ยังไม่รู้สิทธิ์ = ซ่อนเมนูที่ต้องใช้สิทธิ์ไว้ก่อน (ฐานข้อมูลยังบังคับจริงอยู่เสมอ)
   window.canOpenTab = function(key){
     if (isAdmin()) return true;
-    if (window.__perms === undefined) return true;
     var rule = TAB_RULE[key];
     if (rule === undefined) return false;
     if (rule === null) return true;
+    if (window.__perms === undefined) return false;
+    if (window.__perms.admin) return true;
     var have = window.__perms.perms || [];
     return rule.some(function(p){ return have.indexOf(p) !== -1; });
   };
 
+  // ✅ จุดเดียวที่ตั้ง style.display / ชนิดปุ่ม (หลัก/รอง) ของแถบล่าง
   window.applyTabPerms = function(){
     var bar = document.querySelector('.tabbar');
     if (!bar) return;
@@ -23034,20 +23089,30 @@ window.exportAllBackup = async function(){
       var k = t.dataset.tab;
       if (!k) return;
       var show = canOpenTab(k);
-      t.style.display = show ? ((k === 'users' || k === 'settings') ? 'flex' : '') : 'none';
-      if (!admin) t.classList.toggle('tab-secondary', PRIMARY.indexOf(k) === -1);
+      t.style.display = show ? '' : 'none';
+      if (!show) t.classList.remove('promoted');          // กัน .promoted (!important) เอาปุ่มที่ไม่มีสิทธิ์กลับมาแสดง
+      var secondary = admin ? !!DEFAULT_SECONDARY[k] : (PRIMARY.indexOf(k) === -1);
+      t.classList.toggle('tab-secondary', secondary);
     });
     var more = document.getElementById('tabMore');
     if (more) {
-      // ✅ จอใหญ่: แสดงทุกเมนูบน sidebar ไม่ต้องใช้ปุ่มเพิ่มเติม
+      // จอใหญ่: แสดงทุกเมนูบน sidebar ไม่ต้องใช้ปุ่มเพิ่มเติม
       var desktop = window.matchMedia('(min-width:900px)').matches;
-      if (desktop) { more.style.display = 'none'; return; }
-      if (admin) { more.style.display = ''; return; }
       var any = Array.prototype.some.call(bar.querySelectorAll('.tab-secondary'),
         function(t){ return t.style.display !== 'none'; });
-      more.style.display = any ? 'flex' : 'none';
+      more.style.display = (desktop || !any) ? 'none' : 'flex';
     }
   };
+
+  // ✅ ล็อกอินทุกครั้ง: เคลียร์สิทธิ์เก่าและรอโหลดสิทธิ์ใหม่ก่อนวาดหน้า/กู้คืนแท็บเดิม
+  if (typeof completeLogin === 'function') {
+    var _completeLogin = completeLogin;
+    completeLogin = async function(){
+      window.__perms = undefined;
+      try { await window.loadMyPerms(true); } catch (e) {}
+      return _completeLogin.apply(this, arguments);
+    };
+  }
 })();
 </script>
 
@@ -23157,10 +23222,10 @@ window.exportAllBackup = async function(){
   new MutationObserver(syncRole).observe(document.body, { childList: true, subtree: true });
   syncRole();
 
-  // ✅ เจ้าหน้าที่เปิดหน้ายืม-คืนไม่ได้
+  // ✅ เปิดหน้ายืม-คืนได้เฉพาะแอดมินและผู้มีสิทธิ์ approve_borrow (ใช้กติกาเดียวกับแถบล่าง)
   var _renderTab = renderTab;
   renderTab = function(name){
-    if (!isAdmin() && name === 'borrow') name = 'assets';
+    if (!isAdmin() && name === 'borrow' && window.__perms !== undefined && !canOpenTab('borrow')) name = 'assets';
     return _renderTab(name);
   };
 
