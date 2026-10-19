@@ -9316,7 +9316,11 @@ document.querySelectorAll('.more-item').forEach(x => x.onclick = () => {
     document.getElementById('btnLogout')?.click();
   });
 }
-bindNavTap(document.getElementById('tabMore'), openMoreMenu);
+document.getElementById('tabMore')?.addEventListener('click', () => {
+  // กันเปิดซ้ำถ้ามีเมนูเปิดอยู่แล้ว
+  if (document.querySelector('#modalRoot .nav-more-sheet')) return;
+  openMoreMenu();
+});
 
 /* ---------- desktop navbar: ย่อ / ขยาย ---------- */
 (function initDesktopNavCollapse(){
