@@ -23061,12 +23061,7 @@ window.exportAllBackup = async function(){
     display:flex; flex-direction:column; gap:10px; cursor:pointer;
     transition:transform .2s ease, box-shadow .2s ease;
   }
-  /* ✅ เอฟเฟกต์ชี้เมาส์ใช้เฉพาะอุปกรณ์ที่มีเมาส์ (กันแตะครั้งแรกไม่ติดบนมือถือ) */
-  @media (hover:hover) and (pointer:fine){
-    .sx-card:hover{ transform:translateY(-3px); box-shadow:0 16px 34px rgba(13,42,82,.12); }
-  }
-  /* ✅ ให้เบราว์เซอร์ไม่รอการแตะซ้ำ และรับการแตะทันที */
-  .sx-card, .sx-cta{ touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+  .sx-card:hover{ transform:translateY(-3px); box-shadow:0 16px 34px rgba(13,42,82,.12); }
   .sx-card:active{ transform:scale(.97); transition:transform .12s ease; }
   .sx-card.off{ opacity:.62; }
   .sx-stage{
