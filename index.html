@@ -8760,9 +8760,10 @@ async function loadAll(showLoader = false) {
 async function reloadThen(renderFn) {
   const y = window.scrollY;
   try { await loadAll(); } catch (e) { /* loadAll แจ้ง toast แล้ว */ }
-  // ✅ บันทึกสถานะที่เพิ่งโหลด เพื่อให้ตัวรับเรียลไทม์ไม่วาดซ้ำกับการเปลี่ยนแปลงนี้
+  // ✅ ล้างตัวกรองที่ทำให้หน้าว่างก่อนวาด เพื่อให้วาดครั้งเดียว
+  if (window.resetEmptyBorrowFilter) window.resetEmptyBorrowFilter();
   window.__lastBorrowSig = (state.borrow || []).map(b => b.id + ':' + b['สถานะ']).join('|');
-  window.__quietRender = true;                 // ✅ วาดแบบเงียบ ไม่เล่นอนิเมชันซ้ำ
+  window.__quietRender = true;
   try { if (typeof renderTab === 'function') renderTab(state.tab || 'dashboard'); else if (renderFn) renderFn(); }
   catch (e) { console.error(e); }
   finally { window.__quietRender = false; }
@@ -23904,6 +23905,28 @@ window.exportAllBackup = async function(){
 (function(){
   var timer = null;
 
+  // ✅ ถ้าหน้ายืม-คืนว่างเพราะตัวกรองที่ไม่ใช่ค่าเริ่มต้น ให้ล้างตัวกรอง คืน true ถ้ามีการล้าง
+  window.resetEmptyBorrowFilter = function(){
+    try {
+      if (!isAdmin() || state.tab !== 'borrow') return false;
+      var nonDefault = state.borrowCat !== 'all' || state.borrowOverdue
+        || state.borrowTab !== 'active' || state.borrowSort !== 'due_asc';
+      if (!nonDefault) return false;
+
+      var bk = borrowBuckets();
+      var list = state.borrowOverdue
+        ? bk.active.filter(function(b){ return effectiveBorrowStatus(b) === 'เกินกำหนด'; })
+        : (bk[state.borrowTab] || []);
+      if (list.length > 0) return false;
+
+      state.borrowCat = 'all';
+      state.borrowOverdue = false;
+      state.borrowTab = 'active';
+      state.borrowSort = 'due_asc';
+      return true;
+    } catch (e) { return false; }
+  };
+
   function sync(){
     try {
       // ✅ จุดแดงบนเมนูยืม-คืน ให้ตรงกับจำนวนรออนุมัติล่าสุด
@@ -23916,32 +23939,21 @@ window.exportAllBackup = async function(){
         var disp = show ? 'inline-flex' : 'none';
         if (dot.style.display !== disp) dot.style.display = disp;
       }
-
-      // ✅ หน้ายืม-คืนของแอดมิน: ถ้ามีตัวกรองที่ไม่ใช่ค่าเริ่มต้นและหน้าว่าง ให้กลับไปค่าเริ่มต้น
-      if (!isAdmin() || state.tab !== 'borrow') return;
-      var nonDefault = state.borrowCat !== 'all' || state.borrowOverdue || state.borrowTab !== 'active'
-        || state.borrowSort !== 'due_asc';
-      if (!nonDefault) return;
-
-      var bk = borrowBuckets();
-      var list = state.borrowOverdue
-        ? bk.active.filter(function(b){ return effectiveBorrowStatus(b) === 'เกินกำหนด'; })
-        : (bk[state.borrowTab] || []);
-      if (list.length > 0) return;
-
-      state.borrowCat = 'all';
-      state.borrowOverdue = false;
-      state.borrowTab = 'active';
-      state.borrowSort = 'due_asc';
-      renderBorrow();
     } catch (e) { /* ไม่ให้ error ของการตรวจทำให้หน้าพัง */ }
+
+    // ✅ วาดใหม่เฉพาะเมื่อมีการล้างตัวกรองจริง และวาดแบบเงียบ
+    if (window.resetEmptyBorrowFilter()) {
+      window.__quietRender = true;
+      try { renderBorrow(); } finally { window.__quietRender = false; }
+    }
   }
 
   function schedule(){ clearTimeout(timer); timer = setTimeout(sync, 200); }
+
   new MutationObserver(schedule).observe(document.body, { childList: true, subtree: true });
   sync();
 })();
-</script>    
+</script>  
 
 <script id="borrow-live-js">
 (function(){
