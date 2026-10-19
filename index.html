@@ -23039,6 +23039,9 @@ window.exportAllBackup = async function(){
     });
     var more = document.getElementById('tabMore');
     if (more) {
+      // ✅ จอใหญ่: แสดงทุกเมนูบน sidebar ไม่ต้องใช้ปุ่มเพิ่มเติม
+      var desktop = window.matchMedia('(min-width:900px)').matches;
+      if (desktop) { more.style.display = 'none'; return; }
       if (admin) { more.style.display = ''; return; }
       var any = Array.prototype.some.call(bar.querySelectorAll('.tab-secondary'),
         function(t){ return t.style.display !== 'none'; });
