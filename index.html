@@ -23827,19 +23827,29 @@ window.exportAllBackup = async function(){
   @media (min-width:600px){ .sk-wrap{ max-width:none; } }
 </style>
 
-      <style id="tabbar-collapse">
-  /* ✅ แถบล่างย่อ/ขยายตอนเลื่อน */
+<style id="tabbar-collapse">
+  /* ✅ แถบล่างย่อ/ขยายตอนเลื่อนแบบ Instagram */
   .tabbar{
     transform-origin:50% 100%;
-    transition:transform .28s cubic-bezier(.3,.7,.3,1);
+    transition:transform .32s cubic-bezier(.3,.7,.3,1), padding .32s ease;
     will-change:transform;
   }
   .tabbar .lbl{
-    transition:opacity .18s ease, max-width .22s ease;
+    transition:opacity .2s ease, max-width .25s ease;
     max-width:80px;
   }
-  .tabbar.tabbar-compact{ transform:translateY(4px) scale(.92); }
-  .tabbar.tabbar-compact .lbl{ opacity:0; max-width:0; overflow:hidden; }
+  .tabbar.tabbar-compact{
+    transform:translateY(14px) scale(.72);
+  }
+  .tabbar.tabbar-compact .lbl{
+    opacity:0;
+    max-width:0;
+    overflow:hidden;
+  }
+  .tabbar.tabbar-compact .tab svg,
+  .tabbar.tabbar-compact .tab .ico{
+    transform:scale(.9);
+  }
 </style>
 
 <script id="tabbar-collapse-js">
