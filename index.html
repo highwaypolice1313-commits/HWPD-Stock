@@ -23936,33 +23936,45 @@ window.exportAllBackup = async function(){
     } catch (e) { /* ไม่ให้ error ของการตรวจทำให้หน้าพัง */ }
   }
 
-  function schedule(){ clearTimeout(timer); timer = setTimeout(sync, 60); }
+  function schedule(){ clearTimeout(timer); timer = setTimeout(sync, 200); }
   new MutationObserver(schedule).observe(document.body, { childList: true, subtree: true });
   sync();
 })();
 </script>    
 
-      <script id="borrow-live-js">
+<script id="borrow-live-js">
 (function(){
-  var chan = null, timer = null;
+  var chan = null, timer = null, busy = false, lastSig = '';
 
-  // ✅ โหลดข้อมูลใหม่หลังมีการเปลี่ยนแปลง (รวมหลายเหตุการณ์ที่มาใกล้กันเป็นครั้งเดียว)
-  function refreshLive(){
-    clearTimeout(timer);
-    timer = setTimeout(async function(){
-      try {
-        await loadAll();
-        if (typeof updateBorrowDot === 'function') updateBorrowDot();
-        if (typeof refreshNotifBadge === 'function') refreshNotifBadge();
-        // ✅ วาดหน้ายืม-คืนใหม่เฉพาะเมื่อไม่มีหน้าซ้อนอยู่ เพื่อไม่ให้กระทบสิ่งที่แอดมินกำลังทำ
+  // ✅ ลายนิ้วมือของข้อมูลยืม-คืน ใช้ตรวจว่ามีอะไรเปลี่ยนจริงหรือไม่
+  function sigOf(){
+    return (state.borrow || []).map(function(b){ return b.id + ':' + b['สถานะ']; }).join('|');
+  }
+
+  async function refreshLive(){
+    if (busy) return;            // ✅ ไม่ให้การโหลดซ้อนกัน
+    busy = true;
+    try {
+      await loadAll();
+      var sig = sigOf();
+      if (sig !== lastSig) {    // ✅ วาดใหม่เฉพาะเมื่อข้อมูลเปลี่ยนจริง
+        lastSig = sig;
         var sheetOpen = document.querySelector('#modalRoot .overlay');
         if (state.tab === 'borrow' && !sheetOpen) renderTab('borrow');
-      } catch (e) { /* ไม่ให้การรีเฟรชทำให้หน้าพัง */ }
-    }, 300);
+      }
+    } catch (e) { /* ไม่ให้การรีเฟรชทำให้หน้าพัง */ }
+    finally { busy = false; }
+  }
+
+  // ✅ รวมเหตุการณ์ที่มาติดกันภายใน 800 มิลลิวินาทีเป็นการโหลดครั้งเดียว
+  function schedule(){
+    clearTimeout(timer);
+    timer = setTimeout(refreshLive, 800);
   }
 
   function subscribe(){
     if (chan) return;
+    lastSig = sigOf();
     chan = sb.channel('borrow-live')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'borrow' }, function(payload){
         var r = payload.new || {};
@@ -23970,10 +23982,10 @@ window.exportAllBackup = async function(){
           toast('มีคำขอยืมใหม่จาก ' + (r.borrower || '-') + ' · ' + (r.asset_name || ''));
           if (navigator.vibrate) navigator.vibrate([120, 80, 120]);
         }
-        refreshLive();
+        schedule();
       })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'borrow' }, function(){ refreshLive(); })
-      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'borrow' }, function(){ refreshLive(); })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'borrow' }, schedule)
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'borrow' }, schedule)
       .subscribe();
   }
 
