@@ -9248,7 +9248,7 @@ function layoutNav() {
     more.querySelector('.lbl').textContent = (more.classList.contains('active') && cur) ? cur.textContent : 'เมนู';
   }
 
-  // ปุ่ม active ต้องมีอันเดียวและมองเห็นจริง (ถ้าไม่เจอให้ใช้ปุ่มที่ตรงกับหน้าปัจจุบัน แล้วค่อยถอยไปปุ่มแรก)
+  // ปุ่ม active ต้องมีอันเดียวและมองเห็นจริง
   const act = vis.find(t => t.classList.contains('active'))
     || vis.find(t => t.dataset.tab === state.tab)
     || vis[0];
@@ -9256,17 +9256,27 @@ function layoutNav() {
   const first = !layoutNav.done;
   if (first) bar.classList.add('no-anim');
 
-  // --- ทุกปุ่มกว้างเท่ากัน และแสดงชื่อเต็มทุกปุ่ม ---
+  // ปุ่มที่เลือก = ไอคอน + ชื่อเต็ม (ไม่ตัด) ปุ่มอื่นแบ่งพื้นที่ที่เหลือเท่า ๆ กัน และซ่อนชื่อไว้
+  const ICON = 20, GAP = 6, PAD = 18, MIN_W = 36;
   const n = vis.length;
-  const w = (bar.clientWidth - 12) / n;
+  const inner = bar.clientWidth - 12;
+  const lbl = act.querySelector('.lbl');
+  if (lbl) { lbl.style.maxWidth = 'none'; lbl.style.textOverflow = 'clip'; lbl.style.fontSize = ''; }
+  const labelW = lbl ? Math.ceil(lbl.scrollWidth) : 0;
+
+  let aw = ICON + GAP + labelW + PAD;
+  let iw = n > 1 ? (inner - aw) / (n - 1) : 0;
+  if (n === 1) aw = inner;
+  else if (iw < MIN_W) { iw = MIN_W; aw = Math.max(ICON + PAD, inner - MIN_W * (n - 1)); }
 
   let x = 6;
   vis.forEach(t => {
-    t.style.width = w + 'px';
+    const wd = (t === act) ? aw : iw;
+    t.style.width = wd + 'px';
     const l = t.querySelector('.lbl');
-    if (l) { l.style.maxWidth = ''; l.style.fontSize = ''; l.style.textOverflow = ''; }
-    if (t === act) { pill.style.left = x + 'px'; pill.style.width = w + 'px'; }
-    x += w;
+    if (l && t !== act) { l.style.maxWidth = ''; l.style.textOverflow = ''; }
+    if (t === act) { pill.style.left = x + 'px'; pill.style.width = wd + 'px'; }
+    x += wd;
   });
 
   if (first) {
@@ -23674,18 +23684,6 @@ window.exportAllBackup = async function(){
   }
 })();
 </script>
-
-<style id="nav-full-labels">
-@media (max-width:899px){
-  .tabbar .tab{ flex-direction:column; justify-content:center; gap:2px; padding:2px 0; }
-  .tabbar .tab .ico svg{ width:18px; height:18px; }
-  .tabbar .tab .lbl{
-    display:block; max-width:none !important; opacity:1 !important;
-    font-size:10px; line-height:1.15; white-space:normal; text-align:center;
-    overflow:visible;
-  }
-}
-</style>
       
 </body>
 </html>
