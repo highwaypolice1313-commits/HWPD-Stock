@@ -23647,5 +23647,190 @@ window.exportAllBackup = async function(){
 .stat-card.is-click:focus-visible{ outline:2px solid var(--gold, #c9a227); outline-offset:2px; }
 .stat-card.is-on{ border-color:var(--gold, #c9a227) !important; box-shadow:0 0 0 1.5px var(--gold, #c9a227) inset !important; }
 </style>
+<style id="my-profile-edit-css">
+.mp-sec{margin:18px 0 8px;font-size:12.5px;font-weight:700;color:var(--ink-dim);letter-spacing:.2px}
+.mp-pin{border:1px solid var(--panel-line,rgba(0,0,0,.12));border-radius:14px;padding:4px 12px;margin-top:14px}
+.mp-pin summary{cursor:pointer;padding:10px 0;font-weight:700;font-size:13.5px;list-style:none}
+.mp-pin summary::-webkit-details-marker{display:none}
+.mp-pin[open] summary{border-bottom:1px solid var(--panel-line,rgba(0,0,0,.1));margin-bottom:10px}
+.mp-pin .field:last-of-type{margin-bottom:8px}
+</style>
+<script id="my-profile-edit-js">
+/* ===== แก้ไขโปรไฟล์ของฉัน (เมนูบัญชีมุมขวาบน) ===== */
+(function(){
+  var ICON = '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 016-6h4a6 6 0 016 6v1"/></svg>';
+  var BLOODS = ['','A','B','AB','O','ไม่ทราบ'];
+
+  async function myContext(){
+    var s = await sb.auth.getSession();
+    var ses = s.data && s.data.session;
+    if (!ses) return null;
+    var r = await sb.from('users').select('*').eq('auth_user_id', ses.user.id).maybeSingle();
+    return { uid: ses.user.id, email: ses.user.email, row: r.data || null };
+  }
+
+  window.openMyProfile = async function(){
+    setLoading(true, 'กำลังโหลดโปรไฟล์...');
+    var ctx;
+    try { ctx = await myContext(); }
+    catch (e) { ctx = null; }
+    finally { setLoading(false); }
+    if (!ctx) { toast('ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบใหม่'); return; }
+    if (!ctx.row) { toast('บัญชีนี้ยังไม่ผูกกับรายชื่อเจ้าหน้าที่ ให้แอดมินเพิ่มรายชื่อในเมนูเจ้าหน้าที่ก่อน'); return; }
+    var u = ctx.row;
+
+    showSheet(
+      '<div class="sheet-title">แก้ไขโปรไฟล์ของฉัน</div>' +
+      '<div class="field"><label>รูปถ่ายประจำตัว</label><div class="photo-upload-row">' +
+        '<div class="preview-box" id="mp_photoPreview">' + (u.photo ? '<img src="' + escapeHtml(u.photo) + '">' : ICONS.user) + '</div>' +
+        '<div style="flex:1;min-width:160px;"><input type="file" id="mp_photoFile" accept="image/png,image/jpeg,image/webp" class="input" style="padding:8px;">' +
+        '<div class="hint" style="margin-top:6px;">แนะนำไฟล์ไม่เกินประมาณ 40KB</div></div></div>' +
+        '<input type="hidden" id="mp_photo" value="' + escapeHtml(u.photo || '') + '"></div>' +
+      '<div class="field"><label>ลายเซ็น (ใช้ตอนเป็นผู้อนุมัติ)</label><div class="photo-upload-row">' +
+        '<div class="preview-box sig-box" id="mp_sigPreview">' + (u.signature ? '<img src="' + escapeHtml(u.signature) + '">' : ICONS.edit) + '</div>' +
+        '<div style="flex:1;min-width:160px;"><input type="file" id="mp_sigFile" accept="image/png,image/jpeg,image/webp" class="input" style="padding:8px;">' +
+        '<div class="btn-row" style="margin-top:8px;"><button type="button" class="btn btn-ghost" id="mp_sigDraw">เซ็นตอนนี้</button>' +
+        '<button type="button" class="btn btn-danger" id="mp_sigClear">ลบ</button></div></div></div>' +
+        '<input type="hidden" id="mp_sig" value="' + escapeHtml(u.signature || '') + '"></div>' +
+      '<div class="memo-two-col">' +
+        '<div class="field" style="max-width:140px;"><label>ยศ</label><select class="input" id="mp_rank"><option value="">-</option>' +
+          RANK_OPTIONS.map(function(r){ return '<option' + (u.rank === r ? ' selected' : '') + '>' + r + '</option>'; }).join('') + '</select></div>' +
+        '<div class="field"><label>ชื่อ-สกุล</label><input class="input" id="mp_name" value="' + escapeHtml(u.name || '') + '"></div>' +
+      '</div>' +
+      '<div class="field"><label>ตำแหน่ง</label><input class="input" id="mp_position" value="' + escapeHtml(u.position || '') + '"></div>' +
+      '<div class="field"><label>หน่วยงาน</label><input class="input" id="mp_unit" value="' + escapeHtml(u.unit || '') + '"></div>' +
+      '<div class="memo-two-col">' +
+        '<div class="field"><label>เบอร์โทร</label><input class="input" id="mp_phone" inputmode="tel" placeholder="0xx-xxx-xxxx"></div>' +
+        '<div class="field"><label>กรุ๊ปเลือด</label><select class="input" id="mp_blood">' +
+          BLOODS.map(function(b){ return '<option value="' + b + '">' + (b || 'ไม่ระบุ') + '</option>'; }).join('') + '</select></div>' +
+      '</div>' +
+      '<div class="field"><label>วัน/เดือน/ปีเกิด (พ.ศ.)</label><div style="display:flex;gap:8px;">' +
+        '<input class="input" id="mp_bd_d" inputmode="numeric" maxlength="2" placeholder="วัน" style="flex:0 0 26%;min-width:0;">' +
+        '<select class="input" id="mp_bd_m" style="flex:1 1 auto;min-width:0;"><option value="">เดือน</option>' +
+          TH_MONTHS.map(function(m, i){ return '<option value="' + (i + 1) + '">' + m + '</option>'; }).join('') + '</select>' +
+        '<input class="input" id="mp_bd_y" inputmode="numeric" maxlength="4" placeholder="พ.ศ." style="flex:0 0 30%;min-width:0;"></div>' +
+        '<input type="hidden" id="mp_birth" value=""></div>' +
+      '<div class="btn-row"><button class="btn btn-ghost" id="mp_cancel" type="button">ยกเลิก</button>' +
+        '<button class="btn btn-primary" id="mp_save" type="button">บันทึก</button></div>' +
+      '<details class="mp-pin"><summary>เปลี่ยน PIN เข้าระบบ</summary>' +
+        '<div class="field"><label>PIN ปัจจุบัน</label><input class="input" id="mp_pin0" type="password" inputmode="numeric" maxlength="6" autocomplete="current-password"></div>' +
+        '<div class="field"><label>PIN ใหม่ (ตัวเลข 6 หลัก)</label><input class="input" id="mp_pin1" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password"></div>' +
+        '<div class="field"><label>ยืนยัน PIN ใหม่</label><input class="input" id="mp_pin2" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password"></div>' +
+        '<div class="btn-row"><button class="btn btn-ghost" id="mp_pinSave" type="button">เปลี่ยน PIN</button></div></details>'
+    );
+
+    var $ = function(id){ return document.getElementById(id); };
+
+    // เติมข้อมูลส่วนบุคคลจาก user_private
+    sb.from('user_private').select('phone,birth_date,blood_type').eq('auth_user_id', ctx.uid).maybeSingle()
+      .then(function(r){
+        var d = r && r.data; if (!d) return;
+        if ($('mp_phone')) $('mp_phone').value = fmtPhone(d.phone || '');
+        if ($('mp_blood')) $('mp_blood').value = d.blood_type || '';
+        if (d.birth_date && $('mp_bd_d')) {
+          var p = String(d.birth_date).slice(0, 10).split('-').map(Number);
+          $('mp_bd_d').value = String(p[2]); $('mp_bd_m').value = String(p[1]); $('mp_bd_y').value = String(p[0] + 543);
+          $('mp_birth').value = String(d.birth_date).slice(0, 10);
+        }
+      });
+
+    bindFmt($('mp_phone'), fmtPhone, 12);
+    var syncBd = function(){ $('mp_birth').value = bdToIso($('mp_bd_d').value, $('mp_bd_m').value, $('mp_bd_y').value); };
+    $('mp_bd_d').addEventListener('input', function(){ this.value = this.value.replace(/\D/g, ''); syncBd(); });
+    $('mp_bd_y').addEventListener('input', function(){ this.value = this.value.replace(/\D/g, ''); syncBd(); });
+    $('mp_bd_m').addEventListener('change', syncBd);
+
+    // รูปถ่าย / ลายเซ็น
+    $('mp_photoFile').onchange = function(e){
+      var f = e.target.files && e.target.files[0]; if (!f) return;
+      prepareImageFile(f, 60000).then(function(data){
+        $('mp_photo').value = data; $('mp_photoPreview').innerHTML = '<img src="' + data + '">';
+      }).catch(function(err){ toast(err.message || 'เตรียมรูปไม่สำเร็จ'); });
+    };
+    var setSig = function(v){ $('mp_sig').value = v; $('mp_sigPreview').innerHTML = v ? '<img src="' + v + '">' : ICONS.edit; };
+    $('mp_sigFile').onchange = function(e){
+      var f = e.target.files && e.target.files[0]; if (!f) return;
+      sigFileToPng(f).then(setSig).catch(function(err){ toast(err.message || 'เตรียมรูปไม่สำเร็จ'); });
+    };
+    $('mp_sigDraw').onclick = function(){ openSignatureSheet({ title: 'ลายเซ็นประจำตัว', name: val('mp_name'), onDone: setSig }); };
+    $('mp_sigClear').onclick = function(){ setSig(''); };
+    $('mp_cancel').onclick = closeSheet;
+
+    // บันทึกโปรไฟล์
+    $('mp_save').onclick = async function(){
+      var btn = this; if (btn.disabled) return;
+      var ph = val('mp_phone').replace(/\D/g, '');
+      var name = val('mp_name').trim();
+      if (!name) { toast('กรุณากรอกชื่อ-สกุล'); return; }
+      if (ph && ph.length !== 10) { toast('เบอร์โทรกรอกไม่ครบ 10 หลัก'); return; }
+      if ((val('mp_bd_d') || val('mp_bd_y')) && !val('mp_birth')) { toast('วัน/เดือน/ปีเกิด (พ.ศ.) ไม่ถูกต้อง'); return; }
+      setButtonBusy(btn, true); setLoading(true, 'กำลังบันทึกโปรไฟล์...');
+      try {
+        var photo = val('mp_photo');
+        var sigUrl = await uploadSignature(val('mp_sig'), 'user-' + u.id);
+        var payload = {
+          officerId: u.id, name: name, rank: val('mp_rank'), position: val('mp_position').trim(), unit: val('mp_unit').trim(),
+          phone: ph, birthDate: val('mp_birth') || '', bloodType: val('mp_blood'), signature: sigUrl
+        };
+        if (isInlineImage(photo)) payload.photoData = photo; else payload.photo = photo;
+        // ไม่ส่ง role / memoRole จึงเปลี่ยนสิทธิ์ตัวเองไม่ได้
+        await sUpdateUserRole(payload, name);
+
+        if (name !== (state.user && state.user.name)) {
+          try { await sb.from('profiles').update({ display_name: name }).eq('id', ctx.uid); } catch (e) {}
+          state.user.name = name;
+          var pn = document.getElementById('profileName'); if (pn) pn.textContent = name;
+        }
+        window.__me = { id: u.id, name: name, position: payload.position, photo: payload.photo };
+        closeSheet(); toast('บันทึกโปรไฟล์แล้ว');
+        await reloadThen(function(){});
+      } catch (err) {
+        toast('บันทึกไม่สำเร็จ: ' + (err.message || 'เกิดข้อผิดพลาด'));
+      } finally { setLoading(false); setButtonBusy(btn, false, 'บันทึก'); }
+    };
+
+    // เปลี่ยน PIN ของตัวเอง
+    $('mp_pinSave').onclick = async function(){
+      var btn = this; if (btn.disabled) return;
+      var p0 = val('mp_pin0'), p1 = val('mp_pin1'), p2 = val('mp_pin2');
+      if (!p0) { toast('กรุณากรอก PIN ปัจจุบัน'); return; }
+      if (!/^\d{6}$/.test(p1)) { toast('PIN ใหม่ต้องเป็นตัวเลข 6 หลัก'); return; }
+      if (p1 !== p2) { toast('PIN ใหม่และช่องยืนยันไม่ตรงกัน'); return; }
+      if (p1 === p0) { toast('PIN ใหม่ต้องไม่ซ้ำกับ PIN เดิม'); return; }
+      setButtonBusy(btn, true, 'กำลังเปลี่ยน...');
+      try {
+        var chk = await sb.auth.signInWithPassword({ email: ctx.email, password: p0 });
+        if (chk.error) throw new Error('PIN ปัจจุบันไม่ถูกต้อง');
+        var up = await sb.auth.updateUser({ password: p1 });
+        if (up.error) throw new Error(up.error.message || 'เปลี่ยน PIN ไม่สำเร็จ');
+        ['mp_pin0', 'mp_pin1', 'mp_pin2'].forEach(function(id){ $(id).value = ''; });
+        toast('เปลี่ยน PIN เรียบร้อยแล้ว');
+      } catch (err) { toast(err.message || 'เปลี่ยน PIN ไม่สำเร็จ'); }
+      finally { setButtonBusy(btn, false, 'เปลี่ยน PIN'); }
+    };
+  };
+
+  // เพิ่มปุ่ม "โปรไฟล์ของฉัน" ในเมนูบัญชี (ฟังก์ชันเมนูเดิมไม่ถูกแก้)
+  var av = document.getElementById('avatarBtn');
+  if (av) av.addEventListener('click', function(){
+    var p = document.getElementById('acctPop');
+    if (!p || !p.classList.contains('open') || p.querySelector('[data-act="profile"]')) return;
+    var st = p.querySelector('[data-act="settings"]');
+    if (!st) return;
+    var b = document.createElement('button');
+    b.className = 'ap-item'; b.type = 'button'; b.setAttribute('role', 'menuitem'); b.dataset.act = 'profile';
+    b.innerHTML = ICON + '<span>แก้ไขโปรไฟล์</span>';
+    st.parentNode.insertBefore(b, st);
+  });
+
+  // ดักคำสั่ง profile จากเมนู
+  var _acctAct = acctAct;
+  acctAct = function(a){
+    if (a === 'profile') { closeAcctPop(); window.openMyProfile(); return; }
+    return _acctAct(a);
+  };
+})();
+</script>
+
 </body>
 </html>
