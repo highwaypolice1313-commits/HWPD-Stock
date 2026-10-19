@@ -16742,7 +16742,7 @@ function printCommsAuditReport() {
  
    /* ========================= ฟีเจอร์ ๔: ตรวจนับพัสดุประจำปี ========================= */
 async function renderAudit() {
-  if (!isAdmin()) return;
+  if (!(isAdmin() || (window.canOpenTab && window.canOpenTab('audit')))) return;   // ✅ ผู้มีสิทธิ์ annual_count เข้าได้
   const el = document.getElementById('view-audit');
   el.innerHTML = emptyState('กำลังโหลดข้อมูลการตรวจนับ...');
   try {
@@ -18069,7 +18069,7 @@ async function mcLoad() {
 }
 
 async function renderMonthly() {
-  if (!isAdmin()) return;
+  if (!(isAdmin() || (window.canOpenTab && window.canOpenTab('monthly')))) return;   // ✅ ผู้มีสิทธิ์ monthly_check เข้าได้
   const el = document.getElementById('view-monthly');
   const now = new Date();
   if (!state.mcYear) state.mcYear = now.getFullYear();
@@ -20122,7 +20122,7 @@ ${pages}`;
   }
 
   function renderMonthlyEnhanced(){
-    if (!isAdmin()) return;
+    if (!(isAdmin() || (window.canOpenTab && window.canOpenTab('monthly')))) return;   // ✅ ผู้มีสิทธิ์ monthly_check เข้าได้
     const el = document.getElementById('view-monthly');
     if (!el) return;
     const now = new Date();
