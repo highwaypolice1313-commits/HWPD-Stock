@@ -7723,7 +7723,7 @@ html, body{
 
   <button class="tab" data-tab="users" id="usersTabBtn" style="display:none;">
     <span class="ico"><svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="6.6" r="3" stroke="currentColor" stroke-width="1.4"/><path d="M3.8 16.2c1-3 3.4-4.6 6.2-4.6s5.2 1.6 6.2 4.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></span>
-    <span class="lbl">จนท.ในสังกัด</span>
+    <span class="lbl">เจ้าหน้าที่</span>
   </button>
 
   <!-- ===== ปุ่มรอง: ซ่อนบนมือถือ อยู่ใน sheet "เมนู" ===== -->
@@ -9256,42 +9256,15 @@ function layoutNav() {
   const first = !layoutNav.done;
   if (first) bar.classList.add('no-anim');
 
-  // --- คำนวณความกว้าง: ปุ่มที่เลือก = ไอคอน + ป้าย, ปุ่มอื่นแบ่งเท่า ๆ กัน แต่ไม่แคบกว่า MIN_W (กดง่าย) ---
-  const ICON = 20, GAP = 6, PAD = 16, MIN_W = 40;
+  // --- ทุกปุ่มกว้างเท่ากัน และแสดงชื่อเต็มทุกปุ่ม ---
   const n = vis.length;
-  const inner = bar.clientWidth - 12;
-  const lbl = act.querySelector('.lbl');
-  lbl.style.maxWidth = '';
-  lbl.style.fontSize = '';                                  // เริ่มจากขนาดปกติทุกครั้ง
-  let fs = parseFloat(getComputedStyle(lbl).fontSize) || 13;
-
-  const fitCalc = () => {
-    const labelW = Math.ceil(lbl.scrollWidth);
-    let aw = ICON + GAP + labelW + PAD;
-    let iw = n > 1 ? (inner - aw) / (n - 1) : 0;
-    if (n === 1) aw = inner;
-    else if (iw < MIN_W) { iw = MIN_W; aw = Math.max(ICON + PAD, inner - MIN_W * (n - 1)); }
-    return { labelW, aw, iw, room: Math.max(0, Math.floor(aw - ICON - GAP - PAD)) };
-  };
-  let m = fitCalc();
-  // ถ้าชื่อเมนูยาวเกินพื้นที่ ย่อตัวอักษรเฉพาะปุ่มที่เลือก (ไม่ต่ำกว่า 11px)
-  while (m.labelW > m.room && fs > 11) {
-    fs -= 0.5;
-    lbl.style.fontSize = fs + 'px';
-    m = fitCalc();
-  }
-  const { labelW, aw, iw, room: labelRoom } = m;
+  const w = (bar.clientWidth - 12) / n;
 
   let x = 6;
   vis.forEach(t => {
-    const w = (t === act) ? aw : iw;
     t.style.width = w + 'px';
     const l = t.querySelector('.lbl');
-    if (l) {                                     // ป้ายต้องไม่เกินความกว้างปุ่ม (เดิมตัดที่ 110px แต่ pill กว้างตามข้อความเต็ม)
-      if (l && t !== act) l.style.fontSize = '';
-      l.style.maxWidth = (t === act) ? Math.min(labelW, labelRoom) + 'px' : '';
-      l.style.textOverflow = 'ellipsis';
-    }
+    if (l) { l.style.maxWidth = ''; l.style.fontSize = ''; l.style.textOverflow = ''; }
     if (t === act) { pill.style.left = x + 'px'; pill.style.width = w + 'px'; }
     x += w;
   });
@@ -9301,7 +9274,7 @@ function layoutNav() {
     requestAnimationFrame(() => requestAnimationFrame(() => bar.classList.remove('no-anim')));
   }
 }
-   
+
 window.addEventListener('resize', debounce(layoutNav, 100));
 window.addEventListener('orientationchange', () => setTimeout(layoutNav, 250));
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(layoutNav);
@@ -23701,6 +23674,18 @@ window.exportAllBackup = async function(){
   }
 })();
 </script>
+
+<style id="nav-full-labels">
+@media (max-width:899px){
+  .tabbar .tab{ flex-direction:column; justify-content:center; gap:2px; padding:2px 0; }
+  .tabbar .tab .ico svg{ width:18px; height:18px; }
+  .tabbar .tab .lbl{
+    display:block; max-width:none !important; opacity:1 !important;
+    font-size:10px; line-height:1.15; white-space:normal; text-align:center;
+    overflow:visible;
+  }
+}
+</style>
       
 </body>
 </html>
