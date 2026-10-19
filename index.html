@@ -11879,20 +11879,18 @@ function openCategoryPicker(current, onPick) {
   ensureAssetFormCss();
   ensureValuePickerCss();
   const cats = getCategories();
-
+ 
   const root = document.createElement('div');
-  root.className = 'vp-root';
   document.body.appendChild(root);
   const close = () => root.remove();
-
+ 
   root.innerHTML = `
-    <div class="vp-backdrop"></div>
-    <div class="vp-panel" role="dialog" aria-modal="true">
-      <button class="sheet-close" type="button" title="ปิด" aria-label="ปิด">${ICONS.close}</button>
-      <div class="sheet-handle"></div>
-      <div class="sheet-title">เลือกหมวดหมู่</div>
-      ${isAdmin() ? `<button type="button" class="vp-create" id="cat_create">${AF_ICON_PLUS}<span>เพิ่มหมวดหมู่ใหม่</span></button>` : ''}
-      <div class="cat-scroll">
+    <div class="overlay" style="z-index:95;">
+      <div class="sheet vp-sheet" style="max-height:92vh;">
+        <button class="sheet-close" type="button" title="ปิด" aria-label="ปิด">${ICONS.close}</button>
+        <div class="sheet-handle"></div>
+        <div class="sheet-title">เลือกหมวดหมู่</div>
+        ${isAdmin() ? `<button type="button" class="vp-create" id="cat_create">${AF_ICON_PLUS}<span>เพิ่มหมวดหมู่ใหม่</span></button>` : ''}
         <div class="cat-grid">
           ${cats.map(c => `
             <button type="button" class="cat-tile${c === current ? ' active' : ''}" data-cat="${escapeHtml(c)}">
@@ -11902,10 +11900,11 @@ function openCategoryPicker(current, onPick) {
         </div>
       </div>
     </div>`;
-
-  root.querySelector('.vp-backdrop').onclick = close;
+ 
+  const overlay = root.querySelector('.overlay');
+  overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
   root.querySelector('.sheet-close').onclick = close;
-
+ 
   root.querySelectorAll('.cat-tile').forEach(btn => {
     btn.onclick = () => {
       const c = btn.dataset.cat;
@@ -11913,7 +11912,7 @@ function openCategoryPicker(current, onPick) {
       onPick(c);
     };
   });
-
+ 
   const createBtn = root.querySelector('#cat_create');
   if (createBtn) {
     createBtn.onclick = () => {
@@ -12014,62 +12013,30 @@ function assetValueOptions(field, selCat) {
 /* ---------- ไอคอนเครื่องหมายบวกสำหรับปุ่มกรอกใหม่ ---------- */
 const AF_ICON_PLUS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
 
-/* ---------- สไตล์หน้าเลือกค่าและหน้ากรอกค่าใหม่ ---------- */
-/* ---------- สไตล์หน้าเลือกค่าและหน้ากรอกค่าใหม่ ---------- */
+* ---------- สไตล์เฉพาะส่วนของหน้าเลือกค่า (ไม่แตะโครงหน้าต่าง) ---------- */
 function ensureValuePickerCss() {
   if (document.getElementById('valuePickerCss')) return;
   const s = document.createElement('style');
   s.id = 'valuePickerCss';
   s.textContent = `
-/* รากนอกสุด: fixed ตัวเดียว ไม่มี touch-action และไม่มี backdrop-filter */
-.vp-root{ position:fixed; inset:0; z-index:95; }
-.vp-backdrop{ position:absolute; inset:0; background:rgba(15,25,38,.46); }
-
-/* แผงหน้าต่าง: จำกัดความสูง แบ่งเป็นหัว / ค้นหา / รายการ (เลื่อนได้) */
-.vp-panel{
-  position:absolute; left:0; right:0; bottom:0;
-  margin:0 auto; width:100%; max-width:640px;
-  height:min(88vh, 88dvh);
-  display:flex; flex-direction:column;
-  background:var(--panel, #fff);
-  border-radius:28px 28px 0 0;
-  padding:20px 18px calc(16px + env(safe-area-inset-bottom));
-  box-sizing:border-box;
-  box-shadow:0 -16px 48px rgba(20,32,45,.2);
-}
-.vp-panel .sheet-close{ position:absolute; top:14px; right:14px; }
-.vp-panel .sheet-handle{ flex:none; }
-.vp-panel .sheet-title{ flex:none; padding-right:34px; }
-.vp-panel .vp-create{ flex:none; }
-.vp-panel .vp-search{ flex:none; }
-
-/* ตัวเลื่อนจริง: เฉพาะส่วนรายการ / หมวดหมู่ */
-.vp-panel .vp-list,
-.vp-panel .cat-scroll{
-  flex:1 1 0; min-height:0;
-  overflow-y:auto; -webkit-overflow-scrolling:touch;
-  overscroll-behavior:contain; touch-action:pan-y;
-}
-
-/* จอกว้าง: กลางจอ */
-@media (min-width:900px){
-  .vp-root{ display:flex; align-items:center; justify-content:center; padding:28px; }
-  .vp-panel{ position:relative; height:min(80vh, 760px); border-radius:24px; }
-  .vp-backdrop{ position:fixed; }
-}
-
-/* ปุ่มกรอกชื่อใหม่ */
+/* รายการไหลตามเนื้อหา ให้ .sheet เป็นตัวเลื่อนตัวเดียว (ทับ max-height/overflow ของ ensureAssetFormCss) */
+.vp-sheet .vp-list{ display:flex; flex-direction:column; gap:8px; max-height:none; overflow:visible; padding:2px 2px 6px; }
+.vp-sheet .cat-grid{ margin-bottom:6px; }
+ 
+/* ปุ่มกรอกใหม่: ใช้สีเดียวกับ menubar ของธีมที่เลือก */
 .vp-create{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:50px;margin-bottom:12px;border:0;border-radius:16px;font:inherit;font-size:14.5px;font-weight:600;color:#fff;background:linear-gradient(135deg,var(--navy),var(--navy-deep));box-shadow:0 6px 16px color-mix(in srgb,var(--navy) 38%,transparent);cursor:pointer;transition:transform .15s ease,box-shadow .15s ease}
 .vp-create:hover{transform:translateY(-1px);box-shadow:0 10px 22px color-mix(in srgb,var(--navy) 46%,transparent);filter:brightness(1.12)}
 .vp-create:active{transform:scale(.98)}
 .vp-create svg{width:18px;height:18px}
-
+ 
 /* หน้ากรอกค่าใหม่ */
 .ve-sheet .ve-hint{font-size:12.5px;color:var(--ink-dim);line-height:1.5;margin:-4px 0 14px}
 .ve-sheet .ve-input{font-size:16px;min-height:48px}
-.ve-sheet .ve-note{font-size:12px;color:var(--ink-dim);min-height:18px;margin:8px 2px 14px}
+.ve-sheet .ve-note{font-size:12px;color:var(--ink-dim);min-height:0;margin:8px 2px 0}
+.ve-sheet .ve-note:empty{display:none}
 .ve-sheet .ve-note.match{color:var(--ok)}
-
+.ve-sheet .btn-row{margin-top:12px}
+ 
 @media (prefers-reduced-motion: reduce){
   .vp-create, .vp-create:hover { transition:none; transform:none }
 }
@@ -12078,34 +12045,34 @@ function ensureValuePickerCss() {
 }
 
 
-/* ---------- หน้าเลือกค่า (ชื่อ / ยี่ห้อ) ---------- */
+/* ---------- หน้าเลือกค่า (ชื่อครุภัณฑ์ / ยี่ห้อ-รุ่น) ---------- */
 function openValuePicker({ title, placeholder, current, options, onPick }) {
   ensureAssetFormCss();
   ensureValuePickerCss();
-
+ 
   const root = document.createElement('div');
-  root.className = 'vp-root';
   document.body.appendChild(root);
   const close = () => root.remove();
-
-  // รูปแบบเดียวกับหน้าเลือกครุภัณฑ์ยืม-คืน: ไม่ล็อก body และไม่ดัก touchmove
-  const frame = (inner, extra) => `
-    <div class="vp-backdrop"></div>
-    <div class="vp-panel ${extra || ''}" role="dialog" aria-modal="true">
-      <button class="sheet-close" type="button" title="ปิด" aria-label="ปิด">${ICONS.close}</button>
-      <div class="sheet-handle"></div>
-      ${inner}
+ 
+  const wrap = (inner, extra) => `
+    <div class="overlay" style="z-index:95;">
+      <div class="sheet vp-sheet ${extra || ''}" style="max-height:92vh;">
+        <button class="sheet-close" type="button" title="ปิด" aria-label="ปิด">${ICONS.close}</button>
+        <div class="sheet-handle"></div>
+        ${inner}
+      </div>
     </div>`;
-
+ 
   const bindCommon = () => {
-    root.querySelector('.vp-backdrop').onclick = close;
+    const overlay = root.querySelector('.overlay');
+    overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
     root.querySelector('.sheet-close').onclick = close;
   };
-
+ 
   const pick = (value) => { close(); onPick(value); };
-
+ 
   function showEntry(prefill) {
-    root.innerHTML = frame(`
+    root.innerHTML = wrap(`
       <div class="sheet-title">${escapeHtml(title)}ใหม่</div>
       <div class="ve-hint">พิมพ์${escapeHtml(title)}ที่ยังไม่มีในระบบ เมื่อบันทึกแล้วจะขึ้นให้เลือกในครั้งถัดไป</div>
       <input class="input ve-input" id="ve_input" placeholder="${escapeHtml(placeholder)}" autocomplete="off" enterkeyhint="done" value="${escapeHtml(prefill || '')}">
@@ -12113,7 +12080,7 @@ function openValuePicker({ title, placeholder, current, options, onPick }) {
       <div class="btn-row"><button class="btn btn-ghost" id="ve_back" type="button">ย้อนกลับ</button><button class="btn btn-primary" id="ve_ok" type="button">ใช้ค่านี้</button></div>
     `, 've-sheet');
     bindCommon();
-
+ 
     const inp = root.querySelector('#ve_input');
     const note = root.querySelector('#ve_note');
     const findExisting = (t) => {
@@ -12132,27 +12099,30 @@ function openValuePicker({ title, placeholder, current, options, onPick }) {
       const hit = findExisting(t);
       pick(hit ? hit.value : t);
     };
-
+ 
     inp.oninput = refreshNote;
     inp.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); save(); } };
     root.querySelector('#ve_ok').onclick = save;
     root.querySelector('#ve_back').onclick = () => showList();
     refreshNote();
-    setTimeout(() => inp.focus({ preventScroll: true }), 250);
+    // จอสัมผัสไม่โฟกัสอัตโนมัติ เพื่อไม่ให้คีย์บอร์ดดันหน้าต่างขยับ
+    if (!window.matchMedia('(pointer:coarse)').matches) {
+      setTimeout(() => inp.focus({ preventScroll: true }), 250);
+    }
   }
-
+ 
   function showList() {
-    root.innerHTML = frame(`
+    root.innerHTML = wrap(`
       <div class="sheet-title">${escapeHtml(title)}</div>
       <button type="button" class="vp-create" id="vp_create">${AF_ICON_PLUS}<span>กรอก${escapeHtml(title)}ใหม่</span></button>
       <div class="vp-search">${AF_ICON_SEARCH}<input class="input" id="vp_q" placeholder="${escapeHtml(placeholder)}" autocomplete="off" enterkeyhint="done"></div>
       <div class="vp-list" id="vp_list"></div>
     `);
     bindCommon();
-
+ 
     const q = root.querySelector('#vp_q');
     const list = root.querySelector('#vp_list');
-
+ 
     const draw = () => {
       const qq = q.value.trim();
       const lower = qq.toLowerCase();
@@ -12174,7 +12144,7 @@ function openValuePicker({ title, placeholder, current, options, onPick }) {
       list.innerHTML = html;
       list.querySelectorAll('.vp-item').forEach(b => { b.onclick = () => pick(b.dataset.v); });
     };
-
+ 
     q.oninput = draw;
     q.onkeydown = (e) => {
       if (e.key !== 'Enter') return;
@@ -12188,9 +12158,9 @@ function openValuePicker({ title, placeholder, current, options, onPick }) {
     root.querySelector('#vp_create').onclick = () => showEntry(q.value.trim());
     draw();
   }
-
+ 
   showList();
-}
+}      
 
 /* ---------- ฟอร์มเพิ่ม/แก้ไขครุภัณฑ์ ---------- */
 function openAssetForm(a) {
