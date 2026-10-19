@@ -8026,6 +8026,16 @@ html, body{
   </div>
 </div>
 
+<script id="stat-tiles-helpers">
+function statTile(o) {
+  var clickable = !!o.grp;
+  var cls = 'stat-card' + (o.cls ? ' ' + o.cls : '') + (clickable ? ' is-click' : '') + (o.on ? ' is-on' : '');
+  var attrs = clickable
+    ? ' role="button" tabindex="0" aria-pressed="' + (o.on ? 'true' : 'false') + '" data-grp="' + o.grp + '" data-k="' + o.k + '" data-v="' + o.v + '"'
+    : '';
+  return '<div class="' + cls + '"' + attrs + '><div class="stat-num">' + o.num + '</div><div class="stat-label">' + o.label + '</div></div>';
+}
+</script>
 <script>
 /* =========================================================
    CONFIG — แก้ค่าตรงนี้ก่อนใช้งานจริง
@@ -10545,10 +10555,10 @@ function renderAssets() {
     </div>
 
     <div class="stat-grid" style="margin-bottom:14px;">
-      <div class="stat-card"><div class="stat-num">${A.length}</div><div class="stat-label">ทั้งหมด</div></div>
-      <div class="stat-card ok"><div class="stat-num">${cnt('พร้อมใช้งาน')}</div><div class="stat-label">พร้อมใช้งาน</div></div>
-      <div class="stat-card warn"><div class="stat-num">${cnt('กำลังยืม')}</div><div class="stat-label">กำลังยืม</div></div>
-      <div class="stat-card bad"><div class="stat-num">${cnt('ซ่อมบำรุง')}</div><div class="stat-label">ซ่อมบำรุง</div></div>
+      ${statTile({grp:'assets', k:'status', v:'all', num:A.length, label:'ทั้งหมด', on:(state.assetStatusFilter||'all')==='all'})}
+      ${statTile({grp:'assets', k:'status', v:'พร้อมใช้งาน', cls:'ok', num:cnt('พร้อมใช้งาน'), label:'พร้อมใช้งาน', on:state.assetStatusFilter==='พร้อมใช้งาน'})}
+      ${statTile({grp:'assets', k:'status', v:'กำลังยืม', cls:'warn', num:cnt('กำลังยืม'), label:'กำลังยืม', on:state.assetStatusFilter==='กำลังยืม'})}
+      ${statTile({grp:'assets', k:'status', v:'ซ่อมบำรุง', cls:'bad', num:cnt('ซ่อมบำรุง'), label:'ซ่อมบำรุง', on:state.assetStatusFilter==='ซ่อมบำรุง'})}
     </div>
 
     <div class="ax-top">
@@ -12554,9 +12564,9 @@ function renderBorrow() {
     </div>
 
     <div class="stat-grid" style="margin-bottom:14px;">
-      <div class="stat-card warn"><div class="stat-num">${bk.pending.length}</div><div class="stat-label">รออนุมัติ</div></div>
-      <div class="stat-card ok"><div class="stat-num">${bk.active.length}</div><div class="stat-label">ค้างคืน</div></div>
-      <div class="stat-card bad"><div class="stat-num">${overdueCount}</div><div class="stat-label">เกินกำหนด</div></div>
+      ${statTile({grp:'borrow', k:'tab', v:'pending', cls:'warn', num:bk.pending.length, label:'รออนุมัติ', on:state.borrowTab==='pending' && !state.borrowOverdue})}
+      ${statTile({grp:'borrow', k:'tab', v:'active', cls:'ok', num:bk.active.length, label:'ค้างคืน', on:state.borrowTab==='active' && !state.borrowOverdue})}
+      ${statTile({grp:'borrow', k:'overdue', v:'overdue', cls:'bad', num:overdueCount, label:'เกินกำหนด', on:!!state.borrowOverdue})}
     </div>
 
     <div class="ax-top">
@@ -13530,9 +13540,9 @@ function renderMaint() {
     </div>
 
     <div class="stat-grid" style="margin-bottom:14px;">
-      <div class="stat-card warn"><div class="stat-num">${bk.pending.length}</div><div class="stat-label">รอซ่อม</div></div>
-      <div class="stat-card ok"><div class="stat-num">${bk.active.length}</div><div class="stat-label">ค้างซ่อม</div></div>
-      <div class="stat-card info"><div class="stat-num">${Number(totalCost).toLocaleString()}</div><div class="stat-label">ค่าใช้จ่ายสะสม (บาท)</div></div>
+      ${statTile({grp:'maint', k:'tab', v:'pending', cls:'warn', num:bk.pending.length, label:'รอซ่อม', on:state.maintTab==='pending'})}
+      ${statTile({grp:'maint', k:'tab', v:'active', cls:'ok', num:bk.active.length, label:'ค้างซ่อม', on:state.maintTab==='active'})}
+      ${statTile({cls:'info', num:Number(totalCost).toLocaleString(), label:'ค่าใช้จ่ายสะสม (บาท)'})}
     </div>
 
     <div class="ax-top">
@@ -14526,10 +14536,11 @@ function drawUsers() {
 
     <div class="stat-grid" style="margin-bottom:14px;">
       ${stat(rows.length, 'ทั้งหมด (คน)')}
-      ${stat(offCount, 'สัญญาบัตร', 'info')}
-      ${stat(polCount, 'ประทวน', 'info')}
-      ${stat(holdCount, 'กำลังถือพัสดุ', 'ok')}
-      ${stat(flagCount, 'ต้องตรวจข้อมูล', flagCount ? 'warn' : '')}
+      ${statTile({grp:'off', k:'reset', v:'all', num:rows.length, label:'ทั้งหมด (คน)', on:!(state.offFilter && (state.offFilter.role!=='all' || state.offFilter.rank!=='all' || state.offFilter.flag!=='all'))})}
+      ${statTile({grp:'off', k:'rank', v:'สัญญาบัตร', cls:'info', num:offCount, label:'สัญญาบัตร', on:(state.offFilter||{}).rank==='สัญญาบัตร'})}
+      ${statTile({grp:'off', k:'rank', v:'ประทวน', cls:'info', num:polCount, label:'ประทวน', on:(state.offFilter||{}).rank==='ประทวน'})}
+      ${statTile({grp:'off', k:'flag', v:'hold', cls:'ok', num:holdCount, label:'กำลังถือพัสดุ', on:(state.offFilter||{}).flag==='hold'})}
+      ${statTile({grp:'off', k:'flag', v:'issue', cls:flagCount ? 'warn' : '', num:flagCount, label:'ต้องตรวจข้อมูล', on:(state.offFilter||{}).flag==='issue'})}
     </div>
 
     <div class="ax-top">
@@ -23563,5 +23574,79 @@ window.exportAllBackup = async function(){
   .notif-sheet *{ max-width:100%; word-break:break-word; }
 </style>
       
+<script id="stat-tiles-js">
+(function(){
+  function onTile(e){
+    var c = e.target && e.target.closest && e.target.closest('.stat-card[data-grp]');
+    if (!c) return;
+    var g = c.dataset.grp, k = c.dataset.k, v = c.dataset.v;
+
+    if (g === 'assets') {
+      var cur = state.assetStatusFilter || 'all';
+      state.assetStatusFilter = (cur === v) ? 'all' : v;
+      state.assetLimit = ASSET_STEP;
+      renderAssets();
+    } else if (g === 'borrow') {
+      if (k === 'overdue') {
+        state.borrowOverdue = !state.borrowOverdue;
+      } else {
+        if (v === 'pending' && !isAdmin()) return;
+        var on = state.borrowTab === v && !state.borrowOverdue;
+        state.borrowOverdue = false;
+        state.borrowTab = on ? 'active' : v;
+      }
+      renderBorrow();
+    } else if (g === 'maint') {
+      state.maintTab = (state.maintTab === v) ? 'active' : v;
+      renderMaint();
+    } else if (g === 'off') {
+      if (!state.offFilter) state.offFilter = { role: 'all', rank: 'all', flag: 'all' };
+      var f = state.offFilter;
+      if (k === 'reset') { f.role = 'all'; f.rank = 'all'; f.flag = 'all'; }
+      else if (k === 'rank') f.rank = (f.rank === v) ? 'all' : v;
+      else if (k === 'flag') f.flag = (f.flag === v) ? 'all' : v;
+      drawUsers();
+    }
+  }
+  document.addEventListener('click', onTile);
+  document.addEventListener('keydown', function(e){
+    if ((e.key === 'Enter' || e.key === ' ') && e.target && e.target.matches && e.target.matches('.stat-card[data-grp]')) {
+      e.preventDefault();
+      onTile({ target: e.target });
+    }
+  });
+})();
+</script>
+<style id="stat-tiles-v1">
+/* การ์ดสถิติ: แนวนอน ตัวเลขซ้าย ชื่อขวา ใช้ร่วมกันทุกหน้า */
+.stat-grid{
+  display:flex !important; gap:10px; overflow-x:auto; overflow-y:hidden;
+  scroll-snap-type:x proximity; -webkit-overflow-scrolling:touch; scrollbar-width:none;
+  padding:4px 2px 8px !important; margin:0 0 14px !important; box-sizing:border-box; max-width:100%;
+}
+.stat-grid::-webkit-scrollbar{ display:none; }
+.stat-grid > .stat-card{
+  flex:0 0 calc((100% - 20px) / 2.3) !important; min-width:132px; box-sizing:border-box;
+  scroll-snap-align:start; display:flex; align-items:center; justify-content:space-between; gap:8px;
+  text-align:left; padding:12px 14px; margin:0;
+}
+.stat-grid > .stat-card .stat-num{ font-size:22px; flex:none; }
+.stat-grid > .stat-card .stat-label{ margin-top:0; font-size:12px; text-align:right; line-height:1.4; }
+@media (min-width:600px){
+  .stat-grid > .stat-card{ flex-basis:calc((100% - 30px) / 3.3) !important; }
+}
+@media (min-width:1024px){
+  .stat-grid{
+    display:grid !important; grid-auto-flow:column; grid-auto-columns:minmax(0,1fr);
+    overflow:visible; padding:0 !important; margin:0 0 14px !important;
+  }
+  .stat-grid > .stat-card{ flex:none !important; min-width:0; }
+}
+/* ปุ่มกรอง */
+.stat-card.is-click{ cursor:pointer; -webkit-tap-highlight-color:transparent; user-select:none; transition:transform .12s ease, box-shadow .15s ease, border-color .15s ease; }
+.stat-card.is-click:active{ transform:scale(.98); }
+.stat-card.is-click:focus-visible{ outline:2px solid var(--gold, #c9a227); outline-offset:2px; }
+.stat-card.is-on{ border-color:var(--gold, #c9a227) !important; box-shadow:0 0 0 1.5px var(--gold, #c9a227) inset !important; }
+</style>
 </body>
 </html>
