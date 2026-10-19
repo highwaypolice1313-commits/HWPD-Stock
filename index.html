@@ -9145,7 +9145,7 @@ if ((name === 'audit' || name === 'monthly') && !(window.canOpenTab && window.ca
 });
 const moreBtn = document.getElementById('tabMore');
 if (moreBtn) moreBtn.classList.toggle('active', !!document.querySelector('.tab-secondary[data-tab="' + name + '"]'));
-layoutNav();
+requestAnimationFrame(function(){ layoutNav(); }); // ✅ จัดแถบหลังการแตะจบ ไม่ให้ปุ่มขยับระหว่างการแตะ
    
   document.querySelectorAll('.page').forEach(p => { p.style.display = 'none'; });
   const activePage = document.getElementById('view-' + name);
