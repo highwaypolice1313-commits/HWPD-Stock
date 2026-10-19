@@ -7603,6 +7603,285 @@ html, body{
   <div id="sessionRetryBox" style="display:none; margin-top:6px;">
     <button class="btn btn-primary" id="btnRetrySession" style="width:auto;padding:11px 26px;">ลองเชื่อมต่อใหม่</button>
   </div>
+<style id="login-v3">
+#acLogin{ display:flex; flex-direction:column; align-items:center; width:100%; max-width:320px; margin:0 auto; color:#fff; }
+#acLogin [hidden]{ display:none !important; }
+
+.lg-roles{ position:relative; display:grid; grid-template-columns:1fr 1fr; width:100%; max-width:300px; height:54px; margin:0 auto 22px; padding:5px; box-sizing:border-box; border-radius:999px; background:rgba(255,255,255,.1); }
+.lg-thumb{ position:absolute; top:5px; bottom:5px; left:5px; width:calc(50% - 5px); border-radius:999px; background:var(--gold, #ffd21f); box-shadow:0 6px 16px rgba(0,0,0,.22); opacity:0; transition:transform .32s cubic-bezier(.3,.7,.3,1), opacity .2s; }
+.lg-role{ position:relative; z-index:1; display:flex; align-items:center; justify-content:center; height:100%; margin:0; padding:0 8px; border:0; border-radius:999px; background:transparent; box-shadow:none; color:#fff; font-family:inherit; font-size:15px; font-weight:500; line-height:1.5; white-space:nowrap; cursor:pointer; -webkit-user-select:none; user-select:none; }
+.lg-role.on{ color:#0c1e33; font-weight:700; }
+
+.lg-hello{ text-align:center; font-size:15px; margin:4px 0 14px; line-height:1.6; }
+.lg-hello b{ color:var(--gold, #ffd21f); font-weight:700; }
+.lg-switch{ display:inline-block; margin-top:10px; padding:0 20px; height:38px; line-height:38px; border-radius:999px; border:1px solid rgba(255,255,255,.35); background:transparent; color:#fff; font-family:inherit; font-size:14px; font-weight:600; cursor:pointer; }
+
+.lg-steps{ display:flex; justify-content:center; gap:8px; margin:0 0 18px; }
+.lg-steps span{ height:8px; width:8px; border-radius:999px; background:rgba(255,255,255,.35); transition:all .25s; cursor:pointer; }
+.lg-steps span.on{ width:22px; background:var(--gold, #ffd21f); }
+
+.lg-wrap{ width:100%; text-align:center; }
+.lg-cap{ font-size:13px; opacity:.7; margin-bottom:8px; line-height:1.6; }
+.lg-badge{ font-size:40px; font-weight:700; letter-spacing:6px; min-height:56px; line-height:1.5; }
+.lg-hint{ font-size:13px; opacity:.55; margin-top:2px; line-height:1.6; }
+.lg-next{ display:none; margin:18px auto 0; width:160px; height:44px; line-height:44px; padding:0; border:0; border-radius:999px; background:var(--gold, #ffd21f); color:#0c1e33; font-family:inherit; font-size:15px; font-weight:700; cursor:pointer; box-shadow:0 10px 22px rgba(0,0,0,.2); }
+.lg-next.show{ display:block; }
+
+.lg-dots{ display:flex; justify-content:center; gap:14px; margin:6px 0 14px; }
+.lg-dots i{ width:14px; height:14px; border-radius:50%; border:1.5px solid rgba(255,255,255,.5); transition:all .18s; }
+.lg-dots i.on{ background:#fff; border-color:#fff; transform:scale(1.1); }
+.lg-help{ font-size:12px; opacity:.6; line-height:1.7; }
+
+.lg-pad{ display:grid; grid-template-columns:repeat(3, 72px); justify-content:center; gap:14px; margin:26px auto 0; }
+.lg-pad button{ width:72px; height:72px; margin:0; padding:0; border:0; border-radius:50%; background:rgba(255,255,255,.12); box-shadow:none; color:#fff; font-family:inherit; font-size:26px; font-weight:600; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:transform .12s ease, background-color .12s ease; }
+.lg-pad button:active{ transform:scale(.92); background:rgba(255,255,255,.26); }
+.lg-pad .lg-blank{ visibility:hidden; }
+
+.lg-err{ color:#ffb4bd; text-align:center; min-height:20px; margin-top:16px; font-weight:600; font-size:14px; line-height:1.6; }
+.lg-shake{ animation:lgShake .36s; }
+@keyframes lgShake{ 20%,60%{ transform:translateX(-6px); } 40%,80%{ transform:translateX(6px); } }
+
+@media (max-height:900px){
+  .lg-roles{ height:50px; margin-bottom:16px; }
+  .lg-pad{ grid-template-columns:repeat(3, 64px); gap:10px; margin-top:16px; }
+  .lg-pad button{ width:64px; height:64px; font-size:22px; }
+}
+</style>
+<div id="acLogin">
+  <div class="lg-roles" id="lgRoles">
+    <div class="lg-thumb" id="lgThumb"></div>
+    <button type="button" class="lg-role" data-r="admin">แอดมิน</button>
+    <button type="button" class="lg-role" data-r="officer">เจ้าหน้าที่</button>
+  </div>
+
+  <div class="lg-hello" id="lgHello" hidden></div>
+
+  <div class="lg-steps" id="lgSteps" hidden>
+    <span id="lgDot1"></span><span id="lgDot2"></span>
+  </div>
+
+  <div class="lg-wrap" id="lgBadgeWrap" hidden>
+    <div class="lg-cap">รหัสหมวก</div>
+    <div class="lg-badge" id="lgBadgeText"></div>
+    <div class="lg-hint" id="lgBadgeHint">กรอกอย่างน้อย 2 ตัว</div>
+    <button type="button" class="lg-next" id="lgNext">ถัดไป</button>
+  </div>
+
+  <div class="lg-wrap" id="lgPinWrap" hidden>
+    <div class="lg-cap">รหัสผ่าน 6 หลัก</div>
+    <div class="lg-dots" id="lgDots"></div>
+    <div class="lg-help">วัน เดือน ปีเกิด (พ.ศ. 2 หลักท้าย)<br>เช่น 16/12/2536 ใช้ 161236</div>
+  </div>
+
+  <div class="lg-pad" id="lgPad" hidden>
+    <button type="button" data-k="1">1</button><button type="button" data-k="2">2</button><button type="button" data-k="3">3</button>
+    <button type="button" data-k="4">4</button><button type="button" data-k="5">5</button><button type="button" data-k="6">6</button>
+    <button type="button" data-k="7">7</button><button type="button" data-k="8">8</button><button type="button" data-k="9">9</button>
+    <span class="lg-blank"></span><button type="button" data-k="0">0</button><button type="button" data-k="del">⌫</button>
+  </div>
+
+  <div class="lg-err" id="lgErr"></div>
+</div>
+<script id="login-v3-js">
+(function(){
+  var REMEMBER = 'acRememberBadge';
+  var ADMIN_BADGE = 'admin';
+  var MAX_FAIL = 5;
+  var LOCK_MS = 15 * 60 * 1000;
+  var BADGE_MAX = 6;
+
+  var $ = function(id){ return document.getElementById(id); };
+  var root = $('acLogin');
+  if (!root) return;
+
+  var badge = '', pin = '', step = 'badge', role = '', busy = false;
+
+  function err(m){ $('lgErr').textContent = m || ''; }
+  function getRemembered(){ try { return localStorage.getItem(REMEMBER) || ''; } catch (e) { return ''; } }
+  function setRemembered(b){ try { if (b) localStorage.setItem(REMEMBER, b); else localStorage.removeItem(REMEMBER); } catch (e) {} }
+  function shake(){ var w = $('lgPinWrap'); w.classList.remove('lg-shake'); void w.offsetWidth; w.classList.add('lg-shake'); }
+
+  function emailFor(b){
+    var hex = Array.from(new TextEncoder().encode(String(b).trim().toLowerCase()))
+      .map(function(x){ return x.toString(16).padStart(2, '0'); }).join('');
+    return 'u' + hex + '@hpd.local';
+  }
+
+  // ---------- การแสดงผล ----------
+  function paintRole(){
+    var t = $('lgThumb');
+    t.style.opacity = role ? '1' : '0';
+    t.style.transform = role === 'officer' ? 'translateX(100%)' : 'translateX(0)';
+    document.querySelectorAll('#lgRoles .lg-role').forEach(function(b){
+      b.classList.toggle('on', b.dataset.r === role);
+    });
+  }
+
+  function paintBadge(){
+    $('lgBadgeText').textContent = badge;
+    $('lgBadgeHint').style.visibility = badge.length ? 'hidden' : 'visible';
+    $('lgNext').classList.toggle('show', badge.length >= 2);
+  }
+
+  function paintPin(){
+    var dots = $('lgDots'), html = '';
+    for (var i = 0; i < 6; i++) html += '<i class="' + (i < pin.length ? 'on' : '') + '"></i>';
+    dots.innerHTML = html;
+  }
+
+  function paintSteps(){
+    $('lgSteps').hidden = role !== 'officer';
+    $('lgDot1').classList.toggle('on', step === 'badge');
+    $('lgDot2').classList.toggle('on', step === 'pin');
+  }
+
+  function paintScreen(){
+    $('lgBadgeWrap').hidden = !(role === 'officer' && step === 'badge');
+    $('lgPinWrap').hidden = !(role && (step === 'pin' || role === 'admin'));
+    $('lgPad').hidden = !role;
+    paintBadge();
+    paintPin();
+    paintSteps();
+  }
+
+  // ---------- การเลือกระดับ ----------
+  function chooseRole(r){
+    role = r; err(''); pin = '';
+    badge = r === 'admin' ? ADMIN_BADGE : '';
+    step = r === 'admin' ? 'pin' : 'badge';
+    paintRole(); paintScreen();
+  }
+
+  function setStep(s){
+    if (role !== 'officer') s = 'pin';
+    step = s; err(''); paintScreen();
+  }
+
+  function showRoles(){
+    role = ''; badge = ''; pin = ''; step = 'badge';
+    $('lgHello').hidden = true;
+    $('lgRoles').hidden = false;
+    paintRole(); paintScreen();
+  }
+
+  function showRemembered(b){
+    badge = b;
+    role = b === ADMIN_BADGE ? 'admin' : 'officer';
+    step = 'pin';
+    $('lgRoles').hidden = true;
+    var h = $('lgHello');
+    h.hidden = false;
+    h.innerHTML = 'เข้าสู่ระบบในชื่อ <b>' + escapeHtml(b === ADMIN_BADGE ? 'แอดมิน' : b) + '</b>' +
+      '<br><button type="button" class="lg-switch" id="lgSwitch">เปลี่ยนผู้ใช้</button>';
+    $('lgSwitch').onclick = function(){ setRemembered(''); showRoles(); };
+    paintRole(); paintScreen();
+  }
+
+  // ---------- นับครั้งที่กรอกผิด ----------
+  function failKey(b){ return 'acFail:' + String(b).toLowerCase(); }
+  function getFail(b){ try { return JSON.parse(localStorage.getItem(failKey(b)) || '{}'); } catch (e) { return {}; } }
+  function setFail(b, o){
+    try { if (o && Object.keys(o).length) localStorage.setItem(failKey(b), JSON.stringify(o)); else localStorage.removeItem(failKey(b)); } catch (e) {}
+  }
+  function lockLeft(b){ var f = getFail(b); return (f.until && f.until > Date.now()) ? f.until - Date.now() : 0; }
+  function minutesText(ms){ return Math.max(1, Math.ceil(ms / 60000)) + ' นาที'; }
+  function onWrongPin(b){
+    var now = Date.now();
+    var f = getFail(b);
+    if (f.until && f.until <= now) f = {};
+    f.n = (f.n || 0) + 1;
+    if (f.n >= MAX_FAIL) {
+      setFail(b, { until: now + LOCK_MS });
+      return 'กรอกรหัสผิดครบ ' + MAX_FAIL + ' ครั้ง ล็อก ' + minutesText(LOCK_MS) + ' แล้วลองใหม่';
+    }
+    setFail(b, f);
+    return 'รหัสไม่ถูกต้อง กรอกผิดแล้ว ' + f.n + ' ครั้ง (เหลือ ' + (MAX_FAIL - f.n) + ' ครั้งก่อนล็อก)';
+  }
+
+  // ---------- เข้าสู่ระบบ ----------
+  async function loadProfile(auth){
+    var p = await sb.from('profiles').select('role,display_name,active').eq('id', auth.user.id).maybeSingle();
+    if (!p.data || !p.data.active) { await sb.auth.signOut(); throw new Error('บัญชีนี้ยังไม่เปิดใช้งาน'); }
+    return p.data;
+  }
+
+  async function finish(prof, auth){
+    window.__acAuthId = auth.user.id;
+    var me = await sb.from('users').select('id,name,position').eq('auth_user_id', auth.user.id).maybeSingle();
+    window.__me = me.data || { name: prof.display_name };
+    var r = prof.role === 'admin' ? 'admin' : 'viewer';
+    saveSession({ role: r, token: auth.session.access_token, name: prof.display_name });
+    await completeLogin({ role: r, name: prof.display_name, token: auth.session.access_token });
+    var pill = $('rolePill');
+    if (pill) pill.textContent = prof.role === 'admin' ? 'แอดมิน' : 'เจ้าหน้าที่';
+  }
+
+  async function submit(){
+    if (busy) return;
+    err('');
+    if (!role) return err('กรุณาเลือกระดับผู้ใช้งานก่อน');
+    if (!badge || badge.length < 2) { setStep('badge'); return err('กรุณากรอกรหัสหมวกอย่างน้อย 2 ตัว'); }
+    if (pin.length !== 6) return;
+
+    var left = lockLeft(badge);
+    if (left > 0) {
+      pin = ''; paintPin();
+      return err('กรอกผิดหลายครั้ง ล็อกอีก ' + minutesText(left) + ' กรุณารอแล้วลองใหม่');
+    }
+
+    busy = true;
+    try {
+      var r = await sb.auth.signInWithPassword({ email: emailFor(badge), password: pin });
+      if (r.error || !r.data || !r.data.session) {
+        var msg = onWrongPin(badge);
+        pin = ''; paintPin(); shake();
+        return err(msg);
+      }
+      setFail(badge, {});
+      var prof = await loadProfile(r.data);
+      setRemembered(badge);
+      await finish(prof, r.data);
+    } catch (e) {
+      err(e.message || 'เข้าสู่ระบบไม่สำเร็จ');
+      pin = ''; paintPin(); shake();
+    } finally {
+      busy = false;
+    }
+  }
+
+  // ---------- แป้นตัวเลข ----------
+  $('lgPad').addEventListener('click', function(e){
+    var b = e.target.closest('[data-k]'); if (!b) return;
+    var k = b.dataset.k;
+    if (!role) return err('กรุณาเลือกระดับผู้ใช้งานก่อน');
+
+    if (step === 'badge') {
+      if (k === 'del') badge = badge.slice(0, -1);
+      else if (badge.length < BADGE_MAX) badge += k;
+      err('');
+      paintBadge();
+      if (badge.length === BADGE_MAX) setStep('pin');
+      return;
+    }
+
+    if (k === 'del') pin = pin.slice(0, -1);
+    else if (pin.length < 6) pin += k;
+    paintPin();
+    if (pin.length === 6) submit();
+  });
+
+  $('lgNext').addEventListener('click', function(){ if (badge.length >= 2) setStep('pin'); });
+  $('lgDot1').addEventListener('click', function(){ if (role === 'officer') setStep('badge'); });
+  $('lgDot2').addEventListener('click', function(){ if (badge) setStep('pin'); });
+
+  document.querySelectorAll('#lgRoles .lg-role').forEach(function(b){
+    b.addEventListener('click', function(){ chooseRole(b.dataset.r); });
+  });
+
+  var remembered = getRemembered();
+  if (remembered) showRemembered(remembered); else showRoles();
+})();
+</script>
 
 </div>
 
@@ -21433,68 +21712,7 @@ document.addEventListener('click', async function(e){
 });
 </script>
 
-   <style id="user-pin-style-v2">
-.pin-mode{
-  display:flex !important; gap:4px; padding:4px; margin:0 0 16px;
-  background:var(--panel-soft); border:1px solid var(--panel-line); border-radius:16px;
-}
-.pin-mode button{
-  flex:1; border:0; background:transparent; padding:10px 8px; border-radius:12px;
-  font:inherit; font-size:13px; font-weight:600; color:var(--ink-dim); cursor:pointer;
-  transition:background .2s ease, color .2s ease, transform .12s ease;
-  -webkit-tap-highlight-color:transparent;
-}
-.pin-mode button.on{ background:var(--navy); color:#fff; box-shadow:0 4px 12px rgba(16,42,67,.25); }
-.pin-mode button.is-down{ transform:scale(.96); }
 
-.pin-dots{ display:flex !important; justify-content:center; gap:14px; margin:6px 0 20px; }
-.pin-dots i{
-  width:14px; height:14px; border-radius:50%; display:block;
-  border:2px solid var(--navy); background:transparent; opacity:.35;
-  transition:background .18s ease, transform .18s cubic-bezier(.3,1.4,.5,1), opacity .18s ease;
-}
-.pin-dots i.on{ background:var(--navy); opacity:1; transform:scale(1.15); }
-
-.pin-pad{
-  display:grid !important; grid-template-columns:repeat(3, 76px); justify-content:center;
-  gap:14px; margin:0 auto; max-width:280px;
-}
-.pin-pad button{
-  width:76px !important; height:76px !important; padding:0 !important; margin:0 !important;
-  border-radius:50% !important; border:1px solid var(--panel-line) !important;
-  background:var(--panel) !important; color:var(--ink) !important;
-  font:inherit !important; font-size:26px !important; font-weight:600 !important; line-height:1 !important;
-  display:flex !important; align-items:center !important; justify-content:center !important;
-  box-shadow:0 6px 14px -6px rgba(16,42,67,.28), inset 0 1px 0 rgba(255,255,255,.6) !important;
-  cursor:pointer; user-select:none; -webkit-user-select:none;
-  -webkit-tap-highlight-color:transparent; touch-action:manipulation;
-  transition:transform .12s ease, background-color .12s ease, color .12s ease, box-shadow .12s ease !important;
-}
-.pin-pad button svg{ width:24px; height:24px; }
-.pin-pad button.is-down,
-.pin-pad button:active{
-  transform:scale(.9) !important;
-  background:var(--navy) !important; color:#fff !important;
-  box-shadow:0 2px 6px -2px rgba(16,42,67,.35) !important;
-}
-.pin-pad .ghost{ visibility:hidden; }
-</style>
-
-<script id="user-pin-press-js">
-(function(){
-  function down(e){
-    var b = e.target.closest && e.target.closest('.pin-pad button, .pin-mode button');
-    if (b) b.classList.add('is-down');
-  }
-  function up(){
-    document.querySelectorAll('.is-down').forEach(function(b){ b.classList.remove('is-down'); });
-  }
-  document.addEventListener('pointerdown', down, true);
-  document.addEventListener('pointerup', up, true);
-  document.addEventListener('pointercancel', up, true);
-  document.addEventListener('pointerleave', up, true);
-})();
-</script>
 
    <script id="user-notif-signature-v2">
 notifSignature = function(list){
@@ -21520,76 +21738,7 @@ refreshNotifBadge();
 })();
 </script>
 
-<style id="user-pin-slots">
-#pinDots{ display:none !important; }
-.pin-field{ display:flex; justify-content:center; gap:10px; margin:6px 0 6px; }
-.pin-slot{
-  width:44px; height:52px; border-radius:14px; display:flex; align-items:center; justify-content:center;
-  background:rgba(255,255,255,.12); border:1.5px solid rgba(255,255,255,.35);
-  transition:border-color .18s ease, background-color .18s ease, transform .18s cubic-bezier(.3,1.4,.5,1);
-}
-.pin-slot.on{ border-color:#fff; background:rgba(255,255,255,.22); transform:translateY(-2px); }
-.pin-slot.on::before{ content:""; width:12px; height:12px; border-radius:50%; background:#fff; }
-.pin-count{ text-align:center; font-size:12.5px; color:rgba(255,255,255,.85); margin:4px 0 14px; min-height:18px; }
-</style>
-<script id="user-pin-slots-js">
-(function(){
-  var box = document.getElementById('pinBox');
-  var dotsWrap = document.getElementById('pinDots');
-  if (!box || !dotsWrap) return;
 
-  var field = document.createElement('div');
-  field.className = 'pin-field';
-  field.innerHTML = [0,1,2,3,4,5].map(function(){ return '<span class="pin-slot"></span>'; }).join('');
-
-  var count = document.createElement('div');
-  count.className = 'pin-count';
-  count.id = 'pinCount';
-
-  box.insertBefore(count, box.firstChild);
-  box.insertBefore(field, box.firstChild);
-
-  var dots = Array.prototype.slice.call(dotsWrap.querySelectorAll('i'));
-  var slots = field.querySelectorAll('.pin-slot');
-
-  function sync(){
-    var n = 0;
-    dots.forEach(function(d, i){
-      var on = d.classList.contains('on');
-      if (on) n++;
-      slots[i].classList.toggle('on', on);
-    });
-    count.textContent = n === 0 ? 'กรอก PIN 6 หลัก' : 'กรอกแล้ว ' + n + ' / 6 หลัก';
-  }
-
-  new MutationObserver(sync).observe(dotsWrap, { attributes:true, subtree:true, attributeFilter:['class'] });
-  sync();
-})();
-</script>
-
-   <style id="user-pin-compact">
-.pin-pad{ grid-template-columns:repeat(3, 64px) !important; gap:10px !important; max-width:230px !important; }
-.pin-pad button{
-  width:64px !important; height:64px !important;
-  font-size:22px !important;
-}
-.pin-pad button svg{ width:20px !important; height:20px !important; }
-.pin-slot{ width:40px !important; height:44px !important; border-radius:12px !important; }
-.pin-field{ gap:8px !important; margin:4px 0 2px !important; }
-.pin-count{ margin:2px 0 10px !important; font-size:12px !important; }
-.pin-dots{ margin:0 !important; }
-.pin-mode{ margin-bottom:10px !important; }
-.pin-mode button{ padding:8px !important; }
-
-@media (max-height: 900px){
-  .login-badge{ width:64px !important; height:64px !important; margin-bottom:8px !important; }
-  .login-badge svg{ width:30px !important; height:30px !important; }
-  .login-title{ margin-top:0 !important; }
-  .login-sub{ margin-top:4px !important; font-size:12px !important; line-height:1.5 !important; }
-  #roleLoginForm .field{ margin-bottom:8px !important; }
-  #pinBox{ margin-top:0 !important; }
-}
-</style>
    <style id="user-audit-btn-hover">
 .audit-tools-icon{
   width:38px !important; height:38px !important; border-radius:var(--r-sm) !important;
@@ -21610,318 +21759,8 @@ refreshNotifBadge();
 </style>
 
    
-<style id="ac-login-style">
-#acLogin{ display:flex; flex-direction:column; gap:12px; width:100%; max-width:320px; margin:0 auto; }
-#acLogin .ac-mode{ display:flex; gap:4px; padding:4px; border-radius:16px; background:var(--panel-soft); border:1px solid var(--panel-line); }
-#acLogin .ac-mode button{ flex:1; border:0; background:transparent; padding:9px; border-radius:12px; font:inherit; font-size:13px; font-weight:600; color:var(--ink-dim); cursor:pointer; }
-#acLogin .ac-mode button.on{ background:var(--navy); color:#fff; }
-.ac-hello{ text-align:center; font-size:14px; color:var(--ink); }
-.ac-link{ border:0; background:transparent; color:var(--gold); font:inherit; font-size:12.5px; text-decoration:underline; cursor:pointer; padding:0; }
-.ac-slots{ display:flex; justify-content:center; gap:8px; }
-.ac-slots span{ width:40px; height:44px; border-radius:12px; border:1.5px solid rgba(255,255,255,.35); background:rgba(255,255,255,.12); display:flex; align-items:center; justify-content:center; }
-.ac-slots span.on{ border-color:#fff; background:rgba(255,255,255,.22); }
-.ac-slots span.on::before{ content:""; width:11px; height:11px; border-radius:50%; background:#fff; }
-.ac-pad{ display:grid; grid-template-columns:repeat(3, 64px); gap:10px; justify-content:center; margin-top:10px; }
-.ac-pad button{ width:64px; height:64px; border-radius:50%; border:1px solid var(--panel-line); background:var(--panel); color:var(--ink); font:inherit; font-size:22px; font-weight:600; cursor:pointer; box-shadow:0 6px 14px -6px rgba(16,42,67,.28); transition:transform .12s ease, background-color .12s ease, color .12s ease; }
-.ac-pad button.is-down, .ac-pad button:active{ transform:scale(.9); background:var(--navy); color:#fff; }
-.ac-pad .ghost{ visibility:hidden; }
-.pin-shake{ animation:pinShake .36s; }
-@keyframes pinShake{ 20%,60%{ transform:translateX(-6px); } 40%,80%{ transform:translateX(6px); } }
-#acChange{ position:fixed; inset:0; z-index:9500; display:none; align-items:center; justify-content:center; padding:20px; background:rgba(15,25,38,.6); }
-#acChange.open{ display:flex; }
-#acChange .ac-card{ width:100%; max-width:360px; padding:22px; border-radius:24px; background:var(--panel); border:1px solid var(--panel-line); }
-#acChange h3{ margin:0 0 6px; font-size:17px; color:var(--ink); }
-#acChange p{ margin:0 0 14px; font-size:12.5px; color:var(--ink-dim); line-height:1.5; }
-#acProfile .ac-row{ display:flex; justify-content:space-between; gap:12px; padding:10px 0; border-bottom:1px solid var(--panel-line); font-size:13.5px; }
-#acProfile .ac-row span:first-child{ color:var(--ink-dim); }
-.ac-tiles{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-.ac-tile{ display:flex; flex-direction:column; align-items:center; gap:8px; padding:14px 8px; border-radius:18px; border:1px solid rgba(255,255,255,.22); background:rgba(255,255,255,.1); color:#fff; font:inherit; cursor:pointer; transition:transform .12s ease, background-color .12s ease; }
-.ac-tile:active{ transform:scale(.96); background:rgba(255,255,255,.2); }
-.ac-av{ width:52px; height:52px; border-radius:50%; background:#ffd400; color:#002a5c; font-weight:700; font-size:20px; display:flex; align-items:center; justify-content:center; }
-.ac-nm{ font-size:13.5px; font-weight:600; text-align:center; line-height:1.3; color:#fff; }
-</style>
 
-<div id="acChange">
-  <div class="ac-card">
-    <h3>ตั้งรหัสผ่านใหม่</h3>
-    <p>เพื่อความปลอดภัย กรุณาเปลี่ยนรหัสตั้งต้นก่อนใช้งาน (อย่างน้อย 6 ตัว)</p>
-    <div class="field"><label>รหัสผ่านใหม่</label><input class="input" id="acNew1" type="password" autocomplete="new-password"></div>
-    <div class="field"><label>ยืนยันรหัสผ่านใหม่</label><input class="input" id="acNew2" type="password" autocomplete="new-password"></div>
-    <div class="hint" id="acChangeErr" style="color:#d64545;"></div>
-    <button class="btn btn-primary" id="acChangeGo" type="button" style="width:100%;margin-top:8px;">บันทึกรหัสใหม่</button>
-  </div>
-</div>
 
-<script id="ac-login-js">
-(function(){
-  var loginScreen = document.getElementById('loginScreen');
-  var sub = document.getElementById('loginSubText');
-  if (!loginScreen || !sub) return;
-
-  var REMEMBER = 'acRememberBadge';
-  var ADMIN_BADGE = 'admin';
-  var MAX_FAIL = 5;
-  var LOCK_MS = 15 * 60 * 1000;
-  var BADGE_MAX = 6;
-  var ACC = 'var(--gold, #ffd21f)';
-  var ON_ACC = 'var(--navy, #0d2a52)';
-  var SOFT = 'color-mix(in srgb, currentColor 10%, transparent)';
-  var LINE = 'color-mix(in srgb, currentColor 35%, transparent)';
-  var $ = function(id){ return document.getElementById(id); };
-
-  ['roleSelectBox', 'roleLoginForm'].forEach(function(id){
-    var el = $(id); if (el) el.style.display = 'none';
-  });
-
-  var wrap = document.createElement('div');
-  wrap.id = 'acLogin';
-  wrap.style.color = 'inherit';
-  wrap.innerHTML =
-    '<div id="acHello" style="display:none"></div>' +
-
-    // แถบเลือกระดับ: ใช้ div ล้วนเพื่อไม่ให้สไตล์ของปุ่มทั่วแอปมาทับ
-    '<div id="acRoles" style="position:relative;display:grid;grid-template-columns:1fr 1fr;align-items:center;width:100%;max-width:300px;height:52px;margin:0 auto 22px;padding:5px;box-sizing:border-box;border-radius:999px;background:' + SOFT + ';">' +
-      '<div id="acThumb" style="position:absolute;top:5px;bottom:5px;left:5px;width:calc(50% - 5px);border-radius:999px;background:' + ACC + ';box-shadow:0 6px 16px rgba(0,0,0,.22);transition:transform .32s cubic-bezier(.3,.7,.3,1),opacity .2s;opacity:0;"></div>' +
-      '<div class="ac-role-btn" data-r="admin" style="position:relative;z-index:1;height:42px;line-height:42px;text-align:center;font-size:15px;cursor:pointer;color:inherit;user-select:none;-webkit-user-select:none;">แอดมิน</div>' +
-      '<div class="ac-role-btn" data-r="officer" style="position:relative;z-index:1;height:42px;line-height:42px;text-align:center;font-size:15px;cursor:pointer;color:inherit;user-select:none;-webkit-user-select:none;">เจ้าหน้าที่</div>' +
-    '</div>' +
-
-    '<div id="acSteps" style="display:none;justify-content:center;gap:8px;margin:0 auto 18px;">' +
-      '<span id="acDot1" style="height:8px;border-radius:999px;transition:all .25s;"></span>' +
-      '<span id="acDot2" style="height:8px;border-radius:999px;transition:all .25s;"></span>' +
-    '</div>' +
-
-    '<div id="acBadgeWrap" style="display:none;text-align:center;">' +
-      '<div style="font-size:13px;opacity:.7;margin-bottom:6px;">รหัสหมวก</div>' +
-      '<div id="acBadgeText" style="font-size:40px;font-weight:700;letter-spacing:6px;min-height:52px;line-height:52px;color:inherit;"></div>' +
-      '<div id="acBadgeHint" style="font-size:13px;opacity:.55;margin-top:4px;">กรอกอย่างน้อย 2 ตัว</div>' +
-      '<div id="acNext" style="display:none;margin:18px auto 0;width:160px;height:44px;line-height:44px;border-radius:999px;background:' + ACC + ';color:' + ON_ACC + ';font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 10px 22px rgba(0,0,0,.2);">ถัดไป</div>' +
-    '</div>' +
-
-    '<div id="acPinWrap" style="display:none;text-align:center;">' +
-      '<div style="font-size:13px;opacity:.7;margin-bottom:14px;">รหัสผ่าน 6 หลัก</div>' +
-      '<div id="acDots" style="display:flex;justify-content:center;gap:14px;"></div>' +
-      '<div style="font-size:12px;opacity:.55;margin-top:14px;">วัน เดือน ปีเกิด (พ.ศ. 2 หลักท้าย)<br>เช่น 16/12/2536 ใช้ 161236</div>' +
-    '</div>' +
-
-    '<div id="acPad" style="display:none;grid-template-columns:repeat(3,72px);justify-content:center;gap:14px;margin:26px auto 0;">' +
-      [1,2,3,4,5,6,7,8,9].map(function(n){ return padBtn(String(n)); }).join('') +
-      '<span></span>' + padBtn('0') + padBtn('del') +
-    '</div>' +
-
-    '<div id="acErr" style="color:#e5484d;text-align:center;min-height:20px;margin-top:16px;font-weight:600;font-size:14px;"></div>';
-
-  function padBtn(k){
-    var label = k === 'del' ? '⌫' : k;
-    return '<div data-k="' + k + '" style="width:72px;height:72px;border-radius:50%;background:' + SOFT + ';color:inherit;font-size:26px;font-weight:600;line-height:72px;text-align:center;cursor:pointer;user-select:none;-webkit-user-select:none;">' + label + '</div>';
-  }
-
-  sub.insertAdjacentElement('afterend', wrap);
-
-  var badge = '';
-  var pin = '';
-  var step = 'badge';
-  var role = '';
-  var busy = false;
-
-  function err(m){ $('acErr').textContent = m || ''; }
-  function getRemembered(){ try { return localStorage.getItem(REMEMBER) || ''; } catch (e) { return ''; } }
-  function setRemembered(b){ try { if (b) localStorage.setItem(REMEMBER, b); else localStorage.removeItem(REMEMBER); } catch (e) {} }
-  function shake(){ var pw = $('acPinWrap'); pw.classList.remove('pin-shake'); void pw.offsetWidth; pw.classList.add('pin-shake'); }
-
-  function emailFor(b){
-    var hex = Array.from(new TextEncoder().encode(String(b).trim().toLowerCase()))
-      .map(function(x){ return x.toString(16).padStart(2, '0'); }).join('');
-    return 'u' + hex + '@hpd.local';
-  }
-
-  function paintBadge(){
-    $('acBadgeText').textContent = badge;
-    $('acBadgeHint').style.visibility = badge.length ? 'hidden' : 'visible';
-    $('acNext').style.display = badge.length >= 2 ? 'block' : 'none';
-  }
-
-  function paintPin(){
-    var html = '';
-    for (var i = 0; i < 6; i++) {
-      var on = i < pin.length;
-      html += '<span style="width:14px;height:14px;border-radius:50%;transition:all .18s;' +
-        (on ? 'background:currentColor;transform:scale(1.05);' : 'background:transparent;border:1.5px solid ' + LINE + ';') + '"></span>';
-    }
-    $('acDots').innerHTML = html;
-  }
-
-  function paintSteps(){
-    $('acSteps').style.display = role === 'officer' ? 'flex' : 'none';
-    var d1 = $('acDot1'), d2 = $('acDot2');
-    d1.style.width = step === 'badge' ? '22px' : '8px';
-    d1.style.background = step === 'badge' ? ACC : LINE;
-    d2.style.width = step === 'pin' ? '22px' : '8px';
-    d2.style.background = step === 'pin' ? ACC : LINE;
-  }
-
-  function paintScreen(){
-    var onBadge = step === 'badge' && role === 'officer';
-    $('acBadgeWrap').style.display = onBadge ? '' : 'none';
-    $('acPinWrap').style.display = (role && (step === 'pin' || role === 'admin')) ? '' : 'none';
-    $('acPad').style.display = role ? 'grid' : 'none';
-    paintBadge();
-    paintPin();
-    paintSteps();
-  }
-
-  function paintRole(){
-    var t = $('acThumb');
-    if (t) {
-      t.style.opacity = role ? '1' : '0';
-      t.style.transform = role === 'officer' ? 'translateX(100%)' : 'translateX(0)';
-    }
-    document.querySelectorAll('#acRoles .ac-role-btn').forEach(function(b){
-      var on = b.dataset.r === role;
-      b.style.color = on ? ON_ACC : 'inherit';
-      b.style.fontWeight = on ? '700' : '500';
-      b.style.opacity = (on || !role) ? '1' : '.7';
-    });
-  }
-
-  function setStep(s){
-    if (role !== 'officer') s = 'pin';
-    step = s; err(''); paintScreen();
-  }
-
-  function chooseRole(r){
-    role = r; err(''); pin = '';
-    badge = r === 'admin' ? ADMIN_BADGE : '';
-    step = r === 'admin' ? 'pin' : 'badge';
-    paintRole(); paintScreen();
-  }
-
-  function showRoles(){
-    role = ''; badge = ''; pin = ''; step = 'badge';
-    paintRole();
-    $('acHello').style.display = 'none';
-    $('acRoles').style.display = '';
-    paintScreen();
-  }
-
-  function showRemembered(b){
-    badge = b;
-    role = b === ADMIN_BADGE ? 'admin' : 'officer';
-    step = 'pin';
-    $('acRoles').style.display = 'none';
-    var h = $('acHello');
-    h.style.display = '';
-    h.innerHTML = '<div style="text-align:center;color:inherit;font-size:15px;margin:4px 0 14px;">' +
-      'เข้าสู่ระบบในชื่อ <b style="color:' + ACC + ';font-weight:700;">' + escapeHtml(b === ADMIN_BADGE ? 'แอดมิน' : b) + '</b></div>' +
-      '<div style="text-align:center;"><span id="acSwitch" style="display:inline-block;height:38px;line-height:38px;padding:0 20px;border-radius:999px;border:1px solid ' + LINE + ';color:inherit;font-size:14px;font-weight:600;cursor:pointer;">เปลี่ยนผู้ใช้</span></div>';
-    $('acSwitch').onclick = function(){ setRemembered(''); showRoles(); };
-    paintRole(); paintScreen();
-  }
-
-  // ---------- นับครั้งที่กรอกผิด ----------
-  function failKey(b){ return 'acFail:' + String(b).toLowerCase(); }
-  function getFail(b){ try { return JSON.parse(localStorage.getItem(failKey(b)) || '{}'); } catch (e) { return {}; } }
-  function setFail(b, o){
-    try { if (o && Object.keys(o).length) localStorage.setItem(failKey(b), JSON.stringify(o)); else localStorage.removeItem(failKey(b)); } catch (e) {}
-  }
-  function lockLeft(b){ var f = getFail(b); return (f.until && f.until > Date.now()) ? f.until - Date.now() : 0; }
-  function minutesText(ms){ return Math.max(1, Math.ceil(ms / 60000)) + ' นาที'; }
-  function onWrongPin(b){
-    var now = Date.now();
-    var f = getFail(b);
-    if (f.until && f.until <= now) f = {};
-    f.n = (f.n || 0) + 1;
-    if (f.n >= MAX_FAIL) {
-      setFail(b, { until: now + LOCK_MS });
-      return 'กรอกรหัสผิดครบ ' + MAX_FAIL + ' ครั้ง ล็อก ' + minutesText(LOCK_MS) + ' แล้วลองใหม่';
-    }
-    setFail(b, f);
-    return 'รหัสไม่ถูกต้อง กรอกผิดแล้ว ' + f.n + ' ครั้ง (เหลือ ' + (MAX_FAIL - f.n) + ' ครั้งก่อนล็อก)';
-  }
-
-  async function loadProfile(auth){
-    var p = await sb.from('profiles').select('role,display_name,active').eq('id', auth.user.id).maybeSingle();
-    if (!p.data || !p.data.active) { await sb.auth.signOut(); throw new Error('บัญชีนี้ยังไม่เปิดใช้งาน'); }
-    return p.data;
-  }
-
-  async function finish(prof, auth){
-    window.__acAuthId = auth.user.id;
-    var me = await sb.from('users').select('id,name,position').eq('auth_user_id', auth.user.id).maybeSingle();
-    window.__me = me.data || { name: prof.display_name };
-    var r = prof.role === 'admin' ? 'admin' : 'viewer';
-    saveSession({ role: r, token: auth.session.access_token, name: prof.display_name });
-    await completeLogin({ role: r, name: prof.display_name, token: auth.session.access_token });
-    var pill = $('rolePill');
-    if (pill) pill.textContent = prof.role === 'admin' ? 'แอดมิน' : 'เจ้าหน้าที่';
-  }
-
-  async function submit(){
-    if (busy) return;
-    err('');
-    if (!role) return err('กรุณาเลือกระดับผู้ใช้งานก่อน');
-    if (!badge || badge.length < 2) { setStep('badge'); return err('กรุณากรอกรหัสหมวกอย่างน้อย 2 ตัว'); }
-    if (pin.length !== 6) return;
-
-    var left = lockLeft(badge);
-    if (left > 0) {
-      pin = ''; paintPin();
-      return err('กรอกผิดหลายครั้ง ล็อกอีก ' + minutesText(left) + ' กรุณารอแล้วลองใหม่');
-    }
-
-    busy = true;
-    try {
-      var r = await sb.auth.signInWithPassword({ email: emailFor(badge), password: pin });
-      if (r.error || !r.data || !r.data.session) {
-        var msg = onWrongPin(badge);
-        pin = ''; paintPin(); shake();
-        return err(msg);
-      }
-      setFail(badge, {});
-      var prof = await loadProfile(r.data);
-      setRemembered(badge);
-      await finish(prof, r.data);
-    } catch (e) {
-      err(e.message || 'เข้าสู่ระบบไม่สำเร็จ');
-      pin = ''; paintPin(); shake();
-    } finally {
-      busy = false;
-    }
-  }
-
-  // ---------- การกดแป้น ----------
-  $('acPad').addEventListener('click', function(e){
-    var b = e.target.closest('[data-k]'); if (!b) return;
-    var k = b.dataset.k;
-    if (!role) return err('กรุณาเลือกระดับผู้ใช้งานก่อน');
-
-    if (step === 'badge') {
-      if (k === 'del') badge = badge.slice(0, -1);
-      else if (badge.length < BADGE_MAX) badge += k;
-      err('');
-      paintBadge();
-      if (badge.length === BADGE_MAX) setStep('pin');
-      return;
-    }
-
-    if (k === 'del') pin = pin.slice(0, -1);
-    else if (pin.length < 6) pin += k;
-    paintPin();
-    if (pin.length === 6) submit();
-  });
-
-  $('acNext').addEventListener('click', function(){ if (badge.length >= 2) setStep('pin'); });
-  $('acDot1').addEventListener('click', function(){ if (role === 'officer') setStep('badge'); });
-  $('acDot2').addEventListener('click', function(){ if (badge) setStep('pin'); });
-
-  document.querySelectorAll('#acRoles .ac-role-btn').forEach(function(b){
-    b.addEventListener('click', function(){ chooseRole(b.dataset.r); });
-  });
-
-  var remembered = getRemembered();
-  if (remembered) showRemembered(remembered); else showRoles();
-})();
-</script>
 
 <script id="fmt-helpers">
 function fmtCitizen(v){
