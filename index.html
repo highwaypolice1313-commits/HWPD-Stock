@@ -11885,14 +11885,19 @@ function openCategoryPicker(current, onPick) {
   document.body.appendChild(root);
   const close = () => root.remove();
 
+  // กันการลากพื้นหลังบน iPad ยกเว้นตัวเลื่อนหมวดหมู่
+  root.addEventListener('touchmove', e => {
+    if (!e.target.closest('.cat-scroll')) e.preventDefault();
+  }, { passive: false });
+
   root.innerHTML = `
-    <div class="overlay" style="z-index:95;">
-      <div class="sheet vp-sheet" style="max-height:92vh;">
+    <div class="vp-overlay">
+      <div class="sheet vp-sheet">
         <button class="sheet-close" type="button" title="ปิด" aria-label="ปิด">${ICONS.close}</button>
         <div class="sheet-handle"></div>
         <div class="sheet-title">เลือกหมวดหมู่</div>
         ${isAdmin() ? `<button type="button" class="vp-create" id="cat_create">${AF_ICON_PLUS}<span>เพิ่มหมวดหมู่ใหม่</span></button>` : ''}
-        <div style="flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;">
+        <div class="cat-scroll">
           <div class="cat-grid">
             ${cats.map(c => `
               <button type="button" class="cat-tile${c === current ? ' active' : ''}" data-cat="${escapeHtml(c)}">
@@ -11917,7 +11922,7 @@ function openCategoryPicker(current, onPick) {
   const createBtn = root.querySelector('#cat_create');
   if (createBtn) {
     createBtn.onclick = () => {
-      close();                       // เอาหน้าเลือกออกก่อน แล้วเปิดหน้าเพิ่มหมวดหมู่
+      close();
       openCategoryCreate(onPick);
     };
   }
@@ -12020,13 +12025,43 @@ function ensureValuePickerCss() {
   const s = document.createElement('style');
   s.id = 'valuePickerCss';
   s.textContent = `
-.vp-sheet{display:flex;flex-direction:column;overflow:visible}
-.vp-sheet .sheet-title{flex:none}
-.vp-sheet .vp-search{flex:none}
-.vp-sheet .vp-list{flex:1 1 auto;min-height:120px;max-height:none;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+/* ตัวหุ้มนอกสุด: ล็อกการเลื่อนพื้นหลัง เลื่อนได้เฉพาะในกล่อง */
+.vp-overlay{
+  position:fixed; inset:0; z-index:95;
+  display:flex; align-items:flex-end; justify-content:center;
+  background:rgba(15,25,38,.46); backdrop-filter:blur(4px);
+  overscroll-behavior:contain; touch-action:none;
+}
+/* กล่องหน้าต่าง: จำกัดความสูง แบ่งเป็นหัว / ค้นหา / รายการ (เลื่อนได้) */
+.vp-sheet{
+  width:100%; max-width:640px;
+  height:min(88vh, 88dvh); max-height:min(88vh, 88dvh);
+  display:flex; flex-direction:column;
+  overflow:hidden; overscroll-behavior:contain;
+  touch-action:pan-y;
+  padding-bottom:calc(16px + env(safe-area-inset-bottom));
+}
+.vp-sheet .sheet-title{ flex:none; }
+.vp-sheet .vp-search{ flex:none; }
+.vp-sheet .vp-create{ flex:none; }
+/* ตัวเลื่อนจริง: เฉพาะส่วนรายการ */
+.vp-sheet .vp-list{
+  flex:1 1 0; min-height:0; max-height:none;
+  overflow-y:auto; -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain; touch-action:pan-y;
+}
+.vp-sheet .cat-scroll{
+  flex:1 1 0; min-height:0;
+  overflow-y:auto; -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain; touch-action:pan-y;
+}
+@media (min-width:900px){
+  .vp-overlay{ align-items:center; padding:28px; }
+  .vp-sheet{ height:min(80vh, 760px); max-height:min(80vh, 760px); border-radius:24px; }
+}
 
 /* ปุ่มกรอกชื่อใหม่: ใช้สีเดียวกับ menubar ของธีมที่เลือก */
-.vp-create{flex:none;display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:50px;margin-bottom:12px;border:0;border-radius:16px;font:inherit;font-size:14.5px;font-weight:600;color:#fff;background:linear-gradient(135deg,var(--navy),var(--navy-deep));box-shadow:0 6px 16px color-mix(in srgb,var(--navy) 38%,transparent);cursor:pointer;transition:transform .15s ease,box-shadow .15s ease}
+.vp-create{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:50px;margin-bottom:12px;border:0;border-radius:16px;font:inherit;font-size:14.5px;font-weight:600;color:#fff;background:linear-gradient(135deg,var(--navy),var(--navy-deep));box-shadow:0 6px 16px color-mix(in srgb,var(--navy) 38%,transparent);cursor:pointer;transition:transform .15s ease,box-shadow .15s ease}
 .vp-create:hover{transform:translateY(-1px);box-shadow:0 10px 22px color-mix(in srgb,var(--navy) 46%,transparent);filter:brightness(1.12)}
 .vp-create:active{transform:scale(.98)}
 .vp-create svg{width:18px;height:18px}
@@ -12044,20 +12079,32 @@ function ensureValuePickerCss() {
   document.head.appendChild(s);
 }
 
-/* ---------- หน้าเลือกค่า: ใช้โครงเดียวกับหน้าเลือกครุภัณฑ์ของหน้ายืม-คืน ----------
-   วางรากของตัวเองนอก #modalRoot จึงไม่ซ้อนกับระบบหน้าต่างหลัก ไม่ล็อกหน้าหลัก
-   ปิดด้วยการเอารากนี้ออกเท่านั้น */
+
+/* ---------- หน้าเลือกค่า: โครงเดียวกับหน้าเลือกครุภัณฑ์ของหน้ายืม-คืน ----------
+   วางรากของตัวเองนอก #modalRoot จึงไม่ซ้อนกับระบบหน้าต่างหลัก
+   ปิดด้วยการเอารากนี้ออกเท่านั้น และกันการลากพื้นหลังบน iPad */
 function openValuePicker({ title, placeholder, current, options, onPick }) {
   ensureAssetFormCss();
   ensureValuePickerCss();
 
   const root = document.createElement('div');
   document.body.appendChild(root);
-  const close = () => root.remove();
+  const close = () => {
+    root.removeEventListener('touchmove', blockBgScroll);
+    root.remove();
+  };
+
+  // ลากนิ้วนอกรายการให้หยุด เพื่อไม่ให้หน้าหลักเลื่อนไปด้านหลัง
+  // รายการ (.vp-list) และช่องพิมพ์ยังเลื่อนได้ตามปกติ
+  function blockBgScroll(e) {
+    if (e.target.closest('.vp-list')) return;
+    e.preventDefault();
+  }
+  root.addEventListener('touchmove', blockBgScroll, { passive: false });
 
   const wrap = (inner, extra) => `
-    <div class="overlay" style="z-index:95;">
-      <div class="sheet vp-sheet ${extra || ''}" style="max-height:92vh;">
+    <div class="vp-overlay">
+      <div class="sheet vp-sheet ${extra || ''}">
         <button class="sheet-close" type="button" title="ปิด" aria-label="ปิด">${ICONS.close}</button>
         <div class="sheet-handle"></div>
         ${inner}
@@ -12065,7 +12112,6 @@ function openValuePicker({ title, placeholder, current, options, onPick }) {
     </div>`;
 
   const pick = (value) => { close(); onPick(value); };
-
   function showEntry(prefill) {
     root.innerHTML = wrap(`
       <div class="sheet-title">${escapeHtml(title)}ใหม่</div>
