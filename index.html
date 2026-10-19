@@ -8511,7 +8511,8 @@ async function completeLogin({ role, name, token }) {
   pill.textContent = role === 'admin' ? 'แอดมิน' : 'ดูอย่างเดียว';
   pill.classList.toggle('viewer', role !== 'admin');
   document.getElementById('profileName').textContent = state.user.name;
-  if (window.applyTabPerms) window.applyTabPerms();
+if (!isAdmin() && window.loadMyPerms) await loadMyPerms();
+if (window.applyTabPerms) applyTabPerms();
   document.getElementById('loginScreen').style.display = 'none';
   const appEl = document.getElementById('app');
   appEl.style.display = 'block';
@@ -9123,13 +9124,6 @@ window.addEventListener('online', () => setConnection(true));
 window.addEventListener('offline', () => { setConnection(false); toast('ขณะนี้อุปกรณ์ออฟไลน์'); });
 
 function renderTab(name) {
- if (document.startViewTransition && !renderTab._running && !window.matchMedia('(pointer:coarse)').matches) {
-    renderTab._running = true;
-    try {
-      const vt = document.startViewTransition(() => renderTabNow(name));
-      return vt.finished.finally(() => { renderTab._running = false; });
-    } catch (e) { renderTab._running = false; }
-  }
   return renderTabNow(name);
 }
 
@@ -23018,7 +23012,7 @@ window.exportAllBackup = async function(){
   // ✅ ยังไม่มีข้อมูลสิทธิ์ ให้เปิดไว้ก่อน (ฐานข้อมูลยังบังคับจริงอยู่เสมอ)
   window.canOpenTab = function(key){
     if (isAdmin()) return true;
-    if (window.__perms === undefined) return true;
+    if (window.__perms === undefined) return isAdmin();
     var rule = TAB_RULE[key];
     if (rule === undefined) return false;
     if (rule === null) return true;
