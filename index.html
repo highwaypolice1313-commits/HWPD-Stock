@@ -9305,7 +9305,13 @@ function openMoreMenu() {
         </button>`).join('')}
     </div>
 </div>`, 'nav-more-sheet');
-  document.querySelectorAll('.more-item').forEach(x => x.onclick = () => { closeSheet(); renderTab(x.dataset.go); });
+const moreOpenedAt = Date.now();
+document.querySelectorAll('.more-item').forEach(x => x.onclick = () => {
+  // กัน click สังเคราะห์ที่ตกค้างจากการแตะปุ่ม "เมนู" (ทำให้เด้งไปหน้าที่อยู่ใต้นิ้ว เช่น ตั้งค่า)
+  if (Date.now() - moreOpenedAt < 600) return;
+  closeSheet();
+  renderTab(x.dataset.go);
+});
   document.getElementById('mobileMoreLogout')?.addEventListener('click', () => {
     closeSheet();
     document.getElementById('btnLogout')?.click();
