@@ -9307,7 +9307,7 @@ function openMoreMenu() {
 const moreOpenedAt = Date.now();
 document.querySelectorAll('.more-item').forEach(x => x.onclick = () => {
   // กัน click สังเคราะห์ที่ตกค้างจากการแตะปุ่ม "เมนู" (ทำให้เด้งไปหน้าที่อยู่ใต้นิ้ว เช่น ตั้งค่า)
-  if (Date.now() - moreOpenedAt < 600) return;
+  if (Date.now() - moreOpenedAt < 700) return;
   closeSheet();
   renderTab(x.dataset.go);
 });
@@ -9316,10 +9316,17 @@ document.querySelectorAll('.more-item').forEach(x => x.onclick = () => {
     document.getElementById('btnLogout')?.click();
   });
 }
-document.getElementById('tabMore')?.addEventListener('click', () => {
-  // กันเปิดซ้ำถ้ามีเมนูเปิดอยู่แล้ว
-  if (document.querySelector('#modalRoot .nav-more-sheet')) return;
-  openMoreMenu();
+const moreBtn = document.getElementById('tabMore');
+let moreTouchAt = 0;
+const moreSheetOpen = () => !!document.querySelector('#modalRoot .nav-more-sheet');
+moreBtn?.addEventListener('pointerdown', e => {
+  if (e.pointerType === 'mouse') return;
+  moreTouchAt = Date.now();                 // เปิดตั้งแต่แตะลง ไม่รอให้นิ้วยกขึ้น
+  if (!moreSheetOpen()) openMoreMenu();
+});
+moreBtn?.addEventListener('click', () => {
+  if (Date.now() - moreTouchAt < 700) return;   // เปิดไปแล้วจาก pointerdown
+  if (!moreSheetOpen()) openMoreMenu();
 });
 
 /* ---------- desktop navbar: ย่อ / ขยาย ---------- */
