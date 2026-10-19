@@ -9128,7 +9128,7 @@ function renderTab(name) {
 }
 
 function renderTabNow(name) {
-if ((name === 'audit' || name === 'monthly') && !(window.canOpenTab && window.canOpenTab(name))) name = 'dashboard';
+  if (!(window.canOpenTab && window.canOpenTab(name))) name = 'dashboard';
   state.tab = name;
   saveUi({ tab: name, scrollY: renderTabNow._restore ? (loadUi().scrollY || 0) : 0 });
   window.__countStat = true;   // [เพิ่ม] เพิ่งเปิดหน้าจากเมนู -> อนุญาตให้ stat-num นับขึ้น
