@@ -21881,69 +21881,63 @@ refreshNotifBadge();
 
   ['roleSelectBox', 'roleLoginForm'].forEach(function(id){ var el = $(id); if (el) el.style.display = 'none'; });
 
-    // ---------- ส่วนหน้าล็อกอิน (สองขั้น: รหัสหมวก -> รหัสผ่าน) ----------
+   // ---------- หน้าล็อกอิน (รหัสหมวก -> รหัสผ่าน) ----------
   var ADMIN_BADGE = 'admin';
   var MAX_FAIL = 5;
   var LOCK_MS = 15 * 60 * 1000;
   var BADGE_MAX = 6;
-
   var GOLD = '#ffd21f';
-  var GLASS = 'background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);';
 
   var wrap = document.createElement('div');
   wrap.id = 'acLogin';
   wrap.innerHTML =
     '<div id="acHello" style="display:none"></div>' +
 
-    // แถบเลือกระดับผู้ใช้งาน
-    '<div id="acRoles" style="display:flex;width:100%;max-width:300px;margin:0 auto 18px;padding:4px;border-radius:16px;' + GLASS + 'box-sizing:border-box;">' +
-      '<button type="button" class="ac-role-btn" data-r="admin" style="flex:1;padding:11px 8px;border:0;border-radius:12px;background:transparent;color:inherit;font-size:15px;cursor:pointer;">แอดมิน</button>' +
-      '<button type="button" class="ac-role-btn" data-r="officer" style="flex:1;padding:11px 8px;border:0;border-radius:12px;background:transparent;color:inherit;font-size:15px;cursor:pointer;">เจ้าหน้าที่</button>' +
+    // สลับระดับผู้ใช้งาน
+    '<div id="acRoles" style="display:flex;width:100%;max-width:280px;margin:0 auto 22px;padding:4px;border-radius:999px;background:rgba(255,255,255,.08);box-sizing:border-box;">' +
+      '<button type="button" class="ac-role-btn" data-r="admin" style="flex:1;padding:10px 8px;border:0;border-radius:999px;background:transparent;color:inherit;font:inherit;font-size:15px;cursor:pointer;">แอดมิน</button>' +
+      '<button type="button" class="ac-role-btn" data-r="officer" style="flex:1;padding:10px 8px;border:0;border-radius:999px;background:transparent;color:inherit;font:inherit;font-size:15px;cursor:pointer;">เจ้าหน้าที่</button>' +
     '</div>' +
 
-    // ขั้นตอน
-    '<div id="acSteps" style="display:none;justify-content:center;align-items:center;gap:10px;margin:0 auto 16px;font-size:13px;">' +
-      '<button type="button" id="acStep1" style="border:0;background:none;color:inherit;font:inherit;cursor:pointer;opacity:.9;">1 รหัสหมวก</button>' +
-      '<span style="opacity:.4;">›</span>' +
-      '<button type="button" id="acStep2" style="border:0;background:none;color:inherit;font:inherit;cursor:pointer;opacity:.5;">2 รหัสผ่าน</button>' +
+    // ขั้นตอน (จุด)
+    '<div id="acSteps" style="display:none;justify-content:center;gap:8px;margin:0 auto 18px;">' +
+      '<span id="acDot1" style="width:8px;height:8px;border-radius:50%;background:' + GOLD + ';transition:all .25s;"></span>' +
+      '<span id="acDot2" style="width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.3);transition:all .25s;"></span>' +
     '</div>' +
 
-    // ช่องรหัสหมวก (สูงสุด 6 ช่อง ใช้ได้ 2-6 ตัว)
-    '<div id="acBadgeWrap" style="display:none;margin:0 auto 12px;">' +
-      '<div style="font-size:13px;opacity:.75;text-align:center;margin-bottom:10px;">รหัสหมวก</div>' +
-      '<div id="acBadgeSlots" style="display:flex;justify-content:center;gap:8px;"></div>' +
-      '<div style="text-align:center;margin-top:14px;">' +
-        '<button type="button" id="acNext" style="display:none;min-width:150px;padding:10px 26px;border:0;border-radius:999px;background:linear-gradient(150deg,#ffd21f,#e0b400);color:#0d2a52;font:inherit;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 8px 18px rgba(224,180,0,.3);">ถัดไป</button>' +
-      '</div>' +
+    // ขั้นที่ 1: รหัสหมวก (แสดงเป็นตัวหนังสือใหญ่ ไม่มีช่อง)
+    '<div id="acBadgeWrap" style="display:none;text-align:center;">' +
+      '<div style="font-size:13px;opacity:.7;margin-bottom:6px;">รหัสหมวก</div>' +
+      '<div id="acBadgeText" style="font-size:40px;font-weight:700;letter-spacing:6px;min-height:52px;line-height:52px;color:#ffffff;"></div>' +
+      '<div id="acBadgeHint" style="font-size:13px;opacity:.55;margin-top:4px;">กรอกอย่างน้อย 2 ตัว</div>' +
+      '<button type="button" id="acNext" style="display:none;margin-top:18px;min-width:160px;padding:11px 28px;border:0;border-radius:999px;background:linear-gradient(150deg,#ffd21f,#e0b400);color:#0d2a52;font:inherit;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 10px 22px rgba(224,180,0,.3);">ถัดไป</button>' +
     '</div>' +
 
-    // ช่องรหัสผ่าน 6 หลัก
-    '<div id="acPinWrap" style="display:none;">' +
-      '<div style="font-size:13px;opacity:.75;text-align:center;margin-bottom:10px;">รหัสผ่าน 6 หลัก</div>' +
-      '<div id="acSlots" style="display:flex;justify-content:center;gap:10px;margin-bottom:6px;">' +
-        '<span></span><span></span><span></span><span></span><span></span><span></span>' +
-      '</div>' +
-      '<div class="hint" style="text-align:center;font-size:12px;margin:6px 0 12px;opacity:.7;">วัน เดือน ปีเกิด (พ.ศ. 2 หลักท้าย) เช่น 16/12/2536 ใช้ 161236</div>' +
+    // ขั้นที่ 2: รหัสผ่าน (จุด 6 จุด)
+    '<div id="acPinWrap" style="display:none;text-align:center;">' +
+      '<div style="font-size:13px;opacity:.7;margin-bottom:14px;">รหัสผ่าน 6 หลัก</div>' +
+      '<div id="acDots" style="display:flex;justify-content:center;gap:14px;"></div>' +
+      '<div style="font-size:12px;opacity:.55;margin-top:14px;">วัน เดือน ปีเกิด (พ.ศ. 2 หลักท้าย)<br>เช่น 16/12/2536 ใช้ 161236</div>' +
     '</div>' +
 
-    // แป้นตัวเลข (ใช้ร่วมกันทั้งสองขั้น)
-    '<div id="acPad" style="display:none;grid-template-columns:repeat(3,1fr);gap:12px;max-width:260px;margin:4px auto 0;">' +
+    // แป้นตัวเลข
+    '<div id="acPad" style="display:none;grid-template-columns:repeat(3,72px);justify-content:center;gap:14px;margin:26px auto 0;">' +
       [1,2,3,4,5,6,7,8,9].map(function(n){ return padBtn(String(n)); }).join('') +
       '<span></span>' + padBtn('0') + padBtn('del') +
     '</div>' +
 
-    '<div id="acErr" style="color:#ffb4bd;text-align:center;min-height:20px;margin-top:14px;font-weight:600;font-size:14px;"></div>';
+    '<div id="acErr" style="color:#ffb4bd;text-align:center;min-height:20px;margin-top:16px;font-weight:600;font-size:14px;"></div>';
 
   function padBtn(k){
     var label = k === 'del' ? '⌫' : k;
-    return '<button type="button" data-k="' + k + '" style="height:64px;border:0;border-radius:50%;background:#ffffff;color:#0d2a52;font:inherit;font-size:24px;font-weight:700;cursor:pointer;box-shadow:0 6px 16px rgba(0,0,0,.25);">' + label + '</button>';
+    return '<button type="button" data-k="' + k + '" style="width:72px;height:72px;border:0;border-radius:50%;background:rgba(255,255,255,.12);color:#ffffff;font:inherit;font-size:26px;font-weight:600;cursor:pointer;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);box-shadow:inset 0 1px 0 rgba(255,255,255,.12);">' + label + '</button>';
   }
 
   sub.insertAdjacentElement('afterend', wrap);
 
   var badge = '';
   var pin = '';
-  var step = 'badge';      // 'badge' หรือ 'pin'
+  var step = 'badge';
   var role = '';
   var busy = false;
 
@@ -21960,50 +21954,36 @@ refreshNotifBadge();
   }
 
   function paintBadge(){
-    var box = $('acBadgeSlots');
-    var html = '';
-    for (var i = 0; i < BADGE_MAX; i++) {
-      var filled = i < badge.length;
-      var active = step === 'badge' && i === badge.length;
-      html += '<span style="width:40px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;' +
-        'font-size:22px;font-weight:700;' +
-        (filled ? 'background:#ffffff;color:#0d2a52;' : 'background:rgba(255,255,255,.08);color:transparent;') +
-        (active ? 'box-shadow:0 0 0 2px ' + GOLD + ';' : 'border:1px solid rgba(255,255,255,.14);') + '">' +
-        (filled ? escapeHtml(badge[i]) : '') + '</span>';
-    }
-    box.innerHTML = html;
-    $('acNext').style.display = (step === 'badge' && badge.length >= 2) ? 'inline-block' : 'none';
+    $('acBadgeText').textContent = badge;
+    $('acBadgeHint').style.visibility = badge.length ? 'hidden' : 'visible';
+    $('acNext').style.display = badge.length >= 2 ? 'inline-block' : 'none';
   }
 
   function paintPin(){
-    document.querySelectorAll('#acSlots span').forEach(function(s, i){
+    var html = '';
+    for (var i = 0; i < 6; i++) {
       var on = i < pin.length;
-      var active = step === 'pin' && i === pin.length;
-      s.style.cssText = 'width:38px;height:48px;border-radius:14px;display:block;' +
-        (on ? 'background:#ffffff;' : 'background:rgba(255,255,255,.08);') +
-        (active ? 'box-shadow:0 0 0 2px ' + GOLD + ';' : 'border:1px solid rgba(255,255,255,.14);');
-      s.textContent = on ? '•' : '';
-      s.style.color = '#0d2a52';
-      s.style.fontSize = '20px';
-      s.style.display = 'flex';
-      s.style.alignItems = 'center';
-      s.style.justifyContent = 'center';
-    });
+      html += '<span style="width:14px;height:14px;border-radius:50%;transition:all .18s;' +
+        (on ? 'background:#ffffff;transform:scale(1.05);' : 'background:transparent;border:1.5px solid rgba(255,255,255,.4);') + '"></span>';
+    }
+    $('acDots').innerHTML = html;
   }
 
   function paintSteps(){
     var show = role === 'officer';
     $('acSteps').style.display = show ? 'flex' : 'none';
-    $('acStep1').style.opacity = step === 'badge' ? '1' : '.5';
-    $('acStep1').style.fontWeight = step === 'badge' ? '700' : '400';
-    $('acStep2').style.opacity = step === 'pin' ? '1' : '.5';
-    $('acStep2').style.fontWeight = step === 'pin' ? '700' : '400';
+    $('acDot1').style.background = step === 'badge' ? GOLD : 'rgba(255,255,255,.3)';
+    $('acDot1').style.width = step === 'badge' ? '22px' : '8px';
+    $('acDot1').style.borderRadius = '999px';
+    $('acDot2').style.background = step === 'pin' ? GOLD : 'rgba(255,255,255,.3)';
+    $('acDot2').style.width = step === 'pin' ? '22px' : '8px';
+    $('acDot2').style.borderRadius = '999px';
   }
 
   function paintScreen(){
-    var needBadge = role === 'officer';
-    $('acBadgeWrap').style.display = (role && needBadge) ? '' : 'none';
-    $('acPinWrap').style.display = role ? '' : 'none';
+    var onBadge = step === 'badge' && role === 'officer';
+    $('acBadgeWrap').style.display = onBadge ? '' : 'none';
+    $('acPinWrap').style.display = (role && (step === 'pin' || role === 'admin')) ? '' : 'none';
     $('acPad').style.display = role ? 'grid' : 'none';
     paintBadge();
     paintPin();
@@ -22015,19 +21995,18 @@ refreshNotifBadge();
       var on = b.dataset.r === role;
       b.style.background = on ? 'rgba(255,255,255,.22)' : 'transparent';
       b.style.fontWeight = on ? '700' : '400';
-      b.style.opacity = on ? '1' : '.75';
+      b.style.opacity = on ? '1' : '.7';
     });
   }
 
   function setStep(s){
-    if (role !== 'officer' && s === 'badge') s = 'pin';
+    if (role !== 'officer') s = 'pin';
     step = s; err(''); paintScreen();
   }
 
   function chooseRole(r){
-    role = r; err('');
+    role = r; err(''); pin = '';
     badge = r === 'admin' ? ADMIN_BADGE : '';
-    pin = '';
     step = r === 'admin' ? 'pin' : 'badge';
     paintRole(); paintScreen();
   }
@@ -22047,14 +22026,14 @@ refreshNotifBadge();
     $('acRoles').style.display = 'none';
     var h = $('acHello');
     h.style.display = '';
-    h.innerHTML = '<div style="text-align:center;color:#ffffff;font-size:15px;line-height:1.5;margin:4px 0 12px;">' +
+    h.innerHTML = '<div style="text-align:center;color:#ffffff;font-size:15px;margin:4px 0 14px;">' +
       'เข้าสู่ระบบในชื่อ <b style="color:' + GOLD + ';font-weight:700;">' + escapeHtml(b === ADMIN_BADGE ? 'แอดมิน' : b) + '</b></div>' +
-      '<div style="text-align:center;"><button type="button" id="acSwitch" style="display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:8px 22px;border-radius:999px;border:1px solid rgba(255,210,31,.8);background:rgba(255,210,31,.1);color:' + GOLD + ';font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;">เปลี่ยนผู้ใช้</button></div>';
+      '<div style="text-align:center;"><button type="button" id="acSwitch" style="display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:7px 20px;border-radius:999px;border:1px solid rgba(255,210,31,.7);background:transparent;color:' + GOLD + ';font:inherit;font-size:14px;font-weight:600;cursor:pointer;">เปลี่ยนผู้ใช้</button></div>';
     $('acSwitch').onclick = function(){ setRemembered(''); showRoles(); };
     paintRole(); paintScreen();
   }
 
-  // ---------- การนับครั้งที่กรอกผิด ----------
+  // ---------- นับครั้งที่กรอกผิด ----------
   function failKey(b){ return 'acFail:' + String(b).toLowerCase(); }
   function getFail(b){ try { return JSON.parse(localStorage.getItem(failKey(b)) || '{}'); } catch (e) { return {}; } }
   function setFail(b, o){
@@ -22136,7 +22115,7 @@ refreshNotifBadge();
       else if (badge.length < BADGE_MAX) badge += k;
       err('');
       paintBadge();
-      if (badge.length === BADGE_MAX) setStep('pin');   // ครบ 6 ตัวไปขั้นรหัสผ่านอัตโนมัติ
+      if (badge.length === BADGE_MAX) setStep('pin');
       return;
     }
 
@@ -22146,17 +22125,16 @@ refreshNotifBadge();
     if (pin.length === 6) submit();
   });
 
-  $('acNext').addEventListener('click', function(){
-    if (badge.length >= 2) setStep('pin');
-  });
-  $('acStep1').addEventListener('click', function(){ if (role === 'officer') setStep('badge'); });
-  $('acStep2').addEventListener('click', function(){ if (badge) setStep('pin'); });
-  $('acBadgeSlots').addEventListener('click', function(){ if (role === 'officer') setStep('badge'); });
+  $('acNext').addEventListener('click', function(){ if (badge.length >= 2) setStep('pin'); });
+  $('acDot1').addEventListener('click', function(){ if (role === 'officer') setStep('badge'); });
+  $('acDot2').addEventListener('click', function(){ if (badge) setStep('pin'); });
 
   document.querySelectorAll('#acRoles .ac-role-btn').forEach(function(b){
     b.onclick = function(){ chooseRole(b.dataset.r); };
   });
 
+  var remembered = getRemembered();
+  if (remembered) showRemembered(remembered); else showRoles();
   var remembered = getRemembered();
   if (remembered) showRemembered(remembered); else showRoles();
   var _clr = clearSession;
