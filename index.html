@@ -8507,32 +8507,40 @@ async function completeLogin({ role, name, token }) {
   state.role = role;
   state.sessionToken = token;
   state.user = { name: name || (role === 'admin' ? 'แอดมิน' : 'ผู้ดูอย่างเดียว') };
+
   const pill = document.getElementById('rolePill');
   pill.textContent = role === 'admin' ? 'แอดมิน' : 'ดูอย่างเดียว';
   pill.classList.toggle('viewer', role !== 'admin');
   document.getElementById('profileName').textContent = state.user.name;
-if (!isAdmin() && window.loadMyPerms) await loadMyPerms();
-if (window.applyTabPerms) applyTabPerms();
+
+  // โหลดสิทธิ์ให้เสร็จก่อนวาดแถบครั้งแรก เพื่อไม่ให้ปุ่มถูกจัดใหม่ระหว่างใช้งาน
+  if (!isAdmin()) {
+    try { await loadMyPerms(); }
+    catch (e) { window.__perms = { admin: false, perms: [] }; }
+  }
+  if (window.applyTabPerms) applyTabPerms();
+
   document.getElementById('loginScreen').style.display = 'none';
   const appEl = document.getElementById('app');
   appEl.style.display = 'block';
   appEl.classList.add('app-in');
+
   const ui = loadUi();
   const VALID_TABS = ['dashboard','assets','borrow','maint','memos','users','reports','settings','audit','monthly'];
   const startTab = VALID_TABS.includes(ui.tab) ? ui.tab : 'dashboard';
-   const restoreScroll = () => {
-  if (!ui.scrollY) return;
-  let stopped = false;
-  const stop = () => { stopped = true; };
-  window.addEventListener('touchstart', stop, { once:true, passive:true });
-  window.addEventListener('wheel', stop, { once:true, passive:true });
-  [60, 300, 800].forEach(ms => setTimeout(() => { if (!stopped) window.scrollTo(0, ui.scrollY); }, ms));
-   };
+
+  const restoreScroll = () => {
+    if (!ui.scrollY) return;
+    let stopped = false;
+    const stop = () => { stopped = true; };
+    window.addEventListener('touchstart', stop, { once: true, passive: true });
+    window.addEventListener('wheel', stop, { once: true, passive: true });
+    [60, 300, 800].forEach(ms => setTimeout(() => { if (!stopped) window.scrollTo(0, ui.scrollY); }, ms));
+  };
+
   try {
     await loadAll(true);
     renderTabNow._restore = true;
-    if (!isAdmin() && window.loadMyPerms) await loadMyPerms();
-    if (window.applyTabPerms) applyTabPerms();     
     renderTab(startTab);
     restoreScroll();
   } catch (err) {
@@ -8542,7 +8550,6 @@ if (window.applyTabPerms) applyTabPerms();
     toast('เข้าสู่ระบบแล้ว แต่เซิร์ฟเวอร์ยังตอบไม่ทัน');
   }
 }
-
 /* ========================================================= IMAGE UPLOAD — Drive URL, never Base64 in Sheets */
 function isInlineImage(v) { return typeof v === 'string' && v.indexOf('data:image/') === 0; }
 
@@ -9141,7 +9148,7 @@ function renderTabNow(name) {
 });
 const moreBtn = document.getElementById('tabMore');
 if (moreBtn) moreBtn.classList.toggle('active', !!document.querySelector('.tab-secondary[data-tab="' + name + '"]'));
-requestAnimationFrame(function(){ layoutNav(); }); // ✅ จัดแถบหลังการแตะจบ ไม่ให้ปุ่มขยับระหว่างการแตะ
+layoutNav();
    
   document.querySelectorAll('.page').forEach(p => { p.style.display = 'none'; });
   const activePage = document.getElementById('view-' + name);
@@ -9180,13 +9187,6 @@ function layoutNav() {
   const pill = document.getElementById('tabPill');
   if (!bar || !pill) return;
   const tabs = [...bar.querySelectorAll('.tab')];
-
-  // ✅ โหลดสิทธิ์ก่อนจัดแถบ ถ้าสคริปต์สิทธิ์ยังไม่พร้อม ให้จัดแถบตามค่าเดิมไปก่อน
-  if (window.__perms === undefined && typeof loadMyPerms === 'function' && !layoutNav._loading) {
-    layoutNav._loading = true;
-    loadMyPerms().then(function(){ layoutNav._loading = false; layoutNav(); });
-  }
-  if (typeof applyTabPerms === 'function') applyTabPerms();
 
   // เดสก์ท็อปใช้ sidebar: ล้างค่าที่ JS เคยตั้ง
   if (!window.matchMedia('(max-width:899px)').matches) {
@@ -22990,7 +22990,7 @@ window.exportAllBackup = async function(){
   var TAB_RULE = {
     dashboard: null,
     assets:    null,
-    borrow:    ['approve_borrow'],
+    borrow:    [],
     users:     null,
     reports:   null,
     maint:     null,
@@ -23015,6 +23015,7 @@ window.exportAllBackup = async function(){
   window.canOpenTab = function(key){
     if (isAdmin()) return true;
     if (window.__perms === undefined) return isAdmin();
+    if (key === 'borrow') return isAdmin();
     var rule = TAB_RULE[key];
     if (rule === undefined) return false;
     if (rule === null) return true;
