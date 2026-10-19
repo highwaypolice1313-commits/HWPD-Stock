@@ -23698,12 +23698,15 @@ window.exportAllBackup = async function(){
     mountPositionField(u);
   };
 
+  var posPending = null;
+  var posObserver = null;
+
   async function mountPositionField(u){
     var memo = document.getElementById('u_memorole');
     if (!memo || document.getElementById('u_position_id')) return;
     var field = memo.closest('.field');
     if (!field) return;
-    if (u && u['สิทธิ์'] === 'admin') return;          // แอดมินไม่ผูกกับตำแหน่ง
+    if (u && u['สิทธิ์'] === 'admin') return;      // แอดมินไม่ผูกกับตำแหน่ง
 
     var authId = u ? u['auth_user_id'] : null;
     var wrap = document.createElement('div');
@@ -23726,15 +23729,34 @@ window.exportAllBackup = async function(){
       return '<option value="' + p.id + '"' + (prof.data && prof.data.position_id === p.id ? ' selected' : '') + '>' +
         escapeHtml(p.name) + '</option>';
     }).join('');
+    sel.dataset.initial = sel.value;
 
-    sel.onchange = async function(){
-      var r = await sb.rpc('admin_set_user_position', { p_profile: authId, p_position: sel.value || null });
-      if (r.error || !r.data || !r.data.ok) {
-        toast((r.data && r.data.error) || (r.error && r.error.message) || 'บันทึกตำแหน่งไม่สำเร็จ');
-      } else {
-        toast('บันทึกตำแหน่งแล้ว');
-      }
-    };
+    // ✅ ไม่บันทึกตอนเลือก บันทึกเฉพาะตอนกดปุ่มบันทึกของฟอร์ม และเมื่อฟอร์มปิดไปแล้ว (บันทึกสำเร็จ)
+    var saveBtn = document.getElementById('btnSave');
+    if (saveBtn && authId && isAdmin()) {
+      saveBtn.addEventListener('click', function(){
+        posPending = { authId: authId, value: sel.value, initial: sel.dataset.initial };
+        if (posObserver) posObserver.disconnect();
+        posObserver = new MutationObserver(function(){
+          if (document.getElementById('u_position_id')) return;   // ฟอร์มยังเปิดอยู่ (เช่นบันทึกไม่ผ่าน)
+          posObserver.disconnect();
+          var p = posPending;
+          posPending = null;
+          if (!p || p.value === p.initial) return;
+          applyPosition(p.authId, p.value);
+        });
+        posObserver.observe(document.getElementById('modalRoot'), { childList: true, subtree: true });
+      }, true);
+    }
+  }
+
+  async function applyPosition(authId, value){
+    var r = await sb.rpc('admin_set_user_position', { p_profile: authId, p_position: value || null });
+    if (r.error || !r.data || !r.data.ok) {
+      toast((r.data && r.data.error) || (r.error && r.error.message) || 'บันทึกตำแหน่งไม่สำเร็จ');
+    } else {
+      toast('บันทึกตำแหน่งแล้ว');
+    }
   }
 
 })();
