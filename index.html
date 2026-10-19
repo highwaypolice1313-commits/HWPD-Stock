@@ -18895,7 +18895,9 @@ async function trashPurge(t, btn) {
    
 /* ---- (ข) renderSettings() ฉบับแก้ไข: แก้โครงสร้าง panel ซ้อนกัน และแท็บถังขยะ ---- */
 function renderSettings() {
-  if (!isAdmin()) { renderViewerSettings(); return; }
+  // ✅ แอดมิน และผู้ที่มีสิทธิ์ตั้งค่าระบบ เห็นหน้าเต็ม ที่เหลือเห็นเฉพาะธีม
+  const canFullSettings = isAdmin() || !!(window.__perms && (window.__perms.perms || []).indexOf('settings') !== -1);
+  if (!canFullSettings) { renderViewerSettings(); return; }
   const el = document.getElementById('view-settings');
   const s = state.settings || {};
   const active = currentTheme();
@@ -22999,7 +23001,7 @@ window.exportAllBackup = async function(){
     memos:     ['memo_docs', 'view_all_memos'],
     monthly:   ['monthly_check'],
     audit:     ['annual_count'],
-    settings:  ['settings']
+    settings:  null,
   };
   var PRIMARY = ['dashboard', 'assets', 'borrow', 'users', 'reports'];
 
