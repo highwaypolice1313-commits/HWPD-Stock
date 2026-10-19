@@ -8760,10 +8760,14 @@ async function loadAll(showLoader = false) {
 async function reloadThen(renderFn) {
   const y = window.scrollY;
   try { await loadAll(); } catch (e) { /* loadAll แจ้ง toast แล้ว */ }
-  try { if (renderFn) renderFn(); } catch (e) { console.error(e); }
+  // ✅ วาดหน้าด้วยวิธีเดียวกับปุ่มรีเฟรช เพื่อให้จุดแดงและตัวกรองอัปเดตตามข้อมูลล่าสุด
+  try {
+    if (typeof renderTab === 'function') renderTab(state.tab || 'dashboard');
+    else if (renderFn) renderFn();
+  } catch (e) { console.error(e); }
   requestAnimationFrame(() => window.scrollTo(0, y));
 }
-
+      
 async function refreshData() {
   const btn = document.getElementById('refreshBtn');
   if (btn?.disabled) return;
