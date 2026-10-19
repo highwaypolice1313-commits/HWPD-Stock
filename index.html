@@ -12464,7 +12464,8 @@ function drawBorrowList() {
 
   const emptyMsg = terms.length
     ? 'ไม่พบรายการที่ตรงกับ "' + escapeHtml(state.borrowSearch.trim()) + '"'
-    : (state.borrowTab === 'pending' ? 'ไม่มีคำขอรออนุมัติ'
+    : (state.borrowOverdue ? 'ไม่มีรายการเกินกำหนด'
+      : state.borrowTab === 'pending' ? 'ไม่มีคำขอรออนุมัติ'
       : state.borrowTab === 'active' ? 'ไม่มีรายการค้างคืน' : 'ยังไม่มีประวัติ');
 
   listEl.className = isGrid ? 'asset-grid' : '';
@@ -12564,7 +12565,7 @@ function renderBorrow() {
     </div>
 
     <div class="stat-grid" style="margin-bottom:14px;">
-      ${statTile({grp:'borrow', k:'tab', v:'pending', cls:'warn', num:bk.pending.length, label:'รออนุมัติ', on:state.borrowTab==='pending' && !state.borrowOverdue})}
+      ${isAdmin() ? statTile({grp:'borrow', k:'tab', v:'pending', cls:'warn', num:bk.pending.length, label:'รออนุมัติ', on:state.borrowTab==='pending' && !state.borrowOverdue}) : ''}
       ${statTile({grp:'borrow', k:'tab', v:'active', cls:'ok', num:bk.active.length, label:'ค้างคืน', on:state.borrowTab==='active' && !state.borrowOverdue})}
       ${statTile({grp:'borrow', k:'overdue', v:'overdue', cls:'bad', num:overdueCount, label:'เกินกำหนด', on:!!state.borrowOverdue})}
     </div>
@@ -14535,7 +14536,6 @@ function drawUsers() {
     </div>
 
     <div class="stat-grid" style="margin-bottom:14px;">
-      ${stat(rows.length, 'ทั้งหมด (คน)')}
       ${statTile({grp:'off', k:'reset', v:'all', num:rows.length, label:'ทั้งหมด (คน)', on:!(state.offFilter && (state.offFilter.role!=='all' || state.offFilter.rank!=='all' || state.offFilter.flag!=='all'))})}
       ${statTile({grp:'off', k:'rank', v:'สัญญาบัตร', cls:'info', num:offCount, label:'สัญญาบัตร', on:(state.offFilter||{}).rank==='สัญญาบัตร'})}
       ${statTile({grp:'off', k:'rank', v:'ประทวน', cls:'info', num:polCount, label:'ประทวน', on:(state.offFilter||{}).rank==='ประทวน'})}
@@ -23451,8 +23451,8 @@ window.exportAllBackup = async function(){
   window.resetEmptyBorrowFilter = function(){
     try {
       if (!isAdmin() || state.tab !== 'borrow') return false;
-      var nonDefault = state.borrowCat !== 'all' || state.borrowOverdue
-        || state.borrowTab !== 'active' || state.borrowSort !== 'due_asc';
+      // ล้างเฉพาะหมวดและการเรียง ไม่แตะแท็บ/เกินกำหนดที่ผู้ใช้เลือกเอง
+      var nonDefault = state.borrowCat !== 'all' || state.borrowSort !== 'due_asc';
       if (!nonDefault) return false;
 
       var bk = borrowBuckets();
@@ -23462,8 +23462,6 @@ window.exportAllBackup = async function(){
       if (list.length > 0) return false;
 
       state.borrowCat = 'all';
-      state.borrowOverdue = false;
-      state.borrowTab = 'active';
       state.borrowSort = 'due_asc';
       return true;
     } catch (e) { return false; }
@@ -23637,10 +23635,11 @@ window.exportAllBackup = async function(){
 }
 @media (min-width:1024px){
   .stat-grid{
-    display:grid !important; grid-auto-flow:column; grid-auto-columns:minmax(0,1fr);
+    display:grid !important; grid-template-columns:repeat(auto-fit, minmax(0,1fr)) !important;
+    width:100% !important; max-width:100%; box-sizing:border-box;
     overflow:visible; padding:0 !important; margin:0 0 14px !important;
   }
-  .stat-grid > .stat-card{ flex:none !important; min-width:0; }
+  .stat-grid > .stat-card{ flex:none !important; width:auto !important; min-width:0 !important; max-width:none !important; }
 }
 /* ปุ่มกรอง */
 .stat-card.is-click{ cursor:pointer; -webkit-tap-highlight-color:transparent; user-select:none; transition:transform .12s ease, box-shadow .15s ease, border-color .15s ease; }
