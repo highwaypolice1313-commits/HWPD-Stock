@@ -1040,11 +1040,17 @@ const ADMIN_ACTIONS = [
   'restoreItem', 'purgeItem' // เพิ่มใหม่: ถังขยะ ทำได้เฉพาะแอดมิน
 ];
 const AUTH_ACTIONS = ['requestBorrow', 'addMemo', 'updateMemo', 'uploadImage', 'deleteMaint'];
+// ✅ งานที่ผู้ใช้ทั่วไปทำได้เมื่อมีสิทธิ์ที่ระบุ (ฐานข้อมูลยังเป็นด่านจริง ผ่าน RLS)
+const PERM_ACTIONS = { saveAuditRecord: 'annual_count', saveMonthlyCheck: 'monthly_check', clearMonthlyCheck: 'monthly_check' };
+function clientHasPerm(p) {
+  const w = (typeof window !== 'undefined') ? window.__perms : null;
+  return !!(w && (w.admin || (w.perms || []).indexOf(p) !== -1));
+}
 
 async function supaApiPost(action, payload, role, actorName) {
   role = role || 'guest';
   payload = payload || {};
-  if (ADMIN_ACTIONS.indexOf(action) !== -1 && role !== 'admin') throw new Error('ไม่มีสิทธิ์ทำรายการนี้ (ต้องเป็นแอดมิน)');
+  if (ADMIN_ACTIONS.indexOf(action) !== -1 && role !== 'admin' && !(PERM_ACTIONS[action] && clientHasPerm(PERM_ACTIONS[action]))) throw new Error('ไม่มีสิทธิ์ทำรายการนี้ (ต้องเป็นแอดมิน)');
   if (AUTH_ACTIONS.indexOf(action) !== -1 && role === 'guest') throw new Error('กรุณาเข้าสู่ระบบก่อนทำรายการนี้');
   actorName = actorName || (role === 'admin' ? 'แอดมิน' : (role === 'viewer' ? 'ผู้ดูอย่างเดียว' : 'ไม่ทราบผู้ใช้'));
 
