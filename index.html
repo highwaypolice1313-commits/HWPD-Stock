@@ -23026,14 +23026,28 @@ window.exportAllBackup = async function(){
     return rule.some(function(p){ return have.indexOf(p) !== -1; });
   };
 
-window.applyTabPerms = function(){
-  var bar = document.querySelector('.tabbar');
-  if (!bar) return;
-  bar.querySelectorAll('.tab[data-tab]').forEach(function(t){
-    var k = t.dataset.tab;
-    t.style.display = canOpenTab(k) ? (t.classList.contains('tab-secondary') ? '' : 'flex') : 'none';
-  });
-};
+  window.applyTabPerms = function(){
+    var bar = document.querySelector('.tabbar');
+    if (!bar) return;
+    var admin = isAdmin();
+    bar.querySelectorAll('.tab').forEach(function(t){
+      var k = t.dataset.tab;
+      if (!k) return;
+      var show = canOpenTab(k);
+      t.style.display = show ? ((k === 'users' || k === 'settings') ? 'flex' : '') : 'none';
+      if (!admin) t.classList.toggle('tab-secondary', PRIMARY.indexOf(k) === -1);
+    });
+    var more = document.getElementById('tabMore');
+    if (more) {
+      // ✅ จอใหญ่: แสดงทุกเมนูบน sidebar ไม่ต้องใช้ปุ่มเพิ่มเติม
+      var desktop = window.matchMedia('(min-width:900px)').matches;
+      if (desktop) { more.style.display = 'none'; return; }
+      if (admin) { more.style.display = ''; return; }
+      var any = Array.prototype.some.call(bar.querySelectorAll('.tab-secondary'),
+        function(t){ return t.style.display !== 'none'; });
+      more.style.display = any ? 'flex' : 'none';
+    }
+  };
 })();
 </script>
 
