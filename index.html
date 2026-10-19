@@ -9455,7 +9455,7 @@ function buildAlerts() {
   }
   const pending = B.filter(b => b['สถานะ'] === 'รออนุมัติ');
   if (isAdmin() && pending.length) {
-    list.push({ tone:'info', title:'คำขอยืมรออนุมัติ ' + pending.length + ' รายการ', sub:'รอแอดมินตรวจสอบ', tab:'borrow', st:{ borrowTab:'pending' } });
+        list.push({ tone:'info', title:'คำขอยืมรออนุมัติ ' + pending.length + ' รายการ', sub:'รอแอดมินตรวจสอบ', tab:'borrow', st:{ borrowTab:'pending' }, count: pending.length });
   }
   const win = renewalWindowDays();
   const renew = A.filter(a => { const d = daysUntil(a['วันครบกำหนดตรวจสภาพ/ต่อทะเบียน']); return d !== null && d <= win && a['สถานะ'] !== 'จำหน่ายแล้ว'; });
@@ -9477,7 +9477,8 @@ function refreshNotifBadge() {
   let seen = null;
   try { seen = localStorage.getItem('hpNotifSeen'); } catch (e) {}
   const show = list.length > 0 && seen !== notifSignature(list);
-  badge.textContent = list.length > 99 ? '99+' : String(list.length);
+  const total = list.reduce(function(sum, a){ return sum + (a.count || 1); }, 0);  // ✅ นับตามจำนวนรายการจริง
+  badge.textContent = total > 99 ? '99+' : String(total);
   badge.style.display = show ? 'inline-flex' : 'none';
 }
 function goAlert(a) {
