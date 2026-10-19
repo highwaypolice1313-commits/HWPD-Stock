@@ -9156,11 +9156,11 @@ layoutNav();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
   const fab = document.getElementById('fabBtn');
-  fab.style.display = (['assets','borrow','maint','memos','users'].includes(name) && (isAdmin() || name === 'borrow')) ? 'flex' : 'none';
+  fab.style.display = (['assets','borrow','maint','memos','users'].includes(name) && (isAdmin() || name === 'borrow' || name === 'maint')) ? 'flex' : 'none';
   fab.onclick = () => {
     if (name === 'assets' && isAdmin()) openAssetForm();
     if (name === 'borrow') openBorrowForm();
-    if (name === 'maint' && isAdmin()) openMaintForm();
+    if (name === 'maint') openMaintForm();
     if (name === 'memos' && isAdmin()) openPrintMemoForm({});
   };
   if (name === 'dashboard') renderDashboard();
@@ -9929,7 +9929,7 @@ const ASSET_SWIPE = {
   selector: '.list-item.asset-item',
   find: id => state.assets.find(a => a['รหัสครุภัณฑ์'] === id),
   buttons: () => swBtn('ok', ICONS.swap, 'ยืม', 'borrow')
-    + (isAdmin() ? swBtn('bad', ICONS.wrench, 'แจ้งซ่อม', 'maint') : '')
+    + swBtn('bad', ICONS.wrench, 'แจ้งซ่อม', 'maint')
     + swBtn('navy', ICONS.scan, 'QR', 'qr'),
   run: (act, asset, id) => {
     if (act === 'borrow') {
