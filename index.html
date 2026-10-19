@@ -9182,10 +9182,17 @@ requestAnimationFrame(function(){ layoutNav(); }); // ✅ จัดแถบห�
     maint: renderMaint, memos: renderMemos, users: renderUsers,
     reports: renderReports, settings: renderSettings, audit: renderAudit, monthly: renderMonthly
   };
-  const PAGE_SKELETON = '<div class="sk-wrap">' +
-    '<div class="sk sk-title"></div>' +
-    '<div class="sk-row"><div class="sk sk-card"></div><div class="sk sk-card"></div><div class="sk sk-card"></div></div>' +
-    '<div class="sk sk-line"></div><div class="sk sk-line"></div><div class="sk sk-line short"></div></div>';
+  const PAGE_SKELETON = (() => {
+    const item = i => `<div class="sk-item" style="animation-delay:${i * 0.07}s">
+        <div class="sk sk-avatar"></div>
+        <div class="sk-texts"><div class="sk sk-line w70"></div><div class="sk sk-line w40"></div></div>
+      </div>`;
+    return `<div class="sk-wrap">
+      <div class="sk sk-title"></div>
+      <div class="sk-stats">${'<div class="sk sk-stat"></div>'.repeat(3)}</div>
+      <div class="sk-list">${[0, 1, 2, 3, 4].map(item).join('')}</div>
+    </div>`;
+  })();
   const paintPage = PAGE_RENDER[name];
   // รอให้แถบล่างเลื่อนจบ (0.42s) ก่อนเรนเดอร์ ครั้งแรกที่เปิดแอปไม่ต้องหน่วง
   const paintDelay = layoutNav.done ? 460 : 0;
@@ -23721,21 +23728,30 @@ window.exportAllBackup = async function(){
 })();
 </script>
 
-      <style id="page-skeleton-fade">
-  .sk-wrap{ padding:8px 0; }
+<style id="page-skeleton-fade">
+  .sk-wrap{ display:block; width:100%; max-width:640px; margin:0 auto; padding:12px 2px; }
   .sk{
-    background:linear-gradient(90deg, var(--panel-line) 25%, var(--panel-hi, #f3f0ea) 50%, var(--panel-line) 75%);
-    background-size:200% 100%; animation:skShine 1.2s linear infinite; border-radius:14px; margin-bottom:12px;
+    background:linear-gradient(90deg, var(--panel-line) 25%, var(--panel-soft, #fbfaf7) 50%, var(--panel-line) 75%);
+    background-size:200% 100%; animation:skShine 1.4s ease-in-out infinite; border-radius:12px;
   }
-  .sk-title{ height:26px; width:45%; border-radius:8px; }
-  .sk-row{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
-  .sk-card{ height:78px; }
-  .sk-line{ height:52px; }
-  .sk-line.short{ width:60%; }
+  .sk-title{ height:24px; width:42%; margin-bottom:18px; border-radius:8px; }
+  .sk-stats{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:10px; margin-bottom:18px; }
+  .sk-stat{ height:76px; border-radius:18px; }
+  .sk-list{ display:flex; flex-direction:column; gap:10px; }
+  .sk-item{
+    display:flex; align-items:center; gap:12px; padding:12px; border-radius:18px;
+    background:var(--panel); border:1px solid var(--panel-line);
+    animation:skFadeUp .45s ease both;
+  }
+  .sk-avatar{ width:42px; height:42px; border-radius:13px; flex:none; }
+  .sk-texts{ flex:1; display:flex; flex-direction:column; gap:8px; }
+  .sk-line{ height:11px; border-radius:99px; }
+  .w70{ width:70%; } .w40{ width:40%; }
   @keyframes skShine{ from{ background-position:200% 0; } to{ background-position:-200% 0; } }
+  @keyframes skFadeUp{ from{ opacity:0; transform:translateY(6px); } to{ opacity:1; transform:none; } }
   .page > *{ animation:pageFadeIn .3s ease both; }
   @keyframes pageFadeIn{ from{ opacity:0; transform:translateY(8px); } to{ opacity:1; transform:none; } }
-  @media (prefers-reduced-motion: reduce){ .sk, .page > *{ animation:none !important; } }
+  @media (prefers-reduced-motion: reduce){ .sk, .sk-item, .page > *{ animation:none !important; } }
 </style>
       
 </body>
