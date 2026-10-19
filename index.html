@@ -9053,6 +9053,7 @@ function animateCountUps(root=document) {
 }
    
 function applyPremiumMotion(root=document) {
+  if (window.__quietRender) return;   // ✅ การรีเฟรชจากเรียลไทม์ไม่เล่นอนิเมชันซ้ำ
   animateCountUps(root);
   const items = root.querySelectorAll(
     '.list-item,.asset-card,.memo-card,.mc-card,.stat-card,.rp-kpi,.rp-card,.chart-card'
@@ -23960,7 +23961,11 @@ window.exportAllBackup = async function(){
       if (sig !== lastSig) {    // ✅ วาดใหม่เฉพาะเมื่อข้อมูลเปลี่ยนจริง
         lastSig = sig;
         var sheetOpen = document.querySelector('#modalRoot .overlay');
-        if (state.tab === 'borrow' && !sheetOpen) renderTab('borrow');
+        if (state.tab === 'borrow' && !sheetOpen) {
+          window.__quietRender = true;          // ✅ วาดแบบเงียบ ไม่เล่นอนิเมชันซ้ำ
+          try { renderTab('borrow'); }
+          finally { window.__quietRender = false; }
+        }
       }
     } catch (e) { /* ไม่ให้การรีเฟรชทำให้หน้าพัง */ }
     finally { busy = false; }
