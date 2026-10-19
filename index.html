@@ -9177,20 +9177,25 @@ requestAnimationFrame(function(){ layoutNav(); }); // ✅ จัดแถบห�
     if (name === 'maint') openMaintForm();
     if (name === 'memos' && isAdmin()) openPrintMemoForm({});
   };
-  if (name === 'dashboard') renderDashboard();
-  if (name === 'assets') setTimeout(renderAssets, 460);   // รอให้ pill เลื่อนจบ (0.42s) ก่อนเรนเดอร์ข้อมูลหนัก ๆ
-  if (name === 'borrow') renderBorrow();
-  if (name === 'maint') renderMaint();
-  if (name === 'memos') renderMemos();
-  if (name === 'users') renderUsers();
-  if (name === 'reports') renderReports();
-  if (name === 'settings') renderSettings();
-  if (name === 'audit') renderAudit();
-  if (name === 'monthly') renderMonthly();
-    requestAnimationFrame(() => {
-    applyPremiumMotion(activePage || document);
-    window.__countStat = false;   // [เพิ่ม] ปิดธงทันทีหลังนับ -> ตอนค้นหา/เรียงลำดับจะไม่กะพริบ
-  });
+  const PAGE_RENDER = {
+    dashboard: renderDashboard, assets: renderAssets, borrow: renderBorrow,
+    maint: renderMaint, memos: renderMemos, users: renderUsers,
+    reports: renderReports, settings: renderSettings, audit: renderAudit, monthly: renderMonthly
+  };
+  const paintPage = PAGE_RENDER[name];
+  // รอให้แถบล่างเลื่อนจบ (0.42s) ก่อนเรนเดอร์ กันหน้าหนัก ๆ ทำให้ pill กระตุกหรือโผล่มาเลย
+  // ครั้งแรกที่เปิดแอปไม่ต้องหน่วง
+  const paintDelay = layoutNav.done ? 460 : 0;
+  if (paintPage) {
+    setTimeout(() => {
+      if (state.tab !== name) return;   // ผู้ใช้กดไปหน้าอื่นแล้ว ไม่ต้องเรนเดอร์หน้าเก่า
+      paintPage();
+      requestAnimationFrame(() => {
+        applyPremiumMotion(activePage || document);
+        window.__countStat = false;   // ปิดธงหลังนับ ตอนค้นหา/เรียงลำดับจะไม่กะพริบ
+      });
+    }, paintDelay);
+  }
 }
 /* ---------- จัดความกว้างปุ่ม + ตำแหน่ง pill (มือถือ) ---------- */
 function layoutNav() {
