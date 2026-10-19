@@ -23729,7 +23729,7 @@ window.exportAllBackup = async function(){
 </script>
 
 <style id="page-skeleton-fade">
-  .sk-wrap{ display:block; width:100%; max-width:640px; margin:0 auto; padding:12px 2px; }
+  .sk-wrap{ display:block; width:100%; padding:12px 2px; }
   .sk{
     background:linear-gradient(90deg, var(--panel-line) 25%, var(--panel-soft, #fbfaf7) 50%, var(--panel-line) 75%);
     background-size:200% 100%; animation:skShine 1.4s ease-in-out infinite; border-radius:12px;
@@ -23752,6 +23752,7 @@ window.exportAllBackup = async function(){
   .page > *{ animation:pageFadeIn .3s ease both; }
   @keyframes pageFadeIn{ from{ opacity:0; transform:translateY(8px); } to{ opacity:1; transform:none; } }
   @media (prefers-reduced-motion: reduce){ .sk, .sk-item, .page > *{ animation:none !important; } }
+  @media (min-width:600px){ .sk-wrap{ max-width:none; } }
 </style>
       
 </body>
