@@ -23530,7 +23530,30 @@ window.exportAllBackup = async function(){
 
 })();
 </script>
+<script id="maint-lock-me">
+(function(){
+  // ✅ เปิดฟอร์มซ่อมบำรุง: ถ้าไม่ใช่แอดมิน ให้ล็อกผู้แจ้งเป็นชื่อของตัวเอง
+  var _openMaintForm = openMaintForm;
+  openMaintForm = function(presetId){
+    _openMaintForm(presetId);
+    if (!isAdmin()) lockReporterToMe();
+  };
 
+  function lockReporterToMe(){
+    var me = (state.user && state.user.name) || '';
+    var trig = document.getElementById('f_reporterTrigger');
+    if (!trig || !me) return;
+
+    document.getElementById('f_reporter').value = me;
+    document.getElementById('f_reporterName').textContent = me;
+    document.getElementById('f_reporterSub').textContent = 'ผู้แจ้ง (ตัวคุณ)';
+
+    // ✅ ตัดการเลือกผู้แจ้งออกทั้งหมด
+    trig.onclick = null;
+    trig.style.pointerEvents = 'none';
+  }
+})();
+</script>
       
 </body>
 </html>
