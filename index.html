@@ -23187,6 +23187,15 @@ window.exportAllBackup = async function(){
   };
 
   // ✅ จุดเดียวที่ตั้ง style.display / ชนิดปุ่ม (หลัก/รอง) ของแถบล่าง
+        // ✅ ซ่อนปุ่มลัดในหน้าภาพรวมและเมนูอื่นที่ชี้ไปหน้าที่ไม่มีสิทธิ์ (ใช้กฎเดียวกับแถบล่าง)
+  function hideUnauthorizedLinks(){
+    document.querySelectorAll('[data-go]').forEach(function(el){
+      var k = el.getAttribute('data-go');
+      if (!k || !Object.prototype.hasOwnProperty.call(TAB_RULE, k)) return;
+      var want = canOpenTab(k) ? '' : 'none';
+      if (el.style.display !== want) el.style.display = want;
+    });
+  }
   window.applyTabPerms = function(){
     var bar = document.querySelector('.tabbar');
     if (!bar) return;
@@ -23219,6 +23228,13 @@ window.exportAllBackup = async function(){
       return _completeLogin.apply(this, arguments);
     };
   }
+        // ✅ เมื่อหน้าถูกวาดใหม่ (เช่น ภาพรวม) ให้ซ่อนปุ่มลัดที่ไม่มีสิทธิ์อีกครั้ง
+  var _linkTimer = null;
+  new MutationObserver(function(){
+    clearTimeout(_linkTimer);
+    _linkTimer = setTimeout(hideUnauthorizedLinks, 80);
+  }).observe(document.body, { childList: true, subtree: true });
+  hideUnauthorizedLinks();
 })();
 </script>
 
