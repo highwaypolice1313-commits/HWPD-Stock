@@ -23905,20 +23905,22 @@ window.exportAllBackup = async function(){
 
   function sync(){
     try {
-      // ✅ จุดแดงบนเมนูยืม-คืน ให้ตรงกับจำนวนรออนุมัติล่าสุดเสมอ
+      // ✅ จุดแดงบนเมนูยืม-คืน ให้ตรงกับจำนวนรออนุมัติล่าสุด
       var dot = document.getElementById('borrowTabDot');
       if (dot) {
         var pending = (state.borrow || []).filter(function(b){ return b['สถานะ'] === 'รออนุมัติ'; }).length;
         var show = isAdmin() && pending > 0;
         var txt = pending > 99 ? '99+' : String(pending);
-        if (dot.textContent !== txt) dot.textContent = txt;      // เปลี่ยนเฉพาะเมื่อค่าต่างจริง กันวนซ้ำ
+        if (dot.textContent !== txt) dot.textContent = txt;
         var disp = show ? 'inline-flex' : 'none';
         if (dot.style.display !== disp) dot.style.display = disp;
       }
 
-      // ✅ หน้ายืม-คืนของแอดมินว่างเพราะตัวกรอง: ล้างตัวกรองแล้ววาดใหม่
+      // ✅ หน้ายืม-คืนของแอดมิน: ถ้ามีตัวกรองที่ไม่ใช่ค่าเริ่มต้นและหน้าว่าง ให้กลับไปค่าเริ่มต้น
       if (!isAdmin() || state.tab !== 'borrow') return;
-      if (state.borrowCat === 'all' && !state.borrowOverdue) return;
+      var nonDefault = state.borrowCat !== 'all' || state.borrowOverdue || state.borrowTab !== 'active'
+        || state.borrowSort !== 'due_asc';
+      if (!nonDefault) return;
 
       var bk = borrowBuckets();
       var list = state.borrowOverdue
@@ -23928,14 +23930,61 @@ window.exportAllBackup = async function(){
 
       state.borrowCat = 'all';
       state.borrowOverdue = false;
+      state.borrowTab = 'active';
+      state.borrowSort = 'due_asc';
       renderBorrow();
     } catch (e) { /* ไม่ให้ error ของการตรวจทำให้หน้าพัง */ }
   }
 
   function schedule(){ clearTimeout(timer); timer = setTimeout(sync, 60); }
-
   new MutationObserver(schedule).observe(document.body, { childList: true, subtree: true });
   sync();
+})();
+</script>    
+
+      <script id="borrow-live-js">
+(function(){
+  var chan = null, timer = null;
+
+  // ✅ โหลดข้อมูลใหม่หลังมีการเปลี่ยนแปลง (รวมหลายเหตุการณ์ที่มาใกล้กันเป็นครั้งเดียว)
+  function refreshLive(){
+    clearTimeout(timer);
+    timer = setTimeout(async function(){
+      try {
+        await loadAll();
+        if (typeof updateBorrowDot === 'function') updateBorrowDot();
+        if (typeof refreshNotifBadge === 'function') refreshNotifBadge();
+        // ✅ วาดหน้ายืม-คืนใหม่เฉพาะเมื่อไม่มีหน้าซ้อนอยู่ เพื่อไม่ให้กระทบสิ่งที่แอดมินกำลังทำ
+        var sheetOpen = document.querySelector('#modalRoot .overlay');
+        if (state.tab === 'borrow' && !sheetOpen) renderTab('borrow');
+      } catch (e) { /* ไม่ให้การรีเฟรชทำให้หน้าพัง */ }
+    }, 300);
+  }
+
+  function subscribe(){
+    if (chan) return;
+    chan = sb.channel('borrow-live')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'borrow' }, function(payload){
+        var r = payload.new || {};
+        if (r.status === 'รออนุมัติ') {
+          toast('มีคำขอยืมใหม่จาก ' + (r.borrower || '-') + ' · ' + (r.asset_name || ''));
+          if (navigator.vibrate) navigator.vibrate([120, 80, 120]);
+        }
+        refreshLive();
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'borrow' }, function(){ refreshLive(); })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'borrow' }, function(){ refreshLive(); })
+      .subscribe();
+  }
+
+  function unsubscribe(){
+    if (chan) { sb.removeChannel(chan); chan = null; }
+  }
+
+  // ✅ เปิดรับเหตุการณ์เฉพาะแอดมิน และปิดเมื่อออกจากระบบ
+  setInterval(function(){
+    if (isAdmin()) subscribe(); else unsubscribe();
+  }, 2000);
 })();
 </script>
       
