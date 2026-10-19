@@ -9137,7 +9137,7 @@ function renderTab(name) {
 }
 
 function renderTabNow(name) {
-  if (!(window.canOpenTab && window.canOpenTab(name))) name = 'dashboard';
+  if ((name === 'audit' || name === 'monthly') && !(window.canOpenTab && window.canOpenTab(name))) name = 'dashboard';
   state.tab = name;
   saveUi({ tab: name, scrollY: renderTabNow._restore ? (loadUi().scrollY || 0) : 0 });
   window.__countStat = true;   // [เพิ่ม] เพิ่งเปิดหน้าจากเมนู -> อนุญาตให้ stat-num นับขึ้น
@@ -23014,8 +23014,7 @@ window.exportAllBackup = async function(){
   // ✅ ยังไม่มีข้อมูลสิทธิ์ ให้เปิดไว้ก่อน (ฐานข้อมูลยังบังคับจริงอยู่เสมอ)
   window.canOpenTab = function(key){
     if (isAdmin()) return true;
-    if (window.__perms === undefined) return isAdmin();
-    if (key === 'borrow') return isAdmin();
+    if (window.__perms === undefined) return true;
     var rule = TAB_RULE[key];
     if (rule === undefined) return false;
     if (rule === null) return true;
