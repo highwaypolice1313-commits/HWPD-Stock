@@ -7588,6 +7588,28 @@ html, body{
 }
 </style>
       
+<style id="doc-polish-css">
+.dtc-list{display:flex;flex-direction:column;gap:12px;}
+.dtc-card{display:flex;align-items:center;gap:14px;width:100%;text-align:left;padding:16px;border-radius:18px;border:1px solid var(--panel-line,#e5dccb);background:var(--panel,#fff);color:var(--ink,#20303f);cursor:pointer;box-shadow:0 1px 2px rgba(20,32,45,.04),0 8px 20px rgba(20,32,45,.05);transition:transform .15s ease,border-color .15s ease,box-shadow .15s ease;font:inherit;}
+.dtc-card:hover{border-color:var(--gold-line,#bb8a3f);box-shadow:0 12px 28px rgba(20,32,45,.1);}
+.dtc-card:active{transform:scale(.985);}
+.dtc-ico{width:48px;height:48px;border-radius:15px;flex:none;display:flex;align-items:center;justify-content:center;}
+.dtc-ico svg{width:24px;height:24px;}
+.dtc-navy{background:linear-gradient(135deg,var(--navy,#17324f),var(--navy-deep,#0c1e33));color:#fff;box-shadow:0 6px 14px rgba(23,50,79,.25);}
+.dtc-gold{background:linear-gradient(135deg,#d9a85e,var(--gold,#bb8a3f));color:#fff;box-shadow:0 6px 14px rgba(187,138,63,.3);}
+.dtc-txt{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1;}
+.dtc-txt b{font-size:16px;font-weight:700;}
+.dtc-txt small{font-size:13px;color:var(--ink-dim,#6c7b83);line-height:1.45;}
+.dtc-go{color:var(--ink-faint,#a3aeae);flex:none;}
+.dtc-go svg{width:20px;height:20px;}
+.oil-spec-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:6px;}
+.oil-spec-grid .oil-spec-chip{height:44px;padding:0 6px;border-radius:14px;border:1.5px solid var(--panel-line,#e5dccb);background:var(--panel,#fff);color:var(--ink,#20303f);font-size:14px;font-weight:600;letter-spacing:.2px;box-shadow:0 1px 2px rgba(20,32,45,.04);transition:all .15s ease;}
+.oil-spec-grid .oil-spec-chip:hover{border-color:var(--gold-line,#bb8a3f);}
+.oil-spec-grid .oil-spec-chip.on{background:linear-gradient(135deg,var(--navy,#17324f),var(--navy-deep,#0c1e33));color:#fff;border-color:transparent;box-shadow:0 6px 14px rgba(23,50,79,.25);}
+.oil-spec-grid .oil-spec-custom{border-style:dashed;color:var(--ink-dim,#6c7b83);}
+.oil-spec-grid .oil-spec-custom.on{color:#fff;border-style:solid;}
+@media (max-width:380px){.oil-spec-grid{grid-template-columns:repeat(3,minmax(0,1fr));}}
+</style>
 </head>
 
 
@@ -13778,7 +13800,7 @@ function nameIsMe(s) {
 function canReportAnyMaint() {
   if (isAdmin()) return true;
   const w = window.__perms;
-  if (w && (w.admin || (w.perms || []).indexOf('annual_count') !== -1 || (w.perms || []).indexOf('monthly_check') !== -1 || (w.perms || []).indexOf('maint') !== -1)) return true;
+  if (w && (w.admin || (w.perms || []).indexOf('annual_count') !== -1 || (w.perms || []).indexOf('monthly_check') !== -1)) return true;
   const row = myOfficerRow();
   return !!row && row['บทบาทเบิก-ยืม'] === 'ผู้ตรวจสอบ';
 }
@@ -13789,9 +13811,13 @@ function ownsAssetForMe(assetId) {
   return state.borrow.some(b => b['รหัสครุภัณฑ์'] === assetId &&
     ['กำลังยืม', 'เกินกำหนด'].includes(effectiveBorrowStatus(b)) && nameIsMe(b['ผู้ยืม']));
 }
+// ผู้มีสิทธิ์ทั้งระบบแจ้งได้ทุกรายการ / เจ้าหน้าที่ที่มีสิทธิ์แจ้งซ่อม แจ้งได้เฉพาะครุภัณฑ์ที่ตนเองถือครอง
 function canReportMaint(assetId) {
-  return canReportAnyMaint() || ownsAssetForMe(assetId);
+  if (canReportAnyMaint()) return true;
+  return hasPermKey('maint') && ownsAssetForMe(assetId);
 }
+// มีสิทธิ์แจ้งซ่อม/เอกสารซ่อมอย่างน้อยหนึ่งรายการหรือไม่
+function canReportAtAll() { return canReportAnyMaint() || hasPermKey('maint'); }
 
 function openMaintForm(presetId, presetType) {
   ensureAssetFormCss();
@@ -15915,7 +15941,7 @@ function hasPermKey(k) {
   return !!(w && (w.admin || (w.perms || []).indexOf(k) !== -1));
 }
 function canMakeMemoDocs() { return hasPermKey('memo_docs'); }
-function canMakeRepairDocs() { return canReportAnyMaint(); }
+function canMakeRepairDocs() { return canReportAtAll(); }
 function canOpenDocChooser() { return canMakeMemoDocs() || canMakeRepairDocs(); }
 
 // ผู้มีสิทธิ์จัดทำเอกสารใบเบิก (memo_docs) หรือผู้ตรวจสอบ พิมพ์บันทึกขอเบิก-ซ่อมจากงานซ่อมได้
@@ -16575,7 +16601,7 @@ function docAssetHtml(ctx) {
     ${!isOil && mt === 'เปลี่ยนยาง' ? `<div class="field"><label>ขนาดยาง</label><input class="input" id="m_tire" placeholder="เช่น 265/65R17" value="${escapeHtml(tireVal)}"></div>` : ''}
     ${isOil ? `${oilSpecField(d.spec || '')}
       <div class="memo-two-col">
-        <div class="field"><label>จำนวน (ลิตร)</label><input class="input" type="number" min="0" step="any" id="m_oilqty" value="${escapeHtml(d.qty || '')}"></div>
+        <div class="field"><label>จำนวน (ลิตร)</label><input class="input" type="number" min="0" step="any" id="m_oilqty" value="${escapeHtml(d.qty != null ? d.qty : defaultOilQty(a))}"></div>
         <div class="field"><label>เลขไมล์ปัจจุบัน</label><input class="input" id="m_oilmile" inputmode="numeric" value="${escapeHtml(d.mile || '')}"></div>
       </div>` : ''}
     ${showIssue ? `<div class="field"><label>${isVeh ? 'รายละเอียดการซ่อม' : 'อาการ/ปัญหาที่ต้องซ่อม'}</label><textarea class="input" id="m_issue" rows="2">${escapeHtml(d.issue != null ? d.issue : '')}</textarea></div>` : ''}`;
@@ -16596,6 +16622,7 @@ function renderDocBlocks() {
     typeRow.querySelectorAll('[data-dt]').forEach(c => c.onclick = () => {
       captureDocDraft();
       ctx.type = c.dataset.dt;
+      if (ctx.type === 'oil' && ctx.asset && ctx.asset['หมวดหมู่'] !== VEHICLE_CAT) { ctx.asset = null; ctx.plate = ''; ctx.draft = {}; }
       ctx.maintType = '';
       setDocSubject();
       renderDocBlocks();
@@ -16642,7 +16669,7 @@ function wireDocAsset(ctx, host) {
       refreshMemoLivePreview();
     },
     false,
-    isOil ? (a => a['หมวดหมู่'] !== VEHICLE_CAT) : null
+    a => (isOil && a['หมวดหมู่'] !== VEHICLE_CAT) || !canReportMaint(a['รหัสครุภัณฑ์'])
   );
   host.querySelectorAll('#da_mtRow [data-mt]').forEach(c => c.onclick = () => {
     captureDocDraft();
@@ -16689,15 +16716,20 @@ function docAssetError(ctx) {
 // ปุ่ม + ในหน้าเอกสาร: ให้เลือกประเภทก่อน (ใบเบิก / ใบแจ้งซ่อม) แสดงเฉพาะประเภทที่มีสิทธิ์
 function openDocTypeChooser() {
   if (!canOpenDocChooser()) { toast('ไม่มีสิทธิ์สร้างเอกสาร'); return; }
-  const card = (type, title, sub) => `
-    <div class="glass list-item" data-dtc="${type}" style="cursor:pointer;margin-bottom:10px;">
-      <div class="li-body"><div class="li-title">${title}</div><div class="li-sub">${sub}</div></div>
-    </div>`;
+  const CHEV = '<svg viewBox="0 0 20 20" fill="none"><path d="M7 4l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const card = (type, tone, icon, title, sub) => `
+    <button type="button" class="dtc-card" data-dtc="${type}">
+      <span class="dtc-ico dtc-${tone}">${icon}</span>
+      <span class="dtc-txt"><b>${title}</b><small>${sub}</small></span>
+      <span class="dtc-go">${CHEV}</span>
+    </button>`;
   showSheet(`
     <div class="sheet-title">สร้างเอกสารใหม่</div>
-    <div class="hint" style="margin-top:0;margin-bottom:12px;">เลือกประเภทเอกสารที่ต้องการทำ</div>
-    ${canMakeMemoDocs() ? card('general', 'ใบเบิก', 'บันทึกข้อความขอเบิกพัสดุครุภัณฑ์') : ''}
-    ${canMakeRepairDocs() ? card('repair', 'ใบแจ้งซ่อม', 'ขอซ่อมบำรุง เปลี่ยนยาง เปลี่ยนแบตเตอรี่ หรือเบิกน้ำมันเครื่อง') : ''}`);
+    <div class="hint" style="margin-top:0;margin-bottom:14px;">เลือกประเภทเอกสารที่ต้องการทำ</div>
+    <div class="dtc-list">
+      ${canMakeMemoDocs() ? card('general', 'navy', ICONS.checklist, 'ใบเบิก', 'บันทึกข้อความขอเบิกพัสดุครุภัณฑ์') : ''}
+      ${canMakeRepairDocs() ? card('repair', 'gold', ICONS.wrench, 'ใบแจ้งซ่อม', 'ขอซ่อมบำรุง เปลี่ยนยาง เปลี่ยนแบตเตอรี่ หรือเบิกน้ำมันเครื่อง') : ''}
+    </div>`);
   document.querySelectorAll('[data-dtc]').forEach(el => el.onclick = () => {
     const t = el.dataset.dtc;
     closeSheet();
@@ -21927,9 +21959,9 @@ function oilSpecField(cur) {
   const isPreset = OIL_SPECS.includes(cur);
   const isCustom = !!cur && !isPreset;
   return `<div class="field"><label>ชนิด/เบอร์น้ำมันเครื่อง</label>
-    <div class="om-chips" id="oil_specChips">
-      ${OIL_SPECS.map(s => `<button type="button" class="om-chip ${cur === s ? 'on' : ''}" data-spec="${escapeHtml(s)}">${escapeHtml(s)}</button>`).join('')}
-      <button type="button" class="om-chip ${isCustom ? 'on' : ''}" data-spec="__custom">กำหนดเอง</button>
+    <div class="om-chips oil-spec-grid" id="oil_specChips">
+      ${OIL_SPECS.map(s => `<button type="button" class="om-chip oil-spec-chip ${cur === s ? 'on' : ''}" data-spec="${escapeHtml(s)}">${escapeHtml(s)}</button>`).join('')}
+      <button type="button" class="om-chip oil-spec-chip oil-spec-custom ${isCustom ? 'on' : ''}" data-spec="__custom">กำหนดเอง</button>
     </div>
     <input type="hidden" id="oil_spec" value="${escapeHtml(cur || '')}">
     <input class="input" id="oil_spec_custom" placeholder="พิมพ์เบอร์น้ำมัน" style="margin-top:8px;display:${isCustom ? 'block' : 'none'}" value="${escapeHtml(isCustom ? cur : '')}">
