@@ -21454,21 +21454,22 @@ function ensureOilExtraCss() {
   const s = document.createElement('style');
   s.id = 'oilExtraCss';
   s.textContent = `
-.om-f.om-sg img{position:absolute !important;left:50% !important;top:50% !important;bottom:auto !important;transform:translate(-50%,-50%) !important;width:auto !important;height:12mm !important;max-width:100% !important;object-fit:contain}
 .om-chips{display:flex;flex-wrap:wrap;gap:8px}
 .om-chip{border:1px solid var(--panel-line,#d9dee1);background:var(--panel,#fff);color:var(--ink,#1c2d3b);border-radius:999px;padding:8px 14px;font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;transition:all .15s ease}
 .om-chip:hover{border-color:var(--gold-line,#bb8a3f)}
 .om-chip.on{background:var(--navy,#17324f);color:#fff;border-color:var(--navy,#17324f);box-shadow:0 4px 12px rgba(23,50,79,.2)}
-#btnPrintOilFromMaint,
-#modalRoot #btnPrintOilFromMaint,
-button#btnPrintOilFromMaint.btn.btn-primary{
-  background:#ffffff !important;
-  background-image:none !important;
-  color:var(--ink,#1c2d3b) !important;
-  border:1.5px solid var(--gold,#bb8a3f) !important;
-  box-shadow:none !important;
-}
-#btnPrintOilFromMaint:hover{background:#f5f7f8 !important}
+
+/* ลายเซ็นกึ่งกลางช่องเส้นประ */
+.om-sigblk .om-line .om-f.om-sg{position:relative !important;display:flex !important;align-items:center !important;justify-content:center !important;flex:0 0 auto !important;width:4.2cm !important;min-width:4.2cm !important;max-width:4.2cm !important;height:14mm !important;margin:0 1mm !important;padding:0 !important;overflow:hidden !important;text-align:center}
+.om-sigblk .om-line .om-f.om-sg img{position:static !important;left:auto !important;top:auto !important;bottom:auto !important;transform:none !important;display:block !important;margin:0 auto !important;max-width:90% !important;max-height:12mm !important;width:auto !important;height:auto !important;object-fit:contain}
+
+/* ปุ่มพิมพ์บันทึกขอเบิก: สีขาว ขอบทอง */
+html body #modalRoot button#btnPrintOilFromMaint.btn.btn-primary,
+html body button#btnPrintOilFromMaint.btn.btn-primary,
+html body #btnPrintOilFromMaint{background:#ffffff !important;background-color:#ffffff !important;background-image:none !important;color:#1c2d3b !important;border:1.5px solid #bb8a3f !important;box-shadow:none !important}
+html body #modalRoot button#btnPrintOilFromMaint.btn.btn-primary:hover,
+html body button#btnPrintOilFromMaint.btn.btn-primary:hover,
+html body #btnPrintOilFromMaint:hover{background:#f5f7f8 !important;background-color:#f5f7f8 !important}
 `;
   document.head.appendChild(s);
 }
