@@ -15461,7 +15461,6 @@ function buildMemoBodyHtml(m) {
   const req = m.requester || {}, apv = m.approver || {}, iss = m.issuer || {};
   const sigImg = s => s ? `<img class="pf-sigimg" src="${escapeHtml(s)}" alt="">` : '';
   const itemsText = m.itemsText !== undefined ? m.itemsText : itemPhraseList(m.items || []);
-       itemsText: `น้ำมันเครื่อง ${m.spec || '........'} จำนวน ${m.qty || '...'} ลิตร ประจำรถวิทยุหมายเลข ${m.radio || '...'} เลขไมล์ปัจจุบัน ${m.mile || '...'}`,   
   const logo = state.settings && state.settings.garudaLogo;
   const emblemHtml = logo
     ? `<img src="${escapeHtml(logo)}" alt="ตราครุฑ">`
@@ -21110,7 +21109,6 @@ document.getElementById('avatarBtn')?.addEventListener('click', openAcctPop);
 
 /* ========================= เอกสารเบิกน้ำมันเครื่อง (ฉบับแก้ไขสด) ========================= */
 
-
 function oilMemoBodyHtml(m) {
   return buildMemoBodyHtml({
     org: m.org,
@@ -21119,7 +21117,7 @@ function oilMemoBodyHtml(m) {
     subject: m.subject,
     addressee: m.addressee,
     items: [],
-    itemsText: `น้ำมันเครื่อง ${m.spec || '........'} จำนวน ${m.qty || '...'} ลิตร ประจำรถวิทยุหมายเลข ${m.radio || '...'}`,
+    itemsText: `น้ำมันเครื่อง ${m.spec || '........'} จำนวน ${m.qty || '...'} ลิตร ประจำรถวิทยุหมายเลข ${m.radio || '...'} เลขไมล์ปัจจุบัน ${m.mile || '...'}`,
     requester: m.req,
     approver: m.apv,
     issuer: m.iss,
