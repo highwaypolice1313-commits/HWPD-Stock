@@ -13969,8 +13969,6 @@ function openMaintForm(presetId) {
       toast('แจ้งซ่อมแล้ว');
       await reloadThen(renderMaint);
       if (isOil) askOilMemo(assetId, oilExtra);
-      await reloadThen(renderMaint);
-      if (isOil) askOilMemo(assetId);
     } catch (err) { toast(err.message || 'แจ้งซ่อมไม่สำเร็จ'); }
     finally { setLoading(false); setButtonBusy(saveBtn, false); }
   };
@@ -13979,7 +13977,14 @@ function openMaintForm(presetId) {
 async function askOilMemo(assetId, extra) {
   if (!await confirmSheet('บันทึกการถ่ายน้ำมันเครื่องแล้ว ต้องการสร้างเอกสารเบิกน้ำมันเครื่องต่อหรือไม่?',
       { title: 'เอกสารเบิกน้ำมันเครื่อง', okText: 'สร้างเอกสาร' })) return;
-  openOilMemoForm(Object.assign({ assetId }, extra || {}));
+
+  // ชื่อผู้แจ้งของรายการซ่อมที่เพิ่งบันทึก (ดึงจากข้อมูลจริง ไม่ใช่บัญชีที่ล็อกอิน)
+  const latest = (state.maint || [])
+    .filter(m => m['รหัสครุภัณฑ์'] === assetId && String(m['อาการ/ปัญหา'] || '').includes('ถ่ายน้ำมันเครื่อง'))
+    .sort((a, b) => toDate(b['วันที่แจ้ง'] || 0) - toDate(a['วันที่แจ้ง'] || 0))[0];
+  const reporter = String((extra && extra.reporter) || (latest && latest['ผู้แจ้ง']) || '').trim();
+
+  openOilMemoForm(Object.assign({ assetId }, extra || {}, { reporter }));
 }
       
 /* ========================================================= USERS / OFFICERS */
