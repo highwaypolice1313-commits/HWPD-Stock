@@ -15461,6 +15461,7 @@ function buildMemoBodyHtml(m) {
   const req = m.requester || {}, apv = m.approver || {}, iss = m.issuer || {};
   const sigImg = s => s ? `<img class="pf-sigimg" src="${escapeHtml(s)}" alt="">` : '';
   const itemsText = m.itemsText !== undefined ? m.itemsText : itemPhraseList(m.items || []);
+       itemsText: `น้ำมันเครื่อง ${m.spec || '........'} จำนวน ${m.qty || '...'} ลิตร ประจำรถวิทยุหมายเลข ${m.radio || '...'} เลขไมล์ปัจจุบัน ${m.mile || '...'}`,   
   const logo = state.settings && state.settings.garudaLogo;
   const emblemHtml = logo
     ? `<img src="${escapeHtml(logo)}" alt="ตราครุฑ">`
@@ -21108,78 +21109,22 @@ function syncAcctToggle() {
 document.getElementById('avatarBtn')?.addEventListener('click', openAcctPop);
 
 /* ========================= เอกสารเบิกน้ำมันเครื่อง (ฉบับแก้ไขสด) ========================= */
-function ensureOilMemoCss() {
-  if (document.getElementById('oilMemoCss2')) return;
-  const s = document.createElement('style');
-  s.id = 'oilMemoCss2';
-  s.textContent = `
-.om-line{display:flex;align-items:flex-end;gap:1.5mm;width:100%;box-sizing:border-box;margin:0 0 4pt;line-height:18pt;}
-.om-ind{padding-left:2.5cm}
-.om-lb{flex:0 0 auto;white-space:nowrap}
-.om-f{flex:1 1 auto;min-width:1cm;min-height:18pt;border-bottom:1px dotted #000;text-align:center;padding:0 1mm;word-break:break-word;box-sizing:border-box}
-.om-f.om-q{flex:0 0 auto;width:2.2cm}
-.om-f.om-m{flex:0 0 auto;width:3.6cm}
-.om-f.om-d{flex:0 0 auto;width:8cm}
-.om-f.om-sg{position:relative;height:14mm;min-height:14mm;padding:0}
-.om-f.om-sg img{position:absolute;left:0;bottom:0;width:100%;height:12mm;object-fit:contain}
-.om-sigblk{width:7.6cm;margin:18pt 0 0 auto}
-.om-sigblk .om-line{margin-bottom:2pt}
-.om-rankcell{flex:0 0 auto;white-space:nowrap;padding-left:1mm;line-height:18pt;align-self:flex-end}
-.om-rankline{flex:0 0 3.2cm;width:3.2cm;max-width:3.2cm;text-align:left;padding-left:1mm;white-space:nowrap;overflow:visible;position:relative}
-.om-rankword{position:absolute;left:1mm;bottom:0;white-space:nowrap}
-body.modal-open{overflow:hidden}
-#modalRoot .memo-form-sheet{max-height:92dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
-#btnPrintOilFromMaint{background:#ffffff !important;background-image:none !important;color:var(--ink,#1c2d3b) !important;border:1px solid var(--panel-line,#d9dee1) !important;box-shadow:none !important}
-#btnPrintOilFromMaint:hover{background:#f5f7f8 !important}
-`;
-  document.head.appendChild(s);
-}
+
 
 function oilMemoBodyHtml(m) {
-  const v = x => escapeHtml(x || '');
-  const dots = (t, cls) => `<span class="${cls || ''}">${t}</span>`;
-
-  // บล็อกผู้เบิก/ผู้จ่าย/ผู้อนุมัติ ใช้ตำแหน่งเดียวกับ .pf-sign ของระบบบันทึกข้อความ
-  const sign = (role, p, nameId) => `
-    <div class="pf-sign" style="margin-top:14pt;">
-      <div class="pf-sign-rank" style="display:grid;grid-template-columns:1fr 1fr;align-items:end;">
-        <span style="white-space:nowrap;text-align:right;padding-right:2mm;">ลงชื่อ <span class="pf-rank">${v(p.rank) || '&nbsp;'}</span></span>
-        <span style="position:relative;height:14mm;border-bottom:1px dotted #000;display:flex;align-items:center;justify-content:center;">${p.sig ? `<img class="pf-sigimg" src="${escapeHtml(p.sig)}" alt="" style="max-height:12mm;max-width:90%;width:auto;height:auto;position:static;transform:none;">` : ''}</span>
-      </div>
-      <div>( <span${nameId ? ` id="${nameId}"` : ''}>${v(p.name) || '.....................................'}</span> )</div>
-      <div>${v(p.position) || '&nbsp;'}</div>
-      <div>${v(p.date) || '&nbsp;'}</div>
-    </div>`;
-
-  return `
-    <div class="pf-topline">
-      <div class="pf-emblem">${emblemHtmlNow()}</div>
-      <div class="pf-title-wrap"><div class="pf-title">บันทึกข้อความ</div></div>
-    </div>
-    <div class="pf-field-line"><span class="pf-label">ส่วนราชการ</span> <span id="ed_org">${v(m.org)}</span>${m.phone ? ` <span class="pf-label">โทร.</span> <span>${v(m.phone)}</span>` : ''}</div>
-    <div class="pf-two-col" style="grid-template-columns:8.25cm 1fr;">
-      <span><span class="pf-label">ที่</span> <span id="ed_docno">${v(m.docNo) || '........................................'}</span></span>
-      <span><span class="pf-label">วันที่</span> <span id="ed_docdate">${v(m.docDate)}</span></span>
-    </div>
-    <div class="pf-field-line"><span class="pf-label">เรื่อง</span> <span id="ed_subject">${v(m.subject)}</span></div>
-    <div class="pf-field-line pf-addressee"><span class="pf-label">เรียน</span> <span id="ed_addressee">${v(m.addressee) || '........................................'}</span></div>
-
-    <p class="pf-body">ด้วยข้าฯ ${dots(`${v(m.req.rank)} ${v(m.req.name)}`)} มีความประสงค์เบิก</p>
-    <p class="pf-body" style="text-indent:0;">น้ำมันเครื่อง ${dots(v(m.spec))} จำนวน ${dots(v(m.qty))} ลิตร ประจำรถวิทยุหมายเลข ${dots(v(m.radio))}</p>
-    <p class="pf-body" style="text-indent:0;">เลขไมล์ปัจจุบัน ${dots(v(m.mile))} เพื่อใช้ในการปฏิบัติหน้าที่ราชการต่อไป</p>
-    <p class="pf-body">จึงเรียนมาเพื่อโปรดทราบ</p>
-
-    ${sign('ผู้เบิก', m.req, 'ed_reqname')}
-
-    <p class="pf-note">- ผู้จ่าย</p>
-    ${sign('ผู้จ่าย', m.iss, 'ed_issname')}
-
-    <p class="pf-body" style="text-indent:0;">-ได้รับน้ำมันเครื่อง ${dots(v(m.spec))} จำนวน ${dots(v(m.qty))} ลิตร ประจำรถวิทยุหมายเลข ${dots(v(m.radio))} เพื่อใช้ในการปฏิบัติหน้าที่ราชการต่อไป</p>
-    <p class="pf-body">จึงเรียนมาเพื่อโปรดทราบ</p>
-    <p class="pf-note">- อนุมัติให้เบิก-จ่ายได้</p>
-
-    ${sign('ผู้อนุมัติ', m.apv, 'ed_apvname')}
-  `;
+  return buildMemoBodyHtml({
+    org: m.org,
+    docNo: m.docNo,
+    docDate: m.docDate,
+    subject: m.subject,
+    addressee: m.addressee,
+    items: [],
+    itemsText: `น้ำมันเครื่อง ${m.spec || '........'} จำนวน ${m.qty || '...'} ลิตร ประจำรถวิทยุหมายเลข ${m.radio || '...'}`,
+    requester: m.req,
+    approver: m.apv,
+    issuer: m.iss,
+    dueDateText: ''
+  });
 }
       
 /* ย่อขนาดบรรทัดส่วนราชการ ถ้าเกินความกว้างพื้นที่พิมพ์ (ไม่ให้ตัดบรรทัด) */
@@ -21227,8 +21172,6 @@ function refreshOilPreview() {
 function openOilMemoForm(opts) {
   opts = opts || {};
   ensureAssetFormCss();
-  ensureOilMemoCss();
-  ensureOilExtraCss();
 
   const pre = opts.assetId ? state.assets.find(a => a['รหัสครุภัณฑ์'] === opts.assetId) : null;
   const last = pre ? latestOilInfo(pre['รหัสครุภัณฑ์']) : {};
@@ -21441,31 +21384,6 @@ document.addEventListener('click', e => {
     if (q && !q.value && a) q.value = defaultOilQty(a);
   }, 0);
 }, true);
-
-function ensureOilExtraCss() {
-  if (document.getElementById('oilExtraCss')) return;
-  const s = document.createElement('style');
-  s.id = 'oilExtraCss';
-  s.textContent = `
-.om-chips{display:flex;flex-wrap:wrap;gap:8px}
-.om-chip{border:1px solid var(--panel-line,#d9dee1);background:var(--panel,#fff);color:var(--ink,#1c2d3b);border-radius:999px;padding:8px 14px;font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;transition:all .15s ease}
-.om-chip:hover{border-color:var(--gold-line,#bb8a3f)}
-.om-chip.on{background:var(--navy,#17324f);color:#fff;border-color:var(--navy,#17324f);box-shadow:0 4px 12px rgba(23,50,79,.2)}
-
-/* ลายเซ็นกึ่งกลางช่องเส้นประ */
-.om-sigblk .om-line .om-f.om-sg{position:relative !important;display:flex !important;align-items:center !important;justify-content:center !important;flex:0 0 auto !important;width:4.2cm !important;min-width:4.2cm !important;max-width:4.2cm !important;height:14mm !important;margin:0 1mm !important;padding:0 !important;overflow:hidden !important;text-align:center}
-.om-sigblk .om-line .om-f.om-sg img{position:static !important;left:auto !important;top:auto !important;bottom:auto !important;transform:none !important;display:block !important;margin:0 auto !important;max-width:90% !important;max-height:12mm !important;width:auto !important;height:auto !important;object-fit:contain}
-
-/* ปุ่มพิมพ์บันทึกขอเบิก: สีขาว ขอบทอง */
-html body #modalRoot button#btnPrintOilFromMaint.btn.btn-primary,
-html body button#btnPrintOilFromMaint.btn.btn-primary,
-html body #btnPrintOilFromMaint{background:#ffffff !important;background-color:#ffffff !important;background-image:none !important;color:#1c2d3b !important;border:1.5px solid #bb8a3f !important;box-shadow:none !important}
-html body #modalRoot button#btnPrintOilFromMaint.btn.btn-primary:hover,
-html body button#btnPrintOilFromMaint.btn.btn-primary:hover,
-html body #btnPrintOilFromMaint:hover{background:#f5f7f8 !important;background-color:#f5f7f8 !important}
-`;
-  document.head.appendChild(s);
-}
 
 const OIL_SPECS = ['5W-30', '5W-40', '10W-30', '10W-40', '15W-40', '20W-50', 'SAE 40'];
 
