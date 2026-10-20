@@ -1044,10 +1044,17 @@ const ADMIN_ACTIONS = [
 ];
 const AUTH_ACTIONS = ['requestBorrow', 'addMemo', 'updateMemo', 'uploadImage', 'deleteMaint'];
 // ✅ งานที่ผู้ใช้ทั่วไปทำได้เมื่อมีสิทธิ์ที่ระบุ (ฐานข้อมูลยังเป็นด่านจริง ผ่าน RLS)
-const PERM_ACTIONS = { saveAuditRecord: 'annual_count', saveMonthlyCheck: 'monthly_check', clearMonthlyCheck: 'monthly_check' };
+const PERM_ACTIONS = {
+  saveAuditRecord: 'annual_count', saveMonthlyCheck: 'monthly_check', clearMonthlyCheck: 'monthly_check',
+  // แจ้งซ่อม: ใช้สิทธิ์เดียวกับหน้าแจ้งซ่อม (canReportAnyMaint ในหน้าเว็บ)
+  addMaint: ['maint', 'annual_count', 'monthly_check']
+};
+// p เป็นชื่อสิทธิ์ หรือรายการสิทธิ์ (มีสิทธิ์ใดสิทธิ์หนึ่งก็ผ่าน)
 function clientHasPerm(p) {
   const w = (typeof window !== 'undefined') ? window.__perms : null;
-  return !!(w && (w.admin || (w.perms || []).indexOf(p) !== -1));
+  if (!w) return false;
+  if (w.admin) return true;
+  return [].concat(p).some(k => (w.perms || []).indexOf(k) !== -1);
 }
 
 async function supaApiPost(action, payload, role, actorName) {
