@@ -13793,11 +13793,14 @@ function canReportMaint(assetId) {
   return canReportAnyMaint() || ownsAssetForMe(assetId);
 }
 
-function openMaintForm(presetId) {
+function openMaintForm(presetId, presetType) {
   ensureAssetFormCss();
   ensureOilExtraCss();
   const usable = state.assets.filter(a => canReportMaint(a['รหัสครุภัณฑ์']));
   if (!usable.length) { toast('ไม่มีครุภัณฑ์ที่คุณครอบครองให้แจ้งซ่อม'); return; }
+  if (presetType === 'ถ่ายน้ำมันเครื่อง' && !usable.some(a => a['หมวดหมู่'] === VEHICLE_CAT)) {
+    toast('ไม่มียานพาหนะที่คุณครอบครองให้เบิกน้ำมันเครื่อง'); return;
+  }
   const excl = a => !canReportMaint(a['รหัสครุภัณฑ์']);
 
   showSheet(`
@@ -13912,7 +13915,10 @@ function openMaintForm(presetId) {
   document.getElementById('f_assetTrigger').onclick = () => openAssetPickerSheet(val('f_asset'), selectAsset, false, excl);
 
   const preset = presetId && usable.find(a => a['รหัสครุภัณฑ์'] === presetId);
-  selectAsset((preset || usable[0])['รหัสครุภัณฑ์']);
+  const firstPick = preset
+    || (presetType === 'ถ่ายน้ำมันเครื่อง' ? usable.find(a => a['หมวดหมู่'] === VEHICLE_CAT) : null)
+    || usable[0];
+  selectAsset(firstPick['รหัสครุภัณฑ์']);
 
   wireOilSpec();
 
@@ -13924,6 +13930,11 @@ function openMaintForm(presetId) {
     document.getElementById('f_oilWrap').style.display = t === 'ถ่ายน้ำมันเครื่อง' ? '' : 'none';
   });
 
+  // เปิดจากปุ่ม + เบิกน้ำมันเครื่อง: เลือกประเภท "ถ่ายน้ำมันเครื่อง" ไว้ให้เลย
+  if (presetType && isVehicle()) {
+    const presetChip = document.querySelector(`[data-vtype="${presetType}"]`);
+    if (presetChip) presetChip.click();
+  }
   if (reporterCanPick) document.getElementById('f_reporterTrigger').onclick = () =>
     openOfficerPickerSheet(val('f_reporter'), (name, u) => {
       document.getElementById('f_reporter').value = name;
@@ -15983,32 +15994,6 @@ function openOilFromMaint(m, maintId) {
 
 // ปุ่ม + ในหน้าเอกสารซ่อม: เลือกรายการซ่อมก่อน แล้วค่อยเลือกชนิดเอกสาร
 
-// ตัวเลือกรายการซ่อม (ใช้ในฟอร์มเอกสารซ่อมที่เปิดจากหน้าเอกสารซ่อมโดยตรง)
-function repairOptionsHtml(selectedId) {
-  return (state.maint || []).slice()
-    .sort((a, b) => toDate(b['วันที่แจ้ง'] || 0) - toDate(a['วันที่แจ้ง'] || 0))
-    .slice(0, 80)
-    .map(m => {
-      const label = (m['ชื่อครุภัณฑ์'] || '-') + ' · ' + String(m['อาการ/ปัญหา'] || '').slice(0, 40);
-      return `<option value="${escapeHtml(m['รหัสรายการ'])}" ${m['รหัสรายการ'] === selectedId ? 'selected' : ''}>${escapeHtml(label)}</option>`;
-    }).join('');
-}
-
-// หน้าสร้างเอกสารซ่อมโดยตรง (ปุ่ม + ในหน้าเอกสารซ่อม) ผู้ใช้เลือกรายการซ่อมในฟอร์มเอง
-function openRepairCreateForm() {
-  openPrintMemoForm({
-    repair: {
-      kind: 'repair',
-      pick: true,
-      maintId: '',
-      issue: '',
-      plate: '',
-      verb: 'ขอซ่อมบำรุง',
-      approveNote: '- อนุมัติให้ดำเนินการซ่อมได้'
-    }
-  });
-}
-
 // ปุ่ม + ในหน้าเอกสารใบเบิก: เลือกชนิดเอกสารที่จะสร้าง
 function openMemoTypeSheet() {
   const WRENCH = '<svg viewBox="0 0 20 20" fill="none"><path d="M12.4 5.1a3.4 3.4 0 00-4.4 4.4l-5 5a1.5 1.5 0 002.1 2.1l5-5a3.4 3.4 0 004.4-4.4l-2.2 2.2-1.9-.4-.4-1.9 2.4-2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>';
@@ -16020,36 +16005,11 @@ function openMemoTypeSheet() {
   showSheet(`
     <div class="sheet-title">สร้างเอกสารใหม่</div>
     ${opt('mtGeneral', ICONS.log, 'บันทึกข้อความทั่วไป', 'เบิก-ยืมครุภัณฑ์')}
-    ${opt('mtRepair', WRENCH, 'เอกสารขอซ่อมบำรุง', 'ขอซ่อมตามอาการที่แจ้งของรายการซ่อม')}
-    ${opt('mtOil', ICONS.tag, 'เอกสารเบิกน้ำมันเครื่อง', 'สำหรับรถยานพาหนะที่คุณครอบครอง')}`);
+    ${opt('mtRepair', WRENCH, 'เอกสารขอซ่อมบำรุง', 'เลือกครุภัณฑ์และอาการ แล้วเปิดเอกสารให้อัตโนมัติ')}
+    ${opt('mtOil', ICONS.tag, 'เอกสารเบิกน้ำมันเครื่อง', 'เลือกรถยานพาหนะ แล้วเปิดเอกสารให้อัตโนมัติ')}`);
   document.getElementById('mtGeneral').onclick = () => { closeSheet(); openPrintMemoForm({}); };
-  document.getElementById('mtRepair').onclick = () => { closeSheet(); openRepairCreateForm(); };
-  document.getElementById('mtOil').onclick = () => { closeSheet(); openOilPickerSheet(); };
-}
-
-// เลือกรายการถ่ายน้ำมันเครื่องก่อนเปิดฟอร์มเบิกน้ำมัน (ต้องผูกกับรายการซ่อม)
-function openOilPickerSheet() {
-  const list = (state.maint || [])
-    .filter(m => String(m['อาการ/ปัญหา'] || '').includes('ถ่ายน้ำมันเครื่อง'))
-    .sort((a, b) => toDate(b['วันที่แจ้ง'] || 0) - toDate(a['วันที่แจ้ง'] || 0));
-  showSheet(`
-    <div class="sheet-title">เบิกน้ำมันเครื่อง</div>
-    <div class="hint" style="margin-top:0;">เลือกรายการถ่ายน้ำมันเครื่องที่ต้องการทำเอกสาร</div>
-    ${list.length ? list.map(m => `
-      <div class="glass list-item oil-pick" data-mid="${escapeHtml(m['รหัสรายการ'])}" style="cursor:pointer; margin-bottom:8px;">
-        <div class="li-body">
-          <div class="li-title">${escapeHtml(m['ชื่อครุภัณฑ์'] || '-')}</div>
-          <div class="li-sub">${escapeHtml(String(m['อาการ/ปัญหา'] || '').slice(0, 60))}</div>
-        </div>
-      </div>`).join('') : emptyState('ยังไม่มีรายการถ่ายน้ำมันเครื่อง')}`);
-  const ov = document.getElementById('overlayEl');
-  if (ov) ov.querySelectorAll('.oil-pick').forEach(el => {
-    el.onclick = () => {
-      const m = list.find(x => x['รหัสรายการ'] === el.dataset.mid);
-      closeSheet();
-      if (m) openOilFromMaint(m, m['รหัสรายการ']);
-    };
-  });
+  document.getElementById('mtRepair').onclick = () => { closeSheet(); openMaintForm(); };
+  document.getElementById('mtOil').onclick = () => { closeSheet(); openMaintForm(null, 'ถ่ายน้ำมันเครื่อง'); };
 }
 
 function drawMemos() {
@@ -16081,12 +16041,7 @@ function drawMemos() {
       <button type="button" class="memo-sort-chip" id="memoSortBtn" aria-label="เรียงลำดับ: ${sortLabel}">
         <span class="memo-sort-k">เรียง</span>${sortLabel}<span class="memo-sort-caret">▾</span>
       </button>
-      ${filterRoundBtnHtml('memoFilterBtn', state.memoKind && state.memoKind !== 'all' ? 1 : 0)}
-    </div>
-
-    <div class="memo-month-row" id="memoMonthRow">
-      <button type="button" class="memo-month-chip ${state.memoMonth === 'all' ? 'on' : ''}" data-mm="all">ทั้งหมด<b>${all.length}</b></button>
-      ${months.map(k => `<button type="button" class="memo-month-chip ${state.memoMonth === k ? 'on' : ''}" data-mm="${k}">${memoMonthChipLabel(k)}<b>${monthCount[k] || 0}</b></button>`).join('')}
+      ${filterRoundBtnHtml('memoFilterBtn', (state.memoKind && state.memoKind !== 'all' ? 1 : 0) + (state.memoMonth && state.memoMonth !== 'all' ? 1 : 0))}
     </div>
 
     <div class="ax-count" id="memoCountLabel"></div>
@@ -16101,22 +16056,17 @@ function drawMemos() {
   document.getElementById('memoSortBtn').onclick = openMemoSortSheet;
   document.getElementById('memoFilterBtn').onclick = () =>
     openFilterSheet('ตัวกรองเอกสาร', [
-      { key: 'kind', label: 'หมวดเอกสาร', current: state.memoKind || 'all', options: MEMO_KIND_OPTIONS }
+      { key: 'kind', label: 'หมวดเอกสาร', current: state.memoKind || 'all', options: MEMO_KIND_OPTIONS },
+      { key: 'month', label: 'เดือน', current: state.memoMonth || 'all',
+        options: [['all', 'ทุกเดือน']].concat(months.map(k => [k, memoMonthChipLabel(k)])) }
     ], (k, v) => {
-      state.memoKind = v;
+      if (k === 'kind') state.memoKind = v; else state.memoMonth = v;
       drawMemos();
     }, () => {
       state.memoKind = 'all';
+      state.memoMonth = 'all';
       drawMemos();
     });
-  el.querySelectorAll('[data-mm]').forEach(b => b.onclick = () => {
-    state.memoMonth = b.dataset.mm;
-    drawMemos();
-  });
-
-  const monthRow = document.getElementById('memoMonthRow');
-  const activeChip = monthRow && monthRow.querySelector('.on');
-  if (activeChip) monthRow.scrollLeft = activeChip.offsetLeft - monthRow.clientWidth / 2 + activeChip.clientWidth / 2;
 
   drawMemoList();
   wireViewToggle(drawMemos, '#view-memos', 'memosView');
@@ -16599,8 +16549,7 @@ function openPrintMemoForm(opts) {
           </div>
           <div class="mf-section">
             <div class="mf-section-title"><span class="mf-step">2</span> รายการพัสดุที่ขอเบิก/ยืม</div>
-            ${memoFormCtx && memoFormCtx.pick ? `<div class="field"><label>รายการซ่อมที่เกี่ยวข้อง</label><select class="input" id="m_maint"><option value="">-- เลือกรายการซ่อม --</option>${repairOptionsHtml(memoFormCtx.maintId)}</select></div>` : ''}
-            <div id="m_itemsWrap">${itemFieldsHtml()}</div>
+                        <div id="m_itemsWrap">${itemFieldsHtml()}</div>
             <button type="button" class="mf-add" id="btnAddItem">+ เพิ่มรายการพัสดุ</button>
             ${memoFormCtx ? `<div class="field" style="margin-top:10px;"><label>อาการ/ปัญหาที่ต้องซ่อม</label><textarea class="input" id="m_issue" rows="2">${escapeHtml(memoFormCtx.issue || '')}</textarea></div>` : ''}
             ${dueDateText ? `<div class="field"><label>กำหนดส่งคืนภายในวันที่</label><input class="input" type="date" id="m_duedate" value="${dueDateIso}"></div>` : ''}
@@ -16686,23 +16635,6 @@ function openPrintMemoForm(opts) {
     });
   }
   wireItemRow();
-  // เลือกรายการซ่อมในฟอร์มเอกสารซ่อมโดยตรง: เติมครุภัณฑ์ อาการ ทะเบียน และหัวเรื่องให้อัตโนมัติ
-  const pickSel = document.getElementById('m_maint');
-  if (pickSel) pickSel.onchange = () => {
-    const mt = (state.maint || []).find(x => x['รหัสรายการ'] === pickSel.value);
-    const asset = mt ? (state.assets || []).find(a => a['รหัสครุภัณฑ์'] === mt['รหัสครุภัณฑ์']) : null;
-    memoFormCtx.maintId = mt ? mt['รหัสรายการ'] : '';
-    memoFormCtx.issue = mt ? (mt['อาการ/ปัญหา'] || '') : '';
-    memoFormCtx.plate = asset ? (asset['ทะเบียนรถ'] || '') : '';
-    items = buildMemoItemList(asset ? { items: [asset] } : {});
-    document.getElementById('m_itemsWrap').innerHTML = itemFieldsHtml();
-    wireItemRow();
-    const iss = document.getElementById('m_issue'); if (iss) iss.value = memoFormCtx.issue;
-    const sub = document.getElementById('m_subject');
-    if (sub && asset) sub.value = 'ขอซ่อมบำรุง' + (asset['ชื่อครุภัณฑ์'] || '');
-    refreshMemoLivePreview();
-  };
-
   document.getElementById('btnAddItem').onclick = () => {
     document.getElementById('m_itemsWrap').insertAdjacentHTML('beforeend',
         memoItemRowHtml({ id: '', name: '', brand: '', serial: '', qty: 1, unit: 'เครื่อง' }, 'รายการเพิ่มเติม', true)
