@@ -21137,26 +21137,13 @@ function oilMemoBodyHtml(m) {
       <div class="pf-emblem">${emblemHtmlNow()}</div>
       <div class="pf-title-wrap"><div class="pf-title">บันทึกข้อความ</div></div>
     </div>
-
-    <div class="om-line" style="margin-top:4pt">
-      <span class="pf-label om-lb">ส่วนราชการ</span>
-      <span class="om-lb" id="ed_org">${v(m.org)}</span>
-      <span style="flex:1 1 auto"></span>
-      <span class="om-lb">โทร ${v(m.phone)}</span>
+    <div class="pf-field-line"><span class="pf-label">ส่วนราชการ</span> <span id="ed_org">${v(m.org)}</span>${m.phone ? ` <span class="pf-label">โทร.</span> ${v(m.phone)}` : ''}</div>
+    <div class="pf-two-col" style="grid-template-columns:8.25cm 1fr;">
+      <span><span class="pf-label">ที่</span> <span id="ed_docno">${v(m.docNo) || '........................................'}</span></span>
+      <span><span class="pf-label">วันที่</span> <span id="ed_docdate">${v(m.docDate)}</span></span>
     </div>
-
-    <div class="om-line">
-      <span class="pf-label om-lb">ที่</span>${F(v(m.docNo), 'om-d', '', 'ed_docno')}
-      <span class="pf-label om-lb">วันที่</span>${F(`<span id="ed_docdate">${v(m.docDate)}</span>`)}
-    </div>
-
-    <div class="om-line">
-      <span class="pf-label om-lb">เรื่อง</span>${F(`<span id="ed_subject">${v(m.subject)}</span>`)}
-    </div>
-
-    <div class="om-line">
-      <span class="pf-label om-lb">เรียน</span><span class="om-lb" id="ed_addressee">${v(m.addressee)}</span>
-    </div>
+    <div class="pf-field-line"><span class="pf-label">เรื่อง</span> <span id="ed_subject">${v(m.subject)}</span></div>
+    <div class="pf-field-line pf-addressee"><span class="pf-label">เรียน</span> <span id="ed_addressee">${v(m.addressee) || '........................................'}</span></div>
 
     <div class="om-line om-ind" style="margin-top:8pt">
       ${L('ด้วยข้าฯ')}${F(`<span>${v(m.req.rank)}</span> <span id="ed_reqname">${v(m.req.name)}</span>`)}${L('มีความประสงค์เบิก')}
