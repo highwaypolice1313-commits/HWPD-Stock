@@ -7927,7 +7927,6 @@ html, body{
   <div class="page" id="view-borrow" style="display:none;"></div>
   <div class="page" id="view-maint" style="display:none;"></div>
   <div class="page" id="view-memos" style="display:none;"></div>
-  <div class="page" id="view-repair" style="display:none;"></div>
   <div class="page" id="view-users" style="display:none;"></div>
   <div class="page" id="view-reports" style="display:none;"></div>
   <div class="page" id="view-settings" style="display:none;"></div>
@@ -7974,11 +7973,6 @@ html, body{
   <button class="tab tab-secondary" data-tab="memos">
     <span class="ico"><svg viewBox="0 0 20 20" fill="none"><path d="M4 3.5h9l3 3v10a1 1 0 01-1 1H4a1 1 0 01-1-1v-12a1 1 0 011-1z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M6.5 9h7M6.5 12h7M6.5 15h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></span>
     <span class="lbl">เอกสารใบเบิก</span>
-  </button>
-
-  <button class="tab tab-secondary" data-tab="repair">
-    <span class="ico"><svg viewBox="0 0 20 20" fill="none"><path d="M12.4 5.1a3.4 3.4 0 00-4.4 4.4l-5 5a1.5 1.5 0 002.1 2.1l5-5a3.4 3.4 0 004.4-4.4l-2.2 2.2-1.9-.4-.4-1.9 2.4-2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></span>
-    <span class="lbl">เอกสารซ่อม</span>
   </button>
 
   <button class="tab tab-secondary" data-tab="reports">
@@ -8713,7 +8707,7 @@ async function completeLogin({ role, name, token }) {
   appEl.style.display = 'block';
   appEl.classList.add('app-in');
   const ui = loadUi();
-  const VALID_TABS = ['dashboard','assets','borrow','maint','memos','repair','users','reports','settings','audit','monthly'];
+  const VALID_TABS = ['dashboard','assets','borrow','maint','memos','users','reports','settings','audit','monthly'];
   const startTab = VALID_TABS.includes(ui.tab) ? ui.tab : 'dashboard';
    const restoreScroll = () => {
   if (!ui.scrollY) return;
@@ -9373,19 +9367,17 @@ requestAnimationFrame(function(){ layoutNav(); }); // ✅ จัดแถบห�
     window.scrollTo({ top: 0, behavior: window.matchMedia('(pointer:coarse)').matches ? 'instant' : 'smooth' });
   }
   const fab = document.getElementById('fabBtn');
-  fab.style.display = (['assets','borrow','maint','memos','repair','users'].includes(name) && (isAdmin() || name === 'borrow' || name === 'maint')) ? 'flex' : 'none';
+  fab.style.display = (['assets','borrow','maint','memos','users'].includes(name) && (isAdmin() || name === 'borrow' || name === 'maint')) ? 'flex' : 'none';
   fab.onclick = () => {
     if (name === 'assets' && isAdmin()) openAssetForm();
     if (name === 'borrow') openBorrowForm();
     if (name === 'maint') openMaintForm();
-if (name === 'memos' && isAdmin()) openPrintMemoForm({});
-if (name === 'repair' && isAdmin()) openRepairCreateForm();
+if (name === 'memos' && isAdmin()) openMemoTypeSheet();
   };
   const PAGE_RENDER = {
     dashboard: renderDashboard, assets: renderAssets, borrow: renderBorrow,
     maint: renderMaint, users: renderUsers,
-    memos: () => { state.memoKind = 'all'; return renderMemos(); },
-    repair: () => { state.memoKind = 'repair'; return renderMemos(); },
+    memos: renderMemos,
     reports: renderReports, settings: renderSettings, audit: renderAudit, monthly: renderMonthly
   };
   const PAGE_SKELETON = (() => {
@@ -9845,7 +9837,6 @@ function renderDashboard() {
     ['users', 'จนท.ในสังกัด', ''],
     ['maint', 'ซ่อมบำรุง', 'is-bad'],
     ['memos', 'เอกสารใบเบิก', ''],
-    ['repair', 'เอกสารซ่อม', ''],
     ['reports', 'รายงาน', ''],
     ...(isAdmin() ? [['audit', 'ตรวจนับประจำปี', ''], ['monthly', 'ตรวจประจำเดือน', '']] : []),
     ['settings', 'ตั้งค่า', '']
@@ -15865,11 +15856,37 @@ function isMaintDoc(m) {
   return html.indexOf('น้ำมันเครื่อง') !== -1 && html.indexOf('ประจำรถวิทยุหมายเลข') !== -1;
 }
 // หน้าเอกสารใบเบิก-ยืม แสดงเฉพาะเอกสารทั่วไป / หน้าเอกสารซ่อม แสดงเฉพาะเอกสารซ่อม
-function memoInKind(m) {
-  return state.memoKind === 'repair' ? isMaintDoc(m) : !isMaintDoc(m);
+// หมวดของเอกสาร: general = ทั่วไป, repair = ขอซ่อมบำรุง, oil = เบิกน้ำมันเครื่อง
+function memoKindOf(m) {
+  if (!isMaintDoc(m)) return 'general';
+  const html = String(m['เนื้อหาเอกสาร(HTML)'] || '');
+  return html.indexOf('น้ำมันเครื่อง') !== -1 ? 'oil' : 'repair';
 }
-function memoHostId() { return state.memoKind === 'repair' ? 'view-repair' : 'view-memos'; }
-function memoKindTitle() { return state.memoKind === 'repair' ? 'เอกสารซ่อมบำรุง' : 'เอกสารใบเบิก-ยืม'; }
+const MEMO_KIND_META = {
+  general: { label: 'ทั่วไป',           fg: '#3b5b7a', bg: 'rgba(59,91,122,.12)' },
+  repair:  { label: 'ขอซ่อมบำรุง',      fg: '#a3412c', bg: 'rgba(163,65,44,.12)' },
+  oil:     { label: 'เบิกน้ำมันเครื่อง', fg: '#8a6216', bg: 'rgba(187,138,63,.18)' }
+};
+// กรองตามหมวดที่เลือก (all = ทุกหมวด)
+function memoInKind(m) {
+  const k = state.memoKind || 'all';
+  return k === 'all' || memoKindOf(m) === k;
+}
+// ป้ายหมวดบนการ์ด/แถวเอกสาร
+function memoKindTagHtml(m) {
+  const meta = MEMO_KIND_META[memoKindOf(m)];
+  return `<span class="memo-kind-tag" style="display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;margin-bottom:5px;color:${meta.fg};background:${meta.bg};">${meta.label}</span>`;
+}
+// แถบเลือกหมวด พร้อมจำนวนเอกสารในแต่ละหมวด (นับจากข้อมูลทั้งหมด)
+function memoKindChipsHtml() {
+  const all = state.memos || [];
+  const count = { all: all.length, general: 0, repair: 0, oil: 0 };
+  all.forEach(m => { count[memoKindOf(m)]++; });
+  const cur = state.memoKind || 'all';
+  const chip = (k, label) => `<button type="button" class="memo-month-chip ${cur === k ? 'on' : ''}" data-mk="${k}">${label}<b>${count[k]}</b></button>`;
+  return chip('all', 'ทุกหมวด') + chip('general', 'ทั่วไป') + chip('repair', 'ขอซ่อมบำรุง') + chip('oil', 'เบิกน้ำมันเครื่อง');
+}
+function memoHostId() { return 'view-memos'; }
 
 // ข้อความในเนื้อหาเอกสารซ่อม: ชื่อรายการ + ทะเบียน + อาการ
 function repairPhraseText(items, issue, plate) {
@@ -15958,11 +15975,51 @@ function openRepairCreateForm() {
   });
 }
 
+// ปุ่ม + ในหน้าเอกสารใบเบิก: เลือกชนิดเอกสารที่จะสร้าง
+function openMemoTypeSheet() {
+  const WRENCH = '<svg viewBox="0 0 20 20" fill="none"><path d="M12.4 5.1a3.4 3.4 0 00-4.4 4.4l-5 5a1.5 1.5 0 002.1 2.1l5-5a3.4 3.4 0 004.4-4.4l-2.2 2.2-1.9-.4-.4-1.9 2.4-2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>';
+  const opt = (id, icon, title, sub) => `
+    <div class="glass list-item" id="${id}" style="cursor:pointer; margin-bottom:10px;">
+      <div class="li-icon">${icon}</div>
+      <div class="li-body"><div class="li-title">${title}</div><div class="li-sub">${sub}</div></div>
+    </div>`;
+  showSheet(`
+    <div class="sheet-title">สร้างเอกสารใหม่</div>
+    ${opt('mtGeneral', ICONS.log, 'บันทึกข้อความทั่วไป', 'เบิก-ยืมครุภัณฑ์')}
+    ${opt('mtRepair', WRENCH, 'เอกสารขอซ่อมบำรุง', 'ขอซ่อมตามอาการที่แจ้งของรายการซ่อม')}
+    ${opt('mtOil', ICONS.tag, 'เอกสารเบิกน้ำมันเครื่อง', 'สำหรับรถยานพาหนะที่คุณครอบครอง')}`);
+  document.getElementById('mtGeneral').onclick = () => { closeSheet(); openPrintMemoForm({}); };
+  document.getElementById('mtRepair').onclick = () => { closeSheet(); openRepairCreateForm(); };
+  document.getElementById('mtOil').onclick = () => { closeSheet(); openOilPickerSheet(); };
+}
+
+// เลือกรายการถ่ายน้ำมันเครื่องก่อนเปิดฟอร์มเบิกน้ำมัน (ต้องผูกกับรายการซ่อม)
+function openOilPickerSheet() {
+  const list = (state.maint || [])
+    .filter(m => String(m['อาการ/ปัญหา'] || '').includes('ถ่ายน้ำมันเครื่อง'))
+    .sort((a, b) => toDate(b['วันที่แจ้ง'] || 0) - toDate(a['วันที่แจ้ง'] || 0));
+  showSheet(`
+    <div class="sheet-title">เบิกน้ำมันเครื่อง</div>
+    <div class="hint" style="margin-top:0;">เลือกรายการถ่ายน้ำมันเครื่องที่ต้องการทำเอกสาร</div>
+    ${list.length ? list.map(m => `
+      <div class="glass list-item oil-pick" data-mid="${escapeHtml(m['รหัสรายการ'])}" style="cursor:pointer; margin-bottom:8px;">
+        <div class="li-body">
+          <div class="li-title">${escapeHtml(m['ชื่อครุภัณฑ์'] || '-')}</div>
+          <div class="li-sub">${escapeHtml(String(m['อาการ/ปัญหา'] || '').slice(0, 60))}</div>
+        </div>
+      </div>`).join('') : emptyState('ยังไม่มีรายการถ่ายน้ำมันเครื่อง')}`);
+  const ov = document.getElementById('overlayEl');
+  if (ov) ov.querySelectorAll('.oil-pick').forEach(el => {
+    el.onclick = () => {
+      const m = list.find(x => x['รหัสรายการ'] === el.dataset.mid);
+      closeSheet();
+      if (m) openOilFromMaint(m, m['รหัสรายการ']);
+    };
+  });
+}
+
 function drawMemos() {
   const el = document.getElementById(memoHostId());
-  // กันรหัส id ซ้ำ: ล้างหน้าอีกฝั่งที่ค้างอยู่ใน DOM
-  const other = document.getElementById(memoHostId() === 'view-repair' ? 'view-memos' : 'view-repair');
-  if (other) other.innerHTML = '';
   ensureSrchStyles();
   const all = (state.memos || []).filter(memoInKind);
   const months = memoMonthOptions();
@@ -15975,7 +16032,7 @@ function drawMemos() {
 
   el.innerHTML = `
     <div class="section-title">
-      ${memoKindTitle()}
+      เอกสารใบเบิก-ยืม
       <span class="section-actions">${viewToggleHtml('memos', state.memosView)}</span>
     </div>
 
@@ -15992,6 +16049,8 @@ function drawMemos() {
       </button>
     </div>
 
+    <div class="memo-month-row memo-kind-row" id="memoKindRow">${memoKindChipsHtml()}</div>
+
     <div class="memo-month-row" id="memoMonthRow">
       <button type="button" class="memo-month-chip ${state.memoMonth === 'all' ? 'on' : ''}" data-mm="all">ทั้งหมด<b>${all.length}</b></button>
       ${months.map(k => `<button type="button" class="memo-month-chip ${state.memoMonth === k ? 'on' : ''}" data-mm="${k}">${memoMonthChipLabel(k)}<b>${monthCount[k] || 0}</b></button>`).join('')}
@@ -16007,6 +16066,10 @@ function drawMemos() {
   });
 
   document.getElementById('memoSortBtn').onclick = openMemoSortSheet;
+  el.querySelectorAll('[data-mk]').forEach(b => b.onclick = () => {
+    state.memoKind = b.dataset.mk;
+    drawMemos();
+  });
   el.querySelectorAll('[data-mm]').forEach(b => b.onclick = () => {
     state.memoMonth = b.dataset.mm;
     drawMemos();
@@ -16030,6 +16093,7 @@ function memoCard(m, q = '') {
     <div class="memo-thumb" data-thumb></div>
     ${memoQuickActionsHtml(m['รหัสใบเบิก'])}
     <div class="memo-card-body">
+      ${memoKindTagHtml(m)}
       <div class="memo-title">${memoHighlight(m['เรื่อง'] || 'ไม่ระบุเรื่อง', q)}</div>
       <div class="memo-meta-row">
         ${docNo ? `<span class="memo-docno">${memoHighlight(docNo, q)}</span>` : ''}
@@ -16047,6 +16111,7 @@ function memoRow(m, q = '') {
   return `<div class="glass list-item memo-row" data-id="${escapeHtml(m['รหัสใบเบิก'])}">
     <div class="li-icon">${ICONS.log}</div>
     <div class="li-body">
+      ${memoKindTagHtml(m)}
       <div class="li-title">${memoHighlight(m['เรื่อง'] || 'ไม่ระบุเรื่อง', q)}</div>
       <div class="li-sub">${docNo ? `<span class="memo-docno" style="display:inline-block;margin-right:6px;">${memoHighlight(docNo, q)}</span>` : ''}${memoHighlight(m['ผู้ขอเบิก'] || '', q)}${m['ผู้ขอเบิก'] ? ' · ' : ''}${systemDate(m['วันที่สร้าง'])}</div>
     </div>
@@ -16178,14 +16243,14 @@ document.getElementById('btnMemoPrint').onclick = () => {
       commitDocNoOnce();
       dirtyEl.classList.remove('show');
       toast('บันทึกเอกสารแล้ว');
-      await reloadThen(() => { if (state.tab === 'memos' || state.tab === 'repair') renderMemos(); });
+      await reloadThen(() => { if (state.tab === 'memos') renderMemos(); });
     } catch (err) { toast(err.message || 'บันทึกเอกสารไม่สำเร็จ'); }
     finally { setLoading(false); setButtonBusy(btn, false); }
   };
   if (!isNew && isAdmin()) {
     document.getElementById('btnMemoDelete').onclick = async () => {
       if (!await confirmSheet('ย้ายเอกสารนี้ไปถังขยะ? กู้คืนได้ภายใน 30 วันที่ตั้งค่า > ถังขยะ', {title:'ลบเอกสาร', okText:'ย้ายไปถังขยะ', tone:'bad'})) return;
-      try { await apiPost('deleteMemo', { id: opts.id }); closeSheet(); toast('ลบเอกสารแล้ว'); await reloadThen(() => { if (state.tab === 'memos' || state.tab === 'repair') renderMemos(); }); }
+      try { await apiPost('deleteMemo', { id: opts.id }); closeSheet(); toast('ลบเอกสารแล้ว'); await reloadThen(() => { if (state.tab === 'memos') renderMemos(); }); }
       catch (err) { toast(err.message || 'ลบไม่สำเร็จ'); }
     };
   }
