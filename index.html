@@ -13624,6 +13624,7 @@ function openMaintDetail(id) {
   const m = state.maint.find(x => x['รหัสรายการ'] === id);
   if (!m) return;
   const canUpdate = isAdmin() && m['สถานะ'] !== 'ซ่อมเสร็จ';
+  const isOil = String(m['อาการ/ปัญหา'] || '').includes('ถ่ายน้ำมันเครื่อง');
   showSheet(`
     <div class="sheet-title">${escapeHtml(m['ชื่อครุภัณฑ์'])}</div>
     <div class="detail-row"><span>วันที่แจ้ง</span><span>${systemDate(m['วันที่แจ้ง'])}</span></div>
@@ -13645,6 +13646,7 @@ function openMaintDetail(id) {
     <div class="field"><label>ค่าใช้จ่าย (บาท)</label><input class="input" type="number" id="f_mcost" value="${escapeHtml(m['ค่าใช้จ่าย(บาท)'])}"></div>
     <div class="btn-row"><button class="btn btn-primary" id="btnUpdateMaint">บันทึก</button></div>
     ` : ''}
+    ${isOil ? `<div class="btn-row"><button class="btn btn-primary" id="btnPrintOilFromMaint">พิมพ์บันทึกขอเบิกน้ำมันเครื่อง</button></div>` : ''}
     ${isAdmin() ? `<div class="btn-row">
       <button class="btn btn-ghost" id="btnEditMaint">แก้ไขรายการ</button>
       <button class="btn btn-danger" id="btnDeleteMaint">ลบรายการ</button>
@@ -13669,6 +13671,14 @@ function openMaintDetail(id) {
       finally { setLoading(false); setButtonBusy(saveBtn, false); }
     };
   }
+
+  const oilBtn = document.getElementById('btnPrintOilFromMaint');
+  if (oilBtn) oilBtn.onclick = () => {
+    const mi = /เลขไมล์\s*([\d,.]+)/.exec(String(m['อาการ/ปัญหา'])) || [];
+    const q = /น้ำมัน\s*([\d.]+)\s*ลิตร/.exec(String(m['อาการ/ปัญหา'])) || [];
+    closeSheet();
+    openOilMemoForm({ assetId: m['รหัสครุภัณฑ์'], mile: (mi[1] || '').replace(/,/g, ''), qty: q[1] || '' });
+  };
 }
 
    async function deleteMaintItem(m) {
@@ -21112,8 +21122,12 @@ function ensureOilMemoCss() {
 .om-f.om-d{flex:0 0 auto;width:8cm}
 .om-f.om-sg{position:relative;height:14mm;min-height:14mm;padding:0}
 .om-f.om-sg img{position:absolute;left:0;bottom:0;width:100%;height:12mm;object-fit:contain}
-.om-sigblk{width:7.6cm;margin:12pt 0 0 auto}
+.om-sigblk{width:7.6cm;margin:18pt 0 0 auto}
 .om-sigblk .om-line{margin-bottom:2pt}
+.om-rankrow{position:relative}
+.om-rank{position:absolute;right:calc(100% - 0.5mm);bottom:1pt;white-space:nowrap}
+body.modal-open{overflow:hidden}
+#modalRoot .memo-form-sheet{max-height:92dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 `;
   document.head.appendChild(s);
 }
@@ -21127,7 +21141,7 @@ function oilMemoBodyHtml(m) {
   const sign = (role, p, nameId) => `
     <div class="om-sigblk">
       <div class="om-line">${L('ลงชื่อ')}<span class="om-f om-sg">${p.sig ? `<img src="${escapeHtml(p.sig)}" alt="">` : ''}</span>${L(role)}</div>
-      <div class="om-line">${L('(')}${F(`<span>${v(p.rank)}</span> <span${nameId ? ` id="${nameId}"` : ''}>${v(p.name)}</span>`)}${L(')')}</div>
+      <div class="om-line om-rankrow"><span class="om-rank">${v(p.rank)}</span>${L('(')}${F(`<span${nameId ? ` id="${nameId}"` : ''}>${v(p.name)}</span>`)}${L(')')}</div>
       <div class="om-line">${L('ตำแหน่ง')}${F(v(p.position))}</div>
       <div class="om-line">${L('วันที่')}${F(v(p.date))}</div>
     </div>`;
@@ -21161,12 +21175,12 @@ function oilMemoBodyHtml(m) {
     <div class="om-line om-ind" style="margin-top:8pt">${L('- ผู้จ่าย')}</div>
     ${sign('ผู้จ่าย', m.iss, 'ed_issname')}
 
-    <div class="om-line" style="margin-top:8pt">
+    <div class="om-line om-ind" style="margin-top:8pt">
       ${L('-ได้รับน้ำมันเครื่อง')}${F(v(m.spec))}${L('จำนวน')}${F(v(m.qty), 'om-q')}${L('ลิตร ประจำรถวิทยุหมายเลข')}${F(v(m.radio))}
     </div>
     <div class="om-line">${L('เพื่อใช้ในการปฏิบัติหน้าที่ราชการต่อไป')}</div>
     <div class="om-line om-ind">${L('จึงเรียนมาเพื่อโปรดทราบ')}</div>
-    <div class="om-line om-ind" style="margin-top:6pt">${L('- อนุมัติให้เบิก-จ่ายได้')}</div>
+    <div class="om-line om-ind" style="margin-top:12pt">${L('- อนุมัติให้เบิก-จ่ายได้')}</div>
 
     ${sign('ผู้อนุมัติ', m.apv, 'ed_apvname')}
   `;
