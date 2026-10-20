@@ -16162,7 +16162,7 @@ function memoRow(m, q = '') {
 function openMemoEditor(opts) {
   const isNew = !opts.id;
   const readOnly = !!opts.readOnly && !isAdmin();
-    showRawSheet(`<div class="overlay" id="overlayEl">
+    const ov = showRawSheet(`<div class="overlay" id="overlayEl">
     <div class="sheet memo-doc-sheet">
       <button class="sheet-close" id="sheetCloseBtn" type="button" title="ปิด" aria-label="ปิด">${ICONS.close}</button>
       <div class="sheet-handle"></div>
@@ -16187,10 +16187,11 @@ function openMemoEditor(opts) {
       </div>
     </div>
   </div>`);
-  document.getElementById('sheetCloseBtn').addEventListener('click', closeSheet);
-  document.getElementById('btnMemoClose').onclick = closeSheet;
+  const ovOf = id => ov.querySelector('#' + id);
+  ovOf('sheetCloseBtn').addEventListener('click', closeSheet);
+  ovOf('btnMemoClose').onclick = closeSheet;
 
-  const desk = document.getElementById('memoPaperDesk');
+  const desk = ovOf('memoPaperDesk');
   mountPaper(desk, wrapPfDoc(opts.docHtml, !readOnly));
   registerPaper(desk);
   let userZoom = null;
@@ -16201,27 +16202,27 @@ function openMemoEditor(opts) {
     if (!scaleEl || !sizer || !page) return;
     if (userZoom === null) {
       fitPaper(desk);
-      document.getElementById('zLbl').textContent = Math.round(((desk.clientWidth - 32) / A4_W) * 100) + '%';
+      ovOf('zLbl').textContent = Math.round(((desk.clientWidth - 32) / A4_W) * 100) + '%';
       return;
     }
     scaleEl.style.transform = 'scale(' + userZoom + ')';
     sizer.style.width = (A4_W * userZoom) + 'px';
     sizer.style.height = ((page.offsetHeight || A4_H) * userZoom) + 'px';
-    document.getElementById('zLbl').textContent = Math.round(userZoom * 100) + '%';
+    ovOf('zLbl').textContent = Math.round(userZoom * 100) + '%';
   }
-  document.getElementById('zIn').onclick = () => { userZoom = Math.min(2, (userZoom ?? ((desk.clientWidth - 32) / A4_W)) + 0.1); applyZoom(); };
-  document.getElementById('zOut').onclick = () => { userZoom = Math.max(0.3, (userZoom ?? ((desk.clientWidth - 32) / A4_W)) - 0.1); applyZoom(); };
-  document.getElementById('zFit').onclick = () => { userZoom = null; applyZoom(); };
+  ovOf('zIn').onclick = () => { userZoom = Math.min(2, (userZoom ?? ((desk.clientWidth - 32) / A4_W)) + 0.1); applyZoom(); };
+  ovOf('zOut').onclick = () => { userZoom = Math.max(0.3, (userZoom ?? ((desk.clientWidth - 32) / A4_W)) - 0.1); applyZoom(); };
+  ovOf('zFit').onclick = () => { userZoom = null; applyZoom(); };
 
-  const getBody = () => document.getElementById('memoDocBody');
+  const getBody = () => ovOf('memoDocBody');
    let docNoCommitted = !isNew;   // เอกสารเก่าไม่ต้องนับเลขซ้ำ
 const commitDocNoOnce = () => {
   if (docNoCommitted) return;
   docNoCommitted = true;
-  const e = document.getElementById('ed_docno');
+  const e = ovOf('ed_docno');
   if (e) commitDocNo(e.textContent.trim());
 };
-  const dirtyEl = document.getElementById('docDirty');
+  const dirtyEl = ovOf('docDirty');
   if (!readOnly) desk.addEventListener('input', () => {
     dirtyEl.classList.add('show');
     requestAnimationFrame(() => alignPfRankToName(desk));
@@ -16230,7 +16231,7 @@ const commitDocNoOnce = () => {
 
 // พิมพ์เลขอารบิกลงในเอกสาร -> แปลงเป็นเลขไทยทันที (ตอนออกจากช่องที่กำลังแก้)
 desk.addEventListener('focusout', () => {
-  const b = document.getElementById('memoDocBody');
+  const b = ovOf('memoDocBody');
   if (!b) return;
   const walker = document.createTreeWalker(b, NodeFilter.SHOW_TEXT);
   let n;
@@ -16240,13 +16241,13 @@ desk.addEventListener('focusout', () => {
   }
 });
    
-document.getElementById('btnMemoPrint').onclick = () => {
+ovOf('btnMemoPrint').onclick = () => {
   commitDocNoOnce();
   const b = getBody();
   if (b) document.getElementById('printArea').innerHTML = thaiifyHtml(b.outerHTML);
 
   // อ่านค่าจากเอกสารที่เปิดอยู่ (เรื่อง + เลขที่หนังสือ)
-  const g = (id) => { const e = document.getElementById(id); return e ? e.textContent.trim() : ''; };
+  const g = (id) => { const e = ovOf(id); return e ? e.textContent.trim() : ''; };
   const subject = g('ed_subject') || 'บันทึกข้อความ';
   const docNo = g('ed_docno').replace(/\./g, '');   // ตัดจุดไข่ปลาถ้ายังไม่กรอกเลข
 
@@ -16255,11 +16256,11 @@ document.getElementById('btnMemoPrint').onclick = () => {
     { filename: safeFileName('บันทึกข้อความ-' + subject + (docNo ? ' ' + docNo : '')) }
   );
 };
-  const saveMemoBtn = document.getElementById('btnMemoSave');
+  const saveMemoBtn = ovOf('btnMemoSave');
   if (saveMemoBtn) saveMemoBtn.onclick = async () => {
     const b = getBody();
     if (!b) { toast('ไม่พบเนื้อหาเอกสาร'); return; }
-    const g = (id) => { const e = document.getElementById(id); return e ? e.textContent.trim() : ''; };
+    const g = (id) => { const e = ovOf(id); return e ? e.textContent.trim() : ''; };
     const payload = {
       id: opts.id || undefined,
       subject: thaiToArabic(g('ed_subject')) || 'ไม่ระบุเรื่อง',
@@ -16270,7 +16271,7 @@ document.getElementById('btnMemoPrint').onclick = () => {
       borrowId: opts.borrowId || '',
       status: 'บันทึกแล้ว'
     };
-    const btn = document.getElementById('btnMemoSave'); if (!btn || btn.disabled) return; setButtonBusy(btn, true, 'กำลังบันทึก...'); setLoading(true, 'กำลังบันทึกเอกสาร...');
+    const btn = ovOf('btnMemoSave'); if (!btn || btn.disabled) return; setButtonBusy(btn, true, 'กำลังบันทึก...'); setLoading(true, 'กำลังบันทึกเอกสาร...');
     try {
       // ตัดสินใจเพิ่ม/แก้ไข ณ เวลากดบันทึก (ไม่ใช้ค่า isNew ที่ล็อกไว้ตอนเปิดฟอร์ม)
       const isUpdate = !!opts.id;
@@ -16287,7 +16288,7 @@ document.getElementById('btnMemoPrint').onclick = () => {
     finally { setLoading(false); setButtonBusy(btn, false); }
   };
   if (!isNew && isAdmin()) {
-    document.getElementById('btnMemoDelete').onclick = async () => {
+    ovOf('btnMemoDelete').onclick = async () => {
       if (!await confirmSheet('ย้ายเอกสารนี้ไปถังขยะ? กู้คืนได้ภายใน 30 วันที่ตั้งค่า > ถังขยะ', {title:'ลบเอกสาร', okText:'ย้ายไปถังขยะ', tone:'bad'})) return;
       try { await apiPost('deleteMemo', { id: opts.id }); closeSheet(); toast('ลบเอกสารแล้ว'); await reloadThen(() => { if (state.tab === 'memos') renderMemos(); }); }
       catch (err) { toast(err.message || 'ลบไม่สำเร็จ'); }
