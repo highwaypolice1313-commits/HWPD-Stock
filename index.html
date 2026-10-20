@@ -23787,7 +23787,7 @@ window.exportAllBackup = async function(){
   @media (min-width:900px){
     .tabbar.tabbar-compact{ transform:none !important; }
     .tabbar.tabbar-compact .lbl{ opacity:1 !important; max-width:none !important; }
-    body .nav-collapse-btn{ display:none !important; }
+
   }
 </style>
 
@@ -23835,11 +23835,6 @@ window.exportAllBackup = async function(){
 
   desk.addEventListener('change', function(){ setCompact(false); });
 })();
-</script>
-
-<script id="desktop-nav-lock">
-  document.body.classList.remove('nav-collapsed');
-  try { localStorage.setItem('hpDesktopNavCollapsedV1', '0'); } catch(e) {}
 </script>
 
 <script id="borrow-sync-js">
