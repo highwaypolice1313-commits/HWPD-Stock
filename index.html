@@ -21173,6 +21173,34 @@ function refreshOilPreview() {
   mountPaper(desk, wrapPfDoc(oilMemoBodyHtml(collectOilMemo()), false));
 }
 
+      function ensureOilMemoCss() {
+  if (document.getElementById('oilMemoCss2')) return;
+  const s = document.createElement('style');
+  s.id = 'oilMemoCss2';
+  s.textContent = `
+body.modal-open{overflow:hidden}
+#modalRoot .memo-form-sheet{max-height:92dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+`;
+  document.head.appendChild(s);
+}
+
+function ensureOilExtraCss() {
+  if (document.getElementById('oilExtraCss2')) return;
+  const s = document.createElement('style');
+  s.id = 'oilExtraCss2';
+  s.textContent = `
+.om-chips{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:6px}
+.om-chip{appearance:none;border:1px solid var(--panel-line,#dfe5ec);background:var(--panel,#fff);color:var(--ink,#1c2d3b);border-radius:12px;height:40px;padding:0 6px;font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;transition:background .15s ease,border-color .15s ease,color .15s ease;white-space:nowrap}
+.om-chip:hover{border-color:var(--gold-line,#bb8a3f)}
+.om-chip.on{background:var(--navy,#17324f);color:#fff;border-color:var(--navy,#17324f);box-shadow:0 4px 12px rgba(23,50,79,.2)}
+.om-chip:active{transform:scale(.96)}
+@media (max-width:420px){.om-chips{grid-template-columns:repeat(3,minmax(0,1fr))}}
+#btnPrintOilFromMaint.btn{background:#ffffff !important;background-image:none !important;color:#1c2d3b !important;border:1.5px solid #bb8a3f !important;box-shadow:none !important}
+#btnPrintOilFromMaint.btn:hover{background:#f5f7f8 !important}
+`;
+  document.head.appendChild(s);
+}
+      
 function openOilMemoForm(opts) {
   opts = opts || {};
   ensureAssetFormCss();
