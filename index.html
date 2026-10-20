@@ -9378,8 +9378,8 @@ requestAnimationFrame(function(){ layoutNav(); }); // ✅ จัดแถบห�
     if (name === 'assets' && isAdmin()) openAssetForm();
     if (name === 'borrow') openBorrowForm();
     if (name === 'maint') openMaintForm();
-if (name === 'memos' && isAdmin()) openMemoTypeSheet();
-if (name === 'repair' && isAdmin()) openRepairPickerSheet();
+if (name === 'memos' && isAdmin()) openPrintMemoForm({});
+if (name === 'repair' && isAdmin()) openRepairCreateForm();
   };
   const PAGE_RENDER = {
     dashboard: renderDashboard, assets: renderAssets, borrow: renderBorrow,
@@ -15931,23 +15931,30 @@ function openOilFromMaint(m, maintId) {
 }
 
 // ปุ่ม + ในหน้าเอกสารซ่อม: เลือกรายการซ่อมก่อน แล้วค่อยเลือกชนิดเอกสาร
-function openRepairPickerSheet() {
-  const list = (state.maint || []).slice()
+
+// ตัวเลือกรายการซ่อม (ใช้ในฟอร์มเอกสารซ่อมที่เปิดจากหน้าเอกสารซ่อมโดยตรง)
+function repairOptionsHtml(selectedId) {
+  return (state.maint || []).slice()
     .sort((a, b) => toDate(b['วันที่แจ้ง'] || 0) - toDate(a['วันที่แจ้ง'] || 0))
-    .slice(0, 60);
-  showSheet(`
-    <div class="sheet-title">สร้างเอกสารซ่อมบำรุง</div>
-    <div class="hint" style="margin-top:0;">เลือกรายการซ่อมที่ต้องการทำเอกสาร</div>
-    ${list.length ? list.map(m => `
-      <div class="glass list-item rd-pick" data-mid="${escapeHtml(m['รหัสรายการ'])}" style="cursor:pointer; margin-bottom:8px;">
-        <div class="li-body">
-          <div class="li-title">${escapeHtml(m['ชื่อครุภัณฑ์'] || '-')}</div>
-          <div class="li-sub">${escapeHtml(String(m['อาการ/ปัญหา'] || '').slice(0, 60))}</div>
-        </div>
-      </div>`).join('') : emptyState('ยังไม่มีรายการซ่อมบำรุง')}`);
-  const ov = document.getElementById('overlayEl');
-  if (ov) ov.querySelectorAll('.rd-pick').forEach(el => {
-    el.onclick = () => { closeSheet(); openRepairTypeSheet(el.dataset.mid); };
+    .slice(0, 80)
+    .map(m => {
+      const label = (m['ชื่อครุภัณฑ์'] || '-') + ' · ' + String(m['อาการ/ปัญหา'] || '').slice(0, 40);
+      return `<option value="${escapeHtml(m['รหัสรายการ'])}" ${m['รหัสรายการ'] === selectedId ? 'selected' : ''}>${escapeHtml(label)}</option>`;
+    }).join('');
+}
+
+// หน้าสร้างเอกสารซ่อมโดยตรง (ปุ่ม + ในหน้าเอกสารซ่อม) ผู้ใช้เลือกรายการซ่อมในฟอร์มเอง
+function openRepairCreateForm() {
+  openPrintMemoForm({
+    repair: {
+      kind: 'repair',
+      pick: true,
+      maintId: '',
+      issue: '',
+      plate: '',
+      verb: 'ขอซ่อมบำรุง',
+      approveNote: '- อนุมัติให้ดำเนินการซ่อมได้'
+    }
   });
 }
 
@@ -16422,7 +16429,7 @@ function wireSignerCard(prefix, label) {
    
 function openPrintMemoForm(opts) {
   memoFormCtx = opts.repair || null;
-  const items = buildMemoItemList(opts);
+  let items = buildMemoItemList(opts);
   const borrow = opts.borrow || null;
   const reqSig = borrow ? (borrow['ลายเซ็นผู้ยืม'] || '') : '';
   const apvSig = borrow ? (borrow['ลายเซ็นผู้อนุมัติ'] || '') : '';
@@ -16487,6 +16494,7 @@ function openPrintMemoForm(opts) {
           </div>
           <div class="mf-section">
             <div class="mf-section-title"><span class="mf-step">2</span> รายการพัสดุที่ขอเบิก/ยืม</div>
+            ${memoFormCtx && memoFormCtx.pick ? `<div class="field"><label>รายการซ่อมที่เกี่ยวข้อง</label><select class="input" id="m_maint"><option value="">-- เลือกรายการซ่อม --</option>${repairOptionsHtml(memoFormCtx.maintId)}</select></div>` : ''}
             <div id="m_itemsWrap">${itemFieldsHtml()}</div>
             <button type="button" class="mf-add" id="btnAddItem">+ เพิ่มรายการพัสดุ</button>
             ${memoFormCtx ? `<div class="field" style="margin-top:10px;"><label>อาการ/ปัญหาที่ต้องซ่อม</label><textarea class="input" id="m_issue" rows="2">${escapeHtml(memoFormCtx.issue || '')}</textarea></div>` : ''}
@@ -16573,6 +16581,23 @@ function openPrintMemoForm(opts) {
     });
   }
   wireItemRow();
+  // เลือกรายการซ่อมในฟอร์มเอกสารซ่อมโดยตรง: เติมครุภัณฑ์ อาการ ทะเบียน และหัวเรื่องให้อัตโนมัติ
+  const pickSel = document.getElementById('m_maint');
+  if (pickSel) pickSel.onchange = () => {
+    const mt = (state.maint || []).find(x => x['รหัสรายการ'] === pickSel.value);
+    const asset = mt ? (state.assets || []).find(a => a['รหัสครุภัณฑ์'] === mt['รหัสครุภัณฑ์']) : null;
+    memoFormCtx.maintId = mt ? mt['รหัสรายการ'] : '';
+    memoFormCtx.issue = mt ? (mt['อาการ/ปัญหา'] || '') : '';
+    memoFormCtx.plate = asset ? (asset['ทะเบียนรถ'] || '') : '';
+    items = buildMemoItemList(asset ? { items: [asset] } : {});
+    document.getElementById('m_itemsWrap').innerHTML = itemFieldsHtml();
+    wireItemRow();
+    const iss = document.getElementById('m_issue'); if (iss) iss.value = memoFormCtx.issue;
+    const sub = document.getElementById('m_subject');
+    if (sub && asset) sub.value = 'ขอซ่อมบำรุง' + (asset['ชื่อครุภัณฑ์'] || '');
+    refreshMemoLivePreview();
+  };
+
   document.getElementById('btnAddItem').onclick = () => {
     document.getElementById('m_itemsWrap').insertAdjacentHTML('beforeend',
         memoItemRowHtml({ id: '', name: '', brand: '', serial: '', qty: 1, unit: 'เครื่อง' }, 'รายการเพิ่มเติม', true)
@@ -16588,6 +16613,7 @@ function openPrintMemoForm(opts) {
 
   document.getElementById('btnCancel').onclick = closeSheet;
   document.getElementById('btnGenerate').onclick = () => {
+    if (memoFormCtx && !memoFormCtx.maintId) { toast('กรุณาเลือกรายการซ่อมก่อน'); return; }
     const memo = collectMemoFormData();
     if (!memo.items.length) { toast('กรุณากรอกชื่อพัสดุอย่างน้อย 1 รายการ'); return; }
     if (!memo.requester.name.trim()) { toast('กรุณาเลือกหรือกรอกชื่อผู้ขอเบิก/ยืม'); return; }
@@ -21520,16 +21546,6 @@ refreshMemoLivePreview = function () {
 
 
 /* ตัวเลือกประเภทเอกสาร เมื่อกดปุ่ม + ในหน้าเอกสารใบเบิก */
-function openMemoTypeSheet() {
-  showSheet(`
-    <div class="sheet-title">สร้างเอกสารใหม่</div>
-    <div class="glass list-item" id="mtGeneral" style="cursor:pointer; margin-bottom:10px;">
-      <div class="li-icon">${ICONS.log}</div>
-      <div class="li-body"><div class="li-title">บันทึกข้อความทั่วไป</div><div class="li-sub">เบิก-ยืมครุภัณฑ์</div></div>
-    </div>
-`);
-  document.getElementById('mtGeneral').onclick = () => { closeSheet(); openPrintMemoForm({}); };
-}  
 
         /* ---------- ค่าน้ำมันเครื่องตามประเภทรถ (แก้ได้ในฟอร์ม) ---------- */
 function defaultOilQty(a) {
