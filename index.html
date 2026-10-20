@@ -15971,6 +15971,7 @@ function openRepairDocForMaint(m) {
     repair: {
       kind: 'repair',
       maintId: m['รหัสรายการ'],
+      reporter: m['ผู้แจ้ง'] || '',
       issue: m['อาการ/ปัญหา'] || '',
       plate: asset ? (asset['ทะเบียนรถ'] || '') : '',
       verb: 'ขอซ่อมบำรุง',
@@ -16493,7 +16494,9 @@ function openPrintMemoForm(opts) {
   const defaultSubject = memoFormCtx
     ? 'ขอซ่อมบำรุง' + (items[0] && items[0].name ? items[0].name : 'ครุภัณฑ์')
     : 'ขอเบิก' + (items[0] && items[0].name ? items[0].name : 'พัสดุครุภัณฑ์');
-  const requesterNameDefault = borrow ? (borrow['ผู้ยืม'] || '') : (state.user && state.user.name) || '';
+  const requesterNameDefault = memoFormCtx && memoFormCtx.reporter
+    ? memoFormCtx.reporter
+    : (borrow ? (borrow['ผู้ยืม'] || '') : (state.user && state.user.name) || '');
   const approverNameDefault = borrow ? (borrow['ผู้อนุมัติ'] || '') : '';
 
   const reqIdx = findOfficerIndexByName(requesterNameDefault);
