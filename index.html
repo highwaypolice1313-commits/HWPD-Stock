@@ -13677,7 +13677,7 @@ function openMaintDetail(id) {
     const mi = /เลขไมล์\s*([\d,.]+)/.exec(String(m['อาการ/ปัญหา'])) || [];
     const q = /น้ำมัน\s*([\d.]+)\s*ลิตร/.exec(String(m['อาการ/ปัญหา'])) || [];
     closeSheet();
-    openOilMemoForm({ assetId: m['รหัสครุภัณฑ์'], mile: (mi[1] || '').replace(/,/g, ''), qty: q[1] || '', reporter: m['ผู้แจ้ง'] });
+    openOilMemoForm({ assetId: m['รหัสครุภัณฑ์'], mile: (mi[1] || '').replace(/,/g, ''), qty: q[1] || '', spec: oilSpecOf(m['อาการ/ปัญหา']), reporter: m['ผู้แจ้ง'] });
   };
 }
 
@@ -13789,6 +13789,7 @@ function canReportMaint(assetId) {
 
 function openMaintForm(presetId) {
   ensureAssetFormCss();
+  ensureOilExtraCss();
   const usable = state.assets.filter(a => canReportMaint(a['รหัสครุภัณฑ์']));
   if (!usable.length) { toast('ไม่มีครุภัณฑ์ที่คุณครอบครองให้แจ้งซ่อม'); return; }
   const excl = a => !canReportMaint(a['รหัสครุภัณฑ์']);
@@ -13823,6 +13824,7 @@ function openMaintForm(presetId) {
           <label>ขนาดยาง</label><input class="input" id="f_tire" placeholder="เช่น 265/65R17">
         </div>
         <div id="f_oilWrap" style="display:none;">
+          ${oilSpecField('')}
           <div class="memo-two-col">
             <div class="field"><label>จำนวนน้ำมันเครื่อง (ลิตร)</label><input class="input" type="number" min="0" step="any" id="f_oilQty"></div>
             <div class="field"><label>เลขไมล์ปัจจุบัน</label><input class="input" id="f_mile" inputmode="numeric"></div>
@@ -13885,6 +13887,8 @@ function openMaintForm(presetId) {
   const preset = presetId && usable.find(a => a['รหัสครุภัณฑ์'] === presetId);
   selectAsset((preset || usable[0])['รหัสครุภัณฑ์']);
 
+  wireOilSpec();
+
   document.querySelectorAll('[data-vtype]').forEach(chip => chip.onclick = () => {
     const t = chip.dataset.vtype;
     document.getElementById('f_vtype').value = t;
@@ -13932,9 +13936,10 @@ function openMaintForm(presetId) {
       if (t === 'ถ่ายน้ำมันเครื่อง') {
         isOil = true;
         const q = val('f_oilQty'), mi = val('f_mile').trim();
+        const spec = val('oil_spec').trim();
         if (!q) { toast('กรุณาระบุจำนวนน้ำมันเครื่อง (ลิตร)'); return; }
         if (!mi) { toast('กรุณาระบุเลขไมล์ปัจจุบัน'); return; }
-        issue += ' (น้ำมัน ' + q + ' ลิตร · เลขไมล์ ' + mi + ')';
+        issue += ' (น้ำมัน ' + q + ' ลิตร' + (spec ? ' · เบอร์ ' + spec : '') + ' · เลขไมล์ ' + mi + ')';
       }
       const d = val('f_vdetail').trim();
       if (d) issue += ' — ' + d;
@@ -21149,10 +21154,11 @@ function fitOrgLine(container) {
 function collectOilMemo() {
   const g = id => val(id).trim();
   const signer = p => ({ rank: g(p + 'Rank'), name: g(p + 'Name'), position: g(p + 'Position'), sig: g(p + 'Sig') });
+  const prefix = String((state.settings && state.settings.oilDocNoPrefix) || '').trim();
   return {
     org: toThaiNumber(g('oil_org')),
     phone: toThaiNumber(g('oil_phone')),
-    docNo: toThaiNumber(g('oil_docno_full')),
+    docNo: toThaiNumber(prefix + g('oil_docno_suffix')),
     docDate: thaiDateLong(g('oil_docdate')),
     subject: g('oil_subject') || 'ขอเบิกน้ำมันเครื่อง',
     addressee: toThaiNumber(g('oil_addressee')),
@@ -21259,7 +21265,7 @@ function openOilMemoForm(opts) {
 
           <div class="mf-section">
             <div class="mf-section-title"><span class="mf-step">2</span> รายการน้ำมันเครื่อง</div>
-            ${oilSpecField('')}
+            ${oilSpecField(opts.spec || last.spec || '')}
             <div class="field"><label>จำนวน (ลิตร)</label><input class="input" type="number" min="0" step="any" id="oil_qty" value="${escapeHtml(qtyInit)}"></div>
           </div>
 
@@ -21271,8 +21277,11 @@ function openOilMemoForm(opts) {
               <div class="field"><label>วันที่เอกสาร</label><input class="input" type="date" id="oil_docdate" value="${isoDate()}"></div>
             </div>
             <div class="memo-two-col">
-              <div class="field"><label>ที่ (เลขที่หนังสือ)</label>
-                <input class="input" id="oil_docno_full" value="${escapeHtml(oilDocNoDefault)}">
+            <div class="field"><label>ที่ (เลขที่หนังสือ)</label>
+                <div style="display:flex;gap:6px;align-items:center;">
+                  <span class="tag tag-off" style="flex:none;">${escapeHtml(oilPrefix)}</span>
+                  <input class="input" id="oil_docno_suffix" value="-" style="flex:1;">
+                </div>
               </div>
               <div class="field"><label>เรื่อง</label><input class="input" id="oil_subject" value="ขอเบิกน้ำมันเครื่อง"></div>
             </div>
@@ -21397,6 +21406,10 @@ function oilRadioOf(name) {
   return ((String(name || '').match(/\d+/g)) || []).pop() || '';
 }
 /* ดึงเลขไมล์และจำนวนน้ำมันจากประวัติการถ่ายน้ำมันล่าสุดของรถคันนั้น */
+function oilSpecOf(t) {
+  const r = /เบอร์\s*([^·)]+)/.exec(String(t || ''));
+  return r ? r[1].trim() : '';
+}
 function latestOilInfo(assetId) {
   const recs = (state.maint || [])
     .filter(m => m['รหัสครุภัณฑ์'] === assetId && String(m['อาการ/ปัญหา'] || '').includes('ถ่ายน้ำมันเครื่อง'))
@@ -21405,7 +21418,7 @@ function latestOilInfo(assetId) {
   const t = String(recs[0]['อาการ/ปัญหา']);
   const mi = /เลขไมล์\s*([\d,.]+)/.exec(t);
   const q = /น้ำมัน\s*([\d.]+)\s*ลิตร/.exec(t);
-  return { mile: mi ? mi[1].replace(/,/g, '') : '', qty: q ? q[1] : '' };
+  return { mile: mi ? mi[1].replace(/,/g, '') : '', qty: q ? q[1] : '', spec: oilSpecOf(t) };
 }
 
 /* เมื่อเลือกประเภท "ถ่ายน้ำมันเครื่อง" ให้เติมจำนวนลิตรตามประเภทรถให้อัตโนมัติ */
