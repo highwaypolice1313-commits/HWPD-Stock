@@ -7618,6 +7618,17 @@ html, body{
 .mstep.on{background:linear-gradient(135deg,var(--navy,#17324f),var(--navy-deep,#0c1e33));color:#fff;border-color:transparent;box-shadow:0 6px 14px rgba(23,50,79,.25);}
 .maint-quick{height:34px;padding:0 12px;border-radius:12px;font-size:13px;font-weight:600;white-space:nowrap;flex:none;}
 </style>
+<style id="maint-quick-css">
+.mq-btn{display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 15px 0 6px;border-radius:999px;border:none;font:inherit;font-size:13px;font-weight:700;letter-spacing:.2px;color:#fff;cursor:pointer;white-space:nowrap;flex:none;box-shadow:0 6px 16px rgba(20,32,45,.18);transition:transform .18s ease,box-shadow .18s ease,filter .18s ease;}
+.mq-btn:hover{transform:translateY(-1px);box-shadow:0 10px 22px rgba(20,32,45,.24);filter:brightness(1.06);}
+.mq-btn:active{transform:scale(.95);}
+.mq-btn:disabled{opacity:.6;cursor:default;transform:none;}
+.mq-ico{width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.2);display:inline-flex;align-items:center;justify-content:center;flex:none;}
+.mq-ico svg{width:13px;height:13px;}
+.mq-start{background:linear-gradient(135deg,#17324f,#0c1e33);}
+.mq-done{background:linear-gradient(135deg,#34a871,#1d7c4f);}
+@media (max-width:380px){.mq-btn{padding:0 10px 0 5px;font-size:12px;}}
+</style>
 </head>
 
 
@@ -13553,11 +13564,6 @@ function drawMaintList() {
     const m = state.maint.find(x => x['รหัสรายการ'] === b.dataset.quick);
     if (!m) return;
     const to = b.dataset.to;
-    if (to === 'กำลังซ่อม' && !String(m['ผู้รับผิดชอบ'] || '').trim()) {
-      openMaintDetail(m['รหัสรายการ']);
-      toast('กรุณาระบุผู้รับผิดชอบ/ร้านซ่อมก่อนเริ่มซ่อม');
-      return;
-    }
     setButtonBusy(b, true);
     const ok = await setMaintStep(m, to);
     setButtonBusy(b, false);
@@ -13656,9 +13662,6 @@ function maintRespOptions() {
 // เปลี่ยนขั้นตอนงานซ่อม (บันทึกทันที ไม่ต้องกดบันทึกซ้ำ)
 async function setMaintStep(m, toStatus, responsible) {
   const resp = responsible !== undefined ? responsible : (m['ผู้รับผิดชอบ'] || '');
-  if (toStatus === 'กำลังซ่อม' && !String(resp).trim()) {
-    toast('กรุณาระบุผู้รับผิดชอบ/ร้านซ่อมก่อนเริ่มซ่อม'); return false;
-  }
   try {
     await apiPost('updateMaint', { id: m['รหัสรายการ'], status: toStatus, responsible: resp, finishDate: toStatus === 'ซ่อมเสร็จ' ? isoDate() : '' });
     window.__ownMaint = { id: m['รหัสรายการ'], status: toStatus, at: Date.now() };
@@ -13667,11 +13670,17 @@ async function setMaintStep(m, toStatus, responsible) {
   } catch (err) { toast(err.message || 'อัปเดตไม่สำเร็จ'); return false; }
 }
 // ปุ่มลัดบนการ์ด: แสดงเฉพาะแอดมิน และเฉพาะงานที่ยังไม่เสร็จ
+const MQ_ICON = {
+  start: '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M6.6 4.7v10.6c0 .75.82 1.2 1.46.8l8.2-5.3a.95.95 0 000-1.6l-8.2-5.3c-.64-.4-1.46.05-1.46.8z"/></svg>',
+  done: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4.6 10.6l3.5 3.5 7.3-7.5"/></svg>'
+};
+// ปุ่มลัดบนการ์ด: แสดงเฉพาะแอดมิน และเฉพาะงานที่ยังไม่เสร็จ
 function maintQuickBtn(m) {
   if (!isAdmin()) return '';
   const next = MAINT_NEXT[m['สถานะ']];
   if (!next) return '';
-  return `<button type="button" class="btn btn-ghost maint-quick" data-quick="${escapeHtml(m['รหัสรายการ'])}" data-to="${next}">${MAINT_STEP_LABEL[next]}</button>`;
+  const kind = next === 'ซ่อมเสร็จ' ? 'done' : 'start';
+  return `<button type="button" class="mq-btn mq-${kind}" data-quick="${escapeHtml(m['รหัสรายการ'])}" data-to="${next}" title="${MAINT_STEP_LABEL[next]}"><span class="mq-ico">${MQ_ICON[kind]}</span><span>${MAINT_STEP_LABEL[next]}</span></button>`;
 }
 function maintRow(m) {
   return `<div class="glass list-item maint-item" data-id="${escapeHtml(m['รหัสรายการ'])}">
@@ -13749,11 +13758,6 @@ function openMaintDetail(id) {
       const to = b.dataset.step;
       if (to === m['สถานะ']) return;
       const resp = val('f_mresp').trim();
-      if (to === 'กำลังซ่อม' && !resp) {
-        toast('กรุณาระบุผู้รับผิดชอบ/ร้านซ่อมก่อนเริ่มซ่อม');
-        document.getElementById('f_mresp').focus();
-        return;
-      }
       setButtonBusy(b, true);
       const ok = await setMaintStep(m, to, resp);
       setButtonBusy(b, false);
@@ -13944,7 +13948,7 @@ function openMaintForm(presetId, presetType) {
 
       <div class="memo-two-col">
         <div class="field"><label>วันที่แจ้ง</label><input class="input" type="date" id="f_rdate" value="${isoDate()}"></div>
-        <div class="field"><label>ค่าใช้จ่ายตามใบประเมินราคา (บาท)</label><input class="input" type="number" min="0" step="any" id="f_cost" placeholder="กรอกตามใบประเมินราคา (0 ถ้าไม่มี)"></div>
+        <div class="field"><label>ค่าใช้จ่ายตามใบประเมินราคา (บาท) — ไม่บังคับ</label><input class="input" type="number" min="0" step="any" id="f_cost" placeholder="0"></div>
       </div>
       <div class="field">
         <label>รูปถ่ายอาการ/ความเสียหาย — ไม่บังคับ</label>
@@ -14078,7 +14082,6 @@ function openMaintForm(presetId, presetType) {
       if (!issue) { toast('กรุณากรอกอาการ/ปัญหา'); return; }
     }
     if (!val('f_reporter').trim()) { toast('กรุณาเลือกผู้แจ้ง'); return; }
-    if (val('f_cost') === '') { toast('กรุณากรอกค่าใช้จ่ายตามใบประเมินราคา (0 ถ้าไม่มี)'); return; }
 
     const saveBtn = document.getElementById('btnSave'); if (saveBtn.disabled) return;
     setButtonBusy(saveBtn, true); setLoading(true, 'กำลังบันทึกงานซ่อม...');
