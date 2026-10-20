@@ -1102,3 +1102,48 @@ async function supaApiPost(action, payload, role, actorName) {
     default: throw new Error('ไม่รู้จัก action: ' + action);
   }
 }
+
+// ตัดยศออกจากข้อความ (รองรับทั้งแบบมีและไม่มีช่องว่างหลังยศ)
+function stripRank(text){
+  let t = String(text || '').replace(/\s+/g, ' ').trim();
+  for (const r of [...RANK_OPTIONS].sort((a, b) => b.length - a.length)) {
+    if (t.startsWith(r)) { t = t.slice(r.length).trim(); break; }
+  }
+  return t;
+}
+
+// แยกเป็น { first, last } โดยไม่สนยศ ช่องว่าง และตัวพิมพ์
+// "จ.ส.ต. ฉัตรชัย  เกตุถาวร" -> { first: 'ฉัตรชัย', last: 'เกตุถาวร' }
+function splitPersonName(text){
+  const t = stripRank(text);
+  const parts = t.split(' ').filter(Boolean);
+  if (!parts.length) return { first: '', last: '' };
+  const last = parts.length > 1 ? parts[parts.length - 1] : '';
+  const first = parts.length > 1 ? parts.slice(0, -1).join('') : parts[0];
+  return {
+    first: first.replace(/\s+/g, '').toLowerCase(),
+    last: last.replace(/\s+/g, '').toLowerCase()
+  };
+}
+
+// เทียบว่าเป็นคนเดียวกันหรือไม่ ถ้าชื่อหรือนามสกุลตรงกันก็ถือว่าตรง
+// (เลือก logic นี้ได้: 'and' = ต้องตรงทั้งสองส่วน, 'or' = ตรงส่วนใดส่วนหนึ่ง)
+function samePerson(a, b, mode = 'and'){
+  const A = splitPersonName(a), B = splitPersonName(b);
+  if (!A.first && !A.last) return false;
+  if (!B.first && !B.last) return false;
+  const firstOk = A.first && B.first && A.first === B.first;
+  const lastOk  = A.last  && B.last  && A.last  === B.last;
+  return mode === 'or' ? (firstOk || lastOk) : (firstOk && lastOk);
+}
+
+// mcHoldingsOf / offHoldings / openOfficerProfile
+function holdingsOfPerson(u){
+  const full = officerFullName(u);
+  const nm = u['ชื่อ-สกุล'];
+  return (state.borrow || []).filter(b => {
+    const st = effectiveBorrowStatus(b);
+    if (st !== 'กำลังยืม' && st !== 'เกินกำหนด') return false;
+    return samePerson(b['ผู้ยืม'], full) || samePerson(b['ผู้ยืม'], nm);
+  });
+}
