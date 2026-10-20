@@ -13678,7 +13678,7 @@ function openMaintDetail(id) {
     <div class="field"><label>ค่าใช้จ่าย (บาท)</label><input class="input" type="number" id="f_mcost" value="${escapeHtml(m['ค่าใช้จ่าย(บาท)'])}"></div>
     <div class="btn-row"><button class="btn btn-primary" id="btnUpdateMaint">บันทึก</button></div>
     ` : ''}
-    ${canMakeMaintDocs() ? `<div class="btn-row"><button class="btn btn-ghost" id="btnRepairDocFromMaint">พิมพ์บันทึกขอเบิก-ซ่อม</button></div>` : ''}
+    ${(canMakeMaintDocs() || nameIsMe(m['ผู้แจ้ง'])) ? `<div class="btn-row"><button class="btn btn-ghost" id="btnRepairDocFromMaint">พิมพ์บันทึกขอเบิก-ซ่อม</button></div>` : ''}
     ${isAdmin() ? `<div class="btn-row">
       <button class="btn btn-ghost" id="btnEditMaint">แก้ไขรายการ</button>
       <button class="btn btn-danger" id="btnDeleteMaint">ลบรายการ</button>
@@ -14027,7 +14027,7 @@ function openMaintForm(presetId, presetType) {
       toast('แจ้งซ่อมแล้ว');
       await reloadThen(renderMaint);
       // แอดมิน/ผู้ตรวจสอบ: เปิดเอกสารเบิกน้ำมันหรือขอซ่อมตามที่แจ้งทันที
-      if (canMakeMaintDocs() && addRes && addRes.id) {
+      if ((canMakeMaintDocs() || nameIsMe(val('f_reporter'))) && addRes && addRes.id) {
         const created = (state.maint || []).find(x => x['รหัสรายการ'] === addRes.id);
         if (created) createMaintDoc(created);
       }
@@ -15977,7 +15977,7 @@ async function openMaintDoc(m) {
     .sort((a, b) => toDate(b['วันที่สร้าง'] || 0) - toDate(a['วันที่สร้าง'] || 0))[0];
   closeSheet();
   if (existing) {
-    openMemoEditor({ id: existing['รหัสใบเบิก'], docHtml: existing['เนื้อหาเอกสาร(HTML)'], borrowId: linkKey, readOnly: false });
+    openMemoEditor({ id: existing['รหัสใบเบิก'], docHtml: existing['เนื้อหาเอกสาร(HTML)'], borrowId: linkKey, readOnly: !canMakeMaintDocs() });
     return;
   }
   createMaintDoc(m);
@@ -16471,6 +16471,7 @@ function wireSignerCard(prefix, label) {
 
   $('SigTrigger').onclick = () => {
     if (!fullName()) { toast('กรุณาเลือก' + label + 'ก่อน'); return; }
+    if (!isAdmin() && !nameIsMe(fullName())) { toast('เซ็นชื่อได้เฉพาะของตนเอง'); return; }
     const o = findOfficer();
     openSignatureSheet({
       title: 'ลายเซ็น' + label, name: fullName(), saved: o ? o['ลายเซ็น'] : '',
@@ -16547,6 +16548,21 @@ function docPhrase(domItems, ctx) {
     return { items, itemsText: toThaiNumber(` ${nm}${pl}`), verb: 'ขอเปลี่ยนแบตเตอรี่', approveNote: '- อนุมัติให้ดำเนินการได้', receiptText: toThaiNumber(`ดำเนินการ เปลี่ยนแบตเตอรี่ ${nm}${pl}`) };
   }
   const issue = document.getElementById('m_issue') ? val('m_issue').trim() : '';
+  // ครุภัณฑ์ที่ไม่ใช่ยานพาหนะ: ระบุยี่ห้อ/รุ่น และหมายเลขเครื่องทั้งในเนื้อความและท้ายเอกสาร
+  const isVehDoc = ctx.create ? !!(ctx.asset && ctx.asset['หมวดหมู่'] === VEHICLE_CAT) : !!ctx.plate;
+  if (!isVehDoc) {
+    const it = items[0] || {};
+    const base = nm
+      + (it.brand ? ' ยี่ห้อ/รุ่น ' + escapeHtml(it.brand) : '')
+      + (it.serial ? ' หมายเลขเครื่อง ' + escapeHtml(thaiToArabic(it.serial)) : '');
+    return {
+      items,
+      itemsText: ` ${base}${issue ? ' เนื่องจาก' + escapeHtml(issue) : ''}`,
+      verb: 'ขอซ่อมบำรุง',
+      receiptText: `ดำเนินการ ซ่อมบำรุง ${base}`,
+      approveNote: '- อนุมัติให้ดำเนินการซ่อมได้'
+    };
+  }
   return {
     items,
     itemsText: toThaiNumber(` ${nm}${pl}${issue ? ' เนื่องจาก' + escapeHtml(issue) : ''}`),
