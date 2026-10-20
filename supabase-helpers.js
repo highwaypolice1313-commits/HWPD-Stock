@@ -239,7 +239,7 @@ async function logActivitySb(actor, action, detail) {
 }
 
 // ==================== GET-side actions ====================
-const SETTING_KEYS = ['orgName', 'orgPhone', 'docNoPrefix', 'docNoNext', 'renewalAlertDays', 'garudaLogo', 'auditCommittee', 'auditPeriodStart', 'auditPeriodEnd', 'categoryUnits', 'assetCategories', 'categoryIcons', 'memoAddressee'];
+const SETTING_KEYS = ['orgName', 'orgPhone', 'docNoPrefix', 'docNoNext', 'renewalAlertDays', 'garudaLogo', 'auditCommittee', 'auditPeriodStart', 'auditPeriodEnd', 'categoryUnits', 'assetCategories', 'categoryIcons', 'memoAddressee','oilDocNoPrefix', 'oilDocNoNext'];
 
 async function sGetSystemSettings() {
   const { data, error } = await sb.from('system_settings').select('*');
@@ -817,6 +817,9 @@ async function sUpdateSystemSettings(p, actor) {
     }
   }
 
+  if (p.oilDocNoPrefix !== undefined) updates.oilDocNoPrefix = String(p.oilDocNoPrefix || '').trim();
+  if (p.oilDocNoNext !== undefined) updates.oilDocNoNext = String(p.oilDocNoNext || '').trim();
+  
   for (const key of Object.keys(updates)) {
     const { error } = await sb.from('system_settings').upsert({ key, value: String(updates[key]), updated_at: new Date().toISOString() });
     if (error) throw new Error(error.message);
