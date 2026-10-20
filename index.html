@@ -16152,9 +16152,12 @@ function openDocSignSheet(body, desk) {
   document.querySelectorAll('[data-dsig]').forEach(el => el.onclick = () => {
     const s = slots[Number(el.dataset.dsig)];
     closeSheet();
+    const idx = findOfficerIndexByName(s.name);
+    const officer = idx !== '' ? state.users[Number(idx)] : null;
     openSignatureSheet({
       title: 'ลงลายเซ็น — ' + s.label,
       name: s.name,
+      saved: officer ? (officer['ลายเซ็น'] || '') : '',
       onDone: v => {
         applyDocSignature(body, s.ids, v);
         if (desk) desk.dispatchEvent(new Event('input', { bubbles: true }));
