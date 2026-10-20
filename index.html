@@ -13791,6 +13791,10 @@ function myOfficerRow() {
   const n = myName();
   return (state.users || []).find(u => eqCiJs_(u['ชื่อ-สกุล'], n) || eqCiJs_(officerFullName(u), n)) || null;
 }
+function myReporterName() {
+  const r = myOfficerRow();
+  return r ? officerFullName(r) : myName();
+}
 function nameIsMe(s) {
   const row = myOfficerRow();
   const names = [myName()];
@@ -13873,12 +13877,12 @@ function openMaintForm(presetId, presetType) {
         <div class="glass list-item" id="f_reporterTrigger" style="cursor:pointer;">
           <div class="li-icon" id="f_reporterIcon">${ICONS.user}</div>
           <div class="li-body">
-            <div class="li-title" id="f_reporterName">${escapeHtml(myName() || 'แตะเพื่อเลือกผู้แจ้ง')}</div>
+            <div class="li-title" id="f_reporterName">${escapeHtml(canReportAnyMaint() ? 'แตะเพื่อเลือกผู้แจ้ง' : (myReporterName() || 'แตะเพื่อเลือกผู้แจ้ง'))}</div>
             <div class="li-sub" id="f_reporterSub">เลือกจากทำเนียบ หรือพิมพ์ค้นหา</div>
           </div>
           <span class="status-badge status-ready" style="flex:none;">เลือก</span>
         </div>
-        <input type="hidden" id="f_reporter" value="${escapeHtml(myName())}">
+        <input type="hidden" id="f_reporter" value="${canReportAnyMaint() ? '' : escapeHtml(myReporterName())}">
       </div>
 
       <div class="memo-two-col">
@@ -13900,17 +13904,22 @@ function openMaintForm(presetId, presetType) {
   // แอดมิน/ผู้ตรวจสอบ: ถ้าครุภัณฑ์มีผู้ยืมอยู่ ให้ค่าเริ่มต้นเป็นผู้ยืม (เปลี่ยนได้)
   const reporterCanPick = canReportAnyMaint();
   function defaultReporterFor(asset) {
-    if (!reporterCanPick) return { name: myName(), borrowed: false };
+    if (!reporterCanPick) return { name: myReporterName(), borrowed: false };
+    // แอดมิน/ผู้ตรวจสอบ: ค่าตั้งต้นคือผู้ถือครองปัจจุบันของรายการ (ผู้ยืมถ้ามีการยืมอยู่)
+    // ดึงจากทำเนียบ เพื่อให้ยศและตำแหน่งตามมาในเอกสาร ถ้าหาในทำเนียบไม่พบให้เลือกเอง
     const b = state.borrow.find(x => x['รหัสครุภัณฑ์'] === asset['รหัสครุภัณฑ์'] &&
       ['กำลังยืม', 'เกินกำหนด'].includes(effectiveBorrowStatus(x)));
-    return (b && b['ผู้ยืม']) ? { name: b['ผู้ยืม'], borrowed: true } : { name: myName(), borrowed: false };
+    const holderRaw = (b && b['ผู้ยืม']) ? b['ผู้ยืม'] : (asset['ผู้ครอบครอง/หน่วยงาน'] || '');
+    const i = findOfficerIndexByName(holderRaw);
+    if (i === '') return { name: '', borrowed: false };
+    return { name: officerFullName(state.users[Number(i)]), borrowed: !!(b && b['ผู้ยืม']) };
   }
   function setReporter(info) {
     document.getElementById('f_reporter').value = info.name;
     document.getElementById('f_reporterName').textContent = info.name || 'แตะเพื่อเลือกผู้แจ้ง';
     document.getElementById('f_reporterSub').textContent = !reporterCanPick
       ? 'ผู้แจ้งคือชื่อของคุณ'
-      : (info.borrowed ? 'ผู้ยืมปัจจุบัน · เปลี่ยนได้' : 'เลือกจากทำเนียบ หรือพิมพ์ค้นหา');
+      : (info.name ? (info.borrowed ? 'ผู้ยืมปัจจุบัน · เปลี่ยนได้' : 'ผู้ถือครองรายการ · เปลี่ยนได้') : 'เลือกจากทำเนียบ');
     const trig = document.getElementById('f_reporterTrigger');
     trig.style.pointerEvents = reporterCanPick ? '' : 'none';
     trig.style.opacity = reporterCanPick ? '' : '0.75';
@@ -15592,7 +15601,13 @@ function memoHighlight(text, q) {
 }
 
 function memoSigStatus(html) {
-  const n = (String(html || '').match(/class="pf-sigimg"/g) || []).length;
+  const doc = new DOMParser().parseFromString('<div>' + String(html || '') + '</div>', 'text/html');
+  const slotSigned = id => { const b = doc.getElementById(id); return !!(b && b.querySelector('img.pf-sigimg')); };
+  // นับตามช่องลงนามจริง: ผู้ขอเบิก/ผู้แจ้ง, ผู้อนุมัติ, ผู้จ่ายพัสดุ (ไม่นับซ้ำช่องผู้ขอเบิกที่มี 2 จุด)
+  const hasSlots = !!doc.getElementById('ed_issrank');
+  const n = hasSlots
+    ? ['ed_reqrank', 'ed_apvrank', 'ed_issrank'].filter(slotSigned).length
+    : (String(html || '').match(/class="pf-sigimg"/g) || []).length;
   if (n >= 3) return { txt: 'ครบลายเซ็น', cls: 'status-ready' };
   if (n > 0) return { txt: 'ลายเซ็น ' + n + '/3', cls: 'status-borrowed' };
   return { txt: 'ยังไม่เซ็น', cls: 'status-pending' };
@@ -21769,7 +21784,7 @@ function collectOilMemo() {
   const signer = p => ({ rank: g(p + 'Rank'), name: g(p + 'Name'), position: g(p + 'Position'), sig: g(p + 'Sig') });
   const prefix = String((state.settings && state.settings.docNoPrefix) || '').trim();
   return {
-    org: toThaiNumber(g('oil_org')),
+    org: toThaiNumber(g('oil_org')) + (g('oil_phone') ? ' โทร. ' + toThaiNumber(g('oil_phone')) : ''),
     phone: toThaiNumber(g('oil_phone')),
     docNo: toThaiNumber(prefix + g('oil_docno_suffix')),
     docDate: thaiDateLong(g('oil_docdate')),
@@ -24347,12 +24362,13 @@ window.exportAllBackup = async function(){
   };
 
   function lockReporterToMe(){
-    var me = (state.user && state.user.name) || '';
+    var meRow = myOfficerRow();
+    var me = meRow ? officerFullName(meRow) : ((state.user && state.user.name) || '');
     var trig = document.getElementById('f_reporterTrigger');
     if (!trig || !me) return;
 
     // ✅ หารูปจากรายชื่อที่โหลดอยู่ (เหมือนตัวเลือกผู้แจ้งปกติ)
-    var u = (state.users || []).find(function(x){ return x['ชื่อ-สกุล'] === me; });
+    var u = meRow;
 
     document.getElementById('f_reporter').value = me;
     document.getElementById('f_reporterName').textContent = me;
