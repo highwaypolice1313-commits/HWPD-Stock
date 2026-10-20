@@ -10644,8 +10644,14 @@ function renderAssets() {
     });
 
   wireViewToggle(renderAssets, '#view-assets', 'assetView');
-  drawAssetList();
-  requestAnimationFrame(() => applyPremiumMotion(el));
+drawMaintList();
+
+// ถ้าเป็นการรีเฟรชหลังบันทึก ให้คงหน้าจอไว้โดยไม่เล่นแอนิเมชันซ้ำ
+if (!window.__quietRender) {
+  requestAnimationFrame(() => {
+    if (!window.__quietRender) applyPremiumMotion(el);
+  });
+}
 }
 
 function emptyState(msg) {
@@ -13659,16 +13665,45 @@ function maintRespOptions() {
   const set = [...new Set((state.maint || []).map(m => String(m['ผู้รับผิดชอบ'] || '').trim()).filter(Boolean))];
   return set.sort((a, b) => a.localeCompare(b, 'th')).map(v => `<option value="${escapeHtml(v)}">`).join('');
 }
-// เปลี่ยนขั้นตอนงานซ่อม (บันทึกทันที ไม่ต้องกดบันทึกซ้ำ)
+
+ // เปลี่ยนขั้นตอนงานซ่อม (บันทึกทันที ไม่ต้องกดบันทึกซ้ำ)
 async function setMaintStep(m, toStatus, responsible) {
-  const resp = responsible !== undefined ? responsible : (m['ผู้รับผิดชอบ'] || '');
+  const resp = responsible !== undefined
+    ? responsible
+    : (m['ผู้รับผิดชอบ'] || '');
+
   try {
-    await apiPost('updateMaint', { id: m['รหัสรายการ'], status: toStatus, responsible: resp, finishDate: toStatus === 'ซ่อมเสร็จ' ? isoDate() : '' });
-    window.__ownMaint = { id: m['รหัสรายการ'], status: toStatus, at: Date.now() };
+    await apiPost('updateMaint', {
+      id: m['รหัสรายการ'],
+      status: toStatus,
+      responsible: resp,
+      finishDate: toStatus === 'ซ่อมเสร็จ' ? isoDate() : ''
+    });
+
+    window.__ownMaint = {
+      id: m['รหัสรายการ'],
+      status: toStatus,
+      at: Date.now()
+    };
+
+    // อัปเดตเฉพาะข้อมูลในหน่วยความจำ โดยไม่วาดหน้าซ้ำตรงนี้
+    // ให้จุดที่เรียกใช้ฟังก์ชันเป็นผู้จัดการแสดงผลตามเดิม
+    m['สถานะ'] = toStatus;
+    m['ผู้รับผิดชอบ'] = resp;
+
+    if (toStatus === 'ซ่อมเสร็จ') {
+      m['วันที่ซ่อมเสร็จ'] = isoDate();
+    }
+
     toast('อัปเดตเป็น "' + toStatus + '" แล้ว');
     return true;
-  } catch (err) { toast(err.message || 'อัปเดตไม่สำเร็จ'); return false; }
+
+  } catch (err) {
+    toast(err.message || 'อัปเดตไม่สำเร็จ');
+    return false;
+  }
 }
+
 // ปุ่มลัดบนการ์ด: แสดงเฉพาะแอดมิน และเฉพาะงานที่ยังไม่เสร็จ
 const MQ_ICON = {
   start: '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M6.6 4.7v10.6c0 .75.82 1.2 1.46.8l8.2-5.3a.95.95 0 000-1.6l-8.2-5.3c-.64-.4-1.46.05-1.46.8z"/></svg>',
@@ -13769,19 +13804,44 @@ function openMaintDetail(id) {
   if (repairBtn) repairBtn.onclick = () => openMaintDoc(m);
 }
 
-   async function deleteMaintItem(m) {
+
+async function deleteMaintItem(m) {
   const stillOpen = m['สถานะ'] !== 'ซ่อมเสร็จ';
-  const msg = 'ย้ายรายการซ่อม "' + (m['ชื่อครุภัณฑ์'] || '') + '" ไปถังขยะ?' +
-    (stillOpen ? '\nหากไม่มีงานซ่อมค้างอื่น สถานะครุภัณฑ์จะกลับเป็น "พร้อมใช้งาน" (กู้คืนได้ภายใน 30 วัน)' : ' (กู้คืนได้ภายใน 30 วัน)');
-  if (!await confirmSheet(msg, { title: 'ลบรายการซ่อม', okText: 'ย้ายไปถังขยะ', tone: 'bad' })) return;
-  setLoading(true, 'กำลังลบรายการซ่อม...');
+
+  const msg = 'ย้ายรายการซ่อม "' +
+    (m['ชื่อครุภัณฑ์'] || '') +
+    '" ไปถังขยะ?' +
+    (stillOpen
+      ? '\nหากไม่มีงานซ่อมค้างอื่น สถานะครุภัณฑ์จะกลับเป็น "พร้อมใช้งาน" (กู้คืนได้ภายใน 30 วัน)'
+      : ' (กู้คืนได้ภายใน 30 วัน)');
+
+  if (!await confirmSheet(msg, {
+    title: 'ลบรายการซ่อม',
+    okText: 'ย้ายไปถังขยะ',
+    tone: 'bad'
+  })) return;
+
+  // ป้องกันการกดซ้ำ โดยไม่ใช้ตัวโหลดเต็มหน้าจอ
+  const btn = document.getElementById('btnDeleteMaint');
+  if (btn && btn.disabled) return;
+  if (btn) setButtonBusy(btn, true);
+
   try {
     await apiPost('deleteMaint', { id: m['รหัสรายการ'] });
     await deleteLinkedMemos('MNT:' + m['รหัสรายการ']);
-    closeAllSheets(); toast('ลบรายการซ่อมแล้ว'); await reloadThen(renderMaint);
-  } catch (err) { toast(err.message || 'ลบไม่สำเร็จ'); }
-  finally { setLoading(false); }
+
+    closeAllSheets();
+    toast('ลบรายการซ่อมแล้ว');
+
+    // โหลดข้อมูลและวาดหน้าแบบเงียบ รักษาตำแหน่งเลื่อน
+    await reloadThen(renderMaint);
+  } catch (err) {
+    toast(err.message || 'ลบไม่สำเร็จ');
+  } finally {
+    if (btn) setButtonBusy(btn, false);
+  }
 }
+
 
 function openMaintEditForm(m) {
   const asset = state.assets.find(a => a['รหัสครุภัณฑ์'] === m['รหัสครุภัณฑ์']);
@@ -13826,7 +13886,7 @@ function openMaintEditForm(m) {
     if (!val('me_reporter').trim()) { toast('กรุณาเลือกผู้แจ้ง'); return; }
     const status = val('me_status');
     const btn = document.getElementById('meSave'); if (btn.disabled) return;
-    setButtonBusy(btn, true); setLoading(true, 'กำลังบันทึกการแก้ไข...');
+    setButtonBusy(btn, true);
     try {
       await apiPost('updateMaint', {
         id: m['รหัสรายการ'], issue: val('me_issue').trim(), reporter: val('me_reporter'),
@@ -13837,7 +13897,9 @@ function openMaintEditForm(m) {
       });
       closeAllSheets(); toast('แก้ไขรายการซ่อมแล้ว'); await reloadThen(renderMaint);
     } catch (err) { toast(err.message || 'แก้ไขไม่สำเร็จ'); }
-    finally { setLoading(false); setButtonBusy(btn, false); }
+finally {
+  setButtonBusy(btn, false);
+}
   };
 }
    
