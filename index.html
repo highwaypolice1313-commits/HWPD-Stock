@@ -15333,18 +15333,22 @@ function restorePageScroll() {
 /* ===== ระบบซ้อนหน้า: ปิดแล้วกลับหน้าก่อนหน้า (เก็บ DOM จริง ปุ่มยังกดได้) ===== */
 const sheetStack = [];   // เก็บ element ของหน้าที่ถูกซ่อนไว้
 
+// ย้ายหน้าที่เปิดอยู่ (บนสุด) ออกจาก DOM แล้วเก็บไว้ในสแต็ก
+// ไม่ซ่อนทิ้งไว้ใน DOM เพราะจะทำให้ id ซ้ำ และ getElementById ไปเจอหน้าเก่าแทนหน้าที่กำลังใช้งาน
+function stackCurrentOverlay(root) {
+  const top = Array.from(root.children).pop();
+  if (top && top.classList.contains('overlay') && !top.classList.contains('confirm-overlay') && !top.classList.contains('command-overlay')) {
+    top.remove();
+    sheetStack.push(top);
+    return true;
+  }
+  return false;
+}
+
 function showSheet(html, extraClass) {
   rememberPageScroll();
   const root = document.getElementById('modalRoot');
-  const curOverlay = root.querySelector('.overlay');
-  // ถ้ามีหน้าเปิดอยู่ (ไม่ใช่กล่องยืนยัน/ค้นหาด่วน) ให้ซ่อนไว้ใต้หน้าใหม่ ไม่ลบทิ้ง
-  if (curOverlay && !curOverlay.classList.contains('confirm-overlay') && !curOverlay.classList.contains('command-overlay')) {
-    curOverlay.style.display = 'none';
-    curOverlay.removeAttribute('id');          // กัน id ซ้ำ
-    sheetStack.push(curOverlay);
-  } else {
-    root.innerHTML = '';
-  }
+  if (!stackCurrentOverlay(root)) root.innerHTML = '';
   const wrap = document.createElement('div');
   wrap.innerHTML = `<div class="overlay" id="overlayEl"><div class="sheet ${extraClass||''}">
     <button class="sheet-close" type="button" title="ปิด" aria-label="ปิด">${ICONS.close}</button>
@@ -15358,14 +15362,7 @@ function showSheet(html, extraClass) {
 function showRawSheet(overlayHtml) {
   rememberPageScroll();
   const root = document.getElementById('modalRoot');
-  const cur = root.querySelector('.overlay');
-  if (cur && !cur.classList.contains('confirm-overlay') && !cur.classList.contains('command-overlay')) {
-    cur.style.display = 'none';
-    cur.removeAttribute('id');
-    sheetStack.push(cur);
-  } else {
-    root.innerHTML = '';
-  }
+  if (!stackCurrentOverlay(root)) root.innerHTML = '';
   const wrap = document.createElement('div');
   wrap.innerHTML = overlayHtml;
   const overlay = wrap.firstElementChild;
@@ -15384,7 +15381,8 @@ function closeSheet() {
   if (prev && document.body.contains(root)) {
     prev.style.display = '';
     prev.id = 'overlayEl';
-    return;                                    // กลับหน้าเดิม ปุ่มต่าง ๆ ยังกดได้ตามปกติ
+    root.appendChild(prev);                    // กลับหน้าเดิม (element เดิม ปุ่มและ event ยังอยู่ครบ)
+    return;
   }
   root.innerHTML = '';
   memoPreviewDesk = null;
