@@ -21137,20 +21137,18 @@ body.modal-open{overflow:hidden}
 
 function oilMemoBodyHtml(m) {
   const v = x => escapeHtml(x || '');
-  const F = (inner, cls, st, id) =>
-    `<span class="om-f ${cls || ''}"${st ? ` style="${st}"` : ''}${id ? ` id="${id}"` : ''}>${inner}</span>`;
-  const L = t => `<span class="om-lb">${t}</span>`;
-      
+  const dots = (t, cls) => `<span class="${cls || ''}">${t}</span>`;
+
+  // บล็อกผู้เบิก/ผู้จ่าย/ผู้อนุมัติ ใช้ตำแหน่งเดียวกับ .pf-sign ของระบบบันทึกข้อความ
   const sign = (role, p, nameId) => `
-    <div class="om-sigblk">
-      <div class="om-sigrow">
-        <span class="om-sigl">${L('ลงชื่อ')} <span class="om-rankword">${v(p.rank)}</span></span>
-        <span class="om-sigmid">${p.sig ? `<img src="${escapeHtml(p.sig)}" alt="">` : ''}</span>
-        <span class="om-sigr">${L(role)}</span>
+    <div class="pf-sign" style="margin-top:14pt;">
+      <div class="pf-sign-rank" style="display:grid;grid-template-columns:1fr 1fr;align-items:end;">
+        <span style="white-space:nowrap;text-align:right;padding-right:2mm;">ลงชื่อ <span class="pf-rank">${v(p.rank) || '&nbsp;'}</span></span>
+        <span style="position:relative;height:14mm;border-bottom:1px dotted #000;display:flex;align-items:center;justify-content:center;">${p.sig ? `<img class="pf-sigimg" src="${escapeHtml(p.sig)}" alt="" style="max-height:12mm;max-width:90%;width:auto;height:auto;position:static;transform:none;">` : ''}</span>
       </div>
-      <div class="om-line">${L('(')}${F(`<span${nameId ? ` id="${nameId}"` : ''}>${v(p.name)}</span>`)}${L(')')}</div>
-      <div class="om-line">${L('ตำแหน่ง')}${F(v(p.position))}</div>
-      <div class="om-line">${L('วันที่')}${F(v(p.date))}</div>
+      <div>( <span${nameId ? ` id="${nameId}"` : ''}>${v(p.name) || '.....................................'}</span> )</div>
+      <div>${v(p.position) || '&nbsp;'}</div>
+      <div>${v(p.date) || '&nbsp;'}</div>
     </div>`;
 
   return `
@@ -21158,7 +21156,7 @@ function oilMemoBodyHtml(m) {
       <div class="pf-emblem">${emblemHtmlNow()}</div>
       <div class="pf-title-wrap"><div class="pf-title">บันทึกข้อความ</div></div>
     </div>
-    <div class="pf-field-line om-org" style="white-space:nowrap; font-size:15pt; line-height:18pt;"><span class="pf-label">ส่วนราชการ</span> <span id="ed_org">${v(m.org)}</span>${m.phone ? ` <span class="pf-label">โทร.</span> <span>${v(m.phone)}</span>` : ''}</div>
+    <div class="pf-field-line"><span class="pf-label">ส่วนราชการ</span> <span id="ed_org">${v(m.org)}</span>${m.phone ? ` <span class="pf-label">โทร.</span> <span>${v(m.phone)}</span>` : ''}</div>
     <div class="pf-two-col" style="grid-template-columns:8.25cm 1fr;">
       <span><span class="pf-label">ที่</span> <span id="ed_docno">${v(m.docNo) || '........................................'}</span></span>
       <span><span class="pf-label">วันที่</span> <span id="ed_docdate">${v(m.docDate)}</span></span>
@@ -21166,28 +21164,19 @@ function oilMemoBodyHtml(m) {
     <div class="pf-field-line"><span class="pf-label">เรื่อง</span> <span id="ed_subject">${v(m.subject)}</span></div>
     <div class="pf-field-line pf-addressee"><span class="pf-label">เรียน</span> <span id="ed_addressee">${v(m.addressee) || '........................................'}</span></div>
 
-    <div class="om-line om-ind" style="margin-top:8pt">
-      ${L('ด้วยข้าฯ')}${F(`<span>${v(m.req.rank)}</span> <span id="ed_reqname">${v(m.req.name)}</span>`)}${L('มีความประสงค์เบิก')}
-    </div>
-    <div class="om-line">
-      ${L('น้ำมันเครื่อง')}${F(v(m.spec))}${L('จำนวน')}${F(v(m.qty), 'om-q')}${L('ลิตร ประจำรถวิทยุหมายเลข')}${F(v(m.radio))}
-    </div>
-    <div class="om-line">
-      ${L('เลขไมล์ปัจจุบัน')}${F(v(m.mile), 'om-m')}${L('เพื่อใช้ในการปฏิบัติหน้าที่ราชการต่อไป')}
-    </div>
-    <div class="om-line om-ind" style="margin-top:6pt">${L('จึงเรียนมาเพื่อโปรดทราบ')}</div>
+    <p class="pf-body">ด้วยข้าฯ ${dots(`${v(m.req.rank)} ${v(m.req.name)}`)} มีความประสงค์เบิก</p>
+    <p class="pf-body" style="text-indent:0;">น้ำมันเครื่อง ${dots(v(m.spec))} จำนวน ${dots(v(m.qty))} ลิตร ประจำรถวิทยุหมายเลข ${dots(v(m.radio))}</p>
+    <p class="pf-body" style="text-indent:0;">เลขไมล์ปัจจุบัน ${dots(v(m.mile))} เพื่อใช้ในการปฏิบัติหน้าที่ราชการต่อไป</p>
+    <p class="pf-body">จึงเรียนมาเพื่อโปรดทราบ</p>
 
-    ${sign('ผู้เบิก', m.req, 'ed_reqname2')}
+    ${sign('ผู้เบิก', m.req, 'ed_reqname')}
 
-    <div class="om-line om-ind" style="margin-top:8pt">${L('- ผู้จ่าย')}</div>
+    <p class="pf-note">- ผู้จ่าย</p>
     ${sign('ผู้จ่าย', m.iss, 'ed_issname')}
 
-    <div class="om-line om-ind" style="margin-top:8pt">
-      ${L('-ได้รับน้ำมันเครื่อง')}${F(v(m.spec))}${L('จำนวน')}${F(v(m.qty), 'om-q')}${L('ลิตร ประจำรถวิทยุหมายเลข')}${F(v(m.radio))}
-    </div>
-    <div class="om-line">${L('เพื่อใช้ในการปฏิบัติหน้าที่ราชการต่อไป')}</div>
-    <div class="om-line om-ind">${L('จึงเรียนมาเพื่อโปรดทราบ')}</div>
-    <div class="om-line om-ind" style="margin-top:12pt">${L('- อนุมัติให้เบิก-จ่ายได้')}</div>
+    <p class="pf-body" style="text-indent:0;">-ได้รับน้ำมันเครื่อง ${dots(v(m.spec))} จำนวน ${dots(v(m.qty))} ลิตร ประจำรถวิทยุหมายเลข ${dots(v(m.radio))} เพื่อใช้ในการปฏิบัติหน้าที่ราชการต่อไป</p>
+    <p class="pf-body">จึงเรียนมาเพื่อโปรดทราบ</p>
+    <p class="pf-note">- อนุมัติให้เบิก-จ่ายได้</p>
 
     ${sign('ผู้อนุมัติ', m.apv, 'ed_apvname')}
   `;
@@ -21240,7 +21229,6 @@ function openOilMemoForm(opts) {
   ensureAssetFormCss();
   ensureOilMemoCss();
   ensureOilExtraCss();
-  ensureOilSignCss();
 
   const pre = opts.assetId ? state.assets.find(a => a['รหัสครุภัณฑ์'] === opts.assetId) : null;
   const last = pre ? latestOilInfo(pre['รหัสครุภัณฑ์']) : {};
@@ -21511,22 +21499,6 @@ function wireOilSpec() {
   });
   cust.oninput = () => { hid.value = cust.value.trim(); refreshOilPreview(); };
 }     
-
-function ensureOilSignCss() {
-  if (document.getElementById('oilSignCss')) return;
-  const s = document.createElement('style');
-  s.id = 'oilSignCss';
-  s.textContent = `
-.om-sigblk{width:10cm;margin:18pt 0 0 4.1cm;box-sizing:border-box}
-.om-sigblk .om-line{width:100%;margin-bottom:2pt}
-.om-sigrow{display:grid;grid-template-columns:auto 1fr auto;align-items:end;column-gap:1.5mm;line-height:18pt;margin-bottom:2pt}
-.om-sigl,.om-sigr{white-space:nowrap}
-.om-rankword{display:inline-block;white-space:nowrap}
-.om-sigmid{position:relative;display:flex;align-items:center;justify-content:center;height:14mm;min-width:0;border-bottom:1px dotted #000;overflow:hidden}
-.om-sigmid img{display:block;margin:0 auto;max-width:90%;max-height:12mm;width:auto;height:auto;object-fit:contain}
-`;
-  document.head.appendChild(s);
-}
 
 init();   // <-- ของเดิม คงไว้ตามเดิม
 /* ===== จดจำตำแหน่งเลื่อนของหน้า ===== */
