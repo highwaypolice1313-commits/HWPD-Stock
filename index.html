@@ -21143,7 +21143,11 @@ function oilMemoBodyHtml(m) {
       
   const sign = (role, p, nameId) => `
     <div class="om-sigblk">
-      <div class="om-line om-signline">${L('ลงชื่อ')}<span class="om-f om-rankline"><span class="om-rankword">${v(p.rank)}</span></span><span class="om-f om-sg">${p.sig ? `<img src="${escapeHtml(p.sig)}" alt="">` : ''}</span>${L(role)}</div>
+      <div class="om-sigrow">
+        <span class="om-sigl">${L('ลงชื่อ')} <span class="om-rankword">${v(p.rank)}</span></span>
+        <span class="om-sigmid">${p.sig ? `<img src="${escapeHtml(p.sig)}" alt="">` : ''}</span>
+        <span class="om-sigr">${L(role)}</span>
+      </div>
       <div class="om-line">${L('(')}${F(`<span${nameId ? ` id="${nameId}"` : ''}>${v(p.name)}</span>`)}${L(')')}</div>
       <div class="om-line">${L('ตำแหน่ง')}${F(v(p.position))}</div>
       <div class="om-line">${L('วันที่')}${F(v(p.date))}</div>
@@ -21236,6 +21240,7 @@ function openOilMemoForm(opts) {
   ensureAssetFormCss();
   ensureOilMemoCss();
   ensureOilExtraCss();
+  ensureOilSignCss();
 
   const pre = opts.assetId ? state.assets.find(a => a['รหัสครุภัณฑ์'] === opts.assetId) : null;
   const last = pre ? latestOilInfo(pre['รหัสครุภัณฑ์']) : {};
@@ -21505,7 +21510,23 @@ function wireOilSpec() {
     refreshOilPreview();
   });
   cust.oninput = () => { hid.value = cust.value.trim(); refreshOilPreview(); };
-}      
+}     
+
+function ensureOilSignCss() {
+  if (document.getElementById('oilSignCss')) return;
+  const s = document.createElement('style');
+  s.id = 'oilSignCss';
+  s.textContent = `
+.om-sigblk{width:10cm;margin:18pt 0 0 4.1cm;box-sizing:border-box}
+.om-sigblk .om-line{width:100%;margin-bottom:2pt}
+.om-sigrow{display:grid;grid-template-columns:auto 1fr auto;align-items:end;column-gap:1.5mm;line-height:18pt;margin-bottom:2pt}
+.om-sigl,.om-sigr{white-space:nowrap}
+.om-rankword{display:inline-block;white-space:nowrap}
+.om-sigmid{position:relative;display:flex;align-items:center;justify-content:center;height:14mm;min-width:0;border-bottom:1px dotted #000;overflow:hidden}
+.om-sigmid img{display:block;margin:0 auto;max-width:90%;max-height:12mm;width:auto;height:auto;object-fit:contain}
+`;
+  document.head.appendChild(s);
+}
 
 init();   // <-- ของเดิม คงไว้ตามเดิม
 /* ===== จดจำตำแหน่งเลื่อนของหน้า ===== */
