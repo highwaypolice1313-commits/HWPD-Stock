@@ -13447,7 +13447,7 @@ function openBorrowForm(presetId) {
       admin ? uploadSignature(val('f_apvSig'), 'approver-' + assetId) : ''
       ]);
       const payload = {
-        assetId, assetName: asset ? asset['ชื่อครุภัณฑ์'] : '', borrower: val('f_borrower'), borrowerLineId: '',
+        assetId, assetName: asset ? asset['ชื่อครุภัณฑ์'] : '', borrower: val('f_borrower'), borrowerLineId: '', officerId: (state.users || []).find(u => officerFullName(u) === val('f_borrower'))?.['รหัสจนท.'] || '',
         borrowDate: val('f_borrowdate'), dueDate: val('f_duedate'), approver: admin ? (val('f_apvRank') + ' ' + val('f_apvName')).trim() : '',
         note: val('f_bnote'), componentIds, conditionPhotoOut, sigBorrower, sigApprover
       };
