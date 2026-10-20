@@ -13679,15 +13679,17 @@ function openMaintDetail(id) {
       const memos = await apiGet('getMemos', { token: state.sessionToken });
       state.memos = memos || [];
     } catch (e) { /* ใช้ข้อมูลที่มีอยู่ */ }
-    const saved = (state.memos || []).find(x => x['รหัสรายการยืม'] === 'MNT:' + id);
+    const saved = (state.memos || []).find(x =>
+      x['รหัสรายการยืม'] === 'MNT:' + id ||
+      (String(x['เนื้อหาเอกสาร(HTML)'] || '').includes('น้ำมันเครื่อง') &&
+       String(x['เนื้อหาเอกสาร(HTML)'] || '').includes(String(m['ชื่อครุภัณฑ์'] || '').split(' ').pop() || '\u0000')));
+    closeSheet();
     if (saved) {
-      closeSheet();
       openMemoEditor({ id: saved['รหัสใบเบิก'], docHtml: saved['เนื้อหาเอกสาร(HTML)'], borrowId: 'MNT:' + id, readOnly: false });
       return;
     }
     const mi = /เลขไมล์\s*([\d,.]+)/.exec(String(m['อาการ/ปัญหา'])) || [];
     const q = /น้ำมัน\s*([\d.]+)\s*ลิตร/.exec(String(m['อาการ/ปัญหา'])) || [];
-    closeSheet();
     openOilMemoForm({ assetId: m['รหัสครุภัณฑ์'], mile: (mi[1] || '').replace(/,/g, ''), qty: q[1] || '', spec: oilSpecOf(m['อาการ/ปัญหา']), reporter: m['ผู้แจ้ง'], maintId: id });
   };
 }
