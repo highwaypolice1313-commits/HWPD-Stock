@@ -13672,13 +13672,23 @@ function openMaintDetail(id) {
       finally { setLoading(false); setButtonBusy(saveBtn, false); }
     };
   }
-
+      
   const oilBtn = document.getElementById('btnPrintOilFromMaint');
-  if (oilBtn) oilBtn.onclick = () => {
+  if (oilBtn) oilBtn.onclick = async () => {
+    try {
+      const memos = await apiGet('getMemos', { token: state.sessionToken });
+      state.memos = memos || [];
+    } catch (e) { /* ใช้ข้อมูลที่มีอยู่ */ }
+    const saved = (state.memos || []).find(x => x['รหัสรายการยืม'] === 'MNT:' + id);
+    if (saved) {
+      closeSheet();
+      openMemoEditor({ id: saved['รหัสใบเบิก'], docHtml: saved['เนื้อหาเอกสาร(HTML)'], borrowId: 'MNT:' + id, readOnly: false });
+      return;
+    }
     const mi = /เลขไมล์\s*([\d,.]+)/.exec(String(m['อาการ/ปัญหา'])) || [];
     const q = /น้ำมัน\s*([\d.]+)\s*ลิตร/.exec(String(m['อาการ/ปัญหา'])) || [];
     closeSheet();
-    openOilMemoForm({ assetId: m['รหัสครุภัณฑ์'], mile: (mi[1] || '').replace(/,/g, ''), qty: q[1] || '', spec: oilSpecOf(m['อาการ/ปัญหา']), reporter: m['ผู้แจ้ง'] });
+    openOilMemoForm({ assetId: m['รหัสครุภัณฑ์'], mile: (mi[1] || '').replace(/,/g, ''), qty: q[1] || '', spec: oilSpecOf(m['อาการ/ปัญหา']), reporter: m['ผู้แจ้ง'], maintId: id });
   };
 }
 
@@ -13955,7 +13965,7 @@ function openMaintForm(presetId) {
     try {
       let maintPhoto = val('f_maintPhotoVal');
       if (isInlineImage(maintPhoto)) maintPhoto = await uploadImageToDrive(maintPhoto, 'maint-' + assetId);
-      await apiPost('addMaint', {
+      const addRes = await apiPost('addMaint', {
         assetId, assetName: asset['ชื่อครุภัณฑ์'],
         issue, reporter: val('f_reporter'), reportDate: val('f_rdate'),
         cost: val('f_cost'), tireSize, photo: maintPhoto
@@ -13964,7 +13974,8 @@ function openMaintForm(presetId) {
         reporter: val('f_reporter').trim(),
         mile: val('f_mile').trim(),
         qty: val('f_oilQty').trim(),
-        spec: val('oil_spec').trim()
+        spec: val('oil_spec').trim(),
+        maintId: addRes && addRes.id
       } : null;
       closeSheet();
       toast('แจ้งซ่อมแล้ว');
@@ -21381,7 +21392,7 @@ function openOilMemoForm(opts) {
     if (!val('oil_reqName').trim()) { toast('กรุณาเลือกผู้เบิก'); return; }
     const m = collectOilMemo();
     closeSheet();
-    openMemoEditor({ id: null, docHtml: oilMemoBodyHtml(m), borrowId: '' });
+    openMemoEditor({ id: null, docHtml: oilMemoBodyHtml(m), borrowId: opts.maintId ? 'MNT:' + opts.maintId : '' });
   };
 
   refreshOilPreview();
