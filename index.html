@@ -10283,6 +10283,7 @@ async function deleteBorrowItem(b) {
 
   try {
     await apiPost('deleteBorrow', { id: b['รหัสรายการ'] });
+    await deleteLinkedMemos(b['รหัสรายการ']);
     toast('ลบรายการยืม-คืนแล้ว');
     await reloadThen(renderBorrow);
   } catch (err) { toast(err.message || 'ลบไม่สำเร็จ'); }
@@ -12890,6 +12891,7 @@ function openBorrowDetail(id) {
       setButtonBusy(btn, true, 'กำลังลบ...');
       try {
         await apiPost('deleteBorrow', { id });
+        await deleteLinkedMemos(id);
         closeSheet(); toast('ลบรายการยืม-คืนแล้ว'); await reloadThen(renderBorrow);
       } catch (err) { toast(err.message || 'ลบไม่สำเร็จ'); }
       finally { setButtonBusy(btn, false, 'ลบรายการนี้'); }
@@ -12911,7 +12913,9 @@ function openBorrowDetail(id) {
       let returnPhotoVal = document.getElementById('f_returnPhotoVal') ? val('f_returnPhotoVal') : '';
       try {
         if (isInlineImage(returnPhotoVal)) returnPhotoVal = await uploadImageToDrive(returnPhotoVal, 'return-' + id);
-        await apiPost('returnAsset', { borrowId: id, returnDate: isoDate(), conditionPhotoReturn: returnPhotoVal }); closeSheet(); toast('บันทึกการคืนแล้ว'); await reloadThen(renderBorrow); }
+        await apiPost('returnAsset', { borrowId: id, returnDate: isoDate(), conditionPhotoReturn: returnPhotoVal });
+        await deleteLinkedMemos(id);
+        closeSheet(); toast('บันทึกการคืนแล้ว'); await reloadThen(renderBorrow); }
       catch (err) { toast(err.message || 'บันทึกการคืนไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(btn, false); }
     };
   }
@@ -13049,8 +13053,12 @@ function openBorrowEditForm(b) {
     if (!val('rn_duedate')) { toast('กรุณาระบุกำหนดคืนใหม่'); return; }
     const btn = document.getElementById('btnConfirmRenew'); if (btn.disabled) return; setButtonBusy(btn, true, 'กำลังทำรายการ...'); setLoading(true, 'กำลังยืมต่อ...');
     try {
-      await apiPost('renewBorrow', { borrowId: b['รหัสรายการ'], dueDate: val('rn_duedate'), note: val('rn_note') });
+      const renewed = await apiPost('renewBorrow', { borrowId: b['รหัสรายการ'], dueDate: val('rn_duedate'), note: val('rn_note') });
+      await deleteLinkedMemos(b['รหัสรายการ']);     // รายการเดิมปิดแล้ว เอกสารเดิมถูกลบ
       closeSheet(); toast('ยืมต่อสำเร็จแล้ว'); await reloadThen(renderBorrow);
+      // ยืมต่อ = รายการยืมใหม่ จึงเปิดฟอร์มเอกสารเบิกใหม่ให้บันทึก
+      const nb = renewed && renewed.newId ? (state.borrow || []).find(x => x['รหัสรายการ'] === renewed.newId) : null;
+      if (nb && isAdmin()) openPrintMemoForm({ borrow: nb });
     } catch (err) { toast(err.message || 'ยืมต่อไม่สำเร็จ'); } finally { setLoading(false); setButtonBusy(btn, false); }
   };
 }  
@@ -13648,7 +13656,7 @@ function openMaintDetail(id) {
     <div class="field"><label>ค่าใช้จ่าย (บาท)</label><input class="input" type="number" id="f_mcost" value="${escapeHtml(m['ค่าใช้จ่าย(บาท)'])}"></div>
     <div class="btn-row"><button class="btn btn-primary" id="btnUpdateMaint">บันทึก</button></div>
     ` : ''}
-    <div class="btn-row"><button class="btn btn-ghost" id="btnRepairDocFromMaint">เอกสารซ่อมบำรุง</button></div>
+    ${canMakeMaintDocs() ? `<div class="btn-row"><button class="btn btn-ghost" id="btnRepairDocFromMaint">พิมพ์บันทึกขอเบิก-ซ่อม</button></div>` : ''}
     ${isAdmin() ? `<div class="btn-row">
       <button class="btn btn-ghost" id="btnEditMaint">แก้ไขรายการ</button>
       <button class="btn btn-danger" id="btnDeleteMaint">ลบรายการ</button>
@@ -13675,7 +13683,7 @@ function openMaintDetail(id) {
   }
       
   const repairBtn = document.getElementById('btnRepairDocFromMaint');
-  if (repairBtn) repairBtn.onclick = () => { closeSheet(); openRepairTypeSheet(id); };
+  if (repairBtn) repairBtn.onclick = () => openMaintDoc(m);
 }
 
    async function deleteMaintItem(m) {
@@ -13686,6 +13694,7 @@ function openMaintDetail(id) {
   setLoading(true, 'กำลังลบรายการซ่อม...');
   try {
     await apiPost('deleteMaint', { id: m['รหัสรายการ'] });
+    await deleteLinkedMemos('MNT:' + m['รหัสรายการ']);
     closeAllSheets(); toast('ลบรายการซ่อมแล้ว'); await reloadThen(renderMaint);
   } catch (err) { toast(err.message || 'ลบไม่สำเร็จ'); }
   finally { setLoading(false); }
@@ -13858,6 +13867,26 @@ function openMaintForm(presetId) {
     <div class="btn-row"><button class="btn btn-ghost" id="btnCancel">ยกเลิก</button><button class="btn btn-primary" id="btnSave">บันทึก</button></div>
   `);
 
+  // ผู้แจ้ง: เจ้าหน้าที่ทั่วไปแจ้งได้เฉพาะในชื่อของตนเอง (เปลี่ยนไม่ได้)
+  // แอดมิน/ผู้ตรวจสอบ: ถ้าครุภัณฑ์มีผู้ยืมอยู่ ให้ค่าเริ่มต้นเป็นผู้ยืม (เปลี่ยนได้)
+  const reporterCanPick = canReportAnyMaint();
+  function defaultReporterFor(asset) {
+    if (!reporterCanPick) return { name: myName(), borrowed: false };
+    const b = state.borrow.find(x => x['รหัสครุภัณฑ์'] === asset['รหัสครุภัณฑ์'] &&
+      ['กำลังยืม', 'เกินกำหนด'].includes(effectiveBorrowStatus(x)));
+    return (b && b['ผู้ยืม']) ? { name: b['ผู้ยืม'], borrowed: true } : { name: myName(), borrowed: false };
+  }
+  function setReporter(info) {
+    document.getElementById('f_reporter').value = info.name;
+    document.getElementById('f_reporterName').textContent = info.name || 'แตะเพื่อเลือกผู้แจ้ง';
+    document.getElementById('f_reporterSub').textContent = !reporterCanPick
+      ? 'ผู้แจ้งคือชื่อของคุณ'
+      : (info.borrowed ? 'ผู้ยืมปัจจุบัน · เปลี่ยนได้' : 'เลือกจากทำเนียบ หรือพิมพ์ค้นหา');
+    const trig = document.getElementById('f_reporterTrigger');
+    trig.style.pointerEvents = reporterCanPick ? '' : 'none';
+    trig.style.opacity = reporterCanPick ? '' : '0.75';
+  }
+
   const currentAsset = () => state.assets.find(a => a['รหัสครุภัณฑ์'] === val('f_asset'));
   const isVehicle = () => { const a = currentAsset(); return !!a && a['หมวดหมู่'] === VEHICLE_CAT; };
 
@@ -13878,6 +13907,7 @@ function openMaintForm(presetId) {
         .filter(Boolean).join(' · ');
     document.getElementById('f_tire').value = asset['ขนาดยาง'] || '';
     refreshIssueMode();
+    setReporter(defaultReporterFor(asset));
   }
   document.getElementById('f_assetTrigger').onclick = () => openAssetPickerSheet(val('f_asset'), selectAsset, false, excl);
 
@@ -13894,7 +13924,7 @@ function openMaintForm(presetId) {
     document.getElementById('f_oilWrap').style.display = t === 'ถ่ายน้ำมันเครื่อง' ? '' : 'none';
   });
 
-  document.getElementById('f_reporterTrigger').onclick = () =>
+  if (reporterCanPick) document.getElementById('f_reporterTrigger').onclick = () =>
     openOfficerPickerSheet(val('f_reporter'), (name, u) => {
       document.getElementById('f_reporter').value = name;
       document.getElementById('f_reporterName').textContent = name;
@@ -13956,34 +13986,19 @@ function openMaintForm(presetId) {
         issue, reporter: val('f_reporter'), reportDate: val('f_rdate'),
         cost: val('f_cost'), tireSize, photo: maintPhoto
       });
-      const oilExtra = isOil ? {
-        reporter: val('f_reporter').trim(),
-        mile: val('f_mile').trim(),
-        qty: val('f_oilQty').trim(),
-        spec: val('oil_spec').trim(),
-        maintId: addRes && addRes.id
-      } : null;
       closeSheet();
       toast('แจ้งซ่อมแล้ว');
       await reloadThen(renderMaint);
-      if (isOil) askOilMemo(assetId, oilExtra);
+      // แอดมิน/ผู้ตรวจสอบ: เปิดเอกสารเบิกน้ำมันหรือขอซ่อมตามที่แจ้งทันที
+      if (canMakeMaintDocs() && addRes && addRes.id) {
+        const created = (state.maint || []).find(x => x['รหัสรายการ'] === addRes.id);
+        if (created) createMaintDoc(created);
+      }
     } catch (err) { toast(err.message || 'แจ้งซ่อมไม่สำเร็จ'); }
     finally { setLoading(false); setButtonBusy(saveBtn, false); }
   };
 }
 
-async function askOilMemo(assetId, extra) {
-  if (!await confirmSheet('บันทึกการถ่ายน้ำมันเครื่องแล้ว ต้องการสร้างเอกสารเบิกน้ำมันเครื่องต่อหรือไม่?',
-      { title: 'เอกสารเบิกน้ำมันเครื่อง', okText: 'สร้างเอกสาร' })) return;
-
-  // ชื่อผู้แจ้งของรายการซ่อมที่เพิ่งบันทึก (ดึงจากข้อมูลจริง ไม่ใช่บัญชีที่ล็อกอิน)
-  const latest = (state.maint || [])
-    .filter(m => m['รหัสครุภัณฑ์'] === assetId && String(m['อาการ/ปัญหา'] || '').includes('ถ่ายน้ำมันเครื่อง'))
-    .sort((a, b) => toDate(b['วันที่แจ้ง'] || 0) - toDate(a['วันที่แจ้ง'] || 0))[0];
-  const reporter = String((extra && extra.reporter) || (latest && latest['ผู้แจ้ง']) || '').trim();
-
-  openOilMemoForm(Object.assign({ assetId }, extra || {}, { reporter }));
-}
       
 /* ========================================================= USERS / OFFICERS */
 
@@ -15867,6 +15882,8 @@ const MEMO_KIND_META = {
   repair:  { label: 'ขอซ่อมบำรุง',      fg: '#a3412c', bg: 'rgba(163,65,44,.12)' },
   oil:     { label: 'เบิกน้ำมันเครื่อง', fg: '#8a6216', bg: 'rgba(187,138,63,.18)' }
 };
+// ตัวเลือกหมวดในตัวกรอง (รูปแบบเดียวกับตัวกรองหน้าอื่น)
+const MEMO_KIND_OPTIONS = [['all', 'ทุกหมวด'], ['general', 'ทั่วไป'], ['repair', 'ขอซ่อมบำรุง'], ['oil', 'เบิกน้ำมันเครื่อง']];
 // กรองตามหมวดที่เลือก (all = ทุกหมวด)
 function memoInKind(m) {
   const k = state.memoKind || 'all';
@@ -15876,15 +15893,6 @@ function memoInKind(m) {
 function memoKindTagHtml(m) {
   const meta = MEMO_KIND_META[memoKindOf(m)];
   return `<span class="memo-kind-tag" style="display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;margin-bottom:5px;color:${meta.fg};background:${meta.bg};">${meta.label}</span>`;
-}
-// แถบเลือกหมวด พร้อมจำนวนเอกสารในแต่ละหมวด (นับจากข้อมูลทั้งหมด)
-function memoKindChipsHtml() {
-  const all = state.memos || [];
-  const count = { all: all.length, general: 0, repair: 0, oil: 0 };
-  all.forEach(m => { count[memoKindOf(m)]++; });
-  const cur = state.memoKind || 'all';
-  const chip = (k, label) => `<button type="button" class="memo-month-chip ${cur === k ? 'on' : ''}" data-mk="${k}">${label}<b>${count[k]}</b></button>`;
-  return chip('all', 'ทุกหมวด') + chip('general', 'ทั่วไป') + chip('repair', 'ขอซ่อมบำรุง') + chip('oil', 'เบิกน้ำมันเครื่อง');
 }
 function memoHostId() { return 'view-memos'; }
 
@@ -15899,41 +15907,67 @@ function repairPhraseText(items, issue, plate) {
   return ' ' + toThaiNumber(parts.join(' '));
 }
 
-// เมนูเลือกเอกสารที่จะสร้างจากรายการซ่อม
-function openRepairTypeSheet(maintId) {
-  const m = (state.maint || []).find(x => x['รหัสรายการ'] === maintId);
-  if (!m) { toast('ไม่พบรายการซ่อมนี้'); return; }
-  const asset = (state.assets || []).find(a => a['รหัสครุภัณฑ์'] === m['รหัสครุภัณฑ์']) || null;
-  const isOil = String(m['อาการ/ปัญหา'] || '').includes('ถ่ายน้ำมันเครื่อง');
-  showSheet(`
-    <div class="sheet-title">สร้างเอกสารซ่อมบำรุง</div>
-    <div class="hint" style="margin-top:0;">${escapeHtml(m['ชื่อครุภัณฑ์'] || '')}</div>
-    <div class="glass list-item" id="rdRepair" style="cursor:pointer; margin-bottom:10px;">
-      <div class="li-icon">${ICONS.log}</div>
-      <div class="li-body"><div class="li-title">เอกสารขอซ่อมบำรุง</div><div class="li-sub">ขอซ่อมตามอาการที่แจ้ง</div></div>
-    </div>
-    ${isOil ? `<div class="glass list-item" id="rdOil" style="cursor:pointer;">
-      <div class="li-icon">${ICONS.tag}</div>
-      <div class="li-body"><div class="li-title">เอกสารเบิกน้ำมันเครื่อง</div><div class="li-sub">สำหรับรถยานพาหนะที่คุณครอบครอง</div></div>
-    </div>` : ''}`);
-  document.getElementById('rdRepair').onclick = () => {
-    closeSheet();
-    openPrintMemoForm({
-      items: asset ? [asset] : undefined,
-      repair: {
-        kind: 'repair',
-        maintId,
-        issue: m['อาการ/ปัญหา'] || '',
-        plate: asset ? (asset['ทะเบียนรถ'] || '') : '',
-        verb: 'ขอซ่อมบำรุง',
-        approveNote: '- อนุมัติให้ดำเนินการซ่อมได้'
-      }
-    });
-  };
-  if (isOil) document.getElementById('rdOil').onclick = () => { closeSheet(); openOilFromMaint(m, maintId); };
+// เปิดฟอร์มเบิกน้ำมันเครื่อง โดยเติมค่าจากประวัติงานซ่อมที่แจ้งไว้
+// แอดมิน/ผู้ตรวจสอบเท่านั้นที่พิมพ์บันทึกขอเบิก-ซ่อมจากงานซ่อมได้
+function canMakeMaintDocs() {
+  if (isAdmin()) return true;
+  const row = myOfficerRow();
+  return !!row && row['บทบาทเบิก-ยืม'] === 'ผู้ตรวจสอบ';
 }
 
-// เปิดฟอร์มเบิกน้ำมันเครื่อง โดยเติมค่าจากประวัติงานซ่อมที่แจ้งไว้
+// ลบเอกสารทั้งหมดที่ผูกกับรายการ (ลงถังขยะ กู้คืนได้ 30 วัน)
+async function deleteLinkedMemos(linkKey) {
+  let memos = [];
+  try { memos = (await apiGet('getMemos', { token: state.sessionToken })) || []; } catch (e) { return 0; }
+  const targets = memos.filter(x => x['รหัสรายการยืม'] === linkKey);
+  let n = 0;
+  for (const x of targets) {
+    try { await apiPost('deleteMemo', { id: x['รหัสใบเบิก'] }); n++; } catch (e) { /* ลบบางรายการไม่สำเร็จ ไม่ให้ทำงานหลักล้ม */ }
+  }
+  state.memos = memos.filter(x => x['รหัสรายการยืม'] !== linkKey);
+  return n;
+}
+
+// เปิดเอกสารของงานซ่อม: มีแล้วเปิดของเดิม ยังไม่มีให้สร้างตามประเภท (น้ำมัน/ซ่อม)
+async function openMaintDoc(m) {
+  setLoading(true, 'กำลังเปิดเอกสาร...');
+  try { state.memos = (await apiGet('getMemos', { token: state.sessionToken })) || state.memos; }
+  catch (e) { /* ใช้ข้อมูลที่มีอยู่ */ }
+  finally { setLoading(false); }
+  const linkKey = 'MNT:' + m['รหัสรายการ'];
+  const existing = (state.memos || [])
+    .filter(x => x['รหัสรายการยืม'] === linkKey)
+    .sort((a, b) => toDate(b['วันที่สร้าง'] || 0) - toDate(a['วันที่สร้าง'] || 0))[0];
+  closeSheet();
+  if (existing) {
+    openMemoEditor({ id: existing['รหัสใบเบิก'], docHtml: existing['เนื้อหาเอกสาร(HTML)'], borrowId: linkKey, readOnly: false });
+    return;
+  }
+  createMaintDoc(m);
+}
+
+// สร้างเอกสารใหม่ตามประเภทของงานซ่อม
+function createMaintDoc(m) {
+  if (String(m['อาการ/ปัญหา'] || '').includes('ถ่ายน้ำมันเครื่อง')) openOilFromMaint(m, m['รหัสรายการ']);
+  else openRepairDocForMaint(m);
+}
+
+// ฟอร์มขอซ่อมบำรุง เติมข้อมูลจากงานซ่อมที่ระบุ
+function openRepairDocForMaint(m) {
+  const asset = (state.assets || []).find(a => a['รหัสครุภัณฑ์'] === m['รหัสครุภัณฑ์']) || null;
+  openPrintMemoForm({
+    items: asset ? [asset] : undefined,
+    repair: {
+      kind: 'repair',
+      maintId: m['รหัสรายการ'],
+      issue: m['อาการ/ปัญหา'] || '',
+      plate: asset ? (asset['ทะเบียนรถ'] || '') : '',
+      verb: 'ขอซ่อมบำรุง',
+      approveNote: '- อนุมัติให้ดำเนินการซ่อมได้'
+    }
+  });
+}
+
 function openOilFromMaint(m, maintId) {
   const mi = /เลขไมล์\s*([\d,.]+)/.exec(String(m['อาการ/ปัญหา'])) || [];
   const q = /น้ำมัน\s*([\d.]+)\s*ลิตร/.exec(String(m['อาการ/ปัญหา'])) || [];
@@ -16047,9 +16081,8 @@ function drawMemos() {
       <button type="button" class="memo-sort-chip" id="memoSortBtn" aria-label="เรียงลำดับ: ${sortLabel}">
         <span class="memo-sort-k">เรียง</span>${sortLabel}<span class="memo-sort-caret">▾</span>
       </button>
+      ${filterRoundBtnHtml('memoFilterBtn', state.memoKind && state.memoKind !== 'all' ? 1 : 0)}
     </div>
-
-    <div class="memo-month-row memo-kind-row" id="memoKindRow">${memoKindChipsHtml()}</div>
 
     <div class="memo-month-row" id="memoMonthRow">
       <button type="button" class="memo-month-chip ${state.memoMonth === 'all' ? 'on' : ''}" data-mm="all">ทั้งหมด<b>${all.length}</b></button>
@@ -16066,10 +16099,16 @@ function drawMemos() {
   });
 
   document.getElementById('memoSortBtn').onclick = openMemoSortSheet;
-  el.querySelectorAll('[data-mk]').forEach(b => b.onclick = () => {
-    state.memoKind = b.dataset.mk;
-    drawMemos();
-  });
+  document.getElementById('memoFilterBtn').onclick = () =>
+    openFilterSheet('ตัวกรองเอกสาร', [
+      { key: 'kind', label: 'หมวดเอกสาร', current: state.memoKind || 'all', options: MEMO_KIND_OPTIONS }
+    ], (k, v) => {
+      state.memoKind = v;
+      drawMemos();
+    }, () => {
+      state.memoKind = 'all';
+      drawMemos();
+    });
   el.querySelectorAll('[data-mm]').forEach(b => b.onclick = () => {
     state.memoMonth = b.dataset.mm;
     drawMemos();
