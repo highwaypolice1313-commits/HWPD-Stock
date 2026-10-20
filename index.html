@@ -21097,36 +21097,39 @@ function syncAcctToggle() {
 
 document.getElementById('avatarBtn')?.addEventListener('click', openAcctPop);
 
-/* ========================= เอกสารเบิกน้ำมันเครื่อง ========================= */
+/* ========================= เอกสารเบิกน้ำมันเครื่อง (ฉบับแก้ไขสด) ========================= */
 function ensureOilMemoCss() {
-  if (document.getElementById('oilMemoCss')) return;
+  if (document.getElementById('oilMemoCss2')) return;
   const s = document.createElement('style');
-  s.id = 'oilMemoCss';
+  s.id = 'oilMemoCss2';
   s.textContent = `
-.pf-fill{display:inline-block;border-bottom:1px dotted #000;min-width:1.2cm;padding:0 .15cm;text-align:center;line-height:18pt;vertical-align:bottom;white-space:nowrap}
-.pf-fill.wide{min-width:4.6cm}
-.pf-fill.sg{min-width:4.6cm;height:14mm;padding:0;vertical-align:bottom}
-.pf-fill.sg img{height:12mm;width:auto;display:block;margin:0 auto}
-.pf-oil-head{display:flex;justify-content:space-between;gap:6mm}
-.pf-oil-line{margin:6pt 0 0;text-align:left}
-.pf-oil-ind{text-indent:2.5cm}
-.pf-oil-sign{width:9cm;margin:14pt 0 0 7.2cm}
-.pf-oil-sign .r{display:flex;align-items:flex-end;white-space:nowrap;line-height:19pt;gap:2mm}
-.pf-oil-sign .r.c{justify-content:center}
-.pf-oil-sign .r .pf-fill{flex:1 1 auto;min-width:0}
+.om-line{display:flex;align-items:flex-end;gap:1.5mm;width:100%;box-sizing:border-box;margin:0 0 4pt;line-height:18pt;}
+.om-ind{padding-left:2.5cm}
+.om-lb{flex:0 0 auto;white-space:nowrap}
+.om-f{flex:1 1 auto;min-width:1cm;min-height:18pt;border-bottom:1px dotted #000;text-align:center;padding:0 1mm;word-break:break-word;box-sizing:border-box}
+.om-f.om-q{flex:0 0 auto;width:2.2cm}
+.om-f.om-m{flex:0 0 auto;width:3.6cm}
+.om-f.om-d{flex:0 0 auto;width:8cm}
+.om-f.om-sg{position:relative;height:14mm;min-height:14mm;padding:0}
+.om-f.om-sg img{position:absolute;left:0;bottom:0;width:100%;height:12mm;object-fit:contain}
+.om-sigblk{width:7.6cm;margin:12pt 0 0 auto}
+.om-sigblk .om-line{margin-bottom:2pt}
 `;
   document.head.appendChild(s);
 }
 
 function oilMemoBodyHtml(m) {
   const v = x => escapeHtml(x || '');
-  const fill = (inner, cls) => `<span class="pf-fill ${cls || ''}">${inner}</span>`;
-  const signer = (label, p, nameId) => `
-    <div class="pf-oil-sign">
-      <div class="r"><span>ลงชื่อ</span>${fill(p.sig ? `<img class="pf-sigimg" src="${escapeHtml(p.sig)}" alt="">` : '', 'sg')}<span>${label}</span></div>
-      <div class="r c"><span>(</span>${fill(`<span>${v(p.rank)}</span> <span id="${nameId}">${v(p.name)}</span>`)}<span>)</span></div>
-      <div class="r"><span>ตำแหน่ง</span>${fill(v(p.position), 'wide')}</div>
-      <div class="r"><span>วันที่</span>${fill(v(p.date), 'wide')}</div>
+  const F = (inner, cls, st, id) =>
+    `<span class="om-f ${cls || ''}"${st ? ` style="${st}"` : ''}${id ? ` id="${id}"` : ''}>${inner}</span>`;
+  const L = t => `<span class="om-lb">${t}</span>`;
+
+  const sign = (role, p, nameId) => `
+    <div class="om-sigblk">
+      <div class="om-line">${L('ลงชื่อ')}<span class="om-f om-sg">${p.sig ? `<img src="${escapeHtml(p.sig)}" alt="">` : ''}</span>${L(role)}</div>
+      <div class="om-line">${L('(')}${F(`<span>${v(p.rank)}</span> <span${nameId ? ` id="${nameId}"` : ''}>${v(p.name)}</span>`)}${L(')')}</div>
+      <div class="om-line">${L('ตำแหน่ง')}${F(v(p.position))}</div>
+      <div class="om-line">${L('วันที่')}${F(v(p.date))}</div>
     </div>`;
 
   return `
@@ -21134,34 +21137,81 @@ function oilMemoBodyHtml(m) {
       <div class="pf-emblem">${emblemHtmlNow()}</div>
       <div class="pf-title-wrap"><div class="pf-title">บันทึกข้อความ</div></div>
     </div>
-    <div class="pf-oil-head">
-      <span><span class="pf-label">ส่วนราชการ</span> <span id="ed_org">${v(m.org)}</span></span>
-      <span><span class="pf-label">โทร</span> ${v(m.phone)}</span>
+
+    <div class="om-line" style="margin-top:4pt">
+      <span class="pf-label om-lb">ส่วนราชการ</span>
+      <span class="om-lb" id="ed_org">${v(m.org)}</span>
+      <span style="flex:1 1 auto"></span>
+      <span class="om-lb">โทร ${v(m.phone)}</span>
     </div>
-    <div class="pf-two-col">
-      <span><span class="pf-label">ที่</span> <span id="ed_docno">${v(m.docNo)}</span></span>
-      <span><span class="pf-label">วันที่</span> <span id="ed_docdate">${v(m.docDate)}</span></span>
+
+    <div class="om-line">
+      <span class="pf-label om-lb">ที่</span>${F(v(m.docNo), 'om-d', '', 'ed_docno')}
+      <span class="pf-label om-lb">วันที่</span>${F(`<span id="ed_docdate">${v(m.docDate)}</span>`)}
     </div>
-    <div class="pf-field-line"><span class="pf-label">เรื่อง</span> <span id="ed_subject">${v(m.subject)}</span></div>
-    <div class="pf-field-line pf-addressee"><span class="pf-label">เรียน</span> <span id="ed_addressee">${v(m.addressee)}</span></div>
 
-    <p class="pf-body">ด้วยข้าฯ ${fill(`${v(m.req.rank)} ${v(m.req.name)}`, 'wide')} มีความประสงค์เบิก</p>
-    <p class="pf-oil-line">น้ำมันเครื่อง ${fill(v(m.spec), 'wide')} จำนวน ${fill(v(m.qty))} ลิตร ประจำรถวิทยุหมายเลข ${fill(v(m.radio), 'wide')}</p>
-    <p class="pf-oil-line">เลขไมล์ปัจจุบัน ${fill(v(m.mile), 'wide')} เพื่อใช้ในการปฏิบัติหน้าที่ราชการต่อไป</p>
-    <p class="pf-oil-line pf-oil-ind">จึงเรียนมาเพื่อโปรดทราบ</p>
+    <div class="om-line">
+      <span class="pf-label om-lb">เรื่อง</span>${F(`<span id="ed_subject">${v(m.subject)}</span>`)}
+    </div>
 
-    ${signer('ผู้เบิก', m.req, 'ed_reqname')}
+    <div class="om-line">
+      <span class="pf-label om-lb">เรียน</span><span class="om-lb" id="ed_addressee">${v(m.addressee)}</span>
+    </div>
 
-    <p class="pf-oil-line pf-oil-ind">- ผู้จ่าย</p>
-    ${signer('ผู้จ่าย', m.iss, 'ed_issname')}
+    <div class="om-line om-ind" style="margin-top:8pt">
+      ${L('ด้วยข้าฯ')}${F(`<span>${v(m.req.rank)}</span> <span id="ed_reqname">${v(m.req.name)}</span>`)}${L('มีความประสงค์เบิก')}
+    </div>
+    <div class="om-line">
+      ${L('น้ำมันเครื่อง')}${F(v(m.spec))}${L('จำนวน')}${F(v(m.qty), 'om-q')}${L('ลิตร ประจำรถวิทยุหมายเลข')}${F(v(m.radio))}
+    </div>
+    <div class="om-line">
+      ${L('เลขไมล์ปัจจุบัน')}${F(v(m.mile), 'om-m')}${L('เพื่อใช้ในการปฏิบัติหน้าที่ราชการต่อไป')}
+    </div>
+    <div class="om-line om-ind" style="margin-top:6pt">${L('จึงเรียนมาเพื่อโปรดทราบ')}</div>
 
-    <p class="pf-oil-line">-ได้รับน้ำมันเครื่อง ${fill(v(m.spec))} จำนวน ${fill(v(m.qty))} ลิตร ประจำรถวิทยุหมายเลข ${fill(v(m.radio))}</p>
-    <p class="pf-oil-line">เพื่อใช้ในการปฏิบัติหน้าที่ราชการต่อไป</p>
-    <p class="pf-oil-line pf-oil-ind">จึงเรียนมาเพื่อโปรดทราบ</p>
-    <p class="pf-oil-line pf-oil-ind">- อนุมัติให้เบิก-จ่ายได้</p>
+    ${sign('ผู้เบิก', m.req, 'ed_reqname2')}
 
-    ${signer('ผู้อนุมัติ', m.apv, 'ed_apvname')}
+    <div class="om-line om-ind" style="margin-top:8pt">${L('- ผู้จ่าย')}</div>
+    ${sign('ผู้จ่าย', m.iss, 'ed_issname')}
+
+    <div class="om-line" style="margin-top:8pt">
+      ${L('-ได้รับน้ำมันเครื่อง')}${F(v(m.spec))}${L('จำนวน')}${F(v(m.qty), 'om-q')}${L('ลิตร ประจำรถวิทยุหมายเลข')}${F(v(m.radio))}
+    </div>
+    <div class="om-line">${L('เพื่อใช้ในการปฏิบัติหน้าที่ราชการต่อไป')}</div>
+    <div class="om-line om-ind">${L('จึงเรียนมาเพื่อโปรดทราบ')}</div>
+    <div class="om-line om-ind" style="margin-top:6pt">${L('- อนุมัติให้เบิก-จ่ายได้')}</div>
+
+    ${sign('ผู้อนุมัติ', m.apv, 'ed_apvname')}
   `;
+}
+
+/* ดึงค่าจากฟอร์มเอกสารน้ำมัน */
+function collectOilMemo() {
+  const g = id => val(id).trim();
+  const prefix = (state.settings && state.settings.docNoPrefix) || '';
+  const signer = p => ({ rank: g(p + 'Rank'), name: g(p + 'Name'), position: g(p + 'Position'), sig: g(p + 'Sig') });
+  return {
+    org: toThaiNumber(g('oil_org')),
+    phone: toThaiNumber(g('oil_phone')),
+    docNo: toThaiNumber(prefix + g('oil_docno_suffix')),
+    docDate: thaiDateLong(g('oil_docdate')),
+    subject: g('oil_subject') || 'ขอเบิกน้ำมันเครื่อง',
+    addressee: toThaiNumber(g('oil_addressee')),
+    spec: toThaiNumber(g('oil_spec')),
+    qty: toThaiNumber(g('oil_qty')),
+    radio: toThaiNumber(g('oil_radio')),
+    mile: toThaiNumber(g('oil_mile')),
+    req: { ...signer('oil_req'), date: thaiDateAbbr(g('oil_reqDate')) },
+    iss: { ...signer('oil_iss'), date: thaiDateAbbr(g('oil_issDate')) },
+    apv: { ...signer('oil_apv'), date: thaiDateAbbr(g('oil_apvDate')) }
+  };
+}
+
+/* วาดตัวอย่างสดใหม่ทุกครั้งที่แก้ไข */
+function refreshOilPreview() {
+  const desk = document.getElementById('oilPreviewDesk');
+  if (!desk) return;
+  mountPaper(desk, wrapPfDoc(oilMemoBodyHtml(collectOilMemo()), false));
 }
 
 function openOilMemoForm(opts) {
@@ -21170,7 +21220,9 @@ function openOilMemoForm(opts) {
   ensureOilMemoCss();
 
   const pre = opts.assetId ? state.assets.find(a => a['รหัสครุภัณฑ์'] === opts.assetId) : null;
-  const radioOf = name => ((String(name || '').match(/\d+/g)) || []).pop() || '';
+  const last = pre ? latestOilInfo(pre['รหัสครุภัณฑ์']) : {};
+  const mileInit = opts.mile || last.mile || '';
+  const qtyInit = opts.qty || last.qty || (pre ? defaultOilQty(pre) : '');
 
   const meRow = myOfficerRow();
   const reqSplit = meRow ? { rank: meRow['ยศ'] || '', name: meRow['ชื่อ-สกุล'] || '' } : splitRankName(myName());
@@ -21185,65 +21237,78 @@ function openOilMemoForm(opts) {
       <button class="sheet-close" id="sheetCloseBtn" type="button" aria-label="ปิด">${ICONS.close}</button>
       <div class="sheet-handle"></div>
       <div class="sheet-title">เอกสารเบิกน้ำมันเครื่อง</div>
-
-      <div class="mf-section">
-        <div class="mf-section-title"><span class="mf-step">1</span> รถที่เบิกน้ำมันเครื่อง</div>
-        <div class="glass list-item" id="oil_assetTrigger" style="cursor:pointer;">
-          <div class="li-icon" id="oil_assetIcon">${catIcon('ยานพาหนะ')}</div>
-          <div class="li-body">
-            <div class="li-title" id="oil_assetName">${escapeHtml(pre ? pre['ชื่อครุภัณฑ์'] : 'แตะเพื่อเลือกรถ')}</div>
-            <div class="li-sub" id="oil_assetSub">${escapeHtml(pre ? (pre['ทะเบียนรถ'] || pre['รหัสครุภัณฑ์'] || '') : 'เฉพาะยานพาหนะที่คุณครอบครอง')}</div>
-          </div>
-          <span class="status-badge status-ready" style="flex:none;">เลือก</span>
-        </div>
-        <input type="hidden" id="oil_asset" value="${escapeHtml(pre ? pre['รหัสครุภัณฑ์'] : '')}">
-        <div class="memo-two-col" style="margin-top:10px;">
-          <div class="field"><label>ประจำรถวิทยุหมายเลข</label><input class="input" id="oil_radio" value="${escapeHtml(pre ? radioOf(pre['ชื่อครุภัณฑ์']) : '')}"></div>
-          <div class="field"><label>เลขไมล์ปัจจุบัน</label><input class="input" id="oil_mile" inputmode="numeric"></div>
-        </div>
+      <div class="mf-tabs">
+        <button type="button" class="active" data-oview="form">กรอกข้อมูล</button>
+        <button type="button" data-oview="preview">ตัวอย่างเอกสาร</button>
       </div>
-
-      <div class="mf-section">
-        <div class="mf-section-title"><span class="mf-step">2</span> รายการน้ำมันเครื่อง</div>
-        <div class="field"><label>ชนิด/เบอร์น้ำมัน (ไม่บังคับ)</label><input class="input" id="oil_spec" placeholder="เช่น 5W-30"></div>
-        <div class="field"><label>จำนวน (ลิตร)</label><input class="input" type="number" min="0" step="any" id="oil_qty"></div>
-      </div>
-
-      <div class="mf-section">
-        <div class="mf-section-title"><span class="mf-step">3</span> ส่วนหัวหนังสือ</div>
-        <div class="field"><label>ส่วนราชการ</label><input class="input" id="oil_org" value="${escapeHtml(orgLine)}"></div>
-        <div class="memo-two-col">
-          <div class="field"><label>โทร</label><input class="input" id="oil_phone" value="${escapeHtml(phone)}"></div>
-          <div class="field"><label>วันที่เอกสาร</label><input class="input" type="date" id="oil_docdate" value="${isoDate()}"></div>
-        </div>
-        <div class="memo-two-col">
-          <div class="field"><label>ที่ (เลขที่หนังสือ)</label>
-            <div style="display:flex; gap:6px; align-items:center;">
-              <span class="tag tag-off" style="flex:none;">${escapeHtml(docPrefix) || '-'}</span>
-              <input class="input" id="oil_docno_suffix" value="${nextDocNo()}" style="flex:1;">
+      <div class="mf-grid" id="oilGrid" data-view="form">
+        <div class="mf-fields" id="oilFields">
+          <div class="mf-section">
+            <div class="mf-section-title"><span class="mf-step">1</span> รถที่เบิกน้ำมันเครื่อง</div>
+            <div class="glass list-item" id="oil_assetTrigger" style="cursor:pointer;">
+              <div class="li-icon" id="oil_assetIcon">${catIcon('ยานพาหนะ')}</div>
+              <div class="li-body">
+                <div class="li-title" id="oil_assetName">${escapeHtml(pre ? pre['ชื่อครุภัณฑ์'] : 'แตะเพื่อเลือกรถ')}</div>
+                <div class="li-sub" id="oil_assetSub">${escapeHtml(pre ? (pre['ทะเบียนรถ'] || pre['รหัสครุภัณฑ์'] || '') : 'เฉพาะยานพาหนะที่คุณครอบครอง')}</div>
+              </div>
+              <span class="status-badge status-ready" style="flex:none;">เลือก</span>
+            </div>
+            <input type="hidden" id="oil_asset" value="${escapeHtml(pre ? pre['รหัสครุภัณฑ์'] : '')}">
+            <div class="memo-two-col" style="margin-top:10px;">
+              <div class="field"><label>ประจำรถวิทยุหมายเลข</label><input class="input" id="oil_radio" value="${escapeHtml(pre ? oilRadioOf(pre['ชื่อครุภัณฑ์']) : '')}"></div>
+              <div class="field"><label>เลขไมล์ปัจจุบัน</label><input class="input" id="oil_mile" inputmode="numeric" value="${escapeHtml(mileInit)}"></div>
             </div>
           </div>
-          <div class="field"><label>เรื่อง</label><input class="input" id="oil_subject" value="ขอเบิกน้ำมันเครื่อง"></div>
+
+          <div class="mf-section">
+            <div class="mf-section-title"><span class="mf-step">2</span> รายการน้ำมันเครื่อง</div>
+            <div class="field"><label>ชนิด/เบอร์น้ำมัน (ไม่บังคับ)</label><input class="input" id="oil_spec" placeholder="เช่น 5W-30"></div>
+            <div class="field"><label>จำนวน (ลิตร)</label><input class="input" type="number" min="0" step="any" id="oil_qty" value="${escapeHtml(qtyInit)}"></div>
+          </div>
+
+          <div class="mf-section">
+            <div class="mf-section-title"><span class="mf-step">3</span> ส่วนหัวหนังสือ</div>
+            <div class="field"><label>ส่วนราชการ</label><input class="input" id="oil_org" value="${escapeHtml(orgLine)}"></div>
+            <div class="memo-two-col">
+              <div class="field"><label>โทร</label><input class="input" id="oil_phone" value="${escapeHtml(phone)}"></div>
+              <div class="field"><label>วันที่เอกสาร</label><input class="input" type="date" id="oil_docdate" value="${isoDate()}"></div>
+            </div>
+            <div class="memo-two-col">
+              <div class="field"><label>ที่ (เลขที่หนังสือ)</label>
+                <div style="display:flex; gap:6px; align-items:center;">
+                  <span class="tag tag-off" style="flex:none;">${escapeHtml(docPrefix) || '-'}</span>
+                  <input class="input" id="oil_docno_suffix" value="${nextDocNo()}" style="flex:1;">
+                </div>
+              </div>
+              <div class="field"><label>เรื่อง</label><input class="input" id="oil_subject" value="ขอเบิกน้ำมันเครื่อง"></div>
+            </div>
+            <div class="field"><label>เรียน</label><input class="input" id="oil_addressee" value="${escapeHtml((state.settings && state.settings.memoAddressee) || '')}"></div>
+          </div>
+
+          <div class="mf-section">
+            <div class="mf-section-title"><span class="mf-step">4</span> ผู้เบิก</div>
+            ${signerCardHtml('oil_req', 'ผู้เบิก', { rank: reqSplit.rank, name: reqSplit.name, position: meRow ? meRow['ตำแหน่ง'] : '', photo: meRow ? meRow['รูปถ่าย'] : '' })}
+            <div class="field" style="margin-top:10px;"><label>วันที่ลงนาม</label><input class="input" type="date" id="oil_reqDate" value="${isoDate()}"></div>
+          </div>
+
+          <div class="mf-section">
+            <div class="mf-section-title"><span class="mf-step">5</span> ผู้จ่าย</div>
+            ${signerCardHtml('oil_iss', 'ผู้จ่าย', { rank: iss ? iss['ยศ'] : '', name: iss ? iss['ชื่อ-สกุล'] : '', position: iss ? iss['ตำแหน่ง'] : '', photo: iss ? iss['รูปถ่าย'] : '' })}
+            <div class="field" style="margin-top:10px;"><label>วันที่ลงนาม</label><input class="input" type="date" id="oil_issDate" value="${isoDate()}"></div>
+          </div>
+
+          <div class="mf-section">
+            <div class="mf-section-title"><span class="mf-step">6</span> ผู้อนุมัติ</div>
+            ${signerCardHtml('oil_apv', 'ผู้อนุมัติ', { rank: apv ? apv['ยศ'] : '', name: apv ? apv['ชื่อ-สกุล'] : '', position: apv ? apv['ตำแหน่ง'] : '', photo: apv ? apv['รูปถ่าย'] : '' })}
+            <div class="field" style="margin-top:10px;"><label>วันที่ลงนาม</label><input class="input" type="date" id="oil_apvDate" value="${isoDate()}"></div>
+          </div>
         </div>
-        <div class="field"><label>เรียน</label><input class="input" id="oil_addressee" value="${escapeHtml((state.settings && state.settings.memoAddressee) || '')}"></div>
-      </div>
 
-      <div class="mf-section">
-        <div class="mf-section-title"><span class="mf-step">4</span> ผู้เบิก</div>
-        ${signerCardHtml('oil_req', 'ผู้เบิก', { rank: reqSplit.rank, name: reqSplit.name, position: meRow ? meRow['ตำแหน่ง'] : '', photo: meRow ? meRow['รูปถ่าย'] : '' })}
-        <div class="field" style="margin-top:10px;"><label>วันที่ลงนาม</label><input class="input" type="date" id="oil_reqDate" value="${isoDate()}"></div>
-      </div>
-
-      <div class="mf-section">
-        <div class="mf-section-title"><span class="mf-step">5</span> ผู้จ่าย</div>
-        ${signerCardHtml('oil_iss', 'ผู้จ่าย', { rank: iss ? iss['ยศ'] : '', name: iss ? iss['ชื่อ-สกุล'] : '', position: iss ? iss['ตำแหน่ง'] : '', photo: iss ? iss['รูปถ่าย'] : '' })}
-        <div class="field" style="margin-top:10px;"><label>วันที่ลงนาม</label><input class="input" type="date" id="oil_issDate" value="${isoDate()}"></div>
-      </div>
-
-      <div class="mf-section">
-        <div class="mf-section-title"><span class="mf-step">6</span> ผู้อนุมัติ</div>
-        ${signerCardHtml('oil_apv', 'ผู้อนุมัติ', { rank: apv ? apv['ยศ'] : '', name: apv ? apv['ชื่อ-สกุล'] : '', position: apv ? apv['ตำแหน่ง'] : '', photo: apv ? apv['รูปถ่าย'] : '' })}
-        <div class="field" style="margin-top:10px;"><label>วันที่ลงนาม</label><input class="input" type="date" id="oil_apvDate" value="${isoDate()}"></div>
+        <div class="mf-preview">
+          <div class="mf-preview-head"><span class="mf-preview-title">ตัวอย่างเอกสาร</span><span class="mf-badge">อัปเดตสด</span></div>
+          <div class="paper-desk" id="oilPreviewDesk"></div>
+          <div class="mf-preview-hint">แก้ไขช่องซ้ายแล้วเอกสารจะเปลี่ยนทันที</div>
+        </div>
       </div>
 
       <div class="btn-row">
@@ -21256,9 +21321,19 @@ function openOilMemoForm(opts) {
   document.getElementById('sheetCloseBtn').addEventListener('click', closeSheet);
   document.getElementById('oilCancel').onclick = closeSheet;
 
+  document.querySelectorAll('[data-oview]').forEach(b => b.onclick = () => {
+    document.querySelectorAll('[data-oview]').forEach(x => x.classList.toggle('active', x === b));
+    document.getElementById('oilGrid').dataset.view = b.dataset.oview;
+    refreshOilPreview();
+  });
+
   wireSignerCard('oil_req', 'ผู้เบิก');
   wireSignerCard('oil_iss', 'ผู้จ่าย');
   wireSignerCard('oil_apv', 'ผู้อนุมัติ');
+
+  const fields = document.getElementById('oilFields');
+  fields.addEventListener('input', refreshOilPreview);
+  fields.addEventListener('change', refreshOilPreview);
 
   function selectOilAsset(id) {
     const a = state.assets.find(x => x['รหัสครุภัณฑ์'] === id);
@@ -21267,8 +21342,13 @@ function openOilMemoForm(opts) {
     document.getElementById('oil_assetIcon').innerHTML = catIcon(a['หมวดหมู่']);
     document.getElementById('oil_assetName').textContent = a['ชื่อครุภัณฑ์'];
     document.getElementById('oil_assetSub').textContent = a['ทะเบียนรถ'] || a['รหัสครุภัณฑ์'] || '';
-    const r = document.getElementById('oil_radio');
-    if (!r.value) r.value = radioOf(a['ชื่อครุภัณฑ์']);
+    document.getElementById('oil_radio').value = oilRadioOf(a['ชื่อครุภัณฑ์']);
+    const q = document.getElementById('oil_qty');
+    if (!q.value) q.value = defaultOilQty(a);
+    const mi = document.getElementById('oil_mile');
+    const info = latestOilInfo(id);
+    if (!mi.value && info.mile) mi.value = info.mile;
+    refreshOilPreview();
   }
   document.getElementById('oil_assetTrigger').onclick = () =>
     openAssetPickerSheet(val('oil_asset'), selectOilAsset, false,
@@ -21276,32 +21356,25 @@ function openOilMemoForm(opts) {
 
   document.getElementById('oilGen').onclick = () => {
     const aId = val('oil_asset');
-    const a = state.assets.find(x => x['รหัสครุภัณฑ์'] === aId);
-    if (!a) { toast('กรุณาเลือกรถ'); return; }
+    if (!aId) { toast('กรุณาเลือกรถ'); return; }
     if (!canReportMaint(aId)) { toast('เบิกน้ำมันเครื่องได้เฉพาะรถที่คุณครอบครองอยู่'); return; }
-    const qty = val('oil_qty');
-    if (!qty) { toast('กรุณาระบุจำนวนน้ำมัน (ลิตร)'); return; }
+    if (!val('oil_qty')) { toast('กรุณาระบุจำนวนน้ำมัน (ลิตร)'); return; }
     if (!val('oil_reqName').trim()) { toast('กรุณาเลือกผู้เบิก'); return; }
-
-    const m = {
-      org: val('oil_org'),
-      phone: val('oil_phone'),
-      docNo: (state.settings && state.settings.docNoPrefix || '') + val('oil_docno_suffix'),
-      docDate: thaiDateLong(val('oil_docdate')),
-      subject: val('oil_subject') || 'ขอเบิกน้ำมันเครื่อง',
-      addressee: val('oil_addressee'),
-      spec: val('oil_spec'),
-      qty: toThaiNumber(qty),
-      radio: toThaiNumber(val('oil_radio')),
-      mile: toThaiNumber(val('oil_mile')),
-      req: { rank: val('oil_reqRank'), name: val('oil_reqName'), position: val('oil_reqPosition'), date: thaiDateAbbr(val('oil_reqDate')), sig: val('oil_reqSig') },
-      iss: { rank: val('oil_issRank'), name: val('oil_issName'), position: val('oil_issPosition'), date: thaiDateAbbr(val('oil_issDate')), sig: val('oil_issSig') },
-      apv: { rank: val('oil_apvRank'), name: val('oil_apvName'), position: val('oil_apvPosition'), date: thaiDateAbbr(val('oil_apvDate')), sig: val('oil_apvSig') }
-    };
+    const m = collectOilMemo();
     closeSheet();
     openMemoEditor({ id: null, docHtml: oilMemoBodyHtml(m), borrowId: '' });
   };
+
+  refreshOilPreview();
 }
+
+/* ให้การเปลี่ยนค่าลายเซ็น/ผู้เบิก/ผู้จ่าย/ผู้อนุมัติ อัปเดตตัวอย่างน้ำมันด้วย */
+const _refreshMemoLivePreviewBase = refreshMemoLivePreview;
+refreshMemoLivePreview = function () {
+  if (document.getElementById('oilPreviewDesk')) return refreshOilPreview();
+  return _refreshMemoLivePreviewBase();
+};
+
 
 /* ตัวเลือกประเภทเอกสาร เมื่อกดปุ่ม + ในหน้าเอกสารใบเบิก */
 function openMemoTypeSheet() {
@@ -21317,7 +21390,40 @@ function openMemoTypeSheet() {
     </div>`);
   document.getElementById('mtGeneral').onclick = () => { closeSheet(); openPrintMemoForm({}); };
   document.getElementById('mtOil').onclick = () => { closeSheet(); openOilMemoForm({}); };
-}        
+}  
+
+        /* ---------- ค่าน้ำมันเครื่องตามประเภทรถ (แก้ได้ในฟอร์ม) ---------- */
+function defaultOilQty(a) {
+  const n = String((a && a['ชื่อครุภัณฑ์']) || '');
+  if (n.indexOf('กระบะ') !== -1) return '7';
+  if (n.indexOf('วิทยุ') !== -1) return '5';
+  return '';
+}
+function oilRadioOf(name) {
+  return ((String(name || '').match(/\d+/g)) || []).pop() || '';
+}
+/* ดึงเลขไมล์และจำนวนน้ำมันจากประวัติการถ่ายน้ำมันล่าสุดของรถคันนั้น */
+function latestOilInfo(assetId) {
+  const recs = (state.maint || [])
+    .filter(m => m['รหัสครุภัณฑ์'] === assetId && String(m['อาการ/ปัญหา'] || '').includes('ถ่ายน้ำมันเครื่อง'))
+    .sort((a, b) => toDate(b['วันที่แจ้ง'] || 0) - toDate(a['วันที่แจ้ง'] || 0));
+  if (!recs.length) return {};
+  const t = String(recs[0]['อาการ/ปัญหา']);
+  const mi = /เลขไมล์\s*([\d,.]+)/.exec(t);
+  const q = /น้ำมัน\s*([\d.]+)\s*ลิตร/.exec(t);
+  return { mile: mi ? mi[1].replace(/,/g, '') : '', qty: q ? q[1] : '' };
+}
+
+/* เมื่อเลือกประเภท "ถ่ายน้ำมันเครื่อง" ให้เติมจำนวนลิตรตามประเภทรถให้อัตโนมัติ */
+document.addEventListener('click', e => {
+  const chip = e.target.closest && e.target.closest('[data-vtype="ถ่ายน้ำมันเครื่อง"]');
+  if (!chip) return;
+  setTimeout(() => {
+    const q = document.getElementById('f_oilQty');
+    const a = state.assets.find(x => x['รหัสครุภัณฑ์'] === val('f_asset'));
+    if (q && !q.value && a) q.value = defaultOilQty(a);
+  }, 0);
+}, true);
 
 init();   // <-- ของเดิม คงไว้ตามเดิม
 /* ===== จดจำตำแหน่งเลื่อนของหน้า ===== */
