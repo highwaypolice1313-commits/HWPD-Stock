@@ -21137,7 +21137,7 @@ function oilMemoBodyHtml(m) {
       <div class="pf-emblem">${emblemHtmlNow()}</div>
       <div class="pf-title-wrap"><div class="pf-title">บันทึกข้อความ</div></div>
     </div>
-    <div class="pf-field-line"><span class="pf-label">ส่วนราชการ</span> <span id="ed_org">${v(m.org)}</span>${m.phone ? ` <span class="pf-label">โทร.</span> ${v(m.phone)}` : ''}</div>
+    <div class="pf-field-line om-org" style="white-space:nowrap; font-size:15pt; line-height:18pt;"><span class="pf-label">ส่วนราชการ</span> <span id="ed_org">${v(m.org)}</span>${m.phone ? ` <span class="pf-label">โทร.</span> <span>${v(m.phone)}</span>` : ''}</div>
     <div class="pf-two-col" style="grid-template-columns:8.25cm 1fr;">
       <span><span class="pf-label">ที่</span> <span id="ed_docno">${v(m.docNo) || '........................................'}</span></span>
       <span><span class="pf-label">วันที่</span> <span id="ed_docdate">${v(m.docDate)}</span></span>
@@ -21171,7 +21171,20 @@ function oilMemoBodyHtml(m) {
     ${sign('ผู้อนุมัติ', m.apv, 'ed_apvname')}
   `;
 }
-
+      
+/* ย่อขนาดบรรทัดส่วนราชการ ถ้าเกินความกว้างพื้นที่พิมพ์ (ไม่ให้ตัดบรรทัด) */
+function fitOrgLine(container) {
+  const line = container && container.querySelector('.om-org');
+  if (!line) return;
+  line.style.fontSize = '15pt';
+  const max = line.clientWidth;
+  let size = 15;
+  while (line.scrollWidth > max && size > 9) {
+    size -= 0.5;
+    line.style.fontSize = size + 'pt';
+  }
+}
+      
 /* ดึงค่าจากฟอร์มเอกสารน้ำมัน */
 function collectOilMemo() {
   const g = id => val(id).trim();
