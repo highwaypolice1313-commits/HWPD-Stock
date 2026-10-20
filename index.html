@@ -9367,12 +9367,12 @@ requestAnimationFrame(function(){ layoutNav(); }); // ✅ จัดแถบห�
     window.scrollTo({ top: 0, behavior: window.matchMedia('(pointer:coarse)').matches ? 'instant' : 'smooth' });
   }
   const fab = document.getElementById('fabBtn');
-  fab.style.display = (['assets','borrow','maint','memos','users'].includes(name) && (isAdmin() || name === 'borrow' || name === 'maint')) ? 'flex' : 'none';
+  fab.style.display = (['assets','borrow','maint','memos','users'].includes(name) && (isAdmin() || name === 'borrow' || name === 'maint' || (name === 'memos' && canOpenDocChooser()))) ? 'flex' : 'none';
   fab.onclick = () => {
     if (name === 'assets' && isAdmin()) openAssetForm();
     if (name === 'borrow') openBorrowForm();
     if (name === 'maint') openMaintForm();
-if (name === 'memos' && isAdmin()) openDocCreateForm();
+if (name === 'memos' && canOpenDocChooser()) openDocTypeChooser();
   };
   const PAGE_RENDER = {
     dashboard: renderDashboard, assets: renderAssets, borrow: renderBorrow,
@@ -13778,7 +13778,7 @@ function nameIsMe(s) {
 function canReportAnyMaint() {
   if (isAdmin()) return true;
   const w = window.__perms;
-  if (w && (w.admin || (w.perms || []).indexOf('annual_count') !== -1 || (w.perms || []).indexOf('monthly_check') !== -1)) return true;
+  if (w && (w.admin || (w.perms || []).indexOf('annual_count') !== -1 || (w.perms || []).indexOf('monthly_check') !== -1 || (w.perms || []).indexOf('maint') !== -1)) return true;
   const row = myOfficerRow();
   return !!row && row['บทบาทเบิก-ยืม'] === 'ผู้ตรวจสอบ';
 }
@@ -15540,7 +15540,7 @@ function buildMemoBodyHtml(m) {
       <div id="ed_apvposition">${escapeHtml(toThaiNumber(apv.position)) || '&nbsp;'}</div>
       <div id="ed_apvdate">${escapeHtml(apv.date) || '&nbsp;'}</div>
     </div>
-    <p class="pf-body pf-receipt">- ได้รับ<span id="ed_items2">${itemsText}</span> เพื่อใช้ในการปฏิบัติหน้าที่ราชการต่อไป</p>
+    <p class="pf-body pf-receipt">${m.receiptText ? '- ' + m.receiptText : '- ได้รับ<span id="ed_items2">' + itemsText + '</span>'} เพื่อใช้ในการปฏิบัติหน้าที่ราชการต่อไป</p>
    <div class="pf-sign">
      <div class="pf-sign-rank" id="ed_reqrank2"><span class="pf-rank">${escapeHtml(req.rank) || '&nbsp;'}</span>${sigImg(req.sig)}</div>
      <div>( <span id="ed_reqname2">${escapeHtml(req.name) || '.....................................'}</span> )</div>
@@ -15908,9 +15908,20 @@ function memoKindTagHtml(m) {
 function memoHostId() { return 'view-memos'; }
 
 // เปิดฟอร์มเบิกน้ำมันเครื่อง โดยเติมค่าจากประวัติงานซ่อมที่แจ้งไว้
-// แอดมิน/ผู้ตรวจสอบเท่านั้นที่พิมพ์บันทึกขอเบิก-ซ่อมจากงานซ่อมได้
+// ตรวจสิทธิ์จากหน้าตั้งค่า (ชุดสิทธิ์ของตำแหน่ง) ไม่ผูกกับแอดมินอย่างเดียว
+function hasPermKey(k) {
+  if (isAdmin()) return true;
+  const w = window.__perms;
+  return !!(w && (w.admin || (w.perms || []).indexOf(k) !== -1));
+}
+function canMakeMemoDocs() { return hasPermKey('memo_docs'); }
+function canMakeRepairDocs() { return canReportAnyMaint(); }
+function canOpenDocChooser() { return canMakeMemoDocs() || canMakeRepairDocs(); }
+
+// ผู้มีสิทธิ์จัดทำเอกสารใบเบิก (memo_docs) หรือผู้ตรวจสอบ พิมพ์บันทึกขอเบิก-ซ่อมจากงานซ่อมได้
 function canMakeMaintDocs() {
   if (isAdmin()) return true;
+  if (hasPermKey('memo_docs')) return true;
   const row = myOfficerRow();
   return !!row && row['บทบาทเบิก-ยืม'] === 'ผู้ตรวจสอบ';
 }
@@ -16292,6 +16303,7 @@ function collectMemoFormData() {
     itemsText: dp.itemsText,
     verb: dp.verb,
     approveNote: dp.approveNote,
+    receiptText: dp.receiptText,
     dueDateText: document.getElementById('m_duedate') ? thaiDateAbbr(val('m_duedate')) : '',
     requester: { 
       rank: val('m_reqRank'), 
@@ -16501,17 +16513,19 @@ function docPhrase(domItems, ctx) {
       items,
       itemsText: toThaiNumber(` ${nm}${pl}${tire ? ' ขนาดยาง ' + escapeHtml(tire) : ''}`),
       verb: 'ขอเปลี่ยนยาง',
+      receiptText: toThaiNumber(`ดำเนินการ เปลี่ยนยาง ${nm}${pl}${tire ? ' ขนาดยาง ' + escapeHtml(tire) : ''}`),
       approveNote: '- อนุมัติให้ดำเนินการได้'
     };
   }
   if (mt === 'เปลี่ยนแบตเตอรี่') {
-    return { items, itemsText: toThaiNumber(` ${nm}${pl}`), verb: 'ขอเปลี่ยนแบตเตอรี่', approveNote: '- อนุมัติให้ดำเนินการได้' };
+    return { items, itemsText: toThaiNumber(` ${nm}${pl}`), verb: 'ขอเปลี่ยนแบตเตอรี่', approveNote: '- อนุมัติให้ดำเนินการได้', receiptText: toThaiNumber(`ดำเนินการ เปลี่ยนแบตเตอรี่ ${nm}${pl}`) };
   }
   const issue = document.getElementById('m_issue') ? val('m_issue').trim() : '';
   return {
     items,
     itemsText: toThaiNumber(` ${nm}${pl}${issue ? ' เนื่องจาก' + escapeHtml(issue) : ''}`),
     verb: 'ขอซ่อมบำรุง',
+    receiptText: toThaiNumber(`ดำเนินการ ซ่อมบำรุง ${nm}${pl}`),
     approveNote: '- อนุมัติให้ดำเนินการซ่อมได้'
   };
 }
@@ -16576,8 +16590,8 @@ function renderDocBlocks() {
   if (!host || !gen) return;
 
   if (typeRow) {
-    typeRow.innerHTML = ctx && ctx.create
-      ? `<div class="field"><label>ประเภทเอกสาร</label><div class="chip-row" style="flex-wrap:wrap; overflow:visible;">${DOC_TYPES.map(([v, l]) => `<div class="chip ${ctx.type === v ? 'active' : ''}" data-dt="${v}">${l}</div>`).join('')}</div></div>`
+    typeRow.innerHTML = ctx && ctx.create && ctx.type !== 'general'
+      ? `<div class="field"><label>ประเภทเอกสาร</label><div class="chip-row" style="flex-wrap:wrap; overflow:visible;">${DOC_TYPES.filter(([v]) => v !== 'general').map(([v, l]) => `<div class="chip ${ctx.type === v ? 'active' : ''}" data-dt="${v}">${l}</div>`).join('')}</div></div>`
       : '';
     typeRow.querySelectorAll('[data-dt]').forEach(c => c.onclick = () => {
       captureDocDraft();
@@ -16672,8 +16686,27 @@ function docAssetError(ctx) {
 }
 
 // ปุ่ม + ในหน้าเอกสาร: เปิดฟอร์มเดียว เลือกประเภทในฟอร์ม
-function openDocCreateForm() {
-  openPrintMemoForm({ create: true });
+// ปุ่ม + ในหน้าเอกสาร: ให้เลือกประเภทก่อน (ใบเบิก / ใบแจ้งซ่อม) แสดงเฉพาะประเภทที่มีสิทธิ์
+function openDocTypeChooser() {
+  if (!canOpenDocChooser()) { toast('ไม่มีสิทธิ์สร้างเอกสาร'); return; }
+  const card = (type, title, sub) => `
+    <div class="glass list-item" data-dtc="${type}" style="cursor:pointer;margin-bottom:10px;">
+      <div class="li-body"><div class="li-title">${title}</div><div class="li-sub">${sub}</div></div>
+    </div>`;
+  showSheet(`
+    <div class="sheet-title">สร้างเอกสารใหม่</div>
+    <div class="hint" style="margin-top:0;margin-bottom:12px;">เลือกประเภทเอกสารที่ต้องการทำ</div>
+    ${canMakeMemoDocs() ? card('general', 'ใบเบิก', 'บันทึกข้อความขอเบิกพัสดุครุภัณฑ์') : ''}
+    ${canMakeRepairDocs() ? card('repair', 'ใบแจ้งซ่อม', 'ขอซ่อมบำรุง เปลี่ยนยาง เปลี่ยนแบตเตอรี่ หรือเบิกน้ำมันเครื่อง') : ''}`);
+  document.querySelectorAll('[data-dtc]').forEach(el => el.onclick = () => {
+    const t = el.dataset.dtc;
+    closeSheet();
+    openDocCreateForm(t);
+  });
+}
+
+function openDocCreateForm(docType) {
+  openPrintMemoForm({ create: true, docType: docType === 'repair' ? 'repair' : 'general' });
 }
 
 // ตัวกรองเอกสาร: หมวดเป็นปุ่มเลือก เดือนเป็นรายการเลือกแยกตามปี (ไม่รกเมื่อมีหลายเดือน/ปี)
@@ -16721,7 +16754,7 @@ function openMemoFilterSheet() {
 }
 
 function openPrintMemoForm(opts) {
-  memoFormCtx = opts.repair || (opts.create ? { create: true, type: 'general', asset: null, plate: '', maintType: '', draft: {} } : null);
+  memoFormCtx = opts.repair || (opts.create ? { create: true, type: opts.docType || 'general', asset: null, plate: '', maintType: '', draft: {} } : null);
   let items = buildMemoItemList(opts);
   const borrow = opts.borrow || null;
   const reqSig = borrow ? (borrow['ลายเซ็นผู้ยืม'] || '') : '';
