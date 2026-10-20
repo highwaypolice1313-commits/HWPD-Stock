@@ -13677,7 +13677,7 @@ function openMaintDetail(id) {
     const mi = /เลขไมล์\s*([\d,.]+)/.exec(String(m['อาการ/ปัญหา'])) || [];
     const q = /น้ำมัน\s*([\d.]+)\s*ลิตร/.exec(String(m['อาการ/ปัญหา'])) || [];
     closeSheet();
-    openOilMemoForm({ assetId: m['รหัสครุภัณฑ์'], mile: (mi[1] || '').replace(/,/g, ''), qty: q[1] || '' });
+    openOilMemoForm({ assetId: m['รหัสครุภัณฑ์'], mile: (mi[1] || '').replace(/,/g, ''), qty: q[1] || '', reporter: m['ผู้แจ้ง'] });
   };
 }
 
@@ -21128,6 +21128,8 @@ function ensureOilMemoCss() {
 .om-rank{position:absolute;right:calc(100% - 0.5mm);bottom:1pt;white-space:nowrap}
 body.modal-open{overflow:hidden}
 #modalRoot .memo-form-sheet{max-height:92dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+#btnPrintOilFromMaint{background:var(--navy,#17324f) !important;color:#fff !important;border:none !important}
+#btnPrintOilFromMaint:hover{filter:brightness(1.08)}
 `;
   document.head.appendChild(s);
 }
@@ -21238,16 +21240,22 @@ function openOilMemoForm(opts) {
   const mileInit = opts.mile || last.mile || '';
   const qtyInit = opts.qty || last.qty || (pre ? defaultOilQty(pre) : '');
 
-  const meRow = myOfficerRow();
-  const reqSplit = meRow ? { rank: meRow['ยศ'] || '', name: meRow['ชื่อ-สกุล'] || '' } : splitRankName(myName());
+  const reporterName = String(opts.reporter || '').trim();
+  const reporterRow = reporterName
+    ? (state.users || []).find(u => eqCiJs_(u['ชื่อ-สกุล'], reporterName) || eqCiJs_(officerFullName(u), reporterName))
+    : null;
+  const meRow = reporterRow || myOfficerRow();
+  const reqSplit = reporterRow
+    ? { rank: reporterRow['ยศ'] || '', name: reporterRow['ชื่อ-สกุล'] || '' }
+    : (meRow ? { rank: meRow['ยศ'] || '', name: meRow['ชื่อ-สกุล'] || '' } : splitRankName(myName()));
+
   const iss = officersByMemoRole('ผู้จ่ายพัสดุ')[0] || null;
   const apv = officersByMemoRole('ผู้อนุมัติ ลำดับที่ 1')[0] || null;
   const orgLine = (state.settings && state.settings.orgName) || ORG_NAME;
   const phone = (state.settings && state.settings.orgPhone) || ORG_PHONE;
   const docPrefix = (state.settings && state.settings.docNoPrefix) || '';
 
-  showRawSheet(`<div class="overlay" id="overlayEl">
-    <div class="sheet memo-form-sheet">
+  showRawSheet(`<div class="overlay" id="overlayEl"><div class="sheet memo-form-sheet">
       <button class="sheet-close" id="sheetCloseBtn" type="button" aria-label="ปิด">${ICONS.close}</button>
       <div class="sheet-handle"></div>
       <div class="sheet-title">เอกสารเบิกน้ำมันเครื่อง</div>
@@ -21329,8 +21337,7 @@ function openOilMemoForm(opts) {
         <button class="btn btn-ghost" id="oilCancel" type="button">ยกเลิก</button>
         <button class="btn btn-primary" id="oilGen" type="button">เปิดเอกสารเพื่อแก้ไข/พิมพ์ →</button>
       </div>
-    </div>
-  </div>`);
+    </div></div>`);
 
   document.getElementById('sheetCloseBtn').addEventListener('click', closeSheet);
   document.getElementById('oilCancel').onclick = closeSheet;
