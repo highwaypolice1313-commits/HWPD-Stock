@@ -16106,6 +16106,64 @@ function memoRow(m, q = '') {
 }
 
 /* ---------- เปิดหน้าเอกสารเพื่อแก้ไขจริง / พิมพ์ / บันทึก ---------- */
+// ช่องลายเซ็นในเอกสาร: ผู้ขอเบิก/ผู้แจ้ง (2 จุด), ผู้อนุมัติ, ผู้จ่ายพัสดุ
+const DOC_SIG_SLOTS = [
+  { label: 'ผู้ขอเบิก/ผู้แจ้ง', nameId: 'ed_reqname', ids: ['ed_reqrank', 'ed_reqrank2'] },
+  { label: 'ผู้อนุมัติ', nameId: 'ed_apvname', ids: ['ed_apvrank'] },
+  { label: 'ผู้จ่ายพัสดุ', nameId: 'ed_issname', ids: ['ed_issrank'] }
+];
+// วางลายเซ็นลงในช่องที่กำหนด (แทนลายเซ็นเดิมถ้ามี)
+function applyDocSignature(body, ids, dataUrl) {
+  ids.forEach(id => {
+    const box = body.querySelector('#' + id);
+    if (!box) return;
+    box.querySelectorAll('img.pf-sigimg').forEach(x => x.remove());
+    const img = document.createElement('img');
+    img.className = 'pf-sigimg';
+    img.src = dataUrl;
+    img.alt = '';
+    const rank = box.querySelector('.pf-rank');
+    if (rank) rank.insertAdjacentElement('afterend', img); else box.appendChild(img);
+  });
+}
+// เลือกตำแหน่งที่จะลงลายเซ็น (แอดมินทุกช่อง / เจ้าหน้าที่เฉพาะช่องที่เป็นชื่อของตนเอง)
+function openDocSignSheet(body, desk) {
+  if (!body) return;
+  const txt = id => { const e = body.querySelector('#' + id); return e ? e.textContent.trim() : ''; };
+  const slots = DOC_SIG_SLOTS.map(s => {
+    let name = txt(s.nameId);
+    if (/^\.+$/.test(name)) name = '';
+    const signed = !!body.querySelector('#' + s.ids[0] + ' img.pf-sigimg');
+    return { ...s, name, signed };
+  }).filter(s => isAdmin() || (s.name && nameIsMe(s.name)));
+  if (!slots.length) { toast('ไม่มีตำแหน่งที่คุณลงลายเซ็นได้ในเอกสารนี้'); return; }
+  const CHEV = '<svg viewBox="0 0 20 20" fill="none"><path d="M7 4l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  showSheet(`
+    <div class="sheet-title">เพิ่มลายเซ็นในเอกสาร</div>
+    <div class="hint" style="margin-top:0;margin-bottom:14px;">เลือกตำแหน่งที่ต้องการลงลายเซ็น</div>
+    <div class="dtc-list">
+      ${slots.map((s, i) => `
+        <button type="button" class="dtc-card" data-dsig="${i}">
+          <span class="dtc-ico ${i === 0 ? 'dtc-navy' : 'dtc-gold'}">${ICONS.edit}</span>
+          <span class="dtc-txt"><b>${escapeHtml(s.label)}</b><small>${escapeHtml(s.name || 'ยังไม่ระบุชื่อ')} · ${s.signed ? 'มีลายเซ็นแล้ว (แตะเพื่อเซ็นใหม่)' : 'ยังไม่มีลายเซ็น'}</small></span>
+          <span class="dtc-go">${CHEV}</span>
+        </button>`).join('')}
+    </div>`);
+  document.querySelectorAll('[data-dsig]').forEach(el => el.onclick = () => {
+    const s = slots[Number(el.dataset.dsig)];
+    closeSheet();
+    openSignatureSheet({
+      title: 'ลงลายเซ็น — ' + s.label,
+      name: s.name,
+      onDone: v => {
+        applyDocSignature(body, s.ids, v);
+        if (desk) desk.dispatchEvent(new Event('input', { bubbles: true }));
+        toast('ลงลายเซ็นแล้ว กดบันทึกเอกสารเพื่อเก็บไว้');
+      }
+    });
+  });
+}
+
 function openMemoEditor(opts) {
   const isNew = !opts.id;
   const readOnly = !!opts.readOnly && !isAdmin();
@@ -16129,6 +16187,7 @@ function openMemoEditor(opts) {
       <div class="btn-row">
         <button class="btn btn-ghost" id="btnMemoClose">ปิด</button>
         ${!isNew && isAdmin() && !readOnly ? `<button class="btn btn-danger" id="btnMemoDelete">ลบเอกสาร</button>` : ''}
+        ${!readOnly ? `<button class="btn btn-ghost" id="btnMemoSign">+ ลายเซ็น</button>` : ''}
         <button class="btn btn-ghost" id="btnMemoPrint">พิมพ์</button>
         ${!readOnly ? `<button class="btn btn-primary" id="btnMemoSave">บันทึกเอกสาร</button>` : ''}
       </div>
@@ -16203,6 +16262,8 @@ ovOf('btnMemoPrint').onclick = () => {
     { filename: safeFileName('บันทึกข้อความ-' + subject + (docNo ? ' ' + docNo : '')) }
   );
 };
+  const signBtn = ovOf('btnMemoSign');
+  if (signBtn) signBtn.onclick = () => openDocSignSheet(getBody(), desk);
   const saveMemoBtn = ovOf('btnMemoSave');
   if (saveMemoBtn) saveMemoBtn.onclick = async () => {
     const b = getBody();
