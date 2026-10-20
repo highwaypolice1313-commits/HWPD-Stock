@@ -13674,23 +13674,19 @@ function openMaintDetail(id) {
   }
       
   const oilBtn = document.getElementById('btnPrintOilFromMaint');
-  if (oilBtn) oilBtn.onclick = async () => {
-    try {
-      const memos = await apiGet('getMemos', { token: state.sessionToken });
-      state.memos = memos || [];
-    } catch (e) { /* ใช้ข้อมูลที่มีอยู่ */ }
-    const saved = (state.memos || []).find(x =>
-      x['รหัสรายการยืม'] === 'MNT:' + id ||
-      (String(x['เนื้อหาเอกสาร(HTML)'] || '').includes('น้ำมันเครื่อง') &&
-       String(x['เนื้อหาเอกสาร(HTML)'] || '').includes(String(m['ชื่อครุภัณฑ์'] || '').split(' ').pop() || '\u0000')));
+  if (oilBtn) oilBtn.onclick = () => {
+    // เปิดฟอร์มเอกสารใหม่เสมอ โดยเติมข้อมูลจากรายการซ่อมนี้ (ไม่เปิดเอกสารเก่ามาทับ)
+    const mi = /เลขไมล์\s*([\d,.]+)/.exec(String(m['อาการ/ปัญหา'])) || [];   // ดึงเลขไมล์จากอาการ
+    const q = /น้ำมัน\s*([\d.]+)\s*ลิตร/.exec(String(m['อาการ/ปัญหา'])) || []; // ดึงจำนวนลิตรจากอาการ
     closeSheet();
-    if (saved) {
-      openMemoEditor({ id: saved['รหัสใบเบิก'], docHtml: saved['เนื้อหาเอกสาร(HTML)'], borrowId: 'MNT:' + id, readOnly: false });
-      return;
-    }
-    const mi = /เลขไมล์\s*([\d,.]+)/.exec(String(m['อาการ/ปัญหา'])) || [];
-    const q = /น้ำมัน\s*([\d.]+)\s*ลิตร/.exec(String(m['อาการ/ปัญหา'])) || [];
-    openOilMemoForm({ assetId: m['รหัสครุภัณฑ์'], mile: (mi[1] || '').replace(/,/g, ''), qty: q[1] || '', spec: oilSpecOf(m['อาการ/ปัญหา']), reporter: m['ผู้แจ้ง'], maintId: id });
+    openOilMemoForm({
+      assetId: m['รหัสครุภัณฑ์'],
+      mile: (mi[1] || '').replace(/,/g, ''),
+      qty: q[1] || '',
+      spec: oilSpecOf(m['อาการ/ปัญหา']),
+      reporter: m['ผู้แจ้ง'],
+      maintId: id                              // [ใส่ตัวแปรรหัสรายการซ่อมเดิม ถ้าชื่อไม่ใช่ id]
+    });
   };
 }
 
@@ -16063,8 +16059,14 @@ document.getElementById('btnMemoPrint').onclick = () => {
     };
     const btn = document.getElementById('btnMemoSave'); if (!btn || btn.disabled) return; setButtonBusy(btn, true, 'กำลังบันทึก...'); setLoading(true, 'กำลังบันทึกเอกสาร...');
     try {
-      const res = await apiPost(isNew ? 'addMemo' : 'updateMemo', payload);
-      if (isNew && res && res.id) opts.id = res.id;
+      // ตรวจว่าเป็นการแก้ไขหรือสร้างใหม่ ณ เวลาที่กดบันทึก (ไม่ใช้ค่า isNew ที่ล็อกไว้ตอนเปิดฟอร์ม)
+      const isUpdate = !!opts.id;
+      const res = await apiPost(
+        isUpdate ? 'updateMemo' : 'addMemo',
+        isUpdate ? { ...payload, id: opts.id } : payload
+      );
+      // ถ้าเพิ่งสร้างใหม่ ให้จำรหัสที่ได้กลับมา เพื่อให้การบันทึกครั้งถัดไปเป็นการแก้ไขแทนการสร้างซ้ำ
+      if (!isUpdate && res && res.id) opts.id = res.id;
       commitDocNoOnce();
       dirtyEl.classList.remove('show');
       toast('บันทึกเอกสารแล้ว');
