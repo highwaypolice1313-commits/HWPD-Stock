@@ -15340,6 +15340,7 @@ function stackCurrentOverlay(root) {
   if (top && top.classList.contains('overlay') && !top.classList.contains('confirm-overlay') && !top.classList.contains('command-overlay')) {
     top.remove();
     sheetStack.push(top);
+    root.innerHTML = '';                       // ล้างหน้าค้างอื่นทั้งหมด ให้ DOM มีหน้าที่เปิดอยู่หน้าเดียว
     return true;
   }
   return false;
@@ -15381,6 +15382,7 @@ function closeSheet() {
   if (prev && document.body.contains(root)) {
     prev.style.display = '';
     prev.id = 'overlayEl';
+    root.innerHTML = '';                       // ไม่ให้มีหน้าค้าง
     root.appendChild(prev);                    // กลับหน้าเดิม (element เดิม ปุ่มและ event ยังอยู่ครบ)
     return;
   }
