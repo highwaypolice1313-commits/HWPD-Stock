@@ -13551,6 +13551,7 @@ function renderMaint() {
     <div class="stat-grid" style="margin-bottom:14px;">
       ${statTile({grp:'maint', k:'tab', v:'pending', cls:'warn', num:bk.pending.length, label:'รอซ่อม', on:state.maintTab==='pending'})}
       ${statTile({grp:'maint', k:'tab', v:'active', cls:'ok', num:bk.active.length, label:'ค้างซ่อม', on:state.maintTab==='active'})}
+      ${statTile({grp:'maint', k:'tab', v:'history', cls:'info', num:bk.history.length, label:'ซ่อมเสร็จแล้ว', on:state.maintTab==='history'})}
       ${statTile({cls:'info', num:Number(totalCost).toLocaleString(), label:'ค่าใช้จ่ายสะสม (บาท)'})}
     </div>
 
