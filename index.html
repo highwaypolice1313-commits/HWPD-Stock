@@ -7610,6 +7610,14 @@ html, body{
 .oil-spec-grid .oil-spec-custom.on{color:#fff;border-style:solid;}
 @media (max-width:380px){.oil-spec-grid{grid-template-columns:repeat(3,minmax(0,1fr));}}
 </style>
+<style id="maint-step-css">
+.mstep-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:6px;}
+.mstep{height:46px;border-radius:14px;border:1.5px solid var(--panel-line,#e5dccb);background:var(--panel,#fff);color:var(--ink,#20303f);font:inherit;font-weight:600;font-size:14px;cursor:pointer;transition:all .15s ease;}
+.mstep:hover{border-color:var(--gold-line,#bb8a3f);}
+.mstep:active{transform:scale(.97);}
+.mstep.on{background:linear-gradient(135deg,var(--navy,#17324f),var(--navy-deep,#0c1e33));color:#fff;border-color:transparent;box-shadow:0 6px 14px rgba(23,50,79,.25);}
+.maint-quick{height:34px;padding:0 12px;border-radius:12px;font-size:13px;font-weight:600;white-space:nowrap;flex:none;}
+</style>
 </head>
 
 
@@ -9680,6 +9688,8 @@ function buildAlerts() {
     const late = openM.filter(m => -(daysUntil(m['วันที่แจ้ง']) || 0) >= 7).length;
     list.push({ tone:'bad', title:'งานซ่อมค้าง ' + openM.length + ' รายการ', sub: late ? 'รอซ่อมนานเกิน 7 วัน ' + late + ' รายการ' : 'ยังไม่เกิน 7 วัน', tab:'maint', st:{} });
   }
+  // เหตุการณ์แบบเรียลไทม์ (แจ้งซ่อมใหม่ / สถานะงานซ่อมเปลี่ยน) ขึ้นในกระดิ่งและรายการแจ้งเตือน
+  (window.__liveEvents || []).slice(0, 5).forEach(e => list.unshift({ tone: e.tone, title: e.title, sub: e.sub, tab: 'maint', st: {} }));
   return list;
 }
 function notifSignature(list) { return list.map(a => a.title).join('|'); }
@@ -13538,6 +13548,21 @@ function drawMaintList() {
   }
 
   listEl.querySelectorAll('.maint-item').forEach(it => it.onclick = () => openMaintDetail(it.dataset.id));
+  listEl.querySelectorAll('[data-quick]').forEach(b => b.onclick = async (e) => {
+    e.stopPropagation();
+    const m = state.maint.find(x => x['รหัสรายการ'] === b.dataset.quick);
+    if (!m) return;
+    const to = b.dataset.to;
+    if (to === 'กำลังซ่อม' && !String(m['ผู้รับผิดชอบ'] || '').trim()) {
+      openMaintDetail(m['รหัสรายการ']);
+      toast('กรุณาระบุผู้รับผิดชอบ/ร้านซ่อมก่อนเริ่มซ่อม');
+      return;
+    }
+    setButtonBusy(b, true);
+    const ok = await setMaintStep(m, to);
+    setButtonBusy(b, false);
+    if (ok) await reloadThen(renderMaint);
+  });
   if (isAdmin() && !isGrid) wireSwipeRows(listEl, MAINT_SWIPE);
 }
 
@@ -13621,6 +13646,33 @@ function renderMaint() {
   requestAnimationFrame(() => applyPremiumMotion(el));
 }
 
+const MAINT_NEXT = { 'รอซ่อม': 'กำลังซ่อม', 'กำลังซ่อม': 'ซ่อมเสร็จ' };
+const MAINT_STEP_LABEL = { 'กำลังซ่อม': 'เริ่มซ่อม', 'ซ่อมเสร็จ': 'ซ่อมเสร็จ' };
+// รายชื่อผู้รับผิดชอบ/ร้านซ่อมที่เคยใช้ (ไม่ซ้ำ) สำหรับเลือกเร็ว
+function maintRespOptions() {
+  const set = [...new Set((state.maint || []).map(m => String(m['ผู้รับผิดชอบ'] || '').trim()).filter(Boolean))];
+  return set.sort((a, b) => a.localeCompare(b, 'th')).map(v => `<option value="${escapeHtml(v)}">`).join('');
+}
+// เปลี่ยนขั้นตอนงานซ่อม (บันทึกทันที ไม่ต้องกดบันทึกซ้ำ)
+async function setMaintStep(m, toStatus, responsible) {
+  const resp = responsible !== undefined ? responsible : (m['ผู้รับผิดชอบ'] || '');
+  if (toStatus === 'กำลังซ่อม' && !String(resp).trim()) {
+    toast('กรุณาระบุผู้รับผิดชอบ/ร้านซ่อมก่อนเริ่มซ่อม'); return false;
+  }
+  try {
+    await apiPost('updateMaint', { id: m['รหัสรายการ'], status: toStatus, responsible: resp, finishDate: toStatus === 'ซ่อมเสร็จ' ? isoDate() : '' });
+    window.__ownMaint = { id: m['รหัสรายการ'], status: toStatus, at: Date.now() };
+    toast('อัปเดตเป็น "' + toStatus + '" แล้ว');
+    return true;
+  } catch (err) { toast(err.message || 'อัปเดตไม่สำเร็จ'); return false; }
+}
+// ปุ่มลัดบนการ์ด: แสดงเฉพาะแอดมิน และเฉพาะงานที่ยังไม่เสร็จ
+function maintQuickBtn(m) {
+  if (!isAdmin()) return '';
+  const next = MAINT_NEXT[m['สถานะ']];
+  if (!next) return '';
+  return `<button type="button" class="btn btn-ghost maint-quick" data-quick="${escapeHtml(m['รหัสรายการ'])}" data-to="${next}">${MAINT_STEP_LABEL[next]}</button>`;
+}
 function maintRow(m) {
   return `<div class="glass list-item maint-item" data-id="${escapeHtml(m['รหัสรายการ'])}">
     <div class="li-icon">${ICONS.wrench}</div>
@@ -13630,6 +13682,7 @@ function maintRow(m) {
       ${stageHtml(maintStageIdx(m), MAINT_STAGES)}
     </div>
     <div class="status-badge ${statusClass(m['สถานะ'])}">${escapeHtml(m['สถานะ'])}</div>
+    ${maintQuickBtn(m)}
   </div>`;
 }
 function maintCard(m) {
@@ -13641,6 +13694,7 @@ function maintCard(m) {
         <div class="ax-sn">${escapeHtml(m['รหัสครุภัณฑ์'] || '')}</div>
       </div>
       <div class="status-badge ${statusClass(m['สถานะ'])}">${escapeHtml(m['สถานะ'])}</div>
+      ${maintQuickBtn(m)}
     </div>
     <div class="ba-body">
       <div class="ba-cells">
@@ -13667,16 +13721,16 @@ function openMaintDetail(id) {
     <div class="detail-row"><span>ผู้รับผิดชอบ</span><span>${escapeHtml(m['ผู้รับผิดชอบ']) || '-'}</span></div>
     ${m['รูปถ่ายปัญหา'] ? `<div class="hint" style="margin-top:12px; font-weight:500; color:var(--ink);">รูปถ่ายอาการ/ความเสียหาย</div><img class="condition-photo-thumb" src="${m['รูปถ่ายปัญหา']}">` : ''}
     ${canUpdate ? `
-    <div class="field" style="margin-top:14px;"><label>อัปเดตสถานะ</label>
-      <select class="input" id="f_mstatus">
-        <option ${m['สถานะ']==='รอซ่อม'?'selected':''}>รอซ่อม</option>
-        <option ${m['สถานะ']==='กำลังซ่อม'?'selected':''}>กำลังซ่อม</option>
-        <option>ซ่อมเสร็จ</option>
-      </select>
+    <div class="field" style="margin-top:14px;"><label>ขั้นตอนงานซ่อม (แตะเพื่อบันทึกทันที)</label>
+      <div class="mstep-row" id="mStepRow">
+        ${['รอซ่อม','กำลังซ่อม','ซ่อมเสร็จ'].map(s => `<button type="button" class="mstep ${s === m['สถานะ'] ? 'on' : ''}" data-step="${s}">${s}</button>`).join('')}
+      </div>
     </div>
-    <div class="field"><label>ผู้รับผิดชอบ/ร้านซ่อม</label><input class="input" id="f_mresp" value="${escapeHtml(m['ผู้รับผิดชอบ'])||''}"></div>
-    <div class="field"><label>ค่าใช้จ่าย (บาท)</label><input class="input" type="number" id="f_mcost" value="${escapeHtml(m['ค่าใช้จ่าย(บาท)'])}"></div>
-    <div class="btn-row"><button class="btn btn-primary" id="btnUpdateMaint">บันทึก</button></div>
+    <div class="field"><label>ผู้รับผิดชอบ/ร้านซ่อม</label>
+      <input class="input" id="f_mresp" list="dlMaintResp" value="${escapeHtml(m['ผู้รับผิดชอบ'] || '')}" placeholder="เลือกหรือพิมพ์ชื่อ">
+      <datalist id="dlMaintResp">${maintRespOptions()}</datalist>
+    </div>
+    <div class="hint">ค่าใช้จ่ายลงตอนแจ้งซ่อมตามใบประเมินราคา</div>
     ` : ''}
     ${(canMakeMaintDocs() || nameIsMe(m['ผู้แจ้ง'])) ? `<div class="btn-row"><button class="btn btn-ghost" id="btnRepairDocFromMaint">พิมพ์บันทึกขอเบิก-ซ่อม</button></div>` : ''}
     ${isAdmin() ? `<div class="btn-row">
@@ -13691,17 +13745,20 @@ function openMaintDetail(id) {
   }
 
   if (canUpdate) {
-    document.getElementById('btnUpdateMaint').onclick = async () => {
-      const status = val('f_mstatus');
-      const saveBtn = document.getElementById('btnUpdateMaint');
-      if (saveBtn.disabled) return;
-      setButtonBusy(saveBtn, true); setLoading(true, 'กำลังอัปเดตงานซ่อม...');
-      try {
-        await apiPost('updateMaint', { id, status, responsible: val('f_mresp'), cost: val('f_mcost'), finishDate: status === 'ซ่อมเสร็จ' ? isoDate() : '' });
-        closeSheet(); toast('อัปเดตสถานะแล้ว'); await reloadThen(renderMaint);
-      } catch (err) { toast(err.message || 'อัปเดตไม่สำเร็จ'); }
-      finally { setLoading(false); setButtonBusy(saveBtn, false); }
-    };
+    document.querySelectorAll('#mStepRow .mstep').forEach(b => b.onclick = async () => {
+      const to = b.dataset.step;
+      if (to === m['สถานะ']) return;
+      const resp = val('f_mresp').trim();
+      if (to === 'กำลังซ่อม' && !resp) {
+        toast('กรุณาระบุผู้รับผิดชอบ/ร้านซ่อมก่อนเริ่มซ่อม');
+        document.getElementById('f_mresp').focus();
+        return;
+      }
+      setButtonBusy(b, true);
+      const ok = await setMaintStep(m, to, resp);
+      setButtonBusy(b, false);
+      if (ok) { closeSheet(); await reloadThen(renderMaint); }
+    });
   }
       
   const repairBtn = document.getElementById('btnRepairDocFromMaint');
@@ -13887,7 +13944,7 @@ function openMaintForm(presetId, presetType) {
 
       <div class="memo-two-col">
         <div class="field"><label>วันที่แจ้ง</label><input class="input" type="date" id="f_rdate" value="${isoDate()}"></div>
-        <div class="field"><label>ค่าใช้จ่าย (บาท) — ไม่บังคับ</label><input class="input" type="number" min="0" step="any" id="f_cost" placeholder="0"></div>
+        <div class="field"><label>ค่าใช้จ่ายตามใบประเมินราคา (บาท)</label><input class="input" type="number" min="0" step="any" id="f_cost" placeholder="กรอกตามใบประเมินราคา (0 ถ้าไม่มี)"></div>
       </div>
       <div class="field">
         <label>รูปถ่ายอาการ/ความเสียหาย — ไม่บังคับ</label>
@@ -14021,6 +14078,7 @@ function openMaintForm(presetId, presetType) {
       if (!issue) { toast('กรุณากรอกอาการ/ปัญหา'); return; }
     }
     if (!val('f_reporter').trim()) { toast('กรุณาเลือกผู้แจ้ง'); return; }
+    if (val('f_cost') === '') { toast('กรุณากรอกค่าใช้จ่ายตามใบประเมินราคา (0 ถ้าไม่มี)'); return; }
 
     const saveBtn = document.getElementById('btnSave'); if (saveBtn.disabled) return;
     setButtonBusy(saveBtn, true); setLoading(true, 'กำลังบันทึกงานซ่อม...');
@@ -24884,4 +24942,65 @@ window.exportAllBackup = async function(){
 </script>
 
 </body>
+<script id="maint-live-v1">
+(function(){
+  if (window.__maintLiveInit) return; window.__maintLiveInit = true;
+  window.__liveEvents = window.__liveEvents || [];
+  var chan = null, timer = null;
+  function canSee(){ return typeof canReportAtAll === 'function' && canReportAtAll(); }
+  function pushEvent(ev){
+    window.__liveEvents.unshift(Object.assign({ at: Date.now() }, ev));
+    window.__liveEvents = window.__liveEvents.slice(0, 20);
+    if (typeof refreshNotifBadge === 'function') refreshNotifBadge();
+  }
+  function notify(text){
+    toast(text);
+    if (navigator.vibrate) navigator.vibrate([120, 80, 120]);
+  }
+  function scheduleRefresh(){
+    clearTimeout(timer);
+    timer = setTimeout(async function(){
+      if (typeof loadAll !== 'function') return;
+      if (state.tab === 'maint' && !document.querySelector('#modalRoot .overlay')) {
+        await reloadThen(renderMaint);
+      } else {
+        try { await loadAll(false); } catch(e){}
+        if (typeof refreshNotifBadge === 'function') refreshNotifBadge();
+      }
+    }, 600);
+  }
+  function onInsert(payload){
+    var r = payload.new || {};
+    scheduleRefresh();
+    if (!canSee()) return;
+    if (typeof nameIsMe === 'function' && nameIsMe(r.reporter)) return; // ไม่แจ้งตัวเองที่เป็นคนแจ้ง
+    var title = 'แจ้งซ่อมใหม่: ' + (r.asset_name || '-');
+    pushEvent({ tone: 'info', title: title, sub: 'ผู้แจ้ง ' + (r.reporter || '-') + (r.issue ? ' · ' + r.issue : ''), tab: 'maint' });
+    notify(title + ' (' + (r.reporter || '-') + ')');
+  }
+  function onUpdate(payload){
+    var r = payload.new || {};
+    var local = (state.maint || []).find(function(x){ return x['รหัสรายการ'] === r.id; });
+    var before = local ? local['สถานะ'] : null;
+    scheduleRefresh();
+    if (!r.status || before === r.status) return;
+    var own = window.__ownMaint && window.__ownMaint.id === r.id && window.__ownMaint.status === r.status && (Date.now() - window.__ownMaint.at) < 8000;
+    if (own) return; // ไม่แจ้งเตือนการกระทำของตนเอง
+    var mine = typeof nameIsMe === 'function' && nameIsMe(r.reporter);
+    if (!mine && !canSee()) return;
+    var title = 'งานซ่อม ' + (r.asset_name || '-') + ' → ' + r.status;
+    pushEvent({ tone: r.status === 'ซ่อมเสร็จ' ? 'ok' : 'warn', title: title, sub: mine ? 'รายการที่คุณแจ้ง' : 'ผู้แจ้ง ' + (r.reporter || '-'), tab: 'maint' });
+    notify(title);
+  }
+  function subscribe(){
+    if (chan || typeof sb === 'undefined' || !state.user) return;
+    chan = sb.channel('maint-live')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'maint' }, onInsert)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'maint' }, onUpdate)
+      .subscribe();
+  }
+  function unsubscribe(){ if (chan) { sb.removeChannel(chan); chan = null; } }
+  setInterval(function(){ if (state.user) subscribe(); else unsubscribe(); }, 2000);
+})();
+</script>
 </html>
