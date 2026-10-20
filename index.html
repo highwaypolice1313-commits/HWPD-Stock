@@ -9372,7 +9372,7 @@ requestAnimationFrame(function(){ layoutNav(); }); // ✅ จัดแถบห�
     if (name === 'assets' && isAdmin()) openAssetForm();
     if (name === 'borrow') openBorrowForm();
     if (name === 'maint') openMaintForm();
-if (name === 'memos' && isAdmin()) openMemoTypeSheet();
+if (name === 'memos' && isAdmin()) openDocCreateForm();
   };
   const PAGE_RENDER = {
     dashboard: renderDashboard, assets: renderAssets, borrow: renderBorrow,
@@ -15907,17 +15907,6 @@ function memoKindTagHtml(m) {
 }
 function memoHostId() { return 'view-memos'; }
 
-// ข้อความในเนื้อหาเอกสารซ่อม: ชื่อรายการ + ทะเบียน + อาการ
-function repairPhraseText(items, issue, plate) {
-  const names = items.map(it => escapeHtml(it.name)).filter(Boolean).join(' และ');
-  const parts = [
-    names,
-    plate ? 'หมายเลขทะเบียน ' + escapeHtml(plate) : '',
-    issue ? 'เนื่องจาก' + escapeHtml(issue) : ''
-  ].filter(Boolean);
-  return ' ' + toThaiNumber(parts.join(' '));
-}
-
 // เปิดฟอร์มเบิกน้ำมันเครื่อง โดยเติมค่าจากประวัติงานซ่อมที่แจ้งไว้
 // แอดมิน/ผู้ตรวจสอบเท่านั้นที่พิมพ์บันทึกขอเบิก-ซ่อมจากงานซ่อมได้
 function canMakeMaintDocs() {
@@ -15995,24 +15984,6 @@ function openOilFromMaint(m, maintId) {
 
 // ปุ่ม + ในหน้าเอกสารซ่อม: เลือกรายการซ่อมก่อน แล้วค่อยเลือกชนิดเอกสาร
 
-// ปุ่ม + ในหน้าเอกสารใบเบิก: เลือกชนิดเอกสารที่จะสร้าง
-function openMemoTypeSheet() {
-  const WRENCH = '<svg viewBox="0 0 20 20" fill="none"><path d="M12.4 5.1a3.4 3.4 0 00-4.4 4.4l-5 5a1.5 1.5 0 002.1 2.1l5-5a3.4 3.4 0 004.4-4.4l-2.2 2.2-1.9-.4-.4-1.9 2.4-2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>';
-  const opt = (id, icon, title, sub) => `
-    <div class="glass list-item" id="${id}" style="cursor:pointer; margin-bottom:10px;">
-      <div class="li-icon">${icon}</div>
-      <div class="li-body"><div class="li-title">${title}</div><div class="li-sub">${sub}</div></div>
-    </div>`;
-  showSheet(`
-    <div class="sheet-title">สร้างเอกสารใหม่</div>
-    ${opt('mtGeneral', ICONS.log, 'บันทึกข้อความทั่วไป', 'เบิก-ยืมครุภัณฑ์')}
-    ${opt('mtRepair', WRENCH, 'เอกสารขอซ่อมบำรุง', 'เลือกครุภัณฑ์และอาการ แล้วเปิดเอกสารให้อัตโนมัติ')}
-    ${opt('mtOil', ICONS.tag, 'เอกสารเบิกน้ำมันเครื่อง', 'เลือกรถยานพาหนะ แล้วเปิดเอกสารให้อัตโนมัติ')}`);
-  document.getElementById('mtGeneral').onclick = () => { closeSheet(); openPrintMemoForm({}); };
-  document.getElementById('mtRepair').onclick = () => { closeSheet(); openMaintForm(); };
-  document.getElementById('mtOil').onclick = () => { closeSheet(); openMaintForm(null, 'ถ่ายน้ำมันเครื่อง'); };
-}
-
 function drawMemos() {
   const el = document.getElementById(memoHostId());
   ensureSrchStyles();
@@ -16055,19 +16026,7 @@ function drawMemos() {
   });
 
   document.getElementById('memoSortBtn').onclick = openMemoSortSheet;
-  document.getElementById('memoFilterBtn').onclick = () =>
-    openFilterSheet('ตัวกรองเอกสาร', [
-      { key: 'kind', label: 'หมวดเอกสาร', current: state.memoKind || 'all', options: MEMO_KIND_OPTIONS },
-      { key: 'month', label: 'เดือน', current: state.memoMonth || 'all',
-        options: [['all', 'ทุกเดือน']].concat(months.map(k => [k, memoMonthChipLabel(k)])) }
-    ], (k, v) => {
-      if (k === 'kind') state.memoKind = v; else state.memoMonth = v;
-      drawMemos();
-    }, () => {
-      state.memoKind = 'all';
-      state.memoMonth = 'all';
-      drawMemos();
-    });
+  document.getElementById('memoFilterBtn').onclick = openMemoFilterSheet;
 
   drawMemoList();
   wireViewToggle(drawMemos, '#view-memos', 'memosView');
@@ -16319,6 +16278,7 @@ function collectMemoFormData() {
   const suffix = document.getElementById('m_docno_suffix') ? val('m_docno_suffix') : '';
   const fullDocNo = prefix + suffix;
 
+  const dp = docPhrase(items, memoFormCtx);
   return {
     org: toThaiNumber(val('m_org')), 
     docNo: toThaiNumber(fullDocNo), 
@@ -16328,12 +16288,10 @@ function collectMemoFormData() {
     // **จุดที่แก้ไข**: ครอบ toThaiNumber ที่ช่องเรียน เพื่อแปลงตัวเลข เช่น ส.ทล.3 เป็น ส.ทล.๓
     addressee: toThaiNumber(val('m_addressee')), 
     
-    items, 
-    itemsText: memoFormCtx
-      ? repairPhraseText(items, document.getElementById('m_issue') ? val('m_issue').trim() : '', memoFormCtx.plate)
-      : itemPhraseList(items),
-    verb: memoFormCtx ? memoFormCtx.verb : undefined,
-    approveNote: memoFormCtx ? memoFormCtx.approveNote : undefined,
+    items: dp.items,
+    itemsText: dp.itemsText,
+    verb: dp.verb,
+    approveNote: dp.approveNote,
     dueDateText: document.getElementById('m_duedate') ? thaiDateAbbr(val('m_duedate')) : '',
     requester: { 
       rank: val('m_reqRank'), 
@@ -16483,17 +16441,295 @@ function wireSignerCard(prefix, label) {
   };
 }
    
+/* =========================================================
+   เอกสารบันทึกข้อความ: ประเภท (ทั่วไป / ขอซ่อมบำรุง / เบิกน้ำมันเครื่อง)
+   ========================================================= */
+const DOC_TYPES = [['general', 'ทั่วไป'], ['repair', 'ขอซ่อมบำรุง'], ['oil', 'เบิกน้ำมันเครื่อง']];
+
+// ประเภทงานซ่อมยานพาหนะจากข้อความอาการ เช่น "เปลี่ยนยาง (ขนาดยาง ...)"
+function repairTypeOf(issue) {
+  const s = String(issue || '');
+  return VEHICLE_MAINT_TYPES.find(t => s.indexOf(t) === 0) || '';
+}
+function tireFromIssue(issue) {
+  const r = /ขนาดยาง\s*([^)]+)/.exec(String(issue || ''));
+  return r ? r[1].trim() : '';
+}
+
+// ชื่อเรื่องตามประเภทเอกสาร (null = ใช้ค่าเริ่มต้นของเอกสารทั่วไป)
+function docSubject(ctx, name) {
+  if (!ctx || (ctx.create && ctx.type === 'general')) return null;
+  const n = name ? ' ' + name : '';
+  if (ctx.type === 'oil') return 'ขอเบิกน้ำมันเครื่อง' + n;
+  const mt = ctx.create ? ctx.maintType : repairTypeOf(ctx.issue);
+  if (mt === 'เปลี่ยนยาง') return 'ขอเปลี่ยนยาง' + n;
+  if (mt === 'เปลี่ยนแบตเตอรี่') return 'ขอเปลี่ยนแบตเตอรี่' + n;
+  return 'ขอซ่อมบำรุง' + n;
+}
+
+// เนื้อความของเอกสารตามประเภท: กริยา รายการ และหมายเหตุท้ายเอกสาร
+function docPhrase(domItems, ctx) {
+  const generic = { items: domItems, itemsText: itemPhraseList(domItems), verb: undefined, approveNote: undefined };
+  if (!ctx || (ctx.create && ctx.type === 'general')) return generic;
+  const isOil = ctx.type === 'oil' || (!ctx.create && repairTypeOf(ctx.issue) === 'ถ่ายน้ำมันเครื่อง');
+  const isRepair = ctx.type === 'repair' || ctx.kind === 'repair';
+  if (!isOil && !isRepair) return generic;
+
+  const items = ctx.create ? (ctx.asset ? buildMemoItemList({ items: [ctx.asset] }) : []) : domItems;
+  const name = items[0] ? items[0].name : '';
+  const plate = ctx.plate || '';
+  const nm = escapeHtml(name);
+  const pl = plate ? ' หมายเลขทะเบียน ' + escapeHtml(plate) : '';
+
+  if (isOil) {
+    const spec = val('oil_spec').trim();
+    const qty = ctx.create ? val('m_oilqty').trim() : (ctx.qty || '');
+    const mile = ctx.create ? val('m_oilmile').trim() : (ctx.mile || '');
+    const radio = oilRadioOf(name);
+    return {
+      items,
+      itemsText: toThaiNumber(`น้ำมันเครื่อง${spec ? ' ' + escapeHtml(spec) : ''} จำนวน ${qty || '...'} ลิตร ประจำรถวิทยุหมายเลข ${radio || '...'} เลขไมล์ปัจจุบัน ${mile || '...'}`),
+      verb: 'ขอเบิก',
+      approveNote: undefined
+    };
+  }
+
+  const mt = ctx.create ? ctx.maintType : repairTypeOf(ctx.issue);
+  if (mt === 'เปลี่ยนยาง') {
+    const tire = ctx.create ? val('m_tire').trim() : tireFromIssue(ctx.issue);
+    return {
+      items,
+      itemsText: toThaiNumber(` ${nm}${pl}${tire ? ' ขนาดยาง ' + escapeHtml(tire) : ''}`),
+      verb: 'ขอเปลี่ยนยาง',
+      approveNote: '- อนุมัติให้ดำเนินการได้'
+    };
+  }
+  if (mt === 'เปลี่ยนแบตเตอรี่') {
+    return { items, itemsText: toThaiNumber(` ${nm}${pl}`), verb: 'ขอเปลี่ยนแบตเตอรี่', approveNote: '- อนุมัติให้ดำเนินการได้' };
+  }
+  const issue = document.getElementById('m_issue') ? val('m_issue').trim() : '';
+  return {
+    items,
+    itemsText: toThaiNumber(` ${nm}${pl}${issue ? ' เนื่องจาก' + escapeHtml(issue) : ''}`),
+    verb: 'ขอซ่อมบำรุง',
+    approveNote: '- อนุมัติให้ดำเนินการซ่อมได้'
+  };
+}
+
+// เก็บค่าที่กรอกไว้ก่อนวาดบล็อกใหม่ (เปลี่ยนประเภท/ครุภัณฑ์) จะได้ไม่หาย
+function captureDocDraft() {
+  const ctx = memoFormCtx;
+  if (!ctx) return;
+  ctx.draft = {
+    issue: document.getElementById('m_issue') ? val('m_issue') : undefined,
+    tire: document.getElementById('m_tire') ? val('m_tire') : undefined,
+    qty: document.getElementById('m_oilqty') ? val('m_oilqty') : undefined,
+    mile: document.getElementById('m_oilmile') ? val('m_oilmile') : undefined,
+    spec: document.getElementById('oil_spec') ? val('oil_spec') : undefined
+  };
+}
+function setDocSubject() {
+  const sub = document.getElementById('m_subject');
+  const s = docSubject(memoFormCtx, memoFormCtx && memoFormCtx.asset ? memoFormCtx.asset['ชื่อครุภัณฑ์'] : '');
+  if (sub && s) sub.value = s;
+}
+
+// HTML ของบล็อกครุภัณฑ์ตามประเภท
+function docAssetHtml(ctx) {
+  const d = ctx.draft || {};
+  const a = ctx.asset;
+  const isOil = ctx.type === 'oil';
+  const isVeh = !!a && a['หมวดหมู่'] === VEHICLE_CAT;
+  const mt = isOil ? 'ถ่ายน้ำมันเครื่อง' : (ctx.maintType || '');
+  const showIssue = !isOil && !!a && (!isVeh || mt === 'ซ่อมรถ');
+  const chips = !isOil && isVeh
+    ? VEHICLE_MAINT_TYPES.filter(t => t !== 'ถ่ายน้ำมันเครื่อง')
+        .map(t => `<div class="chip ${mt === t ? 'active' : ''}" data-mt="${t}">${t}</div>`).join('')
+    : '';
+  const tireVal = d.tire != null ? d.tire : (a ? (a['ขนาดยาง'] || '') : '');
+  return `
+    <div class="field"><label>${isOil ? 'ยานพาหนะที่เบิกน้ำมันเครื่อง' : 'ครุภัณฑ์ที่ขอซ่อม'}</label>
+      <div class="glass list-item" id="da_assetTrigger" style="cursor:pointer;">
+        <div class="li-body">
+          <div class="li-title">${a ? escapeHtml(a['ชื่อครุภัณฑ์']) : 'แตะเพื่อเลือกครุภัณฑ์'}</div>
+          <div class="li-sub">${a ? escapeHtml([a['ทะเบียนรถ'] ? 'ทะเบียน ' + a['ทะเบียนรถ'] : '', a['รหัสครุภัณฑ์']].filter(Boolean).join(' · ')) : (isOil ? 'เฉพาะยานพาหนะที่คุณครอบครอง' : 'เลือกได้ทุกครุภัณฑ์')}</div>
+        </div>
+        <span class="status-badge status-ready" style="flex:none;">เลือก</span>
+      </div>
+    </div>
+    ${chips ? `<div class="field"><label>ประเภทงานซ่อม</label><div class="chip-row" id="da_mtRow" style="flex-wrap:wrap; overflow:visible;">${chips}</div></div>` : ''}
+    ${!isOil && mt === 'เปลี่ยนยาง' ? `<div class="field"><label>ขนาดยาง</label><input class="input" id="m_tire" placeholder="เช่น 265/65R17" value="${escapeHtml(tireVal)}"></div>` : ''}
+    ${isOil ? `${oilSpecField(d.spec || '')}
+      <div class="memo-two-col">
+        <div class="field"><label>จำนวน (ลิตร)</label><input class="input" type="number" min="0" step="any" id="m_oilqty" value="${escapeHtml(d.qty || '')}"></div>
+        <div class="field"><label>เลขไมล์ปัจจุบัน</label><input class="input" id="m_oilmile" inputmode="numeric" value="${escapeHtml(d.mile || '')}"></div>
+      </div>` : ''}
+    ${showIssue ? `<div class="field"><label>${isVeh ? 'รายละเอียดการซ่อม' : 'อาการ/ปัญหาที่ต้องซ่อม'}</label><textarea class="input" id="m_issue" rows="2">${escapeHtml(d.issue != null ? d.issue : '')}</textarea></div>` : ''}`;
+}
+
+// วาดแถวประเภทและบล็อกครุภัณฑ์ใหม่ทุกครั้งที่ประเภท/ครุภัณฑ์เปลี่ยน
+function renderDocBlocks() {
+  const ctx = memoFormCtx;
+  const typeRow = document.getElementById('m_docTypeRow');
+  const host = document.getElementById('m_docAsset');
+  const gen = document.getElementById('m_generalItems');
+  if (!host || !gen) return;
+
+  if (typeRow) {
+    typeRow.innerHTML = ctx && ctx.create
+      ? `<div class="field"><label>ประเภทเอกสาร</label><div class="chip-row" style="flex-wrap:wrap; overflow:visible;">${DOC_TYPES.map(([v, l]) => `<div class="chip ${ctx.type === v ? 'active' : ''}" data-dt="${v}">${l}</div>`).join('')}</div></div>`
+      : '';
+    typeRow.querySelectorAll('[data-dt]').forEach(c => c.onclick = () => {
+      captureDocDraft();
+      ctx.type = c.dataset.dt;
+      ctx.maintType = '';
+      setDocSubject();
+      renderDocBlocks();
+      refreshMemoLivePreview();
+    });
+  }
+
+  const isCreate = !!(ctx && ctx.create);
+  if (isCreate && ctx.type !== 'general') {
+    gen.style.display = 'none';
+    host.style.display = '';
+    host.innerHTML = docAssetHtml(ctx);
+    wireDocAsset(ctx, host);
+    if (ctx.type === 'oil') wireOilSpec();
+    return;
+  }
+
+  gen.style.display = '';
+  // เอกสารซ่อมที่เปิดจากรายการซ่อม: แสดงอาการที่แจ้งให้แก้ไขได้ (งานเปลี่ยนยาง/แบตไม่ต้องใช้อาการ)
+  const fromMaint = !!ctx && !isCreate;
+  const mtFromMaint = fromMaint ? repairTypeOf(ctx.issue) : '';
+  const showMaintIssue = fromMaint && mtFromMaint !== 'เปลี่ยนยาง' && mtFromMaint !== 'เปลี่ยนแบตเตอรี่';
+  host.style.display = showMaintIssue ? '' : 'none';
+  host.innerHTML = showMaintIssue
+    ? `<div class="field" style="margin-top:10px;"><label>อาการ/ปัญหาที่ต้องซ่อม</label><textarea class="input" id="m_issue" rows="2">${escapeHtml(String(ctx.issue || '').replace(/^ซ่อมรถ\s*—?\s*/, ''))}</textarea></div>`
+    : '';
+}
+
+// ผูกเหตุการณ์ของบล็อกครุภัณฑ์
+function wireDocAsset(ctx, host) {
+  const isOil = ctx.type === 'oil';
+  const trig = host.querySelector('#da_assetTrigger');
+  if (trig) trig.onclick = () => openAssetPickerSheet(
+    ctx.asset ? ctx.asset['รหัสครุภัณฑ์'] : '',
+    (id) => {
+      const a = state.assets.find(x => x['รหัสครุภัณฑ์'] === id);
+      if (!a) { toast('ไม่พบข้อมูลครุภัณฑ์'); return; }
+      ctx.asset = a;
+      ctx.plate = a['ทะเบียนรถ'] || '';
+      ctx.maintType = '';
+      ctx.draft = {};                       // ครุภัณฑ์ใหม่ ใช้ค่าเริ่มต้นของครุภัณฑ์นั้น
+      setDocSubject();
+      renderDocBlocks();
+      refreshMemoLivePreview();
+    },
+    false,
+    isOil ? (a => a['หมวดหมู่'] !== VEHICLE_CAT) : null
+  );
+  host.querySelectorAll('#da_mtRow [data-mt]').forEach(c => c.onclick = () => {
+    captureDocDraft();
+    ctx.maintType = c.dataset.mt;
+    setDocSubject();
+    renderDocBlocks();
+    refreshMemoLivePreview();
+  });
+}
+
+// ข้อความที่จะบันทึกลงรายการซ่อม (ให้ตรงกับรูปแบบในฟอร์มแจ้งซ่อม)
+function maintIssueFromDoc(ctx) {
+  if (ctx.type === 'oil') {
+    const spec = val('oil_spec').trim(), q = val('m_oilqty').trim(), mi = val('m_oilmile').trim();
+    return `ถ่ายน้ำมันเครื่อง (น้ำมัน ${q} ลิตร${spec ? ' · เบอร์ ' + spec : ''} · เลขไมล์ ${mi})`;
+  }
+  const isVeh = ctx.asset['หมวดหมู่'] === VEHICLE_CAT;
+  const issue = document.getElementById('m_issue') ? val('m_issue').trim() : '';
+  if (!isVeh) return issue;
+  if (ctx.maintType === 'เปลี่ยนยาง') {
+    const tire = document.getElementById('m_tire') ? val('m_tire').trim() : '';
+    return 'เปลี่ยนยาง' + (tire ? ` (ขนาดยาง ${tire})` : '');
+  }
+  if (ctx.maintType === 'เปลี่ยนแบตเตอรี่') return 'เปลี่ยนแบตเตอรี่';
+  return 'ซ่อมรถ' + (issue ? ' — ' + issue : '');
+}
+
+// ตรวจข้อมูลก่อนสร้างรายการซ่อมจากเอกสาร
+function docAssetError(ctx) {
+  if (!ctx.asset) return 'กรุณาเลือกครุภัณฑ์';
+  const isVeh = ctx.asset['หมวดหมู่'] === VEHICLE_CAT;
+  if (ctx.type === 'oil') {
+    if (!isVeh) return 'เบิกน้ำมันเครื่องได้เฉพาะยานพาหนะ';
+    if (!val('m_oilqty').trim()) return 'กรุณาระบุจำนวนน้ำมันเครื่อง (ลิตร)';
+    if (!val('m_oilmile').trim()) return 'กรุณาระบุเลขไมล์ปัจจุบัน';
+    return '';
+  }
+  if (isVeh && !ctx.maintType) return 'กรุณาเลือกประเภทงานซ่อม';
+  if ((!isVeh || ctx.maintType === 'ซ่อมรถ') && !(document.getElementById('m_issue') ? val('m_issue').trim() : '')) return 'กรุณากรอกอาการ/ปัญหา';
+  return '';
+}
+
+// ปุ่ม + ในหน้าเอกสาร: เปิดฟอร์มเดียว เลือกประเภทในฟอร์ม
+function openDocCreateForm() {
+  openPrintMemoForm({ create: true });
+}
+
+// ตัวกรองเอกสาร: หมวดเป็นปุ่มเลือก เดือนเป็นรายการเลือกแยกตามปี (ไม่รกเมื่อมีหลายเดือน/ปี)
+function openMemoFilterSheet() {
+  const keys = Array.from(new Set((state.memos || []).map(memoMonthKey).filter(k => k !== 'unknown'))).sort().reverse();
+  const byYear = {};
+  keys.forEach(k => { const y = k.slice(0, 4); (byYear[y] = byYear[y] || []).push(k); });
+  const sel = { kind: state.memoKind || 'all', month: state.memoMonth || 'all' };
+  const monthOpts = Object.keys(byYear).sort().reverse().map(y =>
+    `<optgroup label="ปี พ.ศ. ${Number(y) + 543}">${byYear[y].map(k =>
+      `<option value="${k}" ${sel.month === k ? 'selected' : ''}>${escapeHtml(memoMonthChipLabel(k))}</option>`).join('')}</optgroup>`
+  ).join('');
+  showSheet(`
+    <div class="sheet-title">ตัวกรองเอกสาร</div>
+    <div class="fs-label">หมวดเอกสาร</div>
+    <div class="ax-pills fs-wrap">
+      ${MEMO_KIND_OPTIONS.map(([v, l]) => `<button type="button" class="ax-pill ${sel.kind === v ? 'active' : ''}" data-kind="${v}">${l}</button>`).join('')}
+    </div>
+    <div class="fs-label">เดือน</div>
+    <select class="input" id="mfMonth">
+      <option value="all" ${sel.month === 'all' ? 'selected' : ''}>ทุกเดือน</option>
+      ${monthOpts}
+    </select>
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="mfReset">ล้างตัวกรอง</button>
+      <button class="btn btn-primary" id="mfApply">ดูผลลัพธ์</button>
+    </div>`);
+  const ov = document.getElementById('overlayEl');
+  ov.querySelectorAll('[data-kind]').forEach(b => b.onclick = () => {
+    sel.kind = b.dataset.kind;
+    ov.querySelectorAll('[data-kind]').forEach(x => x.classList.toggle('active', x === b));
+  });
+  document.getElementById('mfApply').onclick = () => {
+    state.memoKind = sel.kind;
+    state.memoMonth = document.getElementById('mfMonth').value;
+    closeSheet();
+    drawMemos();
+  };
+  document.getElementById('mfReset').onclick = () => {
+    state.memoKind = 'all';
+    state.memoMonth = 'all';
+    closeSheet();
+    drawMemos();
+  };
+}
+
 function openPrintMemoForm(opts) {
-  memoFormCtx = opts.repair || null;
+  memoFormCtx = opts.repair || (opts.create ? { create: true, type: 'general', asset: null, plate: '', maintType: '', draft: {} } : null);
   let items = buildMemoItemList(opts);
   const borrow = opts.borrow || null;
   const reqSig = borrow ? (borrow['ลายเซ็นผู้ยืม'] || '') : '';
   const apvSig = borrow ? (borrow['ลายเซ็นผู้อนุมัติ'] || '') : '';
   const dueDateText = borrow ? thaiDateAbbr(borrow['กำหนดคืน']) : '';
   const dueDateIso = borrow && borrow['กำหนดคืน'] ? isoDate(borrow['กำหนดคืน']) : '';
-  const defaultSubject = memoFormCtx
-    ? 'ขอซ่อมบำรุง' + (items[0] && items[0].name ? items[0].name : 'ครุภัณฑ์')
-    : 'ขอเบิก' + (items[0] && items[0].name ? items[0].name : 'พัสดุครุภัณฑ์');
+  const defaultSubject = docSubject(memoFormCtx, items[0] && items[0].name ? items[0].name : '')
+    || ('ขอเบิก' + (items[0] && items[0].name ? items[0].name : 'พัสดุครุภัณฑ์'));
   const requesterNameDefault = memoFormCtx && memoFormCtx.reporter
     ? memoFormCtx.reporter
     : (borrow ? (borrow['ผู้ยืม'] || '') : (state.user && state.user.name) || '');
@@ -16552,9 +16788,12 @@ function openPrintMemoForm(opts) {
           </div>
           <div class="mf-section">
             <div class="mf-section-title"><span class="mf-step">2</span> รายการพัสดุที่ขอเบิก/ยืม</div>
-                        <div id="m_itemsWrap">${itemFieldsHtml()}</div>
-            <button type="button" class="mf-add" id="btnAddItem">+ เพิ่มรายการพัสดุ</button>
-            ${memoFormCtx ? `<div class="field" style="margin-top:10px;"><label>อาการ/ปัญหาที่ต้องซ่อม</label><textarea class="input" id="m_issue" rows="2">${escapeHtml(memoFormCtx.issue || '')}</textarea></div>` : ''}
+            <div id="m_docTypeRow"></div>
+            <div id="m_docAsset"></div>
+            <div id="m_generalItems">
+              <div id="m_itemsWrap">${itemFieldsHtml()}</div>
+              <button type="button" class="mf-add" id="btnAddItem">+ เพิ่มรายการพัสดุ</button>
+            </div>
             ${dueDateText ? `<div class="field"><label>กำหนดส่งคืนภายในวันที่</label><input class="input" type="date" id="m_duedate" value="${dueDateIso}"></div>` : ''}
           </div>
           <div class="mf-section">
@@ -16638,6 +16877,7 @@ function openPrintMemoForm(opts) {
     });
   }
   wireItemRow();
+  renderDocBlocks();
   document.getElementById('btnAddItem').onclick = () => {
     document.getElementById('m_itemsWrap').insertAdjacentHTML('beforeend',
         memoItemRowHtml({ id: '', name: '', brand: '', serial: '', qty: 1, unit: 'เครื่อง' }, 'รายการเพิ่มเติม', true)
@@ -16652,13 +16892,37 @@ function openPrintMemoForm(opts) {
   refreshMemoLivePreview();
 
   document.getElementById('btnCancel').onclick = closeSheet;
-  document.getElementById('btnGenerate').onclick = () => {
-    if (memoFormCtx && !memoFormCtx.maintId) { toast('กรุณาเลือกรายการซ่อมก่อน'); return; }
+  document.getElementById('btnGenerate').onclick = async () => {
+    const ctx = memoFormCtx;
     const memo = collectMemoFormData();
+    const creatingMaint = !!(ctx && ctx.create && ctx.type !== 'general');
+    if (creatingMaint) {
+      const err = docAssetError(ctx);
+      if (err) { toast(err); return; }
+    }
     if (!memo.items.length) { toast('กรุณากรอกชื่อพัสดุอย่างน้อย 1 รายการ'); return; }
     if (!memo.requester.name.trim()) { toast('กรุณาเลือกหรือกรอกชื่อผู้ขอเบิก/ยืม'); return; }
+
+    let borrowId = borrow ? borrow['รหัสรายการ'] : '';
+    if (ctx && !ctx.create) borrowId = 'MNT:' + ctx.maintId;
+    if (creatingMaint) {
+      // สร้างรายการซ่อมก่อน แล้วผูกเอกสารกับรายการนั้น
+      const issue = maintIssueFromDoc(ctx);
+      const tire = document.getElementById('m_tire') ? val('m_tire').trim() : '';
+      const reporter = (memo.requester.rank + ' ' + memo.requester.name).trim();
+      setLoading(true, 'กำลังบันทึกงานซ่อม...');
+      try {
+        const res = await apiPost('addMaint', {
+          assetId: ctx.asset['รหัสครุภัณฑ์'], assetName: ctx.asset['ชื่อครุภัณฑ์'],
+          issue, reporter, reportDate: isoDate(), cost: '', tireSize: tire, photo: ''
+        });
+        borrowId = 'MNT:' + res.id;
+      } catch (err) { toast(err.message || 'บันทึกงานซ่อมไม่สำเร็จ'); return; }
+      finally { setLoading(false); }
+      try { await loadAll(); } catch (e) { /* โหลดข้อมูลใหม่ไม่สำเร็จ ไม่กระทบการเปิดเอกสาร */ }
+    }
+
     const docHtml = buildMemoBodyHtml(memo);
-    const borrowId = memoFormCtx ? 'MNT:' + memoFormCtx.maintId : (borrow ? borrow['รหัสรายการ'] : '');
     closeSheet();
     openMemoEditor({ id: null, docHtml, borrowId });
   };
