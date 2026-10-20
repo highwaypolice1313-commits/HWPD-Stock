@@ -21235,6 +21235,7 @@ function openOilMemoForm(opts) {
   opts = opts || {};
   ensureAssetFormCss();
   ensureOilMemoCss();
+  ensureOilExtraCss();
 
   const pre = opts.assetId ? state.assets.find(a => a['รหัสครุภัณฑ์'] === opts.assetId) : null;
   const last = pre ? latestOilInfo(pre['รหัสครุภัณฑ์']) : {};
@@ -21285,7 +21286,7 @@ function openOilMemoForm(opts) {
 
           <div class="mf-section">
             <div class="mf-section-title"><span class="mf-step">2</span> รายการน้ำมันเครื่อง</div>
-            <div class="field"><label>ชนิด/เบอร์น้ำมัน (ไม่บังคับ)</label><input class="input" id="oil_spec" placeholder="เช่น 5W-30"></div>
+            ${oilSpecField('')}
             <div class="field"><label>จำนวน (ลิตร)</label><input class="input" type="number" min="0" step="any" id="oil_qty" value="${escapeHtml(qtyInit)}"></div>
           </div>
 
@@ -21352,6 +21353,7 @@ function openOilMemoForm(opts) {
   wireSignerCard('oil_req', 'ผู้เบิก');
   wireSignerCard('oil_iss', 'ผู้จ่าย');
   wireSignerCard('oil_apv', 'ผู้อนุมัติ');
+  wireOilSpec();    
 
   const fields = document.getElementById('oilFields');
   fields.addEventListener('input', refreshOilPreview);
@@ -21446,6 +21448,63 @@ document.addEventListener('click', e => {
     if (q && !q.value && a) q.value = defaultOilQty(a);
   }, 0);
 }, true);
+
+function ensureOilExtraCss() {
+  if (document.getElementById('oilExtraCss')) return;
+  const s = document.createElement('style');
+  s.id = 'oilExtraCss';
+  s.textContent = `
+.om-f.om-sg img{position:absolute !important;left:50% !important;top:50% !important;bottom:auto !important;transform:translate(-50%,-50%) !important;width:auto !important;height:12mm !important;max-width:100% !important;object-fit:contain}
+.om-chips{display:flex;flex-wrap:wrap;gap:8px}
+.om-chip{border:1px solid var(--panel-line,#d9dee1);background:var(--panel,#fff);color:var(--ink,#1c2d3b);border-radius:999px;padding:8px 14px;font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;transition:all .15s ease}
+.om-chip:hover{border-color:var(--gold-line,#bb8a3f)}
+.om-chip.on{background:var(--navy,#17324f);color:#fff;border-color:var(--navy,#17324f);box-shadow:0 4px 12px rgba(23,50,79,.2)}
+#btnPrintOilFromMaint,
+#modalRoot #btnPrintOilFromMaint,
+button#btnPrintOilFromMaint.btn.btn-primary{
+  background:#ffffff !important;
+  background-image:none !important;
+  color:var(--ink,#1c2d3b) !important;
+  border:1.5px solid var(--gold,#bb8a3f) !important;
+  box-shadow:none !important;
+}
+#btnPrintOilFromMaint:hover{background:#f5f7f8 !important}
+`;
+  document.head.appendChild(s);
+}
+
+const OIL_SPECS = ['5W-30', '5W-40', '10W-30', '10W-40', '15W-40', '20W-50', 'SAE 40'];
+
+function oilSpecField(cur) {
+  const isPreset = OIL_SPECS.includes(cur);
+  const isCustom = !!cur && !isPreset;
+  return `<div class="field"><label>ชนิด/เบอร์น้ำมันเครื่อง</label>
+    <div class="om-chips" id="oil_specChips">
+      ${OIL_SPECS.map(s => `<button type="button" class="om-chip ${cur === s ? 'on' : ''}" data-spec="${escapeHtml(s)}">${escapeHtml(s)}</button>`).join('')}
+      <button type="button" class="om-chip ${isCustom ? 'on' : ''}" data-spec="__custom">กำหนดเอง</button>
+    </div>
+    <input type="hidden" id="oil_spec" value="${escapeHtml(cur || '')}">
+    <input class="input" id="oil_spec_custom" placeholder="พิมพ์เบอร์น้ำมัน" style="margin-top:8px;display:${isCustom ? 'block' : 'none'}" value="${escapeHtml(isCustom ? cur : '')}">
+  </div>`;
+}
+
+function wireOilSpec() {
+  const hid = document.getElementById('oil_spec');
+  const cust = document.getElementById('oil_spec_custom');
+  document.querySelectorAll('#oil_specChips .om-chip').forEach(b => b.onclick = () => {
+    document.querySelectorAll('#oil_specChips .om-chip').forEach(x => x.classList.toggle('on', x === b));
+    if (b.dataset.spec === '__custom') {
+      cust.style.display = 'block';
+      cust.focus();
+      hid.value = cust.value.trim();
+    } else {
+      cust.style.display = 'none';
+      hid.value = b.dataset.spec;
+    }
+    refreshOilPreview();
+  });
+  cust.oninput = () => { hid.value = cust.value.trim(); refreshOilPreview(); };
+}      
 
 init();   // <-- ของเดิม คงไว้ตามเดิม
 /* ===== จดจำตำแหน่งเลื่อนของหน้า ===== */
