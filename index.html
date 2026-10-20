@@ -21125,10 +21125,12 @@ function ensureOilMemoCss() {
 .om-sigblk{width:7.6cm;margin:18pt 0 0 auto}
 .om-sigblk .om-line{margin-bottom:2pt}
 .om-rankcell{flex:0 0 auto;white-space:nowrap;padding-left:1mm;line-height:18pt;align-self:flex-end}
+.om-rankline{flex:0 0 3.2cm;width:3.2cm;max-width:3.2cm;text-align:left;padding-left:1mm;white-space:nowrap;overflow:visible;position:relative}
+.om-rankword{position:absolute;left:1mm;bottom:0;white-space:nowrap}
 body.modal-open{overflow:hidden}
 #modalRoot .memo-form-sheet{max-height:92dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
-#btnPrintOilFromMaint{background:var(--navy,#17324f) !important;color:#fff !important;border:none !important}
-#btnPrintOilFromMaint:hover{filter:brightness(1.08)}
+#btnPrintOilFromMaint{background:#ffffff !important;background-image:none !important;color:var(--ink,#1c2d3b) !important;border:1px solid var(--panel-line,#d9dee1) !important;box-shadow:none !important}
+#btnPrintOilFromMaint:hover{background:#f5f7f8 !important}
 `;
   document.head.appendChild(s);
 }
@@ -21141,7 +21143,7 @@ function oilMemoBodyHtml(m) {
       
   const sign = (role, p, nameId) => `
     <div class="om-sigblk">
-      <div class="om-line">${L('ลงชื่อ')}<span class="om-rankcell">${v(p.rank)}</span><span class="om-f om-sg">${p.sig ? `<img src="${escapeHtml(p.sig)}" alt="">` : ''}</span>${L(role)}</div>
+      <div class="om-line om-signline">${L('ลงชื่อ')}<span class="om-f om-rankline"><span class="om-rankword">${v(p.rank)}</span></span><span class="om-f om-sg">${p.sig ? `<img src="${escapeHtml(p.sig)}" alt="">` : ''}</span>${L(role)}</div>
       <div class="om-line">${L('(')}${F(`<span${nameId ? ` id="${nameId}"` : ''}>${v(p.name)}</span>`)}${L(')')}</div>
       <div class="om-line">${L('ตำแหน่ง')}${F(v(p.position))}</div>
       <div class="om-line">${L('วันที่')}${F(v(p.date))}</div>
