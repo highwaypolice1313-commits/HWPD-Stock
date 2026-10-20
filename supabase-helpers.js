@@ -147,7 +147,7 @@ const auditToThai = r => ({
   'วันที่ใช้งานครั้งสุดท้าย': r.last_used_date, 'ความเห็นคณะกรรมการ': r.committee_decision
 });
 const borrowToThai = r => ({
-  'รหัสรายการ': r.id, 'รหัสครุภัณฑ์': r.asset_id, 'ชื่อครุภัณฑ์': r.asset_name, 'ผู้ยืม': r.borrower,
+  'รหัสรายการ': r.id, 'รหัสครุภัณฑ์': r.asset_id, 'ชื่อครุภัณฑ์': r.asset_name, 'ผู้ยืม': r.borrower,'รหัสจนท.ผู้ยืม': r.officer_id,
   'LINEUserId': r.borrower_line_id, 'วันที่ยืม': r.borrow_date, 'กำหนดคืน': r.due_date,
   'วันที่คืนจริง': r.return_date, 'สถานะ': r.status, 'ผู้อนุมัติ': r.approver, 'หมายเหตุ': r.note,
   'รหัสส่วนควบที่ยืม': r.component_ids, 'รูปสภาพ(ตอนยืม)': r.photo_out, 'รูปสภาพ(ตอนคืน)': r.photo_in,
@@ -448,7 +448,7 @@ async function sBorrowAsset(p, actor, directApprove) {
   const componentIds = Array.isArray(p.componentIds) ? p.componentIds : [];
   const status = directApprove ? 'กำลังยืม' : 'รออนุมัติ';
   const row = {
-    id, asset_id: p.assetId, asset_name: p.assetName || '', borrower: p.borrower,
+    id, asset_id: p.assetId, asset_name: p.assetName || '', borrower: p.borrower, officer_id: p.officerId || null,
     borrower_line_id: p.borrowerLineId || '', borrow_date: p.borrowDate || null, due_date: p.dueDate || null,
     status, approver: p.approver || (directApprove ? actor : ''), note: p.note || '',
     component_ids: componentIds.join(','), photo_out: p.conditionPhotoOut || '',
