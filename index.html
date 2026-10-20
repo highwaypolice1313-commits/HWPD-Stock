@@ -13646,7 +13646,7 @@ function openMaintDetail(id) {
     <div class="field"><label>ค่าใช้จ่าย (บาท)</label><input class="input" type="number" id="f_mcost" value="${escapeHtml(m['ค่าใช้จ่าย(บาท)'])}"></div>
     <div class="btn-row"><button class="btn btn-primary" id="btnUpdateMaint">บันทึก</button></div>
     ` : ''}
-    ${isOil ? `<div class="btn-row"><button class="btn btn-primary" id="btnPrintOilFromMaint">พิมพ์บันทึกขอเบิกน้ำมันเครื่อง</button></div>` : ''}
+    ${isOil ? `<div class="btn-row"><button class="btn btn-ghost" id="btnPrintOilFromMaint">พิมพ์บันทึกขอเบิกน้ำมันเครื่อง</button></div>` : ''}
     ${isAdmin() ? `<div class="btn-row">
       <button class="btn btn-ghost" id="btnEditMaint">แก้ไขรายการ</button>
       <button class="btn btn-danger" id="btnDeleteMaint">ลบรายการ</button>
@@ -21214,8 +21214,6 @@ function ensureOilExtraCss() {
 .om-chip.on{background:var(--navy,#17324f);color:#fff;border-color:var(--navy,#17324f);box-shadow:0 4px 12px rgba(23,50,79,.2)}
 .om-chip:active{transform:scale(.96)}
 @media (max-width:420px){.om-chips{grid-template-columns:repeat(3,minmax(0,1fr))}}
-#btnPrintOilFromMaint.btn{background:#ffffff !important;background-image:none !important;color:#1c2d3b !important;border:1.5px solid #bb8a3f !important;box-shadow:none !important}
-#btnPrintOilFromMaint.btn:hover{background:#f5f7f8 !important}
 `;
   document.head.appendChild(s);
 }
