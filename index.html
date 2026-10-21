@@ -20046,6 +20046,7 @@ function renderSettings() {
   if (!state.settingsTab) state.settingsTab = 'general';
 
   const TABS = [
+    { id: 'mine', label: 'ของฉัน' },
     { id: 'general',   label: 'ทั่วไป' },
     { id: 'committee', label: 'คณะกรรมการตรวจสอบ' },
     { id: 'units',     label: 'หมวดหมู่ & หน่วยนับ' },
@@ -20066,6 +20067,8 @@ function renderSettings() {
     <div class="chip-row" id="settingsTabRow">
       ${TABS.map(t => `<div class="chip ${state.settingsTab === t.id ? 'active' : ''}" data-stab="${t.id}">${t.label}</div>`).join('')}
     </div>
+
+    ${panel('mine', '<div id="mineSettingsPanel"></div>')}
 
     ${panel('general', `
       <div class="section-title" style="margin-top:6px; font-size:14px;">ธีมเว็บ <small id="themeCurLabel">ใช้อยู่: ${curThemeName}</small></div>
@@ -25071,12 +25074,11 @@ window.exportAllBackup = async function(){
   #view-monthly .mc-swipe-card { touch-action: pan-y !important; }
 </style>
 
-<script id="my-tab-v3">
+<script id="my-tab-v4">
 (function(){
   var MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
   var MONTHS_S = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
   var KEY = 'hpMyOfficerId';
-  var BOX_ID = 'mineSettingsBox';
 
   function mineRow(){
     var saved = localStorage.getItem(KEY);
@@ -25134,8 +25136,7 @@ window.exportAllBackup = async function(){
       (sub ? '<div class="mn-kpi-s">' + sub + '</div>' : '') + '</div>';
   }
 
-  async function renderMine(target){
-    var el = target;
+  async function renderMine(el){
     if (!el) return;
     var me = mineRow();
     var now = new Date();
@@ -25223,55 +25224,67 @@ window.exportAllBackup = async function(){
       '</div></div>';
   }
 
-  function mountMineInSettings(){
-    var host = document.getElementById('view-settings');
-    if (!host) return;
-    var box = document.getElementById(BOX_ID);
-    if (!canMine()) { if (box) box.remove(); return; }
-    if (!box) {
-      box = document.createElement('section');
-      box.id = BOX_ID;
-      box.className = 'mn-embed';
-    }
-    if (host.firstChild !== box) host.insertBefore(box, host.firstChild);
-    renderMine(box);
+  // แผงที่ใช้แสดง: แผงของชิป "ของฉัน" ถ้ามี ไม่เช่นนั้นสร้างกล่องไว้บนสุดของหน้า (กรณีผู้ใช้ที่เห็นหน้าตั้งค่าแบบย่อ)
+  function host(){
+    var h = document.getElementById('mineSettingsPanel');
+    if (h) return h;
+    var view = document.getElementById('view-settings');
+    if (!view || !canMine()) return null;
+    h = document.createElement('div');
+    h.id = 'mineSettingsPanel';
+    view.insertBefore(h, view.firstChild);
+    return h;
+  }
+  function syncChip(){
+    var chip = document.querySelector('#settingsTabRow [data-stab="mine"]');
+    if (chip) chip.style.display = canMine() ? '' : 'none';
+    var p = document.querySelector('.settings-panel[data-panel="mine"]');
+    if (p && !canMine()) p.remove();
+  }
+  function refreshMine(){
+    if (state.tab !== 'settings') return;
+    if (!canMine()) return;
+    var inTabs = !!document.querySelector('#settingsTabRow');
+    if (inTabs && state.settingsTab !== 'mine') return;
+    var h = host();
+    if (h) renderMine(h);
+  }
+  function afterSettingsRender(){
+    if (state.settingsTab === 'mine' && !canMine()) state.settingsTab = 'general';
+    syncChip();
+    refreshMine();
   }
 
-  // ✅ ตั้งค่าใหม่ทุกครั้งที่หน้าตั้งค่าถูกสร้างใหม่ การ์ดนี้จะกลับมาอยู่ด้านบนเสมอ
-  var host = document.getElementById('view-settings');
-  if (host) {
-    new MutationObserver(function(){
-      if (state.tab === 'settings' && !document.getElementById(BOX_ID)) mountMineInSettings();
-    }).observe(host, { childList: true });
+  if (typeof renderSettings === 'function') {
+    var _rs = renderSettings;
+    renderSettings = function(){ var r = _rs.apply(this, arguments); afterSettingsRender(); return r; };
+  }
+  if (typeof renderViewerSettings === 'function') {
+    var _rvs = renderViewerSettings;
+    renderViewerSettings = function(){ var r = _rvs.apply(this, arguments); afterSettingsRender(); return r; };
   }
 
-  // ✅ การกดรายการเปิดรายละเอียดครุภัณฑ์ และปุ่มเปลี่ยนชื่อ ใช้การมอบหมายเหตุการณ์จากเอกสารทั้งหมด
   document.addEventListener('click', function(e){
+    var chip = e.target.closest && e.target.closest('#settingsTabRow [data-stab]');
+    if (chip && chip.dataset.stab === 'mine') setTimeout(refreshMine, 0);
+
     var r = e.target.closest && e.target.closest('.mn-row[data-aid]');
     if (r && r.dataset.aid && typeof openAssetDetail === 'function') { openAssetDetail(r.dataset.aid); return; }
+
     var c = e.target.closest && e.target.closest('[data-mine-change]');
     if (c) {
       var me = mineRow();
       openOfficerPickerSheet(me ? officerFullName(me) : '', function(info){
         var picked = pickedRow(info);
         if (picked) localStorage.setItem(KEY, picked['รหัสจนท.']);
-        mountMineInSettings();
+        refreshMine();
       });
     }
   });
 
-  var _renderTabNowBase = renderTabNow;
-  renderTabNow = function(name){
-    var r = _renderTabNowBase(name);
-    if (name === 'settings') {
-      var go = function(){ setTimeout(mountMineInSettings, 0); };
-      if (r && typeof r.then === 'function') r.then(go); else go();
-    }
-    return r;
-  };
-  window.mountMineInSettings = mountMineInSettings;
+  window.refreshMine = refreshMine;
 })();
-</script>
+</script>      
 
       <style id="mine-dash-v2">
   #view-mine{ box-sizing:border-box; }
@@ -25351,6 +25364,8 @@ window.exportAllBackup = async function(){
     .mn-kpi-v{ font-size:26px; }
 .mn-embed{ margin-bottom:18px; }
 .mn-embed .mn{ padding:0; max-width:none; }
+  #mineSettingsPanel{ margin-bottom:12px; }
+  #mineSettingsPanel .mn{ padding:0; max-width:none; }
   }
 </style>
       
