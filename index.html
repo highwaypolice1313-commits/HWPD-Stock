@@ -7973,6 +7973,7 @@ html, body{
   <div class="page" id="view-settings" style="display:none;"></div>
   <div class="page" id="view-audit" style="display:none;"></div>
   <div class="page" id="view-monthly" style="display:none;"></div>
+        <div class="page" id="view-mine" style="display:none;"></div>
 
   <button class="fab" id="fabBtn" style="display:none;" aria-label="เพิ่มรายการ">
     <svg viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
@@ -8003,6 +8004,11 @@ html, body{
   <button class="tab" data-tab="users" id="usersTabBtn" style="display:none;">
     <span class="ico"><svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="6.6" r="3" stroke="currentColor" stroke-width="1.4"/><path d="M3.8 16.2c1-3 3.4-4.6 6.2-4.6s5.2 1.6 6.2 4.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></span>
     <span class="lbl">เจ้าหน้าที่</span>
+  </button>
+
+  <button class="tab" data-tab="mine">
+    <span class="ico"><svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="3.2" stroke="currentColor" stroke-width="1.4"/><path d="M4 17c.8-3 3.2-4.6 6-4.6s5.2 1.6 6 4.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></span>
+    <span class="lbl">ของฉัน</span>
   </button>
 
   <!-- ===== ปุ่มรอง: ซ่อนบนมือถือ อยู่ใน sheet "เมนู" ===== -->
@@ -8748,7 +8754,7 @@ async function completeLogin({ role, name, token }) {
   appEl.style.display = 'block';
   appEl.classList.add('app-in');
   const ui = loadUi();
-  const VALID_TABS = ['dashboard','assets','borrow','maint','memos','users','reports','settings','audit','monthly'];
+  const VALID_TABS = ['dashboard','assets','borrow','maint','memos','users','reports','settings','audit','monthly','mine'];
   const startTab = VALID_TABS.includes(ui.tab) ? ui.tab : 'dashboard';
    const restoreScroll = () => {
   if (!ui.scrollY) return;
@@ -25072,6 +25078,210 @@ window.exportAllBackup = async function(){
 </style>
 
 </body>
+<script id="my-tab-v1">
+(function(){
+  var MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+  var KEY = 'hpMyOfficerId'; // <-- เก็บรหัสเจ้าหน้าที่ที่เลือกเองไว้ในเครื่อง
+
+  // ✅ เจ้าหน้าที่ของฉัน: ใช้ที่เลือกไว้ก่อน ถ้าไม่มีจึงจับคู่จากชื่อที่ล็อกอิน
+  function mineRow(){
+    var saved = localStorage.getItem(KEY);
+    if (saved) {
+      var r = (state.users || []).find(function(u){ return u['รหัสจนท.'] === saved; });
+      if (r) return r;
+    }
+    return (typeof myOfficerRow === 'function') ? myOfficerRow() : null;
+  }
+  // ✅ ตรวจว่าชื่อในรายการ (ผู้ยืม / ผู้แจ้ง / ผู้ครอบครอง) เป็นของฉันหรือไม่
+  function mineMatches(name){
+    if (!name) return false;
+    var row = mineRow();
+    if (!row) return typeof nameIsMe === 'function' ? nameIsMe(name) : false;
+    return samePerson(name, officerFullName(row)) || samePerson(name, row['ชื่อ-สกุล']);
+  }
+  function fmtDate(v){ return v ? systemDate(v) : '-'; }
+
+  // รับค่าจากหน้าเลือกรายชื่อ ไม่ว่าจะส่งมาเป็นข้อมูลเจ้าหน้าที่ ดัชนี หรือชื่อ
+  function pickedRow(info){
+    if (info && typeof info === 'object' && info['รหัสจนท.']) return info;
+    if (info && typeof info === 'object' && info.name) info = info.name;
+    if (typeof info === 'number' || (typeof info === 'string' && /^\d+$/.test(info))) {
+      return (state.users || [])[Number(info)] || null;
+    }
+    var s = String(info || '');
+    return (state.users || []).find(function(u){ return officerFullName(u) === s || u['ชื่อ-สกุล'] === s; }) || null;
+  }
+
+  function itemHtml(title, sub, status){
+    return '<div class="mine-item">' +
+      '<div class="mine-item-tx"><b>' + escapeHtml(title || '-') + '</b>' +
+      '<div class="mine-sub">' + escapeHtml(sub || '') + '</div></div>' +
+      (status ? '<span class="status-badge ' + statusClass(status) + '">' + escapeHtml(status) + '</span>' : '') +
+      '</div>';
+  }
+  function sectionHtml(title, count, body, emptyText){
+    return '<section class="mine-sec">' +
+      '<h3 class="mine-h">' + escapeHtml(title) + ' <span class="mine-count">' + count + '</span></h3>' +
+      (count ? body : '<div class="mine-empty">' + escapeHtml(emptyText) + '</div>') +
+      '</section>';
+  }
+
+  async function renderMine(){
+    var el = document.getElementById('view-mine');
+    if (!el) return;
+    var row = mineRow();
+    var now = new Date();
+    var borrow = state.borrow || [], maint = state.maint || [], assets = state.assets || [];
+
+    // 1) ครุภัณฑ์ที่ฉันถืออยู่ = ที่กำลังยืม + ที่ผูกชื่อฉันในทะเบียน
+    var myBorrows = borrow.filter(function(b){ return mineMatches(b['ผู้ยืม']); })
+      .sort(function(a,b){ return String(b['วันที่ยืม']||'').localeCompare(String(a['วันที่ยืม']||'')); });
+    var activeBorrows = myBorrows.filter(function(b){
+      var s = effectiveBorrowStatus(b); return s === 'กำลังยืม' || s === 'เกินกำหนด';
+    });
+    var holdAssets = assets.filter(function(a){ return mineMatches(a['ผู้ครอบครอง/หน่วยงาน']); });
+    var holdIds = {};
+    var holdBody = '';
+    activeBorrows.forEach(function(b){
+      holdIds[b['รหัสครุภัณฑ์']] = true;
+      holdBody += itemHtml(b['ชื่อครุภัณฑ์'], 'กำหนดคืน ' + fmtDate(b['กำหนดคืน']), effectiveBorrowStatus(b));
+    });
+    holdAssets.forEach(function(a){
+      if (holdIds[a['รหัสครุภัณฑ์']]) return;
+      holdBody += itemHtml(a['ชื่อครุภัณฑ์'], a['หมวดหมู่'] || '', a['สถานะ']);
+    });
+    var holdCount = activeBorrows.length + holdAssets.filter(function(a){ return !holdIds[a['รหัสครุภัณฑ์']]; }).length;
+
+    // 2) คำขอยืมของฉันพร้อมสถานะ
+    var reqBody = myBorrows.map(function(b){
+      return itemHtml(b['ชื่อครุภัณฑ์'], 'ยืมเมื่อ ' + fmtDate(b['วันที่ยืม']), effectiveBorrowStatus(b));
+    }).join('');
+
+    // 3) งานซ่อมที่ฉันแจ้ง
+    var myMaint = maint.filter(function(m){ return mineMatches(m['ผู้แจ้ง']); });
+    var maintBody = myMaint.map(function(m){
+      return itemHtml(m['ชื่อครุภัณฑ์'], (m['อาการ/ปัญหา'] || '-') + ' · แจ้งเมื่อ ' + fmtDate(m['วันที่แจ้ง']), m['สถานะ']);
+    }).join('');
+
+    // 4) ตรวจประจำเดือนของฉัน (เดือนปัจจุบัน)
+    var mcHtml;
+    if (!row) {
+      mcHtml = '<div class="mine-empty">เลือกชื่อของคุณก่อนจึงจะแสดงผลตรวจ</div>';
+    } else {
+      try {
+        var list = await supaApiGet('getMonthlyChecks', { year: now.getFullYear(), month: now.getMonth() + 1 }); // <-- ตรวจปี ค.ศ. ถ้าเก็บเป็น พ.ศ. ให้ +543
+        var rec = (list || []).find(function(x){ return x['รหัสจนท.'] === row['รหัสจนท.']; });
+        var res = rec ? rec['ผล'] : 'ยังไม่ตรวจ';
+        mcHtml = '<div class="mine-item"><div class="mine-item-tx"><b>ตรวจประจำเดือน ' + MONTHS[now.getMonth()] + ' ' + (now.getFullYear() + 543) + '</b>' +
+          '<div class="mine-sub">' + (rec ? 'ตรวจเมื่อ ' + systemDateTime(rec['วันที่ตรวจ']) : 'ยังไม่มีการตรวจในเดือนนี้') + '</div></div>' +
+          '<span class="status-badge ' + statusClass(res) + '">' + escapeHtml(res) + '</span></div>';
+      } catch (e) {
+        mcHtml = '<div class="mine-empty">โหลดผลตรวจประจำเดือนไม่สำเร็จ</div>';
+      }
+    }
+
+    var name = row ? officerFullName(row) : ((state.user && state.user.name) || '-');
+    var photo = row && row['รูปถ่าย'];
+    var head = '<div class="mine-head">' +
+      (photo ? '<img class="li-avatar" src="' + escapeHtml(photo) + '" alt="">' : ICONS.user) +
+      '<div class="mine-item-tx"><b>' + escapeHtml(name) + '</b>' +
+      '<div class="mine-sub">' + (row ? escapeHtml(row['หน่วยงาน'] || '') : 'ยังไม่ได้เลือกว่าเป็นใคร') + '</div></div>' +
+      '<button type="button" class="btn btn-secondary" id="mineChange">' + (row ? 'เปลี่ยน' : 'เลือกชื่อของฉัน') + '</button>' +
+      '</div>';
+
+    el.innerHTML = '<div class="mine-wrap">' + head +
+      sectionHtml('ครุภัณฑ์ที่ฉันถืออยู่', holdCount, holdBody, 'ไม่มีครุภัณฑ์ที่ถืออยู่') +
+      sectionHtml('คำขอยืมของฉัน', myBorrows.length, reqBody, 'ยังไม่มีคำขอยืม') +
+      sectionHtml('งานซ่อมที่ฉันแจ้ง', myMaint.length, maintBody, 'ยังไม่มีงานซ่อมที่แจ้ง') +
+      '<section class="mine-sec"><h3 class="mine-h">กำหนดตรวจประจำเดือน</h3>' + mcHtml + '</section>' +
+      '</div>';
+
+    var btn = document.getElementById('mineChange');
+    if (btn) btn.onclick = function(){
+      openOfficerPickerSheet(name, function(info){
+        var picked = pickedRow(info);
+        if (picked) localStorage.setItem(KEY, picked['รหัสจนท.']);
+        renderMine();
+      });
+    };
+  }
+  window.renderMine = renderMine;
+
+  // ✅ ต่อกับระบบเปลี่ยนแท็บเดิม: แท็บ "ของฉัน" แสดงผลเอง ส่วนแท็บอื่นทำงานตามเดิม
+  var _renderTabNowBase = renderTabNow;
+  renderTabNow = function(name){
+    var mine = document.getElementById('view-mine');
+    if (name !== 'mine') {
+      if (mine) mine.style.display = 'none';
+      return _renderTabNowBase(name);
+    }
+    state.tab = 'mine';
+    if (typeof saveUi === 'function') saveUi({ tab: 'mine', scrollY: 0 });
+    document.querySelectorAll('.page').forEach(function(p){ p.style.display = 'none'; });
+    document.querySelectorAll('.tab').forEach(function(t){ t.classList.toggle('active', t.dataset.tab === 'mine'); });
+    if (mine) mine.style.display = 'block';
+    window.scrollTo(0, 0);
+    renderMine();
+  };
+})();
+</script>
+<style id="mine-tab-css">
+  #view-mine{ box-sizing:border-box; }
+
+  /* ฐาน: มือถือ คอลัมน์เดียว */
+  .mine-wrap{
+    box-sizing:border-box; width:100%; max-width:1120px; margin:0 auto;
+    padding:16px 16px calc(24px + env(safe-area-inset-bottom, 0px));
+    display:grid; grid-template-columns:minmax(0,1fr); gap:14px;
+  }
+  .mine-head{
+    grid-column:1 / -1; display:flex; align-items:center; gap:12px;
+    padding:14px; border-radius:18px; min-width:0;
+    background:var(--surface, #fff);
+  }
+  .mine-head > div{ flex:1 1 auto; min-width:0; }
+  .mine-head img.li-avatar{ width:52px; height:52px; border-radius:50%; object-fit:cover; flex:0 0 auto; }
+  .mine-head .btn{ flex:0 0 auto; min-height:44px; padding:0 14px; }
+
+  .mine-sec{ min-width:0; padding:14px; border-radius:18px; background:var(--surface, #fff); }
+  .mine-h{ margin:0 0 10px; font-size:16px; line-height:1.3; }
+  .mine-count{ color:var(--navy-soft, #64748b); font-weight:600; margin-left:6px; }
+
+  .mine-item{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    min-height:44px; padding:10px 0; border-top:1px solid var(--navy-line, #e2e8f0);
+  }
+  .mine-item:first-child{ border-top:0; }
+  .mine-item-tx{ min-width:0; flex:1 1 auto; }
+  .mine-item-tx b{ display:block; overflow-wrap:anywhere; word-break:break-word; line-height:1.35; }
+  .mine-sub{ font-size:13px; color:var(--navy-soft, #64748b); overflow-wrap:anywhere; line-height:1.4; }
+  .mine-item .status-badge{ flex:0 0 auto; max-width:46%; text-align:center; white-space:normal; line-height:1.25; }
+  .mine-empty{ color:var(--navy-soft, #64748b); font-size:14px; padding:6px 0; }
+
+  /* แท็บเล็ต / iPad แนวตั้ง (720px ขึ้นไป): สองคอลัมน์ */
+  @media (min-width:720px){
+    .mine-wrap{ grid-template-columns:repeat(2, minmax(0,1fr)); padding:20px 20px calc(28px + env(safe-area-inset-bottom, 0px)); }
+  }
+
+  /* คอมพิวเตอร์ / iPad แนวนอน (1024px ขึ้นไป): สองคอลัมน์ ระยะห่างกว้างขึ้น */
+  @media (min-width:1024px){
+    .mine-wrap{ padding:24px 28px; gap:18px; }
+    .mine-sec{ padding:18px 20px; }
+    .mine-h{ font-size:17px; }
+    .mine-item:hover{ background:rgba(0,0,0,.02); }
+  }
+
+  /* มือถือจอแคบมาก (360px ลงมา) */
+  @media (max-width:360px){
+    .mine-head{ flex-wrap:wrap; }
+    .mine-head .btn{ width:100%; }
+    .mine-item{ align-items:flex-start; }
+    .mine-item .status-badge{ max-width:50%; }
+  }
+
+  @media (prefers-reduced-motion:reduce){ .mine-item{ transition:none; } }
+</style>
+      
 <script id="maint-live-v1">
 (function(){
   if (window.__maintLiveInit) return; window.__maintLiveInit = true;
