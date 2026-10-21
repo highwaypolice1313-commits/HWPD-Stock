@@ -25055,6 +25055,22 @@ window.exportAllBackup = async function(){
   }
 </style>
 
+<style>
+  /* ✅ ป้ายสถานะ "คืนแล้ว" (รายการยืม-คืน) เป็นสีเขียวเข้ม */
+  .status-badge.status-returned { background:#16a34a; color:#fff; }
+
+  /* ✅ ข้อความขั้นสุดท้ายบน timeline ("เสร็จ" / "คืนแล้ว") เป็นสีเขียวเมื่อถึงขั้นนั้นแล้ว */
+  .stg-s.now:last-child .stg-l,
+  .stg-s.done:last-child .stg-l { color:#16a34a; font-weight:700; }
+
+  /* ✅ ตรวจประจำเดือน: ปัดซ้าย-ขวาเฉพาะบนการ์ด ส่วนอื่นเลื่อนหน้าแนวตั้งได้ปกติ */
+  #view-monthly,
+  #view-monthly .mc-grid,
+  #view-monthly .mc-swipe-stage,
+  #view-monthly .mc-swipe-card-wrap { touch-action: pan-y !important; }
+  #view-monthly .mc-swipe-card { touch-action: pan-y !important; }
+</style>
+
 </body>
 <script id="maint-live-v1">
 (function(){
