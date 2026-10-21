@@ -25750,15 +25750,6 @@ syncChip();
 #view-dashboard .hs-menu .dbx-sec{color:var(--ink)}
 #view-settings .nm-a,#view-settings .nm-b{white-space:nowrap}
 
-/* ---- โหมดมืด: การ์ดครุภัณฑ์ อ่านชัดขึ้น ---- */
-:root[data-mode="dark"] .ba-card .ba-cat,
-:root[data-mode="dark"] .ba-card .ba-cat small,
-:root[data-mode="dark"] .ba-card .ba-cat b,
-:root[data-mode="dark"] .ba-card .ax-sn,
-:root[data-mode="dark"] .ba-card .ba-cell small,
-:root[data-mode="dark"] .ba-card .ba-cell b{ color:var(--ink) !important; opacity:1 !important; }
-:root[data-mode="dark"] .ba-card .ba-cat{ background:rgba(255,255,255,.12) !important; border-color:rgba(255,255,255,.22) !important; }
-
 /* ---- ครุภัณฑ์ที่ฉันถืออยู่: เต็มความกว้าง + ตัวอักษรชัดในโหมดมืด ---- */
 #view-dashboard .hs-scroll .hs-card{flex:1 0 220px;min-width:220px;max-width:none}
 #view-dashboard .hs-card-t{color:var(--ink)}
@@ -25768,9 +25759,52 @@ syncChip();
 #view-dashboard .hs-pill.warn{border-color:var(--warn)}
 #view-dashboard .hs-pill.bad{border-color:var(--bad)}
 
-/* ---- โหมดมืด: เพิ่มความคมชัดของตัวอักษรรองทั้งระบบ (หน้าครุภัณฑ์ ฯลฯ) ---- */
-:root[data-mode="dark"]{ --ink-dim:#d3dfeb !important; --ink-faint:#b4c6d9 !important; }
 </style>
+
+<style id="cibnight-contrast-v2">
+/* ===== CIB โหมดมืด: เพิ่มความคมชัดทั้งระบบ ===== */
+:root[data-theme="cibnight"]{
+  --ink:#ffffff !important;
+  --ink-dim:#e6eef8 !important;
+  --ink-faint:#c9d8ea !important;
+}
+
+/* การ์ดครุภัณฑ์ / ยืม / ซ่อม: พื้นหลังเข้มขึ้น ให้ตัวอักษรเด่น */
+:root[data-theme="cibnight"] .asset-grid .ba-card{
+  background:#06213f !important;
+  border-color:#1d4f8a !important;
+}
+:root[data-theme="cibnight"] .asset-grid .ba-card .ba-head{
+  background:linear-gradient(160deg,#0d3366 0%,#06213f 100%) !important;
+}
+:root[data-theme="cibnight"] .asset-grid .ba-card .asset-card-title{
+  color:#ffffff !important;
+  text-shadow:0 1px 2px rgba(0,0,0,.45);
+}
+
+/* หมวดหมู่ (ป้ายชิป) */
+:root[data-theme="cibnight"] .asset-grid .ba-card .ba-cat{
+  background:#12396b !important;
+  border:1px solid #3a6aa6 !important;
+  color:#ffffff !important;
+}
+:root[data-theme="cibnight"] .asset-grid .ba-card .ba-cat small,
+:root[data-theme="cibnight"] .asset-grid .ba-card .ba-cat b{
+  color:#ffffff !important;
+  opacity:1 !important;
+}
+
+/* รหัส และช่องรายละเอียด */
+:root[data-theme="cibnight"] .asset-grid .ba-card .ax-sn,
+:root[data-theme="cibnight"] .asset-grid .ba-card .ba-cell small{
+  color:#e6eef8 !important;
+  opacity:1 !important;
+}
+:root[data-theme="cibnight"] .asset-grid .ba-card .ba-cell b{
+  color:#ffffff !important;
+}
+</style>
+      
 </body>
 
 <script id="maint-live-v1">
