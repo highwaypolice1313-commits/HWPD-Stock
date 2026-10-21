@@ -8138,10 +8138,10 @@ function currentTheme() {
   // ถ้า id ที่เคยบันทึกไว้ไม่มีในรายการแล้ว (เช่น 'night' ของเดิม) ให้ถอยกลับไปธีมเริ่มต้น
   if (saved && THEMES.some(t => t.id === saved)) return saved;
   const dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-  return dark ? 'obsidian' : 'dawn';
+  return dark ? 'cibnight' : 'cib';
 }
 function applyTheme(id) {
-  if (!THEMES.some(t => t.id === id)) id = 'dawn';
+  if (!THEMES.some(t => t.id === id)) id = 'cib';
   const root = document.documentElement;
   root.setAttribute('data-theme', id);
   const t = THEMES.find(x => x.id === id) || {};
@@ -8150,6 +8150,7 @@ function applyTheme(id) {
   if (t.glass) root.setAttribute('data-glass', '1'); else root.removeAttribute('data-glass');
   try { localStorage.setItem(THEME_KEY, id); } catch (e) {}
 }
+try { if (!localStorage.getItem('hpThemeCibDefault')) { localStorage.removeItem(THEME_KEY); localStorage.setItem('hpThemeCibDefault', '1'); } } catch (e) {}
 applyTheme(currentTheme());
    (function markTouchDevice(){
   const isTouchTablet = (navigator.maxTouchPoints || 0) > 1 &&
@@ -8160,7 +8161,7 @@ applyTheme(currentTheme());
 try {
   const mediaDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
   mediaDark?.addEventListener?.('change', e => {
-    try { if (!localStorage.getItem(THEME_KEY)) applyTheme(e.matches ? 'obsidian' : 'dawn'); } catch (_) {}
+    try { if (!localStorage.getItem(THEME_KEY)) applyTheme(e.matches ? 'cibnight' : 'cib'); } catch (_) {}
   });
 } catch (_) {}
 
@@ -21893,7 +21894,7 @@ function toggleThemeMode() {
     let mem = null;
     try { mem = localStorage.getItem(dark ? 'hpAssetLastLight' : 'hpAssetLastDark'); } catch (e) {}
     const t = THEMES.find(x => x.id === mem);
-    next = (t && (t.mode === 'dark') !== dark) ? mem : (dark ? 'dawn' : 'midnight');
+    next = (t && (t.mode === 'dark') !== dark) ? mem : (dark ? 'cibnight' : 'cib');
   }
   try { localStorage.setItem(dark ? 'hpAssetLastDark' : 'hpAssetLastLight', cur); } catch (e) {}
   applyTheme(next);
@@ -25731,6 +25732,15 @@ syncChip();
 #view-settings .mn-kpi-v{color:var(--ink)}
 #view-dashboard .hs-menu .dbx-sec{color:var(--ink)}
 #view-settings .nm-a,#view-settings .nm-b{white-space:nowrap}
+
+/* ---- โหมดมืด: การ์ดครุภัณฑ์ อ่านชัดขึ้น ---- */
+:root[data-mode="dark"] .ba-card .ba-cat,
+:root[data-mode="dark"] .ba-card .ba-cat small,
+:root[data-mode="dark"] .ba-card .ba-cat b,
+:root[data-mode="dark"] .ba-card .ax-sn,
+:root[data-mode="dark"] .ba-card .ba-cell small,
+:root[data-mode="dark"] .ba-card .ba-cell b{ color:var(--ink) !important; opacity:1 !important; }
+:root[data-mode="dark"] .ba-card .ba-cat{ background:rgba(255,255,255,.12) !important; border-color:rgba(255,255,255,.22) !important; }
 
 /* ---- ครุภัณฑ์ที่ฉันถืออยู่: เต็มความกว้าง + ตัวอักษรชัดในโหมดมืด ---- */
 #view-dashboard .hs-scroll .hs-card{flex:1 0 220px;min-width:220px;max-width:none}
