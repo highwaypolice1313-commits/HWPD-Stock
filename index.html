@@ -7633,6 +7633,11 @@ html, body{
 
 
 <body>
+<div id="rotateLockOverlay" aria-live="polite">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.2"/><path d="M11 18.5h2"/></svg>
+<p>กรุณาหมุนอุปกรณ์เป็นแนวตั้ง<br>เพื่อใช้งานระบบพัสดุครุภัณฑ์</p>
+</div>
+
 
 <div id="loginScreen" class="login-wrap">
   <div class="login-badge">
@@ -26026,15 +26031,16 @@ html[data-theme="cibnight"] #assetList .sx-sn{ color:#e6eef8 !important; opacity
   }
   body .topbar{ position:sticky !important; }
 }
-/* (8) iPad แนวนอน: แถบบนขยายเต็มความกว้างจอ (ลากใต้เมนูด้านข้าง) ให้ #topCapsule อยู่ในแถบบนเสมอ
-   ระยะซ้ายเว้นตามความกว้างเมนูจริง: กาง 210px (900–1199) / 236px (1200+), ย่อ 114px */
-@media (min-width:900px) and (hover:none) and (pointer:coarse){
-  body .topbar{ margin-left:0 !important; width:100% !important; max-width:100% !important; padding-left:234px !important; }
-  body.nav-collapsed .topbar{ padding-left:138px !important; }
-}
-@media (min-width:1200px) and (hover:none) and (pointer:coarse){
-  body .topbar{ padding-left:260px !important; }
-  body.nav-collapsed .topbar{ padding-left:138px !important; }
+/* (9) มือถือ: ล็อกแนวตั้ง — เมื่อหมุนเป็นแนวนอนให้แสดงข้อความให้หมุนกลับ (iPad ไม่ถูกกระทบ) */
+#rotateLockOverlay{ display:none; }
+@media (orientation:landscape) and (max-height:500px) and (pointer:coarse){
+  #rotateLockOverlay{
+    display:flex; position:fixed; inset:0; z-index:2147483647;
+    align-items:center; justify-content:center; flex-direction:column; gap:14px;
+    background:#0c1e33; color:#fff; font-family:'Kanit',sans-serif; text-align:center; padding:24px;
+  }
+  #rotateLockOverlay svg{ width:56px; height:56px; }
+  #rotateLockOverlay p{ margin:0; font-size:16px; line-height:1.5; }
 }
 </style>
 
