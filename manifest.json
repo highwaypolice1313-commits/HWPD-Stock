@@ -1,10 +1,10 @@
-
 {
   "name": "ระบบพัสดุครุภัณฑ์ ตำรวจทางหลวง",
   "short_name": "ระบบพัสดุ",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#FFFFFF",
   "theme_color": "#123B70",
   "icons": [
