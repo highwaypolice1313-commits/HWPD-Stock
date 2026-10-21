@@ -25313,7 +25313,7 @@ window.exportAllBackup = async function(){
       (photo ? '<img class="mn-av" src="' + esc(photo) + '" alt="">'
              : '<div class="mn-av mn-av-ph">' + esc(String(name || '?').charAt(0)) + '</div>') +
       '<div style="min-width:0"><div class="mn-date">' + today + '</div><div class="mn-hi">' + greet + '</div>' +
-      '<div class="mn-name">' + esc(name).replace(/\s(\S+)$/, '<br>$1') + '</div><div class="mn-unit">' + esc(unit) + '</div></div>' +
+      '<div class="mn-name">' + esc(name).replace(/^(.*)\s(\S+)$/, '<span class="nm-a">$1</span> <span class="nm-b">$2</span>') + '</div><div class="mn-unit">' + esc(unit) + '</div></div>' +
       changeBtn + '</section>';
 
     var alertBar = overdue.length
@@ -25729,6 +25729,8 @@ syncChip();
 #view-settings .mn-empty{border-color:var(--panel-line);color:var(--ink-dim)}
 #view-settings .mn-mc{background:var(--panel-soft)}
 #view-settings .mn-kpi-v{color:var(--ink)}
+#view-dashboard .hs-menu .dbx-sec{color:var(--ink)}
+#view-settings .nm-a,#view-settings .nm-b{white-space:nowrap}
 </style>
 </body>
 
