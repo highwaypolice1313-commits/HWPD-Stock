@@ -1,5 +1,5 @@
 /**
- * supabase-helpers.js  (ฉบับแก้ไข: ใช้ view สำหรับอ่าน / soft delete / ถังขยะ / ลบรูปตอน purge)
+ * supabase-helpers.js  (ฉบับแก้ไข: กันสถานะครุภัณฑ์เพี้ยนจากรายการยืม + ตรวจผล UPDATE ทุกจุด)
  * ---------------------------------------------------------
  * ตัวกลางแทน Google Apps Script backend เดิม — คุยกับ Supabase (Postgres)
  * โดยตรงจากเบราว์เซอร์ ใช้คู่กับ schema ที่ตั้งไว้แล้วใน Supabase SQL Editor
@@ -8,13 +8,11 @@
  * อัปโหลดขึ้น Google Drive ผ่าน Apps Script ตัวเดิม (GAS_UPLOAD_URL) ตาราง Supabase
  * เก็บแค่ "URL ของรูปบน Drive" เป็น text เท่านั้น
  *
- * การเปลี่ยนแปลงจากเวอร์ชันก่อนหน้า:
- *  - การอ่านข้อมูลใช้ view (v_assets, v_borrow, v_maint, v_components, v_users, v_memos)
- *  - การเขียนข้อมูลยังใช้ตารางจริงเหมือนเดิม
- *  - การลบทุกอย่างเปลี่ยนเป็น soft delete ผ่าน RPC (ย้ายไปถังขยะ กู้คืนได้ 30 วัน)
- *  - เพิ่มฟังก์ชันถังขยะ: กู้คืน (restoreItem), ลบถาวร (purgeItem), รายการในถังขยะ (listTrash)
- *  - รูปบน Drive จะถูกลบเฉพาะตอน purge ถาวรเท่านั้น
- *  - listTrash อ่าน role จาก token ฝั่งเซิร์ฟเวอร์ ไม่รับ role จาก client
+ * การเปลี่ยนแปลงในฉบับนี้:
+ *  - ทุกการเปลี่ยนสถานะครุภัณฑ์ผ่าน setAssetStatusSb() ซึ่งตรวจผลจริงและ throw เมื่อไม่สำเร็จ
+ *  - ห้ามเปลี่ยนสถานะครุภัณฑ์ที่ยังมีรายการยืมค้างอยู่ (แก้ไขฟอร์ม / ปิดซ่อม / คืน / ลบรายการยืม)
+ *  - กันการยืมซ้ำของครุภัณฑ์ที่ถูกยืมอยู่
+ *  - หน้าแสดงผลซิงก์สถานะ "กำลังยืม" ตามรายการยืมที่ค้างอยู่เสมอ
  *
  * วิธีใช้:
  *  1. ตรวจว่า SUPABASE_URL / SUPABASE_ANON_KEY ตรงกับโปรเจกต์ของคุณ (ตรงจุด ⚠️ CONFIG)
@@ -282,6 +280,19 @@ async function sGetAll() {
   const components = componentsD.map(componentToThai);
   const users = usersD.map(userToThai);
   markOverdue(borrow);
+
+  // ✅ แสดงสถานะ "กำลังยืม" ตามรายการยืมที่ค้างอยู่เสมอ แม้ตารางครุภัณฑ์จะไม่ตรงกัน
+  const activeBorrowedIds = new Set(
+    borrow
+      .filter(b => b['สถานะ'] === 'กำลังยืม' || b['สถานะ'] === 'เกินกำหนด')
+      .map(b => b['รหัสครุภัณฑ์'])
+  );
+  assets.forEach(a => {
+    if (activeBorrowedIds.has(a['รหัสครุภัณฑ์']) && a['สถานะ'] === 'พร้อมใช้งาน') {
+      a['สถานะ'] = 'กำลังยืม';
+    }
+  });
+
   return {
     assets, borrow, maint, components, users, settings,
     dashboard: buildDashboardJS(assets, borrow, maint, settings.renewalAlertDays)
@@ -397,6 +408,30 @@ async function softDeleteSb(table, id, actor, role) {
   return data;
 }
 
+// ==================== ASSET STATUS GUARDS (ตัวช่วยกันสถานะเพี้ยน) ====================
+
+// ✅ ตรวจว่าครุภัณฑ์มีรายการยืมที่ยังไม่คืน (ไม่นับรายการในถังขยะ) — ถ้าอ่านไม่ได้จะ throw
+async function hasActiveBorrowSb(assetId) {
+  const { data, error } = await sb.from('borrow').select('id')
+    .eq('asset_id', assetId)
+    .in('status', ['กำลังยืม', 'เกินกำหนด'])
+    .is('deleted_at', null)
+    .limit(1);
+  if (error) throw new Error('ตรวจสอบรายการยืมไม่สำเร็จ: ' + error.message);
+  return !!(data && data.length);
+}
+
+// ✅ อัปเดตสถานะครุภัณฑ์และตรวจผลจริง (กันกรณี RLS ทำให้ล้มเหลวเงียบ ๆ)
+async function setAssetStatusSb(assetId, status, holder) {
+  const upd = { status };
+  if (holder !== undefined) upd.holder = holder;
+  const { data, error } = await sb.from('assets').update(upd).eq('id', assetId).select('id');
+  if (error) throw new Error('อัปเดตสถานะครุภัณฑ์ไม่สำเร็จ: ' + error.message);
+  if (!data || !data.length) {
+    throw new Error('อัปเดตสถานะครุภัณฑ์ไม่สำเร็จ: ไม่พบรหัส ' + assetId + ' หรือไม่มีสิทธิ์แก้ไข');
+  }
+}
+
 // ==================== ASSETS ====================
 async function sAddAsset(p, actor) {
   const id = p.id || genId('AST');
@@ -429,20 +464,17 @@ async function sUpdateAsset(p, actor) {
     if ((k === 'receivedDate' || k === 'renewalDue') && p[k] === '') { upd[map[k]] = null; return; }
     upd[map[k]] = p[k];
   });
-  
-    // ✅ ห้ามตั้งสถานะเป็น "พร้อมใช้งาน" ถ้ายังมีรายการยืมค้างอยู่
-  if (p.status === 'พร้อมใช้งาน') {
-    const { data: active, error: eAct } = await sb.from('borrow')
-      .select('id')
-      .eq('asset_id', p.id)
-      .in('status', ['กำลังยืม', 'เกินกำหนด'])
-      .limit(1);
-    if (eAct) throw new Error('ตรวจสอบรายการยืมไม่สำเร็จ: ' + eAct.message);
-    if (active && active.length) {
-      throw new Error('ครุภัณฑ์นี้ยังมีรายการยืมค้างอยู่ ต้องคืนก่อนจึงเปลี่ยนเป็นพร้อมใช้งานได้');
+
+  // ✅ ห้ามเปลี่ยนสถานะครุภัณฑ์ที่ยังมีรายการยืมค้างอยู่
+  // เช็คเฉพาะตอนที่สถานะถูกเปลี่ยนจริง เพื่อให้ฟอร์มแก้ไขที่ส่งค่าเดิมมายังบันทึกได้ตามปกติ
+  if (p.status !== undefined) {
+    const { data: cur, error: eCur } = await sb.from('assets').select('status').eq('id', p.id).maybeSingle();
+    if (eCur) throw new Error('อ่านข้อมูลครุภัณฑ์ไม่สำเร็จ: ' + eCur.message);
+    if (cur && cur.status !== p.status && p.status !== 'กำลังยืม' && await hasActiveBorrowSb(p.id)) {
+      throw new Error('ครุภัณฑ์นี้ยังมีรายการยืมค้างอยู่ ต้องคืนก่อนจึงเปลี่ยนเป็น "' + p.status + '" ได้');
     }
   }
-  
+
   const { error } = await sb.from('assets').update(upd).eq('id', p.id);
   if (error) throw new Error('แก้ไขครุภัณฑ์ไม่สำเร็จ: ' + error.message);
   await logActivitySb(actor, 'แก้ไขครุภัณฑ์', p.id);
@@ -451,6 +483,10 @@ async function sUpdateAsset(p, actor) {
 
 // ลบครุภัณฑ์ = ย้ายไปถังขยะ (ยังไม่ลบรูปบน Drive จนกว่าจะ purge ถาวร)
 async function sDeleteAsset(id, actor, role) {
+  // ✅ ห้ามลบครุภัณฑ์ที่ยังถูกยืมอยู่ เพื่อไม่ให้รายการยืมค้างชี้ไปที่ของที่ไม่อยู่ในทะเบียน
+  if (await hasActiveBorrowSb(id)) {
+    throw new Error('ครุภัณฑ์นี้ยังมีรายการยืมค้างอยู่ ต้องคืนก่อนจึงจะลบได้');
+  }
   await softDeleteSb('assets', id, actor, role);
   await logActivitySb(actor, 'ลบครุภัณฑ์ (ไปถังขยะ)', id);
   return { deleted: true };
@@ -461,6 +497,12 @@ async function sBorrowAsset(p, actor, directApprove) {
   const id = genId('BRW');
   const componentIds = Array.isArray(p.componentIds) ? p.componentIds : [];
   const status = directApprove ? 'กำลังยืม' : 'รออนุมัติ';
+
+  // ✅ กันการยืมซ้ำ: แอดมินบันทึกยืมได้เฉพาะเมื่อครุภัณฑ์ไม่ได้ถูกยืมอยู่
+  if (directApprove && await hasActiveBorrowSb(p.assetId)) {
+    throw new Error('ครุภัณฑ์นี้ถูกยืมอยู่แล้ว ต้องคืนก่อนจึงจะยืมใหม่ได้');
+  }
+
   const row = {
     id, asset_id: p.assetId, asset_name: p.assetName || '', borrower: p.borrower, officer_id: p.officerId || null,
     borrower_line_id: p.borrowerLineId || '', borrow_date: p.borrowDate || null, due_date: p.dueDate || null,
@@ -471,8 +513,15 @@ async function sBorrowAsset(p, actor, directApprove) {
   };
   const { error } = await sb.from('borrow').insert(row);
   if (error) throw new Error('บันทึกการยืมไม่สำเร็จ: ' + error.message);
+
   if (directApprove) {
-    await sb.from('assets').update({ status: 'กำลังยืม', holder: p.borrower }).eq('id', p.assetId);
+    try {
+      await setAssetStatusSb(p.assetId, 'กำลังยืม', p.borrower);
+    } catch (e) {
+      // ✅ ถ้าอัปเดตสถานะไม่สำเร็จ ให้ลบรายการยืมที่เพิ่งสร้าง เพื่อไม่ให้ข้อมูลไม่ตรงกัน
+      await sb.from('borrow').delete().eq('id', id);
+      throw e;
+    }
     await adjustComponentsSb(parseCompRefs(componentIds.join(',')), +1);
   }
   await logActivitySb(actor, directApprove ? 'บันทึกการยืม (โดยแอดมิน)' : 'ขอยืมครุภัณฑ์', (p.assetName || '') + ' → ' + p.borrower);
@@ -486,7 +535,7 @@ async function sApproveBorrow(p, actor) {
   if (p.sigApprover) upd.sig_approver = p.sigApprover;
   const { error } = await sb.from('borrow').update(upd).eq('id', p.borrowId);
   if (error) throw new Error(error.message);
-  await sb.from('assets').update({ status: 'กำลังยืม', holder: b.borrower }).eq('id', b.asset_id);
+  await setAssetStatusSb(b.asset_id, 'กำลังยืม', b.borrower);
   await adjustComponentsSb(parseCompRefs(b.component_ids), +1);
   await logActivitySb(actor, 'อนุมัติการยืม', p.borrowId);
   return { approved: true };
@@ -506,7 +555,11 @@ async function sReturnAsset(p, actor) {
   if (p.conditionPhotoReturn) upd.photo_in = p.conditionPhotoReturn;
   const { error } = await sb.from('borrow').update(upd).eq('id', p.borrowId);
   if (error) throw new Error(error.message);
-  await sb.from('assets').update({ status: 'พร้อมใช้งาน', holder: '' }).eq('id', b.asset_id);
+
+  // ✅ ตั้งเป็นพร้อมใช้งานเฉพาะเมื่อไม่มีรายการยืมอื่นของครุภัณฑ์นี้ค้างอยู่
+  if (!(await hasActiveBorrowSb(b.asset_id))) {
+    await setAssetStatusSb(b.asset_id, 'พร้อมใช้งาน', '');
+  }
   await adjustComponentsSb(parseCompRefs(b.component_ids), -1);
   await logActivitySb(actor, 'บันทึกการคืน', p.borrowId);
   return { returned: true };
@@ -530,7 +583,7 @@ async function sUpdateBorrow(p, actor) {
 
   // ถ้าเปลี่ยนชื่อผู้ยืมขณะยังอยู่ในสถานะ "กำลังยืม" ให้อัปเดตผู้ครอบครองในทะเบียนครุภัณฑ์ด้วย
   if (p.borrower !== undefined && b.status === 'กำลังยืม') {
-    await sb.from('assets').update({ holder: p.borrower }).eq('id', b.asset_id);
+    await setAssetStatusSb(b.asset_id, 'กำลังยืม', p.borrower);
   }
 
   await logActivitySb(actor, 'แก้ไขข้อมูลการยืม', p.id);
@@ -542,11 +595,16 @@ async function sDeleteBorrow(p, actor, role) {
   const { data: b, error: e1 } = await sb.from('borrow').select('*').eq('id', p.id).single();
   if (e1 || !b) throw new Error('ไม่พบรายการยืมรหัส ' + p.id);
 
-  if (b.status === 'กำลังยืม' || b.status === 'เกินกำหนด') {
-    await sb.from('assets').update({ status: 'พร้อมใช้งาน', holder: '' }).eq('id', b.asset_id);
+  const wasActive = (b.status === 'กำลังยืม' || b.status === 'เกินกำหนด');
+  await softDeleteSb('borrow', p.id, actor, role);
+
+  if (wasActive) {
+    // ✅ คืนสถานะครุภัณฑ์เฉพาะเมื่อไม่มีรายการยืมอื่นค้างอยู่ (หลังลบรายการนี้แล้ว)
+    if (!(await hasActiveBorrowSb(b.asset_id))) {
+      await setAssetStatusSb(b.asset_id, 'พร้อมใช้งาน', '');
+    }
     await adjustComponentsSb(parseCompRefs(b.component_ids), -1);
   }
-  await softDeleteSb('borrow', p.id, actor, role);
   await logActivitySb(actor, 'ลบรายการยืม-คืน (ไปถังขยะ)', p.id);
   return { deleted: true };
 }
@@ -619,8 +677,15 @@ async function sUpdateMaint(p, actor) {
   const { error } = await sb.from('maint').update(upd).eq('id', p.id);
   if (error) throw new Error(error.message);
   if (p.tireSize) await sb.from('assets').update({ tire_size: p.tireSize }).eq('id', m.asset_id);
-  if (p.status === 'ซ่อมเสร็จ') await sb.from('assets').update({ status: 'พร้อมใช้งาน' }).eq('id', m.asset_id);
-  else if (p.status === 'รอซ่อม' || p.status === 'กำลังซ่อม') await sb.from('assets').update({ status: 'ซ่อมบำรุง' }).eq('id', m.asset_id);
+
+  // ✅ ปิดงานซ่อม: ตั้งเป็นพร้อมใช้งานเฉพาะเมื่อไม่มีรายการยืมค้างอยู่
+  if (p.status === 'ซ่อมเสร็จ') {
+    if (!(await hasActiveBorrowSb(m.asset_id))) {
+      await setAssetStatusSb(m.asset_id, 'พร้อมใช้งาน');
+    }
+  } else if (p.status === 'รอซ่อม' || p.status === 'กำลังซ่อม') {
+    await setAssetStatusSb(m.asset_id, 'ซ่อมบำรุง');
+  }
   await logActivitySb(actor, 'อัปเดตงานซ่อม', p.id);
   return { updated: true };
 }
@@ -630,10 +695,10 @@ async function sDeleteMaint(p, actor, role) {
   const { data: m } = await sb.from('maint').select('asset_id').eq('id', p.id).maybeSingle();
   if (!m) throw new Error('ไม่พบรายการซ่อมรหัส ' + p.id);
   await softDeleteSb('maint', p.id, actor, role);
-  // ถ้าไม่มีงานซ่อมที่ยังค้างเหลืออยู่ ให้คืนสถานะครุภัณฑ์เป็นพร้อมใช้งาน
+  // ถ้าไม่มีงานซ่อมที่ยังค้างเหลืออยู่ และไม่มีรายการยืมค้าง ให้คืนสถานะครุภัณฑ์เป็นพร้อมใช้งาน
   const { data: others } = await sb.from('maint').select('id')
     .eq('asset_id', m.asset_id).neq('status', 'ซ่อมเสร็จ').is('deleted_at', null);
-  if (!others || !others.length) {
+  if ((!others || !others.length) && !(await hasActiveBorrowSb(m.asset_id))) {
     await sb.from('assets').update({ status: 'พร้อมใช้งาน' }).eq('id', m.asset_id).eq('status', 'ซ่อมบำรุง');
   }
   await logActivitySb(actor, 'ลบงานซ่อม (ไปถังขยะ)', p.id);
@@ -833,7 +898,7 @@ async function sUpdateSystemSettings(p, actor) {
 
   if (p.oilDocNoPrefix !== undefined) updates.oilDocNoPrefix = String(p.oilDocNoPrefix || '').trim();
   if (p.oilDocNoNext !== undefined) updates.oilDocNoNext = String(p.oilDocNoNext || '').trim();
-  
+
   for (const key of Object.keys(updates)) {
     const { error } = await sb.from('system_settings').upsert({ key, value: String(updates[key]), updated_at: new Date().toISOString() });
     if (error) throw new Error(error.message);
