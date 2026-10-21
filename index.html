@@ -25313,7 +25313,7 @@ window.exportAllBackup = async function(){
       (photo ? '<img class="mn-av" src="' + esc(photo) + '" alt="">'
              : '<div class="mn-av mn-av-ph">' + esc(String(name || '?').charAt(0)) + '</div>') +
       '<div style="min-width:0"><div class="mn-date">' + today + '</div><div class="mn-hi">' + greet + '</div>' +
-      '<div class="mn-name">' + esc(name) + '</div><div class="mn-unit">' + esc(unit) + '</div></div>' +
+      '<div class="mn-name">' + esc(name).replace(/\s(\S+)$/, '<br>$1') + '</div><div class="mn-unit">' + esc(unit) + '</div></div>' +
       changeBtn + '</section>';
 
     var alertBar = overdue.length
@@ -25692,6 +25692,44 @@ syncChip();
 })();
 </script>
 
+
+<style id="theme-fix-v1">
+/* ---- หน้าหลักเจ้าหน้าที่/ผู้ตรวจสอบ: ใช้ตัวแปรธีม ให้เห็นชัดทั้งโหมดสว่างและมืด ---- */
+#view-dashboard .hs-img{background:var(--panel-soft);color:var(--navy)}
+#view-dashboard .hs-img svg{color:var(--navy)}
+#view-dashboard .hs-pill.ok{background:var(--ok-wash);color:var(--ok)}
+#view-dashboard .hs-pill.warn{background:var(--warn-wash);color:var(--warn)}
+#view-dashboard .hs-pill.bad{background:var(--bad-wash);color:var(--bad)}
+#view-dashboard .hs-count{background:var(--panel-soft);color:var(--ink)}
+#view-dashboard .hs-li-ic{background:var(--navy-wash);color:var(--navy)}
+#view-dashboard .hs-li-ic.warn{background:var(--warn-wash);color:var(--warn)}
+#view-dashboard .hs-li-ic.bad{background:var(--bad-wash);color:var(--bad)}
+#view-dashboard .hs-li-ic.ok{background:var(--ok-wash);color:var(--ok)}
+#view-dashboard .hs-empty{border-color:var(--panel-line)}
+#view-dashboard .hs-card{border-color:var(--panel-line)}
+
+/* ---- แท็บ "ฉัน" ในหน้าตั้งค่า: เปลี่ยนสีตามธีม ---- */
+#view-settings .mn{color:var(--ink)}
+#view-settings .mn-hero{background:linear-gradient(135deg,var(--navy) 0%,var(--navy-deep) 100%);color:#fff;border:none}
+#view-settings .mn-name{overflow-wrap:normal;word-break:keep-all}
+#view-settings .mn-kpi,
+#view-settings .mn-panel{background:var(--panel);border-color:var(--panel-line);color:var(--ink)}
+#view-settings .mn-kpi-l,
+#view-settings .mn-kpi-s,
+#view-settings .mn-ss,
+#view-settings .mn-mc-ss{color:var(--ink-dim)}
+#view-settings .mn-count{background:var(--panel-soft);color:var(--ink)}
+#view-settings .mn-row:hover{background:var(--panel-soft)}
+#view-settings .mn-row + .mn-row{border-top-color:var(--panel-line)}
+#view-settings .mn-ic{background:var(--navy-wash);color:var(--navy)}
+#view-settings .mn-ic.warn{background:var(--warn-wash);color:var(--warn)}
+#view-settings .mn-ic.good{background:var(--ok-wash);color:var(--ok)}
+#view-settings .mn-ic.bad{background:var(--bad-wash);color:var(--bad)}
+#view-settings .mn-alert{background:var(--bad-wash);color:var(--bad);border-color:var(--bad)}
+#view-settings .mn-empty{border-color:var(--panel-line);color:var(--ink-dim)}
+#view-settings .mn-mc{background:var(--panel-soft)}
+#view-settings .mn-kpi-v{color:var(--ink)}
+</style>
 </body>
 
 <script id="maint-live-v1">
