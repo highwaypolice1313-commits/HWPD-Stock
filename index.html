@@ -9761,6 +9761,14 @@ function dbxTabIcon(tab) {
 
 let dbxMenuOpen = false;   // จำสถานะการขยาย/ย่อเมนูมือถือ ไม่รีเซ็ตเมื่อวาดหน้าใหม่
 
+function greetLine(){
+  var h = new Date().getHours();
+  var g = h < 12 ? 'สวัสดีตอนเช้า' : (h < 17 ? 'สวัสดีตอนบ่าย' : 'สวัสดีตอนเย็น');
+  var me = typeof myOfficerRow === 'function' ? myOfficerRow() : null;
+  var name = me ? officerFullName(me) : ((state.user && state.user.name) || '');
+  return '<div class="greet-line">' + escapeHtml(g) + ' · ' + escapeHtml(name) + '</div>';
+}
+
 function renderDashboard() {
   const el = document.getElementById('view-dashboard');
   const d = state.dashboard;
@@ -25499,6 +25507,7 @@ syncChip();
   #view-dashboard .hs-menu .dbx-menu-wrap{margin:0 !important}
   #view-dashboard .hs-menu .dbx-menu{margin:0 !important;padding:2px 0 6px !important;width:100%;gap:10px}
   #view-dashboard .hs-menu .dbx-menu .dbx-tile{flex:1 0 92px;width:auto !important;min-width:92px !important;max-width:none !important}
+ .greet-line{font-size:13px;color:var(--ink-dim,#64748b);margin:0 2px 8px}
 </style>
 
 <script id="home-staff-v2-js">
@@ -25697,11 +25706,16 @@ syncChip();
   }
 
   // แทนที่หน้าภาพรวมเฉพาะผู้ที่ไม่ใช่แอดมิน (แอดมินยังเห็นภาพรวมเดิม)
-  var _origDashboard = renderDashboard;
-  renderDashboard = function(){
-    if (isAdmin()) return _origDashboard.apply(this, arguments);
-    return renderHomeStaff();
-  };
+var _origDashboard = renderDashboard;
+renderDashboard = function(){
+  if (isAdmin()) {
+    var r = _origDashboard.apply(this, arguments);
+    var el = document.getElementById('view-dashboard');
+    if (el && !el.querySelector('.greet-line')) el.insertAdjacentHTML('afterbegin', greetLine());
+    return r;
+  }
+  return renderHomeStaff();
+};
 })();
 </script>
 
