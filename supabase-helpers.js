@@ -429,6 +429,20 @@ async function sUpdateAsset(p, actor) {
     if ((k === 'receivedDate' || k === 'renewalDue') && p[k] === '') { upd[map[k]] = null; return; }
     upd[map[k]] = p[k];
   });
+  
+    // ✅ ห้ามตั้งสถานะเป็น "พร้อมใช้งาน" ถ้ายังมีรายการยืมค้างอยู่
+  if (p.status === 'พร้อมใช้งาน') {
+    const { data: active, error: eAct } = await sb.from('borrow')
+      .select('id')
+      .eq('asset_id', p.id)
+      .in('status', ['กำลังยืม', 'เกินกำหนด'])
+      .limit(1);
+    if (eAct) throw new Error('ตรวจสอบรายการยืมไม่สำเร็จ: ' + eAct.message);
+    if (active && active.length) {
+      throw new Error('ครุภัณฑ์นี้ยังมีรายการยืมค้างอยู่ ต้องคืนก่อนจึงเปลี่ยนเป็นพร้อมใช้งานได้');
+    }
+  }
+  
   const { error } = await sb.from('assets').update(upd).eq('id', p.id);
   if (error) throw new Error('แก้ไขครุภัณฑ์ไม่สำเร็จ: ' + error.message);
   await logActivitySb(actor, 'แก้ไขครุภัณฑ์', p.id);
