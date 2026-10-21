@@ -25074,224 +25074,12 @@ window.exportAllBackup = async function(){
   #view-monthly .mc-swipe-card { touch-action: pan-y !important; }
 </style>
 
-<script id="my-tab-v4">
-(function(){
-  var MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
-  var MONTHS_S = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-  var KEY = 'hpMyOfficerId';
-
-  function mineRow(){
-    var saved = localStorage.getItem(KEY);
-    if (saved) {
-      var r = (state.users || []).find(function(u){ return u['รหัสจนท.'] === saved; });
-      if (r) return r;
-    }
-    return (typeof myOfficerRow === 'function') ? myOfficerRow() : null;
-  }
-  function mineMatches(name){
-    if (!name) return false;
-    var row = mineRow();
-    if (!row) return typeof nameIsMe === 'function' ? nameIsMe(name) : false;
-    return samePerson(name, officerFullName(row)) || samePerson(name, row['ชื่อ-สกุล']);
-  }
-  function pickedRow(info){
-    if (info && typeof info === 'object' && info['รหัสจนท.']) return info;
-    if (info && typeof info === 'object' && info.name) info = info.name;
-    if (typeof info === 'number' || (typeof info === 'string' && /^\d+$/.test(info))) {
-      return (state.users || [])[Number(info)] || null;
-    }
-    var s = String(info || '');
-    return (state.users || []).find(function(u){ return officerFullName(u) === s || u['ชื่อ-สกุล'] === s; }) || null;
-  }
-  function canMine(){
-    if (isAdmin()) return true;
-    var w = window.__perms;
-    return !!(w && (w.admin || (w.perms || []).indexOf('my_tab') !== -1));
-  }
-  function fmtShort(v){
-    var d = v ? toDate(v) : null;
-    if (!d || isNaN(d)) return '-';
-    return d.getDate() + ' ' + MONTHS_S[d.getMonth()] + ' ' + (d.getFullYear() + 543);
-  }
-  function esc(s){ return escapeHtml(String(s == null ? '' : s)); }
-  function badge(s){ return s ? '<span class="status-badge ' + statusClass(s) + '">' + esc(s) + '</span>' : ''; }
-  function icTone(s){
-    if (s === 'เกินกำหนด' || s === 'ยังไม่เสร็จ' || s === 'ซ่อมบำรุง') return 'bad';
-    if (s === 'กำลังยืม' || s === 'รออนุมัติ' || s === 'รอซ่อม' || s === 'กำลังซ่อม') return 'warn';
-    if (s === 'พร้อมใช้งาน' || s === 'คืนแล้ว' || s === 'ซ่อมเสร็จ') return 'good';
-    return '';
-  }
-  function row(assetId, title, sub, status){
-    var letter = esc(String(title || '?').trim().charAt(0));
-    return '<div class="mn-row" data-aid="' + esc(assetId || '') + '">' +
-      '<div class="mn-ic ' + icTone(status) + '">' + letter + '</div>' +
-      '<div class="mn-tx"><div class="mn-tt">' + esc(title || '-') + '</div>' +
-      '<div class="mn-ss">' + esc(sub || '') + '</div></div>' + badge(status) + '</div>';
-  }
-  function panel(title, count, body, emptyText, cls){
-    return '<section class="mn-panel ' + (cls || '') + '"><header class="mn-ph"><h3>' + esc(title) + '</h3>' +
-      '<span class="mn-count">' + count + '</span></header>' +
-      (count ? body : '<div class="mn-empty">' + esc(emptyText) + '</div>') + '</section>';
-  }
-  function kpi(label, value, tone, sub){
-    return '<div class="mn-kpi ' + tone + '"><div class="mn-kpi-top"><span class="mn-kpi-dot"></span>' +
-      '<span class="mn-kpi-l">' + esc(label) + '</span></div>' +
-      '<div class="mn-kpi-v">' + value + '</div>' +
-      (sub ? '<div class="mn-kpi-s">' + sub + '</div>' : '') + '</div>';
-  }
-
-  async function renderMine(el){
-    if (!el) return;
-    var me = mineRow();
-    var now = new Date();
-    var borrow = state.borrow || [], maint = state.maint || [], assets = state.assets || [];
-
-    var myBorrows = borrow.filter(function(b){ return mineMatches(b['ผู้ยืม']); })
-      .sort(function(a,b){ return String(b['วันที่ยืม'] || '').localeCompare(String(a['วันที่ยืม'] || '')); });
-    var active = myBorrows.filter(function(b){ var s = effectiveBorrowStatus(b); return s === 'กำลังยืม' || s === 'เกินกำหนด'; });
-    var overdue = active.filter(function(b){ return effectiveBorrowStatus(b) === 'เกินกำหนด'; });
-
-    var holdIds = {}, holdRows = '', holdCount = 0;
-    active.forEach(function(b){
-      holdIds[b['รหัสครุภัณฑ์']] = true; holdCount++;
-      holdRows += row(b['รหัสครุภัณฑ์'], b['ชื่อครุภัณฑ์'], 'กำหนดคืน ' + fmtShort(b['กำหนดคืน']), effectiveBorrowStatus(b));
-    });
-    assets.forEach(function(a){
-      if (holdIds[a['รหัสครุภัณฑ์']] || !mineMatches(a['ผู้ครอบครอง/หน่วยงาน'])) return;
-      holdCount++;
-      holdRows += row(a['รหัสครุภัณฑ์'], a['ชื่อครุภัณฑ์'], a['หมวดหมู่'] || '', a['สถานะ']);
-    });
-
-    var reqRows = myBorrows.map(function(b){
-      return row(b['รหัสครุภัณฑ์'], b['ชื่อครุภัณฑ์'], 'ยืมเมื่อ ' + fmtShort(b['วันที่ยืม']), effectiveBorrowStatus(b));
-    }).join('');
-
-    var myMaint = maint.filter(function(m){ return mineMatches(m['ผู้แจ้ง']); });
-    var openMaint = myMaint.filter(function(m){ return m['สถานะ'] !== 'ซ่อมเสร็จ'; });
-    var maintRows = myMaint.map(function(m){
-      return row(m['รหัสครุภัณฑ์'], m['ชื่อครุภัณฑ์'], (m['อาการ/ปัญหา'] || '-') + ' · ' + fmtShort(m['วันที่แจ้ง']), m['สถานะ']);
-    }).join('');
-
-    var mcTone = '', mcValue = '–', mcSub = 'ยังไม่ได้เลือกชื่อ';
-    var ringBg = '#eef2f7', ringFg = '#475569', ringTxt = '–';
-    if (me) {
-      try {
-        var list = await supaApiGet('getMonthlyChecks', { year: now.getFullYear(), month: now.getMonth() + 1 }); // <-- ถ้าเก็บเป็น พ.ศ. ให้ +543
-        var rec = (list || []).find(function(x){ return x['รหัสจนท.'] === me['รหัสจนท.']; });
-        var res = rec ? rec['ผล'] : 'ยังไม่ตรวจ';
-        mcValue = esc(res);
-        mcSub = rec ? 'ตรวจเมื่อ ' + esc(systemDateTime(rec['วันที่ตรวจ'])) : 'ยังไม่มีการตรวจเดือนนี้';
-        if (res === 'ครบ') { mcTone = 'good'; ringBg = '#dcfce7'; ringFg = '#166534'; ringTxt = '✓'; }
-        else if (res === 'มีปัญหา') { mcTone = 'bad'; ringBg = '#fee2e2'; ringFg = '#991b1b'; ringTxt = '!'; }
-        else { mcTone = 'warn'; ringBg = '#fef3c7'; ringFg = '#92400e'; ringTxt = '–'; }
-      } catch (e) {
-        mcValue = 'ไม่สำเร็จ'; mcSub = 'โหลดผลตรวจไม่ได้';
-      }
-    }
-
-    var name = me ? officerFullName(me) : ((state.user && state.user.name) || '-');
-    var unit = me ? (me['หน่วยงาน'] || '') : 'ยังไม่ได้เลือกว่าเป็นใคร';
-    var photo = me && me['รูปถ่าย'];
-    var hour = now.getHours();
-    var greet = hour < 12 ? 'สวัสดีตอนเช้า' : (hour < 17 ? 'สวัสดีตอนบ่าย' : 'สวัสดีตอนเย็น');
-    var today = now.getDate() + ' ' + MONTHS[now.getMonth()] + ' ' + (now.getFullYear() + 543);
-
-    var hero = '<section class="mn-hero">' +
-      (photo ? '<img class="mn-av" src="' + esc(photo) + '" alt="">'
-             : '<div class="mn-av mn-av-ph">' + esc(String(name || '?').charAt(0)) + '</div>') +
-      '<div style="min-width:0"><div class="mn-date">' + today + '</div><div class="mn-hi">' + greet + '</div>' +
-      '<div class="mn-name">' + esc(name) + '</div><div class="mn-unit">' + esc(unit) + '</div></div>' +
-      '<button type="button" class="mn-chg" data-mine-change>' + (me ? 'เปลี่ยน' : 'เลือกชื่อ') + '</button></section>';
-
-    var alertBar = overdue.length
-      ? '<div class="mn-alert">มี ' + overdue.length + ' รายการเกินกำหนดคืน กรุณาติดต่อคืนครุภัณฑ์</div>' : '';
-
-    var kpis = '<div class="mn-kpis">' +
-      kpi('ครุภัณฑ์ที่ถืออยู่', holdCount, holdCount ? 'accent' : '',
-          overdue.length ? 'เกินกำหนด ' + overdue.length + ' รายการ' : 'ไม่มีรายการเกินกำหนด') +
-      kpi('คำขอยืมทั้งหมด', myBorrows.length, '', 'กำลังยืม ' + active.length + ' รายการ') +
-      kpi('งานซ่อมที่แจ้ง', myMaint.length, openMaint.length ? 'warn' : 'good', 'ยังไม่เสร็จ ' + openMaint.length + ' รายการ') +
-      kpi('ตรวจประจำเดือน', mcValue, mcTone, mcSub) +
-      '</div>';
-
-    var mcPanel = '<section class="mn-panel mn-wide"><header class="mn-ph"><h3>กำหนดตรวจประจำเดือน</h3></header>' +
-      '<div class="mn-mc"><div class="mn-ring" style="background:' + ringBg + ';color:' + ringFg + '">' + ringTxt + '</div>' +
-      '<div style="min-width:0"><div class="mn-mc-tt">' + esc(MONTHS[now.getMonth()] + ' ' + (now.getFullYear() + 543)) + '</div>' +
-      '<div class="mn-mc-ss">' + (me ? mcSub : 'เลือกชื่อของคุณเพื่อดูผลตรวจ') + '</div></div></div></section>';
-
-    el.innerHTML = '<div class="mn">' + hero + alertBar + kpis +
-      '<div class="mn-grid">' +
-        panel('ครุภัณฑ์ที่ฉันถืออยู่', holdCount, holdRows, 'ไม่มีครุภัณฑ์ที่ถืออยู่') +
-        panel('คำขอยืมของฉัน', myBorrows.length, reqRows, 'ยังไม่มีคำขอยืม') +
-        panel('งานซ่อมที่ฉันแจ้ง', myMaint.length, maintRows, 'ยังไม่มีงานซ่อมที่แจ้ง') +
-        mcPanel +
-      '</div></div>';
-  }
-
-  // แผงที่ใช้แสดง: แผงของชิป "ของฉัน" ถ้ามี ไม่เช่นนั้นสร้างกล่องไว้บนสุดของหน้า (กรณีผู้ใช้ที่เห็นหน้าตั้งค่าแบบย่อ)
-  function host(){
-    var h = document.getElementById('mineSettingsPanel');
-    if (h) return h;
-    var view = document.getElementById('view-settings');
-    if (!view || !canMine()) return null;
-    h = document.createElement('div');
-    h.id = 'mineSettingsPanel';
-    view.insertBefore(h, view.firstChild);
-    return h;
-  }
-  function syncChip(){
-    var chip = document.querySelector('#settingsTabRow [data-stab="mine"]');
-    if (chip) chip.style.display = canMine() ? '' : 'none';
-    var p = document.querySelector('.settings-panel[data-panel="mine"]');
-    if (p && !canMine()) p.remove();
-  }
-  function refreshMine(){
-    if (state.tab !== 'settings') return;
-    if (!canMine()) return;
-    var inTabs = !!document.querySelector('#settingsTabRow');
-    if (inTabs && state.settingsTab !== 'mine') return;
-    var h = host();
-    if (h) renderMine(h);
-  }
-  function afterSettingsRender(){
-    if (state.settingsTab === 'mine' && !canMine()) state.settingsTab = 'general';
-    syncChip();
-    refreshMine();
-  }
-
-  if (typeof renderSettings === 'function') {
-    var _rs = renderSettings;
-    renderSettings = function(){ var r = _rs.apply(this, arguments); afterSettingsRender(); return r; };
-  }
-  if (typeof renderViewerSettings === 'function') {
-    var _rvs = renderViewerSettings;
-    renderViewerSettings = function(){ var r = _rvs.apply(this, arguments); afterSettingsRender(); return r; };
-  }
-
-  document.addEventListener('click', function(e){
-    var chip = e.target.closest && e.target.closest('#settingsTabRow [data-stab]');
-    if (chip && chip.dataset.stab === 'mine') setTimeout(refreshMine, 0);
-
-    var r = e.target.closest && e.target.closest('.mn-row[data-aid]');
-    if (r && r.dataset.aid && typeof openAssetDetail === 'function') { openAssetDetail(r.dataset.aid); return; }
-
-    var c = e.target.closest && e.target.closest('[data-mine-change]');
-    if (c) {
-      var me = mineRow();
-      openOfficerPickerSheet(me ? officerFullName(me) : '', function(info){
-        var picked = pickedRow(info);
-        if (picked) localStorage.setItem(KEY, picked['รหัสจนท.']);
-        refreshMine();
-      });
-    }
-  });
-
-  window.refreshMine = refreshMine;
-})();
-</script>      
-
-      <style id="mine-dash-v2">
+<style id="mine-dash-v3">
   #view-mine{ box-sizing:border-box; }
+  #view-settings{ padding-bottom:calc(104px + env(safe-area-inset-bottom,0px)); }
+  #mineSettingsPanel{ margin-bottom:12px; position:relative; clear:both; }
+  #mineSettingsPanel .mn{ padding:0; max-width:none; }
+
   .mn{ box-sizing:border-box; width:100%; max-width:1180px; margin:0 auto; color:#0f172a;
        padding:18px 16px calc(32px + env(safe-area-inset-bottom,0px)); display:grid; gap:16px; }
 
@@ -25366,41 +25154,252 @@ window.exportAllBackup = async function(){
     .mn-av{ width:56px; height:56px; }
     .mn-name{ font-size:19px; }
     .mn-kpi-v{ font-size:26px; }
-.mn-embed{ margin-bottom:18px; }
-.mn-embed .mn{ padding:0; max-width:none; }
-  #mineSettingsPanel{ margin-bottom:12px; }
-  #mineSettingsPanel .mn{ padding:0; max-width:none; }
   }
 </style>
 
-<script id="settings-access-v1">
+<script id="my-tab-v5">
 (function(){
-  // ✅ แสดงปุ่ม "ตั้งค่า" ให้ผู้ที่เข้าแท็บ "ของฉัน" ได้ (เจ้าหน้าที่ / ผู้ตรวจสอบ) และแอดมิน
+  var MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+  var MONTHS_S = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  var KEY = 'hpMyOfficerId';
+  var renderSeq = 0;
+
+  function canMine(){
+    if (isAdmin()) return true;
+    var w = window.__perms;
+    return !!(w && (w.admin || (w.perms || []).indexOf('my_tab') !== -1));
+  }
+  // ✅ เฉพาะแอดมินเท่านั้นที่เปลี่ยนว่ากำลังดูข้อมูลของใครได้
+  function canChangeIdentity(){ return isAdmin(); }
+
+  // ✅ ผู้ใช้ทั่วไป: ผูกกับบัญชีที่ล็อกอินเท่านั้น ไม่รับค่าจากเครื่อง
+  // ✅ แอดมิน: ใช้คนที่เลือกไว้ในเครื่อง (ถ้ามี)
+  function mineRow(){
+    if (isAdmin()) {
+      var saved = localStorage.getItem(KEY);
+      if (saved) {
+        var r = (state.users || []).find(function(u){ return u['รหัสจนท.'] === saved; });
+        if (r) return r;
+      }
+      return null;
+    }
+    return (typeof myOfficerRow === 'function') ? myOfficerRow() : null;
+  }
+  function mineMatches(name){
+    if (!name) return false;
+    var row = mineRow();
+    if (!row) return !isAdmin() && typeof nameIsMe === 'function' ? nameIsMe(name) : false;
+    return samePerson(name, officerFullName(row)) || samePerson(name, row['ชื่อ-สกุล']);
+  }
+  function pickedRow(info){
+    if (info && typeof info === 'object' && info['รหัสจนท.']) return info;
+    if (info && typeof info === 'object' && info.name) info = info.name;
+    if (typeof info === 'number' || (typeof info === 'string' && /^\d+$/.test(info))) {
+      return (state.users || [])[Number(info)] || null;
+    }
+    var s = String(info || '');
+    return (state.users || []).find(function(u){ return officerFullName(u) === s || u['ชื่อ-สกุล'] === s; }) || null;
+  }
+  function fmtShort(v){
+    var d = v ? toDate(v) : null;
+    if (!d || isNaN(d)) return '-';
+    return d.getDate() + ' ' + MONTHS_S[d.getMonth()] + ' ' + (d.getFullYear() + 543);
+  }
+  function esc(s){ return escapeHtml(String(s == null ? '' : s)); }
+  function badge(s){ return s ? '<span class="status-badge ' + statusClass(s) + '">' + esc(s) + '</span>' : ''; }
+  function icTone(s){
+    if (s === 'เกินกำหนด' || s === 'ยังไม่เสร็จ' || s === 'ซ่อมบำรุง') return 'bad';
+    if (s === 'กำลังยืม' || s === 'รออนุมัติ' || s === 'รอซ่อม' || s === 'กำลังซ่อม') return 'warn';
+    if (s === 'พร้อมใช้งาน' || s === 'คืนแล้ว' || s === 'ซ่อมเสร็จ') return 'good';
+    return '';
+  }
+  function row(assetId, title, sub, status){
+    var letter = esc(String(title || '?').trim().charAt(0));
+    return '<div class="mn-row" data-aid="' + esc(assetId || '') + '">' +
+      '<div class="mn-ic ' + icTone(status) + '">' + letter + '</div>' +
+      '<div class="mn-tx"><div class="mn-tt">' + esc(title || '-') + '</div>' +
+      '<div class="mn-ss">' + esc(sub || '') + '</div></div>' + badge(status) + '</div>';
+  }
+  function panel(title, count, body, emptyText){
+    return '<section class="mn-panel"><header class="mn-ph"><h3>' + esc(title) + '</h3>' +
+      '<span class="mn-count">' + count + '</span></header>' +
+      (count ? body : '<div class="mn-empty">' + esc(emptyText) + '</div>') + '</section>';
+  }
+  function kpi(label, value, tone, sub){
+    return '<div class="mn-kpi ' + tone + '"><div class="mn-kpi-top"><span class="mn-kpi-dot"></span>' +
+      '<span class="mn-kpi-l">' + esc(label) + '</span></div>' +
+      '<div class="mn-kpi-v">' + value + '</div>' +
+      (sub ? '<div class="mn-kpi-s">' + sub + '</div>' : '') + '</div>';
+  }
+
+  async function renderMine(el){
+    if (!el) return;
+    var seq = ++renderSeq;
+    var me = mineRow();
+    var now = new Date();
+    var borrow = state.borrow || [], maint = state.maint || [], assets = state.assets || [];
+
+    var myBorrows = borrow.filter(function(b){ return mineMatches(b['ผู้ยืม']); })
+      .sort(function(a,b){ return String(b['วันที่ยืม'] || '').localeCompare(String(a['วันที่ยืม'] || '')); });
+    var active = myBorrows.filter(function(b){ var s = effectiveBorrowStatus(b); return s === 'กำลังยืม' || s === 'เกินกำหนด'; });
+    var overdue = active.filter(function(b){ return effectiveBorrowStatus(b) === 'เกินกำหนด'; });
+
+    var holdIds = {}, holdRows = '', holdCount = 0;
+    active.forEach(function(b){
+      holdIds[b['รหัสครุภัณฑ์']] = true; holdCount++;
+      holdRows += row(b['รหัสครุภัณฑ์'], b['ชื่อครุภัณฑ์'], 'กำหนดคืน ' + fmtShort(b['กำหนดคืน']), effectiveBorrowStatus(b));
+    });
+    assets.forEach(function(a){
+      if (holdIds[a['รหัสครุภัณฑ์']] || !mineMatches(a['ผู้ครอบครอง/หน่วยงาน'])) return;
+      holdCount++;
+      holdRows += row(a['รหัสครุภัณฑ์'], a['ชื่อครุภัณฑ์'], a['หมวดหมู่'] || '', a['สถานะ']);
+    });
+
+    var reqRows = myBorrows.map(function(b){
+      return row(b['รหัสครุภัณฑ์'], b['ชื่อครุภัณฑ์'], 'ยืมเมื่อ ' + fmtShort(b['วันที่ยืม']), effectiveBorrowStatus(b));
+    }).join('');
+
+    var myMaint = maint.filter(function(m){ return mineMatches(m['ผู้แจ้ง']); });
+    var openMaint = myMaint.filter(function(m){ return m['สถานะ'] !== 'ซ่อมเสร็จ'; });
+    var maintRows = myMaint.map(function(m){
+      return row(m['รหัสครุภัณฑ์'], m['ชื่อครุภัณฑ์'], (m['อาการ/ปัญหา'] || '-') + ' · ' + fmtShort(m['วันที่แจ้ง']), m['สถานะ']);
+    }).join('');
+
+    var mcTone = '', mcValue = '–', mcSub = 'ยังไม่ได้เลือกชื่อ';
+    var ringBg = '#eef2f7', ringFg = '#475569', ringTxt = '–';
+    if (me) {
+      try {
+        var list = await supaApiGet('getMonthlyChecks', { year: now.getFullYear(), month: now.getMonth() + 1 }); // <-- ถ้าเก็บเป็น พ.ศ. ให้ +543
+        var rec = (list || []).find(function(x){ return x['รหัสจนท.'] === me['รหัสจนท.']; });
+        var res = rec ? rec['ผล'] : 'ยังไม่ตรวจ';
+        mcValue = esc(res);
+        mcSub = rec ? 'ตรวจเมื่อ ' + esc(systemDateTime(rec['วันที่ตรวจ'])) : 'ยังไม่มีการตรวจเดือนนี้';
+        if (res === 'ครบ') { mcTone = 'good'; ringBg = '#dcfce7'; ringFg = '#166534'; ringTxt = '✓'; }
+        else if (res === 'มีปัญหา') { mcTone = 'bad'; ringBg = '#fee2e2'; ringFg = '#991b1b'; ringTxt = '!'; }
+        else { mcTone = 'warn'; ringBg = '#fef3c7'; ringFg = '#92400e'; ringTxt = '–'; }
+      } catch (e) {
+        mcValue = 'ไม่สำเร็จ'; mcSub = 'โหลดผลตรวจไม่ได้';
+      }
+    }
+
+    var name = me ? officerFullName(me) : ((state.user && state.user.name) || '-');
+    var unit;
+    if (me) unit = me['หน่วยงาน'] || '';
+    else if (isAdmin()) unit = 'ยังไม่ได้เลือกว่ากำลังดูของใคร';
+    else unit = 'ไม่พบข้อมูลของคุณในทะเบียน กรุณาติดต่อแอดมิน';
+
+    var photo = me && me['รูปถ่าย'];
+    var hour = now.getHours();
+    var greet = hour < 12 ? 'สวัสดีตอนเช้า' : (hour < 17 ? 'สวัสดีตอนบ่าย' : 'สวัสดีตอนเย็น');
+    var today = now.getDate() + ' ' + MONTHS[now.getMonth()] + ' ' + (now.getFullYear() + 543);
+
+    var changeBtn = canChangeIdentity()
+      ? '<button type="button" class="mn-chg" data-mine-change>' + (me ? 'เปลี่ยน' : 'เลือกชื่อ') + '</button>'
+      : '';
+
+    var hero = '<section class="mn-hero">' +
+      (photo ? '<img class="mn-av" src="' + esc(photo) + '" alt="">'
+             : '<div class="mn-av mn-av-ph">' + esc(String(name || '?').charAt(0)) + '</div>') +
+      '<div style="min-width:0"><div class="mn-date">' + today + '</div><div class="mn-hi">' + greet + '</div>' +
+      '<div class="mn-name">' + esc(name) + '</div><div class="mn-unit">' + esc(unit) + '</div></div>' +
+      changeBtn + '</section>';
+
+    var alertBar = overdue.length
+      ? '<div class="mn-alert">มี ' + overdue.length + ' รายการเกินกำหนดคืน กรุณาติดต่อคืนครุภัณฑ์</div>' : '';
+
+    var kpis = '<div class="mn-kpis">' +
+      kpi('ครุภัณฑ์ที่ถืออยู่', holdCount, holdCount ? 'accent' : '',
+          overdue.length ? 'เกินกำหนด ' + overdue.length + ' รายการ' : 'ไม่มีรายการเกินกำหนด') +
+      kpi('คำขอยืมทั้งหมด', myBorrows.length, '', 'กำลังยืม ' + active.length + ' รายการ') +
+      kpi('งานซ่อมที่แจ้ง', myMaint.length, openMaint.length ? 'warn' : 'good', 'ยังไม่เสร็จ ' + openMaint.length + ' รายการ') +
+      kpi('ตรวจประจำเดือน', mcValue, mcTone, mcSub) +
+      '</div>';
+
+    var mcPanel = '<section class="mn-panel mn-wide"><header class="mn-ph"><h3>กำหนดตรวจประจำเดือน</h3></header>' +
+      '<div class="mn-mc"><div class="mn-ring" style="background:' + ringBg + ';color:' + ringFg + '">' + ringTxt + '</div>' +
+      '<div style="min-width:0"><div class="mn-mc-tt">' + esc(MONTHS[now.getMonth()] + ' ' + (now.getFullYear() + 543)) + '</div>' +
+      '<div class="mn-mc-ss">' + (me ? mcSub : 'ยังไม่มีข้อมูลผลตรวจสำหรับผู้ใช้นี้') + '</div></div></div></section>';
+
+    if (seq !== renderSeq) return;   // ✅ มีการเรนเดอร์ใหม่กว่าแล้ว ทิ้งผลเก่า
+    el.innerHTML = '<div class="mn">' + hero + alertBar + kpis +
+      '<div class="mn-grid">' +
+        panel('ครุภัณฑ์ที่ฉันถืออยู่', holdCount, holdRows, 'ไม่มีครุภัณฑ์ที่ถืออยู่') +
+        panel('คำขอยืมของฉัน', myBorrows.length, reqRows, 'ยังไม่มีคำขอยืม') +
+        panel('งานซ่อมที่ฉันแจ้ง', myMaint.length, maintRows, 'ยังไม่มีงานซ่อมที่แจ้ง') +
+        mcPanel +
+      '</div></div>';
+  }
+
+  function host(){
+    var h = document.getElementById('mineSettingsPanel');
+    if (h) return h;
+    var view = document.getElementById('view-settings');
+    if (!view || !canMine()) return null;
+    h = document.createElement('div');
+    h.id = 'mineSettingsPanel';
+    view.insertBefore(h, view.firstChild);
+    return h;
+  }
+  function syncChip(){
+    var chip = document.querySelector('#settingsTabRow [data-stab="mine"]');
+    if (chip) chip.style.display = canMine() ? '' : 'none';
+    var p = document.querySelector('.settings-panel[data-panel="mine"]');
+    if (p && !canMine()) p.remove();
+  }
+  function refreshMine(){
+    if (state.tab !== 'settings' || !canMine()) return;
+    var inTabs = !!document.querySelector('#settingsTabRow');
+    if (inTabs && state.settingsTab !== 'mine') return;
+    var h = host();
+    if (h) renderMine(h);
+  }
+  function afterSettingsRender(){
+    if (state.settingsTab === 'mine' && !canMine()) state.settingsTab = 'general';
+    syncChip();
+    refreshMine();
+  }
+
+  if (typeof renderSettings === 'function') {
+    var _rs = renderSettings;
+    renderSettings = function(){ var r = _rs.apply(this, arguments); afterSettingsRender(); return r; };
+  }
+  if (typeof renderViewerSettings === 'function') {
+    var _rvs = renderViewerSettings;
+    renderViewerSettings = function(){ var r = _rvs.apply(this, arguments); afterSettingsRender(); return r; };
+  }
+
+  // ✅ ปุ่มตั้งค่าให้แสดงกับผู้ที่เข้าแท็บนี้ได้
   function showSettingsTab(){
     var b = document.querySelector('.tab[data-tab="settings"]');
-    if (!b || window.__perms === undefined && !isAdmin()) return;
-    var allowed = isAdmin() || !!(window.canOpenTab && window.canOpenTab('mine'));
-    if (allowed && b.style.display === 'none') b.style.display = '';
+    if (!b) return;
+    if (canMine() && b.style.display === 'none') b.style.display = '';
   }
   setInterval(showSettingsTab, 1000);
+
+  document.addEventListener('click', function(e){
+    var chip = e.target.closest && e.target.closest('#settingsTabRow [data-stab]');
+    if (chip && chip.dataset.stab === 'mine') setTimeout(refreshMine, 0);
+
+    var r = e.target.closest && e.target.closest('.mn-row[data-aid]');
+    if (r && r.dataset.aid && typeof openAssetDetail === 'function') { openAssetDetail(r.dataset.aid); return; }
+
+    var c = e.target.closest && e.target.closest('[data-mine-change]');
+    if (c && canChangeIdentity()) {
+      var me = mineRow();
+      openOfficerPickerSheet(me ? officerFullName(me) : '', function(info){
+        var picked = pickedRow(info);
+        if (picked) localStorage.setItem(KEY, picked['รหัสจนท.']);
+        refreshMine();
+      });
+    }
+  });
+
+  window.refreshMine = refreshMine;
+  showSettingsTab();
+  syncChip();
 })();
 </script>      
 
-<script id="mine-settings-observer-v1">
-(function(){
-  var view = document.getElementById('view-settings');
-  if (!view) return;
-  var busy = false;
-  function go(){
-    if (busy || state.tab !== 'settings' || typeof window.refreshMine !== 'function') return;
-    busy = true;
-    Promise.resolve().then(function(){ window.refreshMine(); }).then(function(){ busy = false; }, function(){ busy = false; });
-  }
-  new MutationObserver(go).observe(view, { childList: true });
-  go();
-})();
-</script>
-      
 </body>
 
 <script id="maint-live-v1">
