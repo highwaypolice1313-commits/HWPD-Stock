@@ -25269,8 +25269,14 @@ window.exportAllBackup = async function(){
     var ringBg = '#eef2f7', ringFg = '#475569', ringTxt = '–';
     if (me) {
       try {
-        var list = await supaApiGet('getMonthlyChecks', { year: now.getFullYear(), month: now.getMonth() + 1 }); // <-- ถ้าเก็บเป็น พ.ศ. ให้ +543
-        var rec = (list || []).find(function(x){ return x['รหัสจนท.'] === me['รหัสจนท.']; });
+        var mo = now.getMonth() + 1;
+        // ✅ ค้นทั้งปี พ.ศ. และ ค.ศ. เพราะข้อมูลตรวจบันทึกไว้ทั้งสองแบบ
+        var parts = await Promise.all([
+          supaApiGet('getMonthlyChecks', { year: now.getFullYear() + 543, month: mo }),
+          supaApiGet('getMonthlyChecks', { year: now.getFullYear(), month: mo })
+        ]);
+        var list = [].concat(parts[0] || [], parts[1] || []);
+        var rec = list.find(function(x){ return x['รหัสจนท.'] === me['รหัสจนท.']; });
         var res = rec ? rec['ผล'] : 'ยังไม่ตรวจ';
         mcValue = esc(res);
         mcSub = rec ? 'ตรวจเมื่อ ' + esc(systemDateTime(rec['วันที่ตรวจ'])) : 'ยังไม่มีการตรวจเดือนนี้';
@@ -25297,7 +25303,8 @@ window.exportAllBackup = async function(){
       ? '<button type="button" class="mn-chg" data-mine-change>' + (me ? 'เปลี่ยน' : 'เลือกชื่อ') + '</button>'
       : '';
 
-    var hero = '<section class="mn-hero">' +
+    var hero = '<section class="mn-hero"' +
+      (me ? ' data-mine-profile role="button" tabindex="0" style="cursor:pointer"' : '') + '>' +
       (photo ? '<img class="mn-av" src="' + esc(photo) + '" alt="">'
              : '<div class="mn-av mn-av-ph">' + esc(String(name || '?').charAt(0)) + '</div>') +
       '<div style="min-width:0"><div class="mn-date">' + today + '</div><div class="mn-hi">' + greet + '</div>' +
@@ -25386,6 +25393,14 @@ window.exportAllBackup = async function(){
   }
   setInterval(showSettingsTab, 1000);
 
+          // ✅ กดการ์ดด้านบนเพื่อเปิดโปรไฟล์ของคนนั้น (ปุ่มเปลี่ยนไม่ทำงานตรงนี้)
+    var prof = e.target.closest && e.target.closest('[data-mine-profile]');
+    if (prof && !e.target.closest('[data-mine-change]')) {
+      var pm = mineRow();
+      if (pm && typeof openOfficerProfile === 'function') openOfficerProfile(pm);
+      return;
+    }
+      
   document.addEventListener('click', function(e){
     var chip = e.target.closest && e.target.closest('#settingsTabRow [data-stab]');
     if (chip && chip.dataset.stab === 'mine') setTimeout(refreshMine, 0);
