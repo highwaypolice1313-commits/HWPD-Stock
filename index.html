@@ -25276,7 +25276,11 @@ window.exportAllBackup = async function(){
           supaApiGet('getMonthlyChecks', { year: now.getFullYear(), month: mo })
         ]);
         var list = [].concat(parts[0] || [], parts[1] || []);
-        var rec = list.find(function(x){ return x['รหัสจนท.'] === me['รหัสจนท.']; });
+        var key = (typeof mcKey === 'function') ? mcKey(me) : (me['รหัสจนท.'] || me['ชื่อ-สกุล']);
+        var rec = list.find(function(x){ return x['รหัสจนท.'] === key; })
+        || list.find(function(x){
+            return x['ชื่อผู้ถูกตรวจ'] === officerFullName(me) || x['ชื่อผู้ถูกตรวจ'] === me['ชื่อ-สกุล'];
+          });
         var res = rec ? rec['ผล'] : 'ยังไม่ตรวจ';
         mcValue = esc(res);
         mcSub = rec ? 'ตรวจเมื่อ ' + esc(systemDateTime(rec['วันที่ตรวจ'])) : 'ยังไม่มีการตรวจเดือนนี้';
@@ -25393,35 +25397,40 @@ window.exportAllBackup = async function(){
   }
   setInterval(showSettingsTab, 1000);
 
-          // ✅ กดการ์ดด้านบนเพื่อเปิดโปรไฟล์ของคนนั้น (ปุ่มเปลี่ยนไม่ทำงานตรงนี้)
-    var prof = e.target.closest && e.target.closest('[data-mine-profile]');
-    if (prof && !e.target.closest('[data-mine-change]')) {
+document.addEventListener('click', function(e){
+  var chip = e.target.closest && e.target.closest('#settingsTabRow [data-stab]');
+  if (chip && chip.dataset.stab === 'mine') setTimeout(refreshMine, 0);
+
+  // กดการ์ดด้านบน → เปิดหน้าแก้ไขของคนนั้น (ปุ่มเปลี่ยนไม่ทำงานตรงนี้)
+  var prof = e.target.closest && e.target.closest('[data-mine-profile]');
+  if (prof && !e.target.closest('[data-mine-change]')) {
+    if (isAdmin()) {
       var pm = mineRow();
-      if (pm && typeof openOfficerProfile === 'function') openOfficerProfile(pm);
-      return;
+      if (pm) openUserForm(pm);           // แอดมิน: แก้ไขรายชื่อ จนท. ของคนนั้น
+      else toast('ยังไม่ได้เลือกรายชื่อ');
+    } else if (typeof window.openMyProfile === 'function') {
+      window.openMyProfile();             // ผู้ใช้ทั่วไป: แก้ไขโปรไฟล์ของตัวเอง
     }
-      
-  document.addEventListener('click', function(e){
-    var chip = e.target.closest && e.target.closest('#settingsTabRow [data-stab]');
-    if (chip && chip.dataset.stab === 'mine') setTimeout(refreshMine, 0);
+    return;
+  }
 
-    var r = e.target.closest && e.target.closest('.mn-row[data-aid]');
-    if (r && r.dataset.aid && typeof openAssetDetail === 'function') { openAssetDetail(r.dataset.aid); return; }
+  var r = e.target.closest && e.target.closest('.mn-row[data-aid]');
+  if (r && r.dataset.aid && typeof openAssetDetail === 'function') { openAssetDetail(r.dataset.aid); return; }
 
-    var c = e.target.closest && e.target.closest('[data-mine-change]');
-    if (c && canChangeIdentity()) {
-      var me = mineRow();
-      openOfficerPickerSheet(me ? officerFullName(me) : '', function(info){
-        var picked = pickedRow(info);
-        if (picked) localStorage.setItem(KEY, picked['รหัสจนท.']);
-        refreshMine();
-      });
-    }
-  });
+  var c = e.target.closest && e.target.closest('[data-mine-change]');
+  if (c && canChangeIdentity()) {
+    var me = mineRow();
+    openOfficerPickerSheet(me ? officerFullName(me) : '', function(info){
+      var picked = pickedRow(info);
+      if (picked) localStorage.setItem(KEY, picked['รหัสจนท.']);
+      refreshMine();
+    });
+  }
+});
 
-  window.refreshMine = refreshMine;
-  showSettingsTab();
-  syncChip();
+window.refreshMine = refreshMine;
+showSettingsTab();
+syncChip();
 })();
 </script>      
 
