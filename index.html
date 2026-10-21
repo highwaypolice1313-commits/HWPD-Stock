@@ -25761,44 +25761,45 @@ syncChip();
 
 </style>
 
-<style id="cibnight-shop-v3">
-/* ===== ทะเบียนครุภัณฑ์ · CIB โหมดมืด (ทั้งแบบชอปปิ้งและแบบการ์ด) ===== */
+<style id="cibnight-shop-v4">
+/* ===== ทะเบียนครุภัณฑ์ · CIB โหมดมืด ===== */
 
-/* ---- 1) หมวดหมู่: เอากรอบออก เหลือเฉพาะตัวหนังสือสีขาว ---- */
-:root[data-theme="cibnight"] #view-assets .ba-cat{
-  background:transparent !important;
-  border:none !important;
+/* 1) หมวดหมู่: ไม่มีกรอบ ไม่มีพื้น ตัวหนังสือขาว */
+html[data-theme="cibnight"] body #view-assets .ba-cat,
+html[data-theme="cibnight"] body #view-assets .ba-card .ba-cat{
+  background:none !important;
+  background-color:transparent !important;
+  border:0 !important;
+  border-color:transparent !important;
+  outline:0 !important;
   box-shadow:none !important;
   padding:0 !important;
+  border-radius:0 !important;
   color:#ffffff !important;
   opacity:1 !important;
 }
-:root[data-theme="cibnight"] #view-assets .ba-cat small,
-:root[data-theme="cibnight"] #view-assets .ba-cat b{
+html[data-theme="cibnight"] body #view-assets .ba-cat small,
+html[data-theme="cibnight"] body #view-assets .ba-cat b{
   color:#ffffff !important;
   opacity:1 !important;
 }
 
-/* ---- 2) การ์ดแบบชอปปิ้ง: พื้นหลังเข้ม ขอบชัด ---- */
-:root[data-theme="cibnight"] .asset-grid .ba-card{
+/* 2) รหัสครุภัณฑ์ */
+html[data-theme="cibnight"] body #view-assets .ba-card .ax-sn{
+  color:#ffffff !important;
+  opacity:1 !important;
+}
+
+/* 3) ชื่อครุภัณฑ์ */
+html[data-theme="cibnight"] body #view-assets .ba-card .asset-card-title{
+  color:#ffffff !important;
+  opacity:1 !important;
+}
+
+/* 4) การ์ดแบบชอปปิ้ง: พื้นเข้ม ขอบชัด */
+html[data-theme="cibnight"] body #view-assets .ba-card{
   background:#06213f !important;
   border:1px solid #2a5a94 !important;
-}
-:root[data-theme="cibnight"] .asset-grid .ba-card .asset-card-title{
-  color:#ffffff !important;
-  opacity:1 !important;
-}
-:root[data-theme="cibnight"] .asset-grid .ba-card .ax-sn{
-  color:#ffffff !important;
-  opacity:1 !important;
-}
-:root[data-theme="cibnight"] .asset-grid .ba-card .ba-cell small{
-  color:#e6eef8 !important;
-  opacity:1 !important;
-}
-:root[data-theme="cibnight"] .asset-grid .ba-card .ba-cell b{
-  color:#ffffff !important;
-  opacity:1 !important;
 }
 </style>
       
