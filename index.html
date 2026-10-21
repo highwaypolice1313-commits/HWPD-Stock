@@ -25988,6 +25988,22 @@ html[data-theme="cibnight"] #assetList .sx-sn{ color:#e6eef8 !important; opacity
   body.nav-collapsed .tabbar > .tab-pill + .tab{ margin-top:72px !important; }
   body .nav-collapse-btn{ top:14px !important; }
 }
+/* (5) iPad แนวนอน: ปรับระยะปุ่มเมนูให้ชิดเมนูแรกขึ้นอีก และบังคับให้ #topCapsule แสดงผลเสมอ */
+@media (min-width:900px) and (hover:none) and (pointer:coarse){
+  body .tabbar > .tab-pill + .tab,
+  body.nav-collapsed .tabbar > .tab-pill + .tab{ margin-top:46px !important; }
+  body .topbar{ position:sticky !important; top:0 !important; z-index:60 !important; }
+  body .topbar .profile{ position:relative !important; z-index:5 !important; display:flex !important; }
+  body .topbar #topCapsule{
+    position:relative !important; z-index:5 !important; display:flex !important;
+    visibility:visible !important; opacity:1 !important; height:44px !important; max-height:none !important;
+    width:auto !important; min-width:max-content !important; max-width:none !important;
+    overflow:visible !important; flex:0 0 auto !important; flex-shrink:0 !important;
+    align-items:center !important;
+  }
+  body .topbar #topCapsule > button{ width:38px !important; height:38px !important; min-width:38px !important; }
+  body .topbar #topCapsule > button.cap-avatar{ width:34px !important; height:34px !important; }
+}
 </style>
 
 </body>
