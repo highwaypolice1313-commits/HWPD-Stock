@@ -23859,6 +23859,7 @@ window.exportAllBackup = async function(){
     monthly:   ['monthly_check'],
     audit:     ['annual_count'],
     settings:  null,
+    mine:      ['my_tab'],
   };
   // ปุ่มหลักของเจ้าหน้าที่ (ที่เหลือไปอยู่ใน "เพิ่มเติม")
   var PRIMARY = ['dashboard', 'assets', 'borrow', 'users', 'reports'];
@@ -24330,7 +24331,7 @@ window.exportAllBackup = async function(){
     ['edit_assets','เพิ่มแก้ไขครุภัณฑ์'], ['maint','แจ้งซ่อมบำรุง'], ['memo_docs','จัดทำเอกสารใบเบิก'],
     ['reports','ดูรายงาน'], ['annual_count','ตรวจนับประจำปี'], ['monthly_check','ตรวจประจำเดือน'],
     ['manage_users','จัดการรายชื่อเจ้าหน้าที่'], ['trash','เข้าถังขยะ'], ['settings','ตั้งค่าระบบ'],
-    ['view_all_memos','ดูใบเบิกทั้งหมด']
+    ['view_all_memos','ดูใบเบิกทั้งหมด'], ['my_tab', 'แท็บ ของฉัน']
   ];
 
   async function loadPositions(){
@@ -25078,12 +25079,69 @@ window.exportAllBackup = async function(){
 </style>
 
 </body>
+
+<style id="mine-dash-css">
+  #view-mine{ box-sizing:border-box; }
+  .mine-wrap{
+    box-sizing:border-box; width:100%; max-width:1200px; margin:0 auto;
+    padding:16px 16px calc(28px + env(safe-area-inset-bottom,0px));
+    display:grid; gap:14px;
+  }
+  .mine-hero{ background:#0f2d4f; color:#fff; border-radius:20px; padding:18px; }
+  .mine-hero-top{ display:flex; align-items:center; gap:14px; min-width:0; }
+  .mine-hero-tx{ flex:1 1 auto; min-width:0; }
+  .mine-date{ font-size:12px; opacity:.75; }
+  .mine-hi{ font-size:13px; opacity:.85; margin-top:2px; }
+  .mine-name{ font-size:19px; font-weight:600; line-height:1.3; overflow-wrap:anywhere; }
+  .mine-hero .mine-sub{ color:#cfe0f5; font-size:13px; overflow-wrap:anywhere; }
+  .mine-av{ width:56px; height:56px; border-radius:50%; object-fit:cover; flex:0 0 auto; }
+  .mine-av-ph{ background:#1d4a7a; display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:600; }
+  .mine-chg{ flex:0 0 auto; min-height:40px; padding:0 14px; border-radius:12px; border:1px solid rgba(255,255,255,.35); background:transparent; color:#fff; font:inherit; font-size:13px; cursor:pointer; }
+
+  .mine-kpis{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+  .mine-kpi{ background:var(--surface,#fff); border-radius:16px; padding:14px; border-left:4px solid #94a3b8; min-width:0; }
+  .mine-kpi.tone-accent{ border-left-color:#2563eb; }
+  .mine-kpi.tone-warn{ border-left-color:#d97706; }
+  .mine-kpi.tone-good{ border-left-color:#16a34a; }
+  .mine-kpi.tone-bad{ border-left-color:#dc2626; }
+  .mine-kpi-v{ font-size:26px; font-weight:700; line-height:1.1; }
+  .mine-kpi-l{ font-size:13px; color:var(--navy-soft,#64748b); margin-top:4px; }
+  .mine-kpi-s{ font-size:12px; color:var(--navy-soft,#64748b); margin-top:2px; }
+
+  .mine-grid{ display:grid; grid-template-columns:minmax(0,1fr); gap:14px; }
+  .mine-panel{ background:var(--surface,#fff); border-radius:18px; padding:14px 16px; min-width:0; }
+  .mine-panel-h{ display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+  .mine-panel-h h3{ margin:0; font-size:16px; flex:1 1 auto; }
+  .mine-pill{ font-size:12px; font-weight:600; padding:2px 10px; border-radius:999px; background:#e2e8f0; color:#334155; }
+  .mine-item{ display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:44px; padding:10px 0; border-top:1px solid var(--navy-line,#e2e8f0); }
+  .mine-item:first-child{ border-top:0; }
+  .mine-item-tx{ min-width:0; flex:1 1 auto; }
+  .mine-item-tx b{ display:block; overflow-wrap:anywhere; line-height:1.35; }
+  .mine-sub{ font-size:13px; color:var(--navy-soft,#64748b); overflow-wrap:anywhere; line-height:1.4; }
+  .mine-item .status-badge{ flex:0 0 auto; max-width:46%; text-align:center; white-space:normal; line-height:1.25; }
+  .mine-empty{ color:var(--navy-soft,#64748b); font-size:14px; padding:8px 0; }
+  .mine-mc{ display:flex; align-items:center; gap:12px; }
+  .mine-mc-ring{ width:56px; height:56px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; flex:0 0 auto; }
+
+  @media (min-width:720px){
+    .mine-wrap{ padding:20px 20px calc(32px + env(safe-area-inset-bottom,0px)); }
+    .mine-kpis{ grid-template-columns:repeat(4,minmax(0,1fr)); }
+  }
+  @media (min-width:900px){
+    .mine-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .mine-panel.wide{ grid-column:1 / -1; }
+  }
+  @media (max-width:360px){
+    .mine-chg{ padding:0 10px; }
+    .mine-name{ font-size:17px; }
+    .mine-kpi-v{ font-size:22px; }
+  }
+</style>
 <script id="my-tab-v1">
 (function(){
   var MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
-  var KEY = 'hpMyOfficerId'; // <-- เก็บรหัสเจ้าหน้าที่ที่เลือกเองไว้ในเครื่อง
+  var KEY = 'hpMyOfficerId';
 
-  // ✅ เจ้าหน้าที่ของฉัน: ใช้ที่เลือกไว้ก่อน ถ้าไม่มีจึงจับคู่จากชื่อที่ล็อกอิน
   function mineRow(){
     var saved = localStorage.getItem(KEY);
     if (saved) {
@@ -25092,16 +25150,12 @@ window.exportAllBackup = async function(){
     }
     return (typeof myOfficerRow === 'function') ? myOfficerRow() : null;
   }
-  // ✅ ตรวจว่าชื่อในรายการ (ผู้ยืม / ผู้แจ้ง / ผู้ครอบครอง) เป็นของฉันหรือไม่
   function mineMatches(name){
     if (!name) return false;
     var row = mineRow();
     if (!row) return typeof nameIsMe === 'function' ? nameIsMe(name) : false;
     return samePerson(name, officerFullName(row)) || samePerson(name, row['ชื่อ-สกุล']);
   }
-  function fmtDate(v){ return v ? systemDate(v) : '-'; }
-
-  // รับค่าจากหน้าเลือกรายชื่อ ไม่ว่าจะส่งมาเป็นข้อมูลเจ้าหน้าที่ ดัชนี หรือชื่อ
   function pickedRow(info){
     if (info && typeof info === 'object' && info['รหัสจนท.']) return info;
     if (info && typeof info === 'object' && info.name) info = info.name;
@@ -25111,90 +25165,113 @@ window.exportAllBackup = async function(){
     var s = String(info || '');
     return (state.users || []).find(function(u){ return officerFullName(u) === s || u['ชื่อ-สกุล'] === s; }) || null;
   }
+  function fmtDate(v){ return v ? systemDate(v) : '-'; }
+  function canMine(){ return isAdmin() || !!(window.canOpenTab && window.canOpenTab('mine')); }
 
-  function itemHtml(title, sub, status){
-    return '<div class="mine-item">' +
-      '<div class="mine-item-tx"><b>' + escapeHtml(title || '-') + '</b>' +
-      '<div class="mine-sub">' + escapeHtml(sub || '') + '</div></div>' +
-      (status ? '<span class="status-badge ' + statusClass(status) + '">' + escapeHtml(status) + '</span>' : '') +
-      '</div>';
+  // ✅ ซ่อนปุ่มแท็บ "ของฉัน" ถ้าไม่มีสิทธิ์ แสดงเมื่อได้สิทธิ์แล้ว
+  function syncMineTab(){
+    var b = document.querySelector('.tab[data-tab="mine"]');
+    if (b) b.style.display = canMine() ? '' : 'none';
   }
-  function sectionHtml(title, count, body, emptyText){
-    return '<section class="mine-sec">' +
-      '<h3 class="mine-h">' + escapeHtml(title) + ' <span class="mine-count">' + count + '</span></h3>' +
-      (count ? body : '<div class="mine-empty">' + escapeHtml(emptyText) + '</div>') +
-      '</section>';
+  setInterval(syncMineTab, 1000);
+
+  function badge(s){ return s ? '<span class="status-badge ' + statusClass(s) + '">' + escapeHtml(s) + '</span>' : ''; }
+  function item(title, sub, status){
+    return '<div class="mine-item"><div class="mine-item-tx"><b>' + escapeHtml(title || '-') + '</b>' +
+      '<div class="mine-sub">' + escapeHtml(sub || '') + '</div></div>' + badge(status) + '</div>';
+  }
+  function panel(title, count, body, emptyText, cls){
+    return '<section class="mine-panel ' + (cls || '') + '"><header class="mine-panel-h"><h3>' + escapeHtml(title) + '</h3>' +
+      '<span class="mine-pill">' + count + '</span></header>' +
+      (count ? body : '<div class="mine-empty">' + escapeHtml(emptyText) + '</div>') + '</section>';
+  }
+  function kpi(label, value, tone, sub){
+    return '<div class="mine-kpi tone-' + tone + '"><div class="mine-kpi-v">' + value + '</div>' +
+      '<div class="mine-kpi-l">' + label + '</div>' + (sub ? '<div class="mine-kpi-s">' + sub + '</div>' : '') + '</div>';
   }
 
   async function renderMine(){
     var el = document.getElementById('view-mine');
     if (!el) return;
-    var row = mineRow();
+    var me = mineRow();
     var now = new Date();
     var borrow = state.borrow || [], maint = state.maint || [], assets = state.assets || [];
 
-    // 1) ครุภัณฑ์ที่ฉันถืออยู่ = ที่กำลังยืม + ที่ผูกชื่อฉันในทะเบียน
     var myBorrows = borrow.filter(function(b){ return mineMatches(b['ผู้ยืม']); })
-      .sort(function(a,b){ return String(b['วันที่ยืม']||'').localeCompare(String(a['วันที่ยืม']||'')); });
-    var activeBorrows = myBorrows.filter(function(b){
-      var s = effectiveBorrowStatus(b); return s === 'กำลังยืม' || s === 'เกินกำหนด';
-    });
-    var holdAssets = assets.filter(function(a){ return mineMatches(a['ผู้ครอบครอง/หน่วยงาน']); });
-    var holdIds = {};
-    var holdBody = '';
-    activeBorrows.forEach(function(b){
-      holdIds[b['รหัสครุภัณฑ์']] = true;
-      holdBody += itemHtml(b['ชื่อครุภัณฑ์'], 'กำหนดคืน ' + fmtDate(b['กำหนดคืน']), effectiveBorrowStatus(b));
-    });
-    holdAssets.forEach(function(a){
-      if (holdIds[a['รหัสครุภัณฑ์']]) return;
-      holdBody += itemHtml(a['ชื่อครุภัณฑ์'], a['หมวดหมู่'] || '', a['สถานะ']);
-    });
-    var holdCount = activeBorrows.length + holdAssets.filter(function(a){ return !holdIds[a['รหัสครุภัณฑ์']]; }).length;
+      .sort(function(a,b){ return String(b['วันที่ยืม'] || '').localeCompare(String(a['วันที่ยืม'] || '')); });
+    var active = myBorrows.filter(function(b){ var s = effectiveBorrowStatus(b); return s === 'กำลังยืม' || s === 'เกินกำหนด'; });
+    var overdue = active.filter(function(b){ return effectiveBorrowStatus(b) === 'เกินกำหนด'; }).length;
 
-    // 2) คำขอยืมของฉันพร้อมสถานะ
-    var reqBody = myBorrows.map(function(b){
-      return itemHtml(b['ชื่อครุภัณฑ์'], 'ยืมเมื่อ ' + fmtDate(b['วันที่ยืม']), effectiveBorrowStatus(b));
+    var holdIds = {}, holdRows = '', holdCount = 0;
+    active.forEach(function(b){
+      holdIds[b['รหัสครุภัณฑ์']] = true; holdCount++;
+      holdRows += item(b['ชื่อครุภัณฑ์'], 'กำหนดคืน ' + fmtDate(b['กำหนดคืน']), effectiveBorrowStatus(b));
+    });
+    assets.forEach(function(a){
+      if (holdIds[a['รหัสครุภัณฑ์']] || !mineMatches(a['ผู้ครอบครอง/หน่วยงาน'])) return;
+      holdCount++; holdRows += item(a['ชื่อครุภัณฑ์'], a['หมวดหมู่'] || '', a['สถานะ']);
+    });
+
+    var reqRows = myBorrows.map(function(b){
+      return item(b['ชื่อครุภัณฑ์'], 'ยืมเมื่อ ' + fmtDate(b['วันที่ยืม']), effectiveBorrowStatus(b));
     }).join('');
 
-    // 3) งานซ่อมที่ฉันแจ้ง
     var myMaint = maint.filter(function(m){ return mineMatches(m['ผู้แจ้ง']); });
-    var maintBody = myMaint.map(function(m){
-      return itemHtml(m['ชื่อครุภัณฑ์'], (m['อาการ/ปัญหา'] || '-') + ' · แจ้งเมื่อ ' + fmtDate(m['วันที่แจ้ง']), m['สถานะ']);
+    var openMaint = myMaint.filter(function(m){ return m['สถานะ'] !== 'ซ่อมเสร็จ'; });
+    var maintRows = myMaint.map(function(m){
+      return item(m['ชื่อครุภัณฑ์'], (m['อาการ/ปัญหา'] || '-') + ' · ' + fmtDate(m['วันที่แจ้ง']), m['สถานะ']);
     }).join('');
 
-    // 4) ตรวจประจำเดือนของฉัน (เดือนปัจจุบัน)
-    var mcHtml;
-    if (!row) {
-      mcHtml = '<div class="mine-empty">เลือกชื่อของคุณก่อนจึงจะแสดงผลตรวจ</div>';
-    } else {
+    var mcTone = 'bad', mcText = 'ยังไม่ได้เลือกชื่อ', mcSub = '', mcRing = '–', mcRingBg = '#e2e8f0', mcRingFg = '#334155';
+    if (me) {
       try {
-        var list = await supaApiGet('getMonthlyChecks', { year: now.getFullYear(), month: now.getMonth() + 1 }); // <-- ตรวจปี ค.ศ. ถ้าเก็บเป็น พ.ศ. ให้ +543
-        var rec = (list || []).find(function(x){ return x['รหัสจนท.'] === row['รหัสจนท.']; });
+        var list = await supaApiGet('getMonthlyChecks', { year: now.getFullYear(), month: now.getMonth() + 1 }); // <-- ถ้าเก็บเป็น พ.ศ. ให้ +543
+        var rec = (list || []).find(function(x){ return x['รหัสจนท.'] === me['รหัสจนท.']; });
         var res = rec ? rec['ผล'] : 'ยังไม่ตรวจ';
-        mcHtml = '<div class="mine-item"><div class="mine-item-tx"><b>ตรวจประจำเดือน ' + MONTHS[now.getMonth()] + ' ' + (now.getFullYear() + 543) + '</b>' +
-          '<div class="mine-sub">' + (rec ? 'ตรวจเมื่อ ' + systemDateTime(rec['วันที่ตรวจ']) : 'ยังไม่มีการตรวจในเดือนนี้') + '</div></div>' +
-          '<span class="status-badge ' + statusClass(res) + '">' + escapeHtml(res) + '</span></div>';
+        if (res === 'ครบ') { mcTone = 'good'; mcRing = '✓'; mcRingBg = '#dcfce7'; mcRingFg = '#166534'; }
+        else if (res === 'มีปัญหา') { mcTone = 'bad'; mcRing = '!'; mcRingBg = '#fee2e2'; mcRingFg = '#991b1b'; }
+        else { mcTone = 'warn'; mcRing = '–'; mcRingBg = '#fef3c7'; mcRingFg = '#92400e'; }
+        mcText = res;
+        mcSub = rec ? 'ตรวจเมื่อ ' + systemDateTime(rec['วันที่ตรวจ']) : 'ยังไม่มีการตรวจเดือนนี้';
       } catch (e) {
-        mcHtml = '<div class="mine-empty">โหลดผลตรวจประจำเดือนไม่สำเร็จ</div>';
+        mcText = 'โหลดไม่สำเร็จ'; mcSub = '';
       }
     }
 
-    var name = row ? officerFullName(row) : ((state.user && state.user.name) || '-');
-    var photo = row && row['รูปถ่าย'];
-    var head = '<div class="mine-head">' +
-      (photo ? '<img class="li-avatar" src="' + escapeHtml(photo) + '" alt="">' : ICONS.user) +
-      '<div class="mine-item-tx"><b>' + escapeHtml(name) + '</b>' +
-      '<div class="mine-sub">' + (row ? escapeHtml(row['หน่วยงาน'] || '') : 'ยังไม่ได้เลือกว่าเป็นใคร') + '</div></div>' +
-      '<button type="button" class="btn btn-secondary" id="mineChange">' + (row ? 'เปลี่ยน' : 'เลือกชื่อของฉัน') + '</button>' +
+    var name = me ? officerFullName(me) : ((state.user && state.user.name) || '-');
+    var unit = me ? (me['หน่วยงาน'] || '') : 'ยังไม่ได้เลือกว่าเป็นใคร';
+    var photo = me && me['รูปถ่าย'];
+    var hour = now.getHours();
+    var greet = hour < 12 ? 'สวัสดีตอนเช้า' : (hour < 17 ? 'สวัสดีตอนบ่าย' : 'สวัสดีตอนเย็น');
+    var today = now.getDate() + ' ' + MONTHS[now.getMonth()] + ' ' + (now.getFullYear() + 543);
+
+    var hero = '<section class="mine-hero"><div class="mine-hero-top">' +
+      (photo ? '<img class="mine-av" src="' + escapeHtml(photo) + '" alt="">'
+             : '<div class="mine-av mine-av-ph">' + escapeHtml((name || '?').charAt(0)) + '</div>') +
+      '<div class="mine-hero-tx"><div class="mine-date">' + today + '</div><div class="mine-hi">' + greet + '</div>' +
+      '<div class="mine-name">' + escapeHtml(name) + '</div><div class="mine-sub">' + escapeHtml(unit) + '</div></div>' +
+      '<button type="button" class="mine-chg" id="mineChange">' + (me ? 'เปลี่ยน' : 'เลือกชื่อ') + '</button>' +
+      '</div></section>';
+
+    var kpis = '<div class="mine-kpis">' +
+      kpi('ครุภัณฑ์ที่ถืออยู่', holdCount, 'accent', overdue ? 'เกินกำหนด ' + overdue + ' รายการ' : '') +
+      kpi('คำขอยืมทั้งหมด', myBorrows.length, 'neutral', 'กำลังยืม ' + active.length) +
+      kpi('งานซ่อมที่แจ้ง', myMaint.length, openMaint.length ? 'warn' : 'good', 'ยังไม่เสร็จ ' + openMaint.length) +
+      kpi('ตรวจประจำเดือน', escapeHtml(mcText), mcTone, escapeHtml(mcSub)) +
       '</div>';
 
-    el.innerHTML = '<div class="mine-wrap">' + head +
-      sectionHtml('ครุภัณฑ์ที่ฉันถืออยู่', holdCount, holdBody, 'ไม่มีครุภัณฑ์ที่ถืออยู่') +
-      sectionHtml('คำขอยืมของฉัน', myBorrows.length, reqBody, 'ยังไม่มีคำขอยืม') +
-      sectionHtml('งานซ่อมที่ฉันแจ้ง', myMaint.length, maintBody, 'ยังไม่มีงานซ่อมที่แจ้ง') +
-      '<section class="mine-sec"><h3 class="mine-h">กำหนดตรวจประจำเดือน</h3>' + mcHtml + '</section>' +
-      '</div>';
+    var mcPanel = '<section class="mine-panel"><header class="mine-panel-h"><h3>กำหนดตรวจประจำเดือน</h3></header>' +
+      '<div class="mine-mc"><div class="mine-mc-ring" style="background:' + mcRingBg + ';color:' + mcRingFg + '">' + mcRing + '</div>' +
+      '<div class="mine-item-tx"><b>' + escapeHtml(MONTHS[now.getMonth()] + ' ' + (now.getFullYear() + 543)) + '</b>' +
+      '<div class="mine-sub">' + escapeHtml(mcText) + (mcSub ? ' · ' + escapeHtml(mcSub) : '') + '</div></div></div></section>';
+
+    el.innerHTML = '<div class="mine-wrap">' + hero + kpis +
+      '<div class="mine-grid">' +
+        panel('ครุภัณฑ์ที่ฉันถืออยู่', holdCount, holdRows, 'ไม่มีครุภัณฑ์ที่ถืออยู่') +
+        panel('คำขอยืมของฉัน', myBorrows.length, reqRows, 'ยังไม่มีคำขอยืม') +
+        panel('งานซ่อมที่ฉันแจ้ง', myMaint.length, maintRows, 'ยังไม่มีงานซ่อมที่แจ้ง') +
+        mcPanel +
+      '</div></div>';
 
     var btn = document.getElementById('mineChange');
     if (btn) btn.onclick = function(){
@@ -25207,7 +25284,6 @@ window.exportAllBackup = async function(){
   }
   window.renderMine = renderMine;
 
-  // ✅ ต่อกับระบบเปลี่ยนแท็บเดิม: แท็บ "ของฉัน" แสดงผลเอง ส่วนแท็บอื่นทำงานตามเดิม
   var _renderTabNowBase = renderTabNow;
   renderTabNow = function(name){
     var mine = document.getElementById('view-mine');
@@ -25215,6 +25291,7 @@ window.exportAllBackup = async function(){
       if (mine) mine.style.display = 'none';
       return _renderTabNowBase(name);
     }
+    if (!canMine()) return _renderTabNowBase('dashboard');   // ✅ ไม่มีสิทธิ์ ส่งกลับหน้าแรก
     state.tab = 'mine';
     if (typeof saveUi === 'function') saveUi({ tab: 'mine', scrollY: 0 });
     document.querySelectorAll('.page').forEach(function(p){ p.style.display = 'none'; });
@@ -25223,64 +25300,9 @@ window.exportAllBackup = async function(){
     window.scrollTo(0, 0);
     renderMine();
   };
+  syncMineTab();
 })();
-</script>
-<style id="mine-tab-css">
-  #view-mine{ box-sizing:border-box; }
-
-  /* ฐาน: มือถือ คอลัมน์เดียว */
-  .mine-wrap{
-    box-sizing:border-box; width:100%; max-width:1120px; margin:0 auto;
-    padding:16px 16px calc(24px + env(safe-area-inset-bottom, 0px));
-    display:grid; grid-template-columns:minmax(0,1fr); gap:14px;
-  }
-  .mine-head{
-    grid-column:1 / -1; display:flex; align-items:center; gap:12px;
-    padding:14px; border-radius:18px; min-width:0;
-    background:var(--surface, #fff);
-  }
-  .mine-head > div{ flex:1 1 auto; min-width:0; }
-  .mine-head img.li-avatar{ width:52px; height:52px; border-radius:50%; object-fit:cover; flex:0 0 auto; }
-  .mine-head .btn{ flex:0 0 auto; min-height:44px; padding:0 14px; }
-
-  .mine-sec{ min-width:0; padding:14px; border-radius:18px; background:var(--surface, #fff); }
-  .mine-h{ margin:0 0 10px; font-size:16px; line-height:1.3; }
-  .mine-count{ color:var(--navy-soft, #64748b); font-weight:600; margin-left:6px; }
-
-  .mine-item{
-    display:flex; align-items:center; justify-content:space-between; gap:10px;
-    min-height:44px; padding:10px 0; border-top:1px solid var(--navy-line, #e2e8f0);
-  }
-  .mine-item:first-child{ border-top:0; }
-  .mine-item-tx{ min-width:0; flex:1 1 auto; }
-  .mine-item-tx b{ display:block; overflow-wrap:anywhere; word-break:break-word; line-height:1.35; }
-  .mine-sub{ font-size:13px; color:var(--navy-soft, #64748b); overflow-wrap:anywhere; line-height:1.4; }
-  .mine-item .status-badge{ flex:0 0 auto; max-width:46%; text-align:center; white-space:normal; line-height:1.25; }
-  .mine-empty{ color:var(--navy-soft, #64748b); font-size:14px; padding:6px 0; }
-
-  /* แท็บเล็ต / iPad แนวตั้ง (720px ขึ้นไป): สองคอลัมน์ */
-  @media (min-width:720px){
-    .mine-wrap{ grid-template-columns:repeat(2, minmax(0,1fr)); padding:20px 20px calc(28px + env(safe-area-inset-bottom, 0px)); }
-  }
-
-  /* คอมพิวเตอร์ / iPad แนวนอน (1024px ขึ้นไป): สองคอลัมน์ ระยะห่างกว้างขึ้น */
-  @media (min-width:1024px){
-    .mine-wrap{ padding:24px 28px; gap:18px; }
-    .mine-sec{ padding:18px 20px; }
-    .mine-h{ font-size:17px; }
-    .mine-item:hover{ background:rgba(0,0,0,.02); }
-  }
-
-  /* มือถือจอแคบมาก (360px ลงมา) */
-  @media (max-width:360px){
-    .mine-head{ flex-wrap:wrap; }
-    .mine-head .btn{ width:100%; }
-    .mine-item{ align-items:flex-start; }
-    .mine-item .status-badge{ max-width:50%; }
-  }
-
-  @media (prefers-reduced-motion:reduce){ .mine-item{ transition:none; } }
-</style>
+</script>      
       
 <script id="maint-live-v1">
 (function(){
