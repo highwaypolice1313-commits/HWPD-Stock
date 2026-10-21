@@ -25434,104 +25434,91 @@ syncChip();
 })();
 </script>      
 
-<style id="home-staff-v1">
-  .hs{display:grid;gap:16px;padding:4px 0 24px;box-sizing:border-box;width:100%}
-  .hs *{box-sizing:border-box}
-  .hs-hero{background:linear-gradient(135deg,var(--navy,#0f2d4f) 0%,#17324f 100%);color:#fff;border-radius:22px;padding:20px;position:relative;overflow:hidden}
-  .hs-hero::after{content:"";position:absolute;right:-40px;top:-40px;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle,rgba(245,184,0,.35),transparent 70%);pointer-events:none}
-  .hs-k{font-size:12.5px;color:#a9c4e6;position:relative;z-index:1}
-  .hs-t{font-size:20px;font-weight:700;margin:4px 0 14px;line-height:1.35;position:relative;z-index:1}
-  .hs-row{display:flex;align-items:center;gap:12px;position:relative;z-index:1}
-  .hs-track{flex:1;height:8px;border-radius:99px;background:rgba(255,255,255,.18);overflow:hidden}
-  .hs-fill{height:100%;background:linear-gradient(90deg,var(--gold,#f5b800),#ffd65c);transition:width .3s ease}
-  .hs-pct{font-weight:700;color:var(--gold,#f5b800);font-size:15px;white-space:nowrap}
-  .hs-btn{margin-top:14px;position:relative;z-index:1;background:var(--gold,#f5b800);color:var(--navy,#0f2d4f);border:0;border-radius:999px;padding:10px 18px;font:inherit;font-weight:700;cursor:pointer}
-  .hs-search{display:flex;align-items:center;gap:10px;background:var(--panel,#fff);border:1px solid var(--panel-line,#e6ecf3);border-radius:999px;padding:0 16px;height:52px;box-shadow:0 6px 18px rgba(15,45,79,.06)}
-  .hs-search svg{flex:none;color:var(--navy,#0f2d4f)}
-  .hs-search input{border:0;outline:0;flex:1;min-width:0;background:transparent;font:inherit;font-size:15px;color:var(--ink,#0f172a)}
-  .hs-cats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
-  .hs-cat{background:none;border:0;padding:0;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--ink,#0f172a);font:inherit;min-width:0}
-  .hs-cat-ic{width:56px;height:56px;border-radius:50%;background:var(--panel,#fff);border:1px solid var(--panel-line,#e6ecf3);display:flex;align-items:center;justify-content:center;color:var(--navy,#0f2d4f);box-shadow:0 4px 12px rgba(15,45,79,.06)}
-  .hs-cat-ic svg{width:24px;height:24px}
-  .hs-cat span{font-size:12.5px;color:var(--ink-dim,#64748b);white-space:nowrap}
-  .hs-kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-  .hs-kpi{background:var(--panel,#fff);border:1px solid var(--panel-line,#e6ecf3);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:6px;min-width:0}
-  .hs-kpi-top{display:flex;align-items:center;gap:8px}
-  .hs-dot{width:10px;height:10px;border-radius:50%;background:#94a3b8;flex:none}
-  .hs-kpi-l{font-size:13.5px;color:var(--ink-dim,#64748b);font-weight:500}
-  .hs-kpi-v{font-size:28px;font-weight:700;line-height:1.05;color:var(--ink,#0f172a)}
-  .hs-kpi-s{font-size:12.5px;color:var(--ink-dim,#64748b)}
-  .hs-kpi.ok .hs-dot{background:var(--ok,#16a34a)}
-  .hs-kpi.warn .hs-dot{background:var(--warn,#d97706)}
-  .hs-kpi.bad .hs-dot{background:var(--bad,#dc2626)}
-  .hs-kpi.info .hs-dot{background:#2563eb}
-  .hs-sec{display:flex;align-items:center;justify-content:space-between;margin:4px 2px 0}
-  .hs-sec h2{margin:0;font-size:16px;color:var(--ink,#0f172a)}
-  .hs-count{font-size:12px;font-weight:700;background:#eef3fa;color:#1e3a5f;border-radius:999px;padding:3px 10px}
-  .hs-scroll{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;margin:0 -16px;padding:2px 16px 8px}
-  .hs-scroll::-webkit-scrollbar{display:none}
-  .hs-card{flex:0 0 220px;scroll-snap-align:start;background:var(--panel,#fff);border:1px solid var(--panel-line,#e6ecf3);border-radius:20px;padding:14px;cursor:pointer;text-align:left;font:inherit;color:inherit;box-shadow:0 6px 18px rgba(15,45,79,.05)}
-  .hs-img{height:104px;border-radius:14px;background:linear-gradient(135deg,#eaf1fb,#fdf6e3);display:flex;align-items:center;justify-content:center;color:var(--navy,#0f2d4f);margin-bottom:12px;overflow:hidden}
-  .hs-img img{width:100%;height:100%;object-fit:cover}
-  .hs-card-t{font-weight:700;font-size:15px;line-height:1.35;overflow-wrap:anywhere}
-  .hs-card-s{font-size:12.5px;color:var(--ink-dim,#64748b);margin-top:3px}
-  .hs-pill{display:inline-block;font-size:11.5px;font-weight:600;border-radius:999px;padding:4px 10px;margin-top:10px}
-  .hs-pill.ok{background:var(--ok-wash,#dcfce7);color:#166534}
-  .hs-pill.warn{background:var(--warn-wash,#fef3c7);color:#92400e}
-  .hs-pill.bad{background:var(--bad-wash,#fee2e2);color:#991b1b}
-  .hs-pill.info{background:#eaf1fb;color:#1e4f8f}
-  .hs-list{background:var(--panel,#fff);border:1px solid var(--panel-line,#e6ecf3);border-radius:20px;padding:4px 16px}
-  .hs-li{display:flex;align-items:center;gap:12px;padding:13px 0;cursor:pointer;min-height:58px}
-  .hs-li + .hs-li{border-top:1px solid #eef2f7}
-  .hs-li-ic{width:42px;height:42px;border-radius:14px;background:#eaf1fb;color:var(--navy,#0f2d4f);display:flex;align-items:center;justify-content:center;flex:none;font-weight:700}
-  .hs-li-ic.warn{background:var(--warn-wash,#fef3c7);color:#92400e}
-  .hs-li-ic.bad{background:var(--bad-wash,#fee2e2);color:#991b1b}
-  .hs-li-ic.ok{background:var(--ok-wash,#dcfce7);color:#166534}
-  .hs-li-ic svg{width:20px;height:20px}
-  .hs-li-tx{flex:1;min-width:0}
-  .hs-li-tt{font-size:15px;font-weight:600;overflow-wrap:anywhere}
-  .hs-li-ss{font-size:12.5px;color:var(--ink-dim,#64748b);margin-top:2px;overflow-wrap:anywhere}
-  .hs-li-end{flex:none}
-  .hs-more{padding:12px 0 14px;text-align:center;font-size:13px;color:var(--ink-dim,#64748b)}
-  .hs-empty{border:1px dashed #d5deea;border-radius:16px;padding:18px;text-align:center;color:var(--ink-dim,#64748b);font-size:14px}
+<style id="home-staff-v2">
+  #view-dashboard .hs{display:grid;gap:16px;padding:4px 0 28px;box-sizing:border-box;width:100%;max-width:none;margin:0}
+  #view-dashboard .hs *{box-sizing:border-box}
+  #view-dashboard .hs-hero{background:linear-gradient(135deg,var(--navy,#0f2d4f) 0%,#17324f 100%);color:#fff;border-radius:22px;padding:20px;position:relative;overflow:hidden}
+  #view-dashboard .hs-hero::after{content:"";position:absolute;right:-40px;top:-40px;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle,rgba(245,184,0,.35),transparent 70%);pointer-events:none}
+  #view-dashboard .hs-k{font-size:12.5px;color:#a9c4e6;position:relative;z-index:1}
+  #view-dashboard .hs-t{font-size:20px;font-weight:700;margin:4px 0 14px;line-height:1.35;position:relative;z-index:1}
+  #view-dashboard .hs-row{display:flex;align-items:center;gap:12px;position:relative;z-index:1}
+  #view-dashboard .hs-track{flex:1;height:8px;border-radius:99px;background:rgba(255,255,255,.18);overflow:hidden}
+  #view-dashboard .hs-fill{height:100%;background:linear-gradient(90deg,var(--gold,#f5b800),#ffd65c);transition:width .3s ease}
+  #view-dashboard .hs-pct{font-weight:700;color:var(--gold,#f5b800);font-size:15px;white-space:nowrap}
+  #view-dashboard .hs-btn{margin-top:14px;position:relative;z-index:1;background:var(--gold,#f5b800);color:var(--navy,#0f2d4f);border:0;border-radius:999px;padding:10px 18px;font:inherit;font-weight:700;cursor:pointer}
+  #view-dashboard .hs-search{display:flex;align-items:center;gap:10px;background:var(--panel,#fff);border:1px solid var(--panel-line,#e6ecf3);border-radius:999px;padding:0 16px;height:52px;box-shadow:var(--shadow-sm,0 6px 18px rgba(15,45,79,.06))}
+  #view-dashboard .hs-search svg{flex:none;width:20px;height:20px;color:var(--navy,#0f2d4f)}
+  #view-dashboard .hs-search input{border:0;outline:0;flex:1;min-width:0;background:transparent;font:inherit;font-size:15px;color:var(--ink,#0f172a)}
+  #view-dashboard .hs-kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  #view-dashboard .hs-kpi{background:var(--panel,#fff);border:1px solid var(--panel-line,#e6ecf3);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:6px;min-width:0}
+  #view-dashboard .hs-kpi-top{display:flex;align-items:center;gap:8px}
+  #view-dashboard .hs-dot{width:10px;height:10px;border-radius:50%;background:#94a3b8;flex:none}
+  #view-dashboard .hs-kpi-l{font-size:13.5px;color:var(--ink-dim,#64748b);font-weight:500}
+  #view-dashboard .hs-kpi-v{font-size:28px;font-weight:700;line-height:1.05;color:var(--ink,#0f172a)}
+  #view-dashboard .hs-kpi-s{font-size:12.5px;color:var(--ink-dim,#64748b)}
+  #view-dashboard .hs-kpi.ok .hs-dot{background:var(--ok,#16a34a)}
+  #view-dashboard .hs-kpi.warn .hs-dot{background:var(--warn,#d97706)}
+  #view-dashboard .hs-kpi.bad .hs-dot{background:var(--bad,#dc2626)}
+  #view-dashboard .hs-kpi.info .hs-dot{background:#2563eb}
+  #view-dashboard .hs-sec{display:flex;align-items:center;justify-content:space-between;margin:4px 2px 0}
+  #view-dashboard .hs-sec h2{margin:0;font-size:16px;color:var(--ink,#0f172a)}
+  #view-dashboard .hs-count{font-size:12px;font-weight:700;background:#eef3fa;color:#1e3a5f;border-radius:999px;padding:3px 10px}
+  #view-dashboard .hs-scroll{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;margin:0;padding:2px 2px 8px}
+  #view-dashboard .hs-scroll::-webkit-scrollbar{display:none}
+  #view-dashboard .hs-card{flex:0 0 220px;scroll-snap-align:start;background:var(--panel,#fff);border:1px solid var(--panel-line,#e6ecf3);border-radius:20px;padding:14px;cursor:pointer;text-align:left;font:inherit;color:inherit;box-shadow:var(--shadow-sm,0 6px 18px rgba(15,45,79,.05))}
+  #view-dashboard .hs-img{height:104px;border-radius:14px;background:linear-gradient(135deg,#eaf1fb,#fdf6e3);display:flex;align-items:center;justify-content:center;color:var(--navy,#0f2d4f);margin-bottom:12px;overflow:hidden}
+  #view-dashboard .hs-img img{width:100%;height:100%;object-fit:cover}
+  #view-dashboard .hs-img svg{width:40px;height:40px}
+  #view-dashboard .hs-card-t{font-weight:700;font-size:15px;line-height:1.35;overflow-wrap:anywhere}
+  #view-dashboard .hs-card-s{font-size:12.5px;color:var(--ink-dim,#64748b);margin-top:3px}
+  #view-dashboard .hs-pill{display:inline-block;font-size:11.5px;font-weight:600;border-radius:999px;padding:4px 10px;margin-top:10px}
+  #view-dashboard .hs-pill.ok{background:var(--ok-wash,#dcfce7);color:#166534}
+  #view-dashboard .hs-pill.warn{background:var(--warn-wash,#fef3c7);color:#92400e}
+  #view-dashboard .hs-pill.bad{background:var(--bad-wash,#fee2e2);color:#991b1b}
+  #view-dashboard .hs-list{background:var(--panel,#fff);border:1px solid var(--panel-line,#e6ecf3);border-radius:20px;padding:4px 16px}
+  #view-dashboard .hs-li{display:flex;align-items:center;gap:12px;padding:13px 0;min-height:58px}
+  #view-dashboard .hs-li + .hs-li{border-top:1px solid #eef2f7}
+  #view-dashboard .hs-li-ic{width:42px;height:42px;border-radius:15px;background:var(--navy-wash,#eaf1fb);color:var(--navy,#0f2d4f);display:grid;place-items:center;flex:none}
+  #view-dashboard .hs-li-ic.warn{background:var(--warn-wash,#fef3c7);color:#92400e}
+  #view-dashboard .hs-li-ic.bad{background:var(--bad-wash,#fee2e2);color:#991b1b}
+  #view-dashboard .hs-li-ic.ok{background:var(--ok-wash,#dcfce7);color:#166534}
+  #view-dashboard .hs-li-ic svg{width:20px;height:20px}
+  #view-dashboard .hs-li-tx{flex:1;min-width:0}
+  #view-dashboard .hs-li-tt{font-size:15px;font-weight:600;overflow-wrap:anywhere}
+  #view-dashboard .hs-li-ss{font-size:12.5px;color:var(--ink-dim,#64748b);margin-top:2px;overflow-wrap:anywhere}
+  #view-dashboard .hs-li-end{flex:none;color:var(--ink-faint,#94a3b8)}
+  #view-dashboard .hs-li-end svg{width:16px;height:16px}
+  #view-dashboard .hs-more{padding:12px 0 0;text-align:center;font-size:13px;color:var(--ink-dim,#64748b)}
+  #view-dashboard .hs-empty{border:1px dashed #d5deea;border-radius:16px;padding:18px;text-align:center;color:var(--ink-dim,#64748b);font-size:14px}
   @media (min-width:900px){
-    .hs{max-width:1180px;margin:0 auto}
-    .hs-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}
-    .hs-two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+    #view-dashboard .hs-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}
   }
 </style>
 
-<script id="home-staff-v1-js">
+<script id="home-staff-v2-js">
 (function(){
   var seq = 0;
   var MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
-  var SVG = {
-    box:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 8l-9-5-9 5 9 5 9-5zM3 8v8l9 5 9-5V8"/></svg>',
-    swap:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 7h13l-4-4M17 17H4l4 4"/></svg>',
-    repair:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 7a4 4 0 105 5l-9 9-4-4 9-9z"/></svg>',
-    check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12l4 4 10-10"/></svg>',
-    chart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
-    search:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>',
-    user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></svg>',
-    chev:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>'
+  // ชื่อเมนูลัดเดียวกับหน้าแอดมิน
+  var MENU_LABEL = {
+    assets:'ครุภัณฑ์', borrow:'ยืม-คืน', users:'จนท.ในสังกัด', maint:'ซ่อมบำรุง',
+    memos:'เอกสารใบเบิก', reports:'รายงาน', audit:'ตรวจนับประจำปี', monthly:'ตรวจประจำเดือน', settings:'ตั้งค่า'
   };
-  var CATS = [
-    { k:'assets', label:'ครุภัณฑ์', ic:SVG.box },
-    { k:'borrow', label:'ยืม-คืน',   ic:SVG.swap },
-    { k:'maint',  label:'ซ่อม',      ic:SVG.repair },
-    { k:'monthly',label:'ตรวจ',      ic:SVG.check },
-    { k:'reports',label:'รายงาน',    ic:SVG.chart }
-  ];
+  var MENU_ORDER = ['assets','borrow','users','maint','memos','reports','audit','monthly','settings'];
+  var SEARCH_ICON = '<svg viewBox="0 0 20 20" fill="none"><circle cx="8.7" cy="8.7" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M12.5 12.5L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+  var CHEV = '<svg viewBox="0 0 20 20" fill="none"><path d="M8 5l5 5-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
   function esc(s){ return escapeHtml(String(s == null ? '' : s)); }
   function can(k){ return typeof canOpenTab === 'function' ? !!canOpenTab(k) : false; }
+  function icon(k){ return typeof dbxTabIcon === 'function' ? dbxTabIcon(k) : ''; }
   function go(k){ if (typeof renderTab === 'function') renderTab(k); }
   function auditor(){ return !isAdmin() && can('monthly'); }
   function greet(){ var h = new Date().getHours(); return h < 12 ? 'สวัสดีตอนเช้า' : (h < 17 ? 'สวัสดีตอนบ่าย' : 'สวัสดีตอนเย็น'); }
   function monthLabel(){ var d = new Date(); return MONTHS[d.getMonth()] + ' ' + (d.getFullYear() + 543); }
   function pctOf(n, d){ return d ? Math.round(n / d * 100) : 0; }
+  function holdingsOf(u){ return (u && typeof mcHoldingsOf === 'function') ? mcHoldingsOf(u) : []; }
+  function assetOf(id){ return (state.assets || []).find(function(a){ return a['รหัสครุภัณฑ์'] === id; }) || null; }
 
-  // ดึงผลตรวจเดือนนี้ (ค้นทั้ง พ.ศ. และ ค.ศ. เหมือนหน้า "ของฉัน")
   async function fetchMonth(){
     var now = new Date(), mo = now.getMonth() + 1, ce = now.getFullYear();
     var parts = await Promise.all([
@@ -25552,19 +25539,26 @@ syncChip();
     if (r === 'มีปัญหา') return { cls:'bad', txt:'ตรวจแล้ว · มีปัญหา' };
     return { cls:'warn', txt:'ยังไม่ตรวจ' };
   }
-  function holdingsOf(u){ return (u && typeof mcHoldingsOf === 'function') ? mcHoldingsOf(u) : []; }
-  function assetOf(id){ return (state.assets || []).find(function(a){ return a['รหัสครุภัณฑ์'] === id; }) || null; }
 
-  function catRow(){
-    var list = CATS.filter(function(c){ return can(c.k); });
-    if (!list.length) return '';
-    return '<div class="hs-cats">' + list.map(function(c){
-      return '<button type="button" class="hs-cat" data-go="' + c.k + '"><div class="hs-cat-ic">' + c.ic + '</div><span>' + c.label + '</span></button>';
-    }).join('') + '</div>';
+  // เมนูลัด: ทุกเมนูที่คนนี้เข้าได้ เลื่อนแนวนอนได้ ใช้คลาสและไอคอนเดียวกับหน้าแอดมิน
+  function menuHtml(){
+    var keys = MENU_ORDER.filter(can);
+    if (!keys.length) return '';
+    return '<div class="dbx-sec">เมนูลัด</div>' +
+      '<div class="dbx-menu-wrap"><div class="dbx-menu is-open" id="hsMenu">' +
+      keys.map(function(k){
+        return '<button class="dbx-tile" data-go="' + k + '" type="button">' +
+          '<span class="dbx-tile-ico">' + icon(k) + '</span><span>' + esc(MENU_LABEL[k]) + '</span></button>';
+      }).join('') +
+      '</div></div>';
   }
   function searchBox(){
-    return '<label class="hs-search">' + SVG.search +
+    return '<label class="hs-search">' + SEARCH_ICON +
       '<input id="hsQ" type="search" placeholder="ค้นหาครุภัณฑ์ รหัส หรือชื่อ จนท." autocomplete="off"></label>';
+  }
+  function kpi(label, value, tone, sub){
+    return '<div class="hs-kpi ' + tone + '"><div class="hs-kpi-top"><span class="hs-dot"></span><span class="hs-kpi-l">' + esc(label) + '</span></div>' +
+      '<div class="hs-kpi-v">' + value + '</div><div class="hs-kpi-s">' + esc(sub) + '</div></div>';
   }
 
   /* ---------------- เจ้าหน้าที่ ---------------- */
@@ -25580,7 +25574,6 @@ syncChip();
     var mine = function(b){ return me && (eqCiJs_(b['ผู้ยืม'], name) || eqCiJs_(b['ผู้ยืม'], me['ชื่อ-สกุล'])); };
     var reqAll = (state.borrow || []).filter(mine);
     var reqActive = reqAll.filter(function(b){ var s = effectiveBorrowStatus(b); return s === 'กำลังยืม' || s === 'เกินกำหนด'; });
-
     var myMaint = me ? (state.maint || []).filter(function(m){ return eqCiJs_(m['ผู้แจ้ง'], myReporterName()); }) : [];
     var openMaint = myMaint.filter(function(m){ return m['สถานะ'] !== 'ซ่อมเสร็จ'; });
 
@@ -25590,7 +25583,7 @@ syncChip();
 
     var cards = hold.length ? '<div class="hs-scroll">' + hold.map(function(b){
       var a = assetOf(b['รหัสครุภัณฑ์']);
-      var img = a && /^https?:/.test(a['รูปภาพ(URL)'] || '') ? '<img src="' + esc(a['รูปภาพ(URL)']) + '" alt="">' : SVG.box;
+      var img = a && /^https?:/.test(a['รูปภาพ(URL)'] || '') ? '<img src="' + esc(a['รูปภาพ(URL)']) + '" alt="">' : icon('assets');
       var st = effectiveBorrowStatus(b);
       var cls = st === 'เกินกำหนด' ? 'bad' : (st === 'กำลังยืม' ? 'warn' : 'ok');
       return '<button type="button" class="hs-card" data-aid="' + esc(b['รหัสครุภัณฑ์']) + '">' +
@@ -25601,7 +25594,7 @@ syncChip();
     }).join('') + '</div>' : '<div class="hs-empty">ไม่มีครุภัณฑ์ที่ถืออยู่</div>';
 
     var maintRows = openMaint.slice(0, 5).map(function(m){
-      return '<div class="hs-li"><div class="hs-li-ic warn">' + SVG.repair + '</div><div class="hs-li-tx">' +
+      return '<div class="hs-li"><div class="hs-li-ic warn">' + icon('maint') + '</div><div class="hs-li-tx">' +
         '<div class="hs-li-tt">' + esc(m['ชื่อครุภัณฑ์']) + '</div>' +
         '<div class="hs-li-ss">' + esc(m['อาการ/ปัญหา'] || '-') + ' · ' + esc(m['สถานะ']) + '</div></div></div>';
     }).join('');
@@ -25610,9 +25603,9 @@ syncChip();
       '<div class="hs-hero"><div class="hs-k">' + greet() + ' · ' + esc(name) + '</div>' +
         '<div class="hs-t">' + esc(heroT) + '</div>' +
         '<div class="hs-row"><span class="hs-k" style="min-width:72px">ตรวจประจำเดือน</span><div class="hs-track"><div class="hs-fill" style="width:' + pct + '%"></div></div><div class="hs-pct">' + pct + '%</div></div>' +
-        '<div class="hs-k" style="margin-top:10px;position:relative;z-index:1">' + esc(unit) + '</div>' +
+        '<div class="hs-k" style="margin-top:10px">' + esc(unit) + '</div>' +
       '</div>' +
-      searchBox() + catRow() +
+      searchBox() + menuHtml() +
       '<div class="hs-kpis">' +
         kpi('ครุภัณฑ์ที่ถืออยู่', hold.length, hold.length ? 'info' : '', overdue ? 'เกินกำหนด ' + overdue + ' รายการ' : 'ไม่มีรายการเกินกำหนด') +
         kpi('คำขอยืมทั้งหมด', reqAll.length, '', 'กำลังยืม ' + reqActive.length + ' รายการ') +
@@ -25623,11 +25616,6 @@ syncChip();
       cards +
       (openMaint.length ? '<div class="hs-sec"><h2>งานซ่อมที่ฉันแจ้ง</h2><span class="hs-count">' + openMaint.length + '</span></div><div class="hs-list">' + maintRows + '</div>' : '') +
     '</div>';
-  }
-
-  function kpi(label, value, tone, sub){
-    return '<div class="hs-kpi ' + tone + '"><div class="hs-kpi-top"><span class="hs-dot"></span><span class="hs-kpi-l">' + esc(label) + '</span></div>' +
-      '<div class="hs-kpi-v">' + value + '</div><div class="hs-kpi-s">' + esc(sub) + '</div></div>';
   }
 
   /* ---------------- ผู้ตรวจสอบ ---------------- */
@@ -25641,10 +25629,10 @@ syncChip();
     var pct = pctOf(done, total);
 
     var pendRows = pending.slice(0, 8).map(function(r){
-      return '<div class="hs-li" data-go="monthly"><div class="hs-li-ic">' + SVG.user + '</div><div class="hs-li-tx">' +
+      return '<div class="hs-li" data-go="monthly" style="cursor:pointer"><div class="hs-li-ic">' + icon('users') + '</div><div class="hs-li-tx">' +
         '<div class="hs-li-tt">' + esc(officerFullName(r.u)) + '</div>' +
         '<div class="hs-li-ss">' + esc(r.u['หน่วยงาน'] || '') + ' · ' + holdingsOf(r.u).length + ' รายการที่ถือ</div></div>' +
-        '<span class="hs-li-end">' + SVG.chev + '</span></div>';
+        '<span class="hs-li-end">' + CHEV + '</span></div>';
     }).join('');
 
     return '<div class="hs">' +
@@ -25653,7 +25641,7 @@ syncChip();
         '<div class="hs-row"><div class="hs-track"><div class="hs-fill" style="width:' + pct + '%"></div></div><div class="hs-pct">' + pct + '%</div></div>' +
         '<button type="button" class="hs-btn" data-go="monthly">' + (pending.length ? 'เริ่มตรวจต่อ' : 'ดูผลการตรวจ') + '</button>' +
       '</div>' +
-      searchBox() + catRow() +
+      searchBox() + menuHtml() +
       '<div class="hs-kpis">' +
         kpi('ตรวจแล้ว', done, 'ok', 'จากผู้ที่ต้องตรวจ ' + total + ' คน') +
         kpi('ยังไม่ได้ตรวจ', pending.length, pending.length ? 'warn' : 'ok', pending.length ? 'ต้องติดตามเดือนนี้' : 'ตรวจครบทุกคนแล้ว') +
@@ -25673,7 +25661,7 @@ syncChip();
     var my = ++seq;
     el.innerHTML = '<div class="hs"><div class="hs-hero"><div class="hs-k">กำลังโหลดข้อมูล…</div></div></div>';
     var monthList = await fetchMonth();
-    if (my !== seq) return;               // มีการเรนเดอร์ใหม่กว่าแล้ว
+    if (my !== seq) return;
     el.innerHTML = auditor() ? buildAuditor(monthList) : buildOfficer(monthList);
     bind(el);
   }
