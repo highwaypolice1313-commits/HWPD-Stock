@@ -8458,11 +8458,11 @@ function committeeSignBlockHtml(compact) {
   const signs = auditSignCurrent || [];
  
   const S = compact
-    ? { headSig: 44, headSigH: '11mm', headLabel: 40, headW: 150, headFs: '10pt',
-        memSig: 26, memSigH: '12mm', memLabel: 24, memW: 93, memFs: '8.5pt',
+    ? { headSig: 36, headSigH: '7mm', headLabel: 40, headW: 150, headFs: '10pt',
+        memSig: 20, memSigH: '8mm', memLabel: 24, memW: 93, memFs: '8.5pt',
         gap: '2mm', cellPad: '0.5mm 0', pairW: '186mm' }
-    : { headSig: 52, headSigH: '16mm', headLabel: 44, headW: 170, headFs: '12.5pt',
-        memSig: 28, memSigH: '18mm', memLabel: 25, memW: 93, memFs: '9.5pt',
+    : { headSig: 42, headSigH: '11mm', headLabel: 44, headW: 170, headFs: '12.5pt',
+        memSig: 21, memSigH: '13mm', memLabel: 25, memW: 93, memFs: '9.5pt',
         gap: '5mm', cellPad: '2mm 0', pairW: '186mm' };
  
   const heads = [], mems = [], secs = [];
@@ -13994,12 +13994,23 @@ function openMaintForm(presetId, presetType) {
   if (presetType === 'ถ่ายน้ำมันเครื่อง' && !usable.some(a => a['หมวดหมู่'] === VEHICLE_CAT)) {
     toast('ไม่มียานพาหนะที่คุณครอบครองให้เบิกน้ำมันเครื่อง'); return;
   }
-  const excl = a => !canReportMaint(a['รหัสครุภัณฑ์']);
+  // ขอบเขตการเลือก: "ของฉัน" (ที่ตนเองครอบครอง) หรือ "ทั้งหมด" — ค่าเริ่มต้นคือของฉันถ้ามี
+  const mineList = usable.filter(a => ownsAssetForMe(a['รหัสครุภัณฑ์']));
+  let scope = mineList.length ? 'mine' : 'all';
+  const excl = a => scope === 'mine'
+    ? !ownsAssetForMe(a['รหัสครุภัณฑ์'])
+    : !canReportMaint(a['รหัสครุภัณฑ์']);
+  const scopeChipHtml = (mineList.length && canReportAnyMaint()) ? `
+      <div style="display:flex; gap:8px; margin:0 0 10px;">
+        <button type="button" id="f_scopeMine" class="btn btn-ghost" style="flex:1; height:36px; font-size:13px;">ของฉัน (${mineList.length})</button>
+        <button type="button" id="f_scopeAll" class="btn btn-ghost" style="flex:1; height:36px; font-size:13px;">ทั้งหมด (${usable.length})</button>
+      </div>` : '';
 
   showSheet(`
     <div class="sheet-title">แจ้งซ่อมบำรุง</div>
     <div class="mf-section">
       <div class="mf-section-title"><span class="mf-step">1</span> เลือกครุภัณฑ์</div>
+      ${scopeChipHtml}
       <div class="glass list-item" id="f_assetTrigger" style="cursor:pointer;">
         <div class="li-icon" id="f_assetIcon">${ICONS.other}</div>
         <div class="li-body">
@@ -14114,10 +14125,29 @@ function openMaintForm(presetId, presetType) {
   document.getElementById('f_assetTrigger').onclick = () => openAssetPickerSheet(val('f_asset'), selectAsset, false, excl);
 
   const preset = presetId && usable.find(a => a['รหัสครุภัณฑ์'] === presetId);
+  const pool = () => (scope === 'mine' ? mineList : usable);
   const firstPick = preset
-    || (presetType === 'ถ่ายน้ำมันเครื่อง' ? usable.find(a => a['หมวดหมู่'] === VEHICLE_CAT) : null)
-    || usable[0];
+    || (presetType === 'ถ่ายน้ำมันเครื่อง' ? pool().find(a => a['หมวดหมู่'] === VEHICLE_CAT) : null)
+    || pool()[0];
   selectAsset(firstPick['รหัสครุภัณฑ์']);
+
+  function paintScope() {
+    const m = document.getElementById('f_scopeMine'), a = document.getElementById('f_scopeAll');
+    if (m) m.classList.toggle('btn-primary', scope === 'mine');
+    if (m) m.classList.toggle('btn-ghost', scope !== 'mine');
+    if (a) a.classList.toggle('btn-primary', scope === 'all');
+    if (a) a.classList.toggle('btn-ghost', scope !== 'all');
+  }
+  function setScope(s) {
+    scope = s;
+    paintScope();
+    const cur = val('f_asset');
+    if (!pool().some(x => x['รหัสครุภัณฑ์'] === cur) && pool()[0]) selectAsset(pool()[0]['รหัสครุภัณฑ์']);
+  }
+  const bMine = document.getElementById('f_scopeMine'), bAll = document.getElementById('f_scopeAll');
+  if (bMine) bMine.onclick = () => setScope('mine');
+  if (bAll) bAll.onclick = () => setScope('all');
+  paintScope();
 
   wireOilSpec();
 
