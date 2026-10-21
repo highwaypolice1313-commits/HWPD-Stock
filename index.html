@@ -24643,8 +24643,23 @@ window.exportAllBackup = async function(){
   var _openMaintForm = openMaintForm;
   openMaintForm = function(presetId){
     _openMaintForm(presetId);
-    if (!isAdmin()) lockReporterToMe();
+    if (isAdmin()) return;
+    // ผู้ตรวจสอบ: ตั้งต้นเป็นตัวเอง แต่ยังเปลี่ยนผู้แจ้งได้
+    if (canReportAnyMaint()) { setReporterToMe(); return; }
+    lockReporterToMe();
   };
+
+  function setReporterToMe(){
+    var meRow = myOfficerRow();
+    var me = meRow ? officerFullName(meRow) : ((state.user && state.user.name) || '');
+    if (!me || !document.getElementById('f_reporter')) return;
+    document.getElementById('f_reporter').value = me;
+    document.getElementById('f_reporterName').textContent = me;
+    document.getElementById('f_reporterSub').textContent = 'ผู้แจ้ง (ตัวคุณ) · เปลี่ยนได้';
+    document.getElementById('f_reporterIcon').innerHTML = (meRow && meRow['รูปถ่าย'])
+      ? '<img src="' + meRow['รูปถ่าย'] + '" style="width:100%;height:100%;object-fit:cover;border-radius:13px;">'
+      : ICONS.user;
+  }
 
   function lockReporterToMe(){
     var meRow = myOfficerRow();
