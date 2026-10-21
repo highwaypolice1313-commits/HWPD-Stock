@@ -9761,14 +9761,6 @@ function dbxTabIcon(tab) {
 
 let dbxMenuOpen = false;   // จำสถานะการขยาย/ย่อเมนูมือถือ ไม่รีเซ็ตเมื่อวาดหน้าใหม่
 
-function greetLine(){
-  var h = new Date().getHours();
-  var g = h < 12 ? 'สวัสดีตอนเช้า' : (h < 17 ? 'สวัสดีตอนบ่าย' : 'สวัสดีตอนเย็น');
-  var me = typeof myOfficerRow === 'function' ? myOfficerRow() : null;
-  var name = me ? officerFullName(me) : ((state.user && state.user.name) || '');
-  return '<div class="greet-line">' + escapeHtml(g) + ' · ' + escapeHtml(name) + '</div>';
-}
-
 function renderDashboard() {
   const el = document.getElementById('view-dashboard');
   const d = state.dashboard;
@@ -25507,7 +25499,6 @@ syncChip();
   #view-dashboard .hs-menu .dbx-menu-wrap{margin:0 !important}
   #view-dashboard .hs-menu .dbx-menu{margin:0 !important;padding:2px 0 6px !important;width:100%;gap:10px}
   #view-dashboard .hs-menu .dbx-menu .dbx-tile{flex:1 0 92px;width:auto !important;min-width:92px !important;max-width:none !important}
- .greet-line{font-size:13px;color:var(--ink-dim,#64748b);margin:0 2px 8px}
 </style>
 
 <script id="home-staff-v2-js">
@@ -25619,12 +25610,12 @@ syncChip();
     }).join('');
 
     return '<div class="hs">' +
-       '<div class="hs-hero">' +
+      '<div class="hs-hero"><div class="hs-k">' + greet() + ' · ' + esc(name) + '</div>' +
         '<div class="hs-t">' + esc(heroT) + '</div>' +
         '<div class="hs-row"><span class="hs-k" style="min-width:72px">ตรวจประจำเดือน</span><div class="hs-track"><div class="hs-fill" style="width:' + pct + '%"></div></div><div class="hs-pct">' + pct + '%</div></div>' +
         '<div class="hs-k" style="margin-top:10px">' + esc(unit) + '</div>' +
       '</div>' +
-      searchBox() + menuHtml() +
+      menuHtml() +
       '<div class="hs-kpis">' +
         kpi('ครุภัณฑ์ที่ถืออยู่', hold.length, hold.length ? 'info' : '', overdue ? 'เกินกำหนด ' + overdue + ' รายการ' : 'ไม่มีรายการเกินกำหนด') +
         kpi('คำขอยืมทั้งหมด', reqAll.length, '', 'กำลังยืม ' + reqActive.length + ' รายการ') +
@@ -25659,7 +25650,7 @@ syncChip();
         '<div class="hs-row"><div class="hs-track"><div class="hs-fill" style="width:' + pct + '%"></div></div><div class="hs-pct">' + pct + '%</div></div>' +
         '<button type="button" class="hs-btn" data-go="monthly">' + (pending.length ? 'เริ่มตรวจต่อ' : 'ดูผลการตรวจ') + '</button>' +
       '</div>' +
-      searchBox() + menuHtml() +
+      menuHtml() +
       '<div class="hs-kpis">' +
         kpi('ตรวจแล้ว', done, 'ok', 'จากผู้ที่ต้องตรวจ ' + total + ' คน') +
         kpi('ยังไม่ได้ตรวจ', pending.length, pending.length ? 'warn' : 'ok', pending.length ? 'ต้องติดตามเดือนนี้' : 'ตรวจครบทุกคนแล้ว') +
@@ -25681,7 +25672,7 @@ syncChip();
     el.innerHTML = '<div class="hs"><div class="hs-hero"><div class="hs-k">กำลังโหลดข้อมูล…</div></div></div>';
     var monthList = await fetchMonth();
     if (my !== seq) return;
-      el.innerHTML = greetLine() + (auditor() ? buildAuditor(monthList) : buildOfficer(monthList));
+    el.innerHTML = auditor() ? buildAuditor(monthList) : buildOfficer(monthList);
     bind(el);
   }
 
@@ -25706,16 +25697,11 @@ syncChip();
   }
 
   // แทนที่หน้าภาพรวมเฉพาะผู้ที่ไม่ใช่แอดมิน (แอดมินยังเห็นภาพรวมเดิม)
-var _origDashboard = renderDashboard;
-renderDashboard = function(){
-  if (isAdmin()) {
-    var r = _origDashboard.apply(this, arguments);
-    var el = document.getElementById('view-dashboard');
-    if (el && !el.querySelector('.greet-line')) el.insertAdjacentHTML('afterbegin', greetLine());
-    return r;
-  }
-  return renderHomeStaff();
-};
+  var _origDashboard = renderDashboard;
+  renderDashboard = function(){
+    if (isAdmin()) return _origDashboard.apply(this, arguments);
+    return renderHomeStaff();
+  };
 })();
 </script>
 
