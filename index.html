@@ -10644,7 +10644,8 @@ function renderAssets() {
     });
 
   wireViewToggle(renderAssets, '#view-assets', 'assetView');
-drawMaintList();
+      drawAssetList();
+      drawMaintList();
 
 // ถ้าเป็นการรีเฟรชหลังบันทึก ให้คงหน้าจอไว้โดยไม่เล่นแอนิเมชันซ้ำ
 if (!window.__quietRender) {
