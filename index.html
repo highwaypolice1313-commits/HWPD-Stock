@@ -25966,6 +25966,21 @@ html[data-theme="cibnight"] #assetList .sx-sn{ color:#e6eef8 !important; opacity
     padding:10px 10px 8px !important; overflow:visible !important;
   }
 }
+/* (3) iPad แนวนอน: ชุดปุ่มด้านขวาบน (ค้นหา / รีเฟรช / แจ้งเตือน / บัญชี) ต้องแสดงเสมอ
+   กฎ touch ก่อนหน้าซ่อน/ย่อ .profile และดันปุ่มให้หลุดขอบ จึงคืนค่าและกันไม่ให้ถูกบีบ */
+@media (min-width:900px) and (hover:none) and (pointer:coarse){
+  body .topbar{ flex-wrap:nowrap !important; overflow:visible !important; }
+  body .topbar .brand{ flex:1 1 0 !important; min-width:0 !important; overflow:hidden !important; }
+  body .topbar .profile{
+    display:flex !important; visibility:visible !important; opacity:1 !important;
+    flex:0 0 auto !important; flex-shrink:0 !important; width:auto !important; height:auto !important;
+    max-width:none !important; overflow:visible !important; margin-left:auto !important;
+  }
+  body .topbar #topCapsule{ display:flex !important; visibility:visible !important; opacity:1 !important; flex:0 0 auto !important; flex-shrink:0 !important; }
+  body .topbar #topCapsule > button{ display:inline-flex !important; visibility:visible !important; opacity:1 !important; }
+  body .topbar #topCapsule > button.cap-avatar{ display:grid !important; }
+  body .topbar #topCapsule .cap-sep{ display:block !important; }
+}
 </style>
 
 </body>
