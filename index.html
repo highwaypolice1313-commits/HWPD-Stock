@@ -26018,11 +26018,9 @@ html[data-theme="cibnight"] #assetList .sx-sn{ color:#e6eef8 !important; opacity
    ไม่ขึ้นกับการจัดวางตามความกว้างของเมนู จึงแสดงทั้งตอนเมนูกางและตอนย่อ */
 @media (min-width:900px) and (hover:none) and (pointer:coarse){
   body .topbar #topCapsule{
-    position:absolute !important;
-    top:max(14px, env(safe-area-inset-top)) !important;
-    right:max(16px, env(safe-area-inset-right)) !important;
-    left:auto !important; bottom:auto !important;
-    z-index:65 !important;
+    position:static !important;
+    top:auto !important; right:auto !important; left:auto !important; bottom:auto !important;
+    z-index:auto !important;
     display:flex !important; visibility:visible !important; opacity:1 !important;
     margin:0 !important;
   }
