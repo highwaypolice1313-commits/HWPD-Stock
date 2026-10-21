@@ -23212,6 +23212,7 @@ window.exportAllBackup = async function(){
   // ---------- ตัวช่วย ----------
   // อายุเป็นปีเต็มจากวันเกิด (ค.ศ. YYYY-MM-DD) คืน null ถ้าไม่มีวันเกิด
   function offAge(u){
+    if (u && u['อายุ(ปี)'] != null && u['อายุ(ปี)'] !== '') return Number(u['อายุ(ปี)']);
     var iso = u && u['วัน/เดือน/ปีเกิด'];
     if (!iso) return null;
     var p = String(iso).slice(0, 10).split('-').map(Number);
