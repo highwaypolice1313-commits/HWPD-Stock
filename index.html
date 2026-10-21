@@ -10994,6 +10994,35 @@ function assetTimelineHtml(a, id) {
   </div>`;
 }
 
+// ✅ คำนวณอายุการใช้งานจากวันที่รับเข้าถึงวันนี้ แสดงเป็น "X ปี Y เดือน Z วัน"
+function assetAgeText(v) {
+  if (!v) return '-';
+  const start = toDate(v);
+  if (!start || isNaN(start)) return '-';
+  const now = new Date();
+  if (start > now) return '-';                      // <-- วันที่รับเข้าเป็นอนาคต ไม่คำนวณ
+
+  let years  = now.getFullYear() - start.getFullYear();
+  let months = now.getMonth()    - start.getMonth();
+  let days   = now.getDate()     - start.getDate();
+
+  // ปรับค่าเมื่อวันหรือเดือนติดลบ
+  if (days < 0) {
+    months--;
+    days += new Date(now.getFullYear(), now.getMonth(), 0).getDate(); // <-- จำนวนวันของเดือนก่อนหน้า
+  }
+  if (months < 0) {
+    years--;
+    months += 12;
+  }
+
+  const parts = [];
+  if (years)  parts.push(years + ' ปี');
+  if (months) parts.push(months + ' เดือน');
+  if (days || parts.length === 0) parts.push(days + ' วัน');
+  return parts.join(' ');
+}      
+      
 function openAssetDetail(id, opts = {}) {
   const a = state.assets.find(x => x['รหัสครุภัณฑ์'] === id);
   if (!a) return;
@@ -11010,6 +11039,7 @@ function openAssetDetail(id, opts = {}) {
   <div class="detail-row"><span>หมายเลขเครื่องยนต์</span><span>${escapeHtml(a['หมายเลขเครื่องยนต์']) || '-'}</span></div>
   <div class="detail-row"><span>ขนาดยาง</span><span>${escapeHtml(a['ขนาดยาง']) || '-'}</span></div>` : ''}
     <div class="detail-row"><span>วันที่รับเข้า</span><span>${systemDate(a['วันที่รับเข้า'])}</span></div>
+    <div class="detail-row"><span>อายุการใช้งาน</span><span>${escapeHtml(assetAgeText(a['วันที่รับเข้า']))}</span></div>
     <div class="detail-row"><span>มูลค่า</span><span>${a['มูลค่า(บาท)'] ? Number(a['มูลค่า(บาท)']).toLocaleString() + ' บาท' : '-'}</span></div>
     <div class="detail-row"><span>สถานะ</span><span class="status-badge ${statusClass(a['สถานะ'])}">${escapeHtml(a['สถานะ'])}</span></div>
     <div class="detail-row"><span>ผู้ครอบครอง</span><span>${escapeHtml(a['ผู้ครอบครอง/หน่วยงาน']) || '-'}</span></div>
