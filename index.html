@@ -7633,10 +7633,6 @@ html, body{
 
 
 <body>
-<div id="rotateLockOverlay" aria-live="polite">
-<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.2"/><path d="M11 18.5h2"/></svg>
-<p>กรุณาหมุนอุปกรณ์เป็นแนวตั้ง<br>เพื่อใช้งานระบบพัสดุครุภัณฑ์</p>
-</div>
 
 
 <div id="loginScreen" class="login-wrap">
@@ -26031,29 +26027,7 @@ html[data-theme="cibnight"] #assetList .sx-sn{ color:#e6eef8 !important; opacity
   }
   body .topbar{ position:sticky !important; }
 }
-/* (9) มือถือ: ล็อกแนวตั้ง — เมื่อหมุนเป็นแนวนอนให้แสดงข้อความให้หมุนกลับ (iPad ไม่ถูกกระทบ) */
-#rotateLockOverlay{ display:none; }
-@media (orientation:landscape) and (max-height:500px) and (pointer:coarse){
-  #rotateLockOverlay{
-    display:flex; position:fixed; inset:0; z-index:2147483647;
-    align-items:center; justify-content:center; flex-direction:column; gap:14px;
-    background:#0c1e33; color:#fff; font-family:'Kanit',sans-serif; text-align:center; padding:24px;
-  }
-  #rotateLockOverlay svg{ width:56px; height:56px; }
-  #rotateLockOverlay p{ margin:0; font-size:16px; line-height:1.5; }
-}
-/* (10) เจอสาเหตุจริงแล้ว: บล็อก CSS เดิมของระบบที่ใช้กับ "ทุกอุปกรณ์จอสัมผัส" (ไม่ว่าจอกว้างเท่าไร)
-   มีกฎ .topbar{ width:100% !important; } โดยไม่ล้าง margin-left ที่มาจากกฎเดสก์ท็อป (900–1199px = 242px, 1200px+ = 268px)
-   เมื่อเมนูไม่ได้ถูกย่อ แถบบนจึงกว้างเกินจอไปเท่ากับความกว้างเมนู ดัน #topCapsule หลุดออกไปนอกขอบขวาที่มองไม่เห็น
-   (ตอนย่อเมนูไม่เป็นไร เพราะมีกฎ body.nav-collapsed .topbar ที่ตั้ง width ให้ตรงอยู่แล้วและมีลำดับความสำคัญสูงกว่า)
-   แก้โดยตั้ง width ให้ตรงกับ margin-left ของแต่ละช่วงจอ เฉพาะตอนเมนูไม่ได้ถูกย่อ */
-@media (min-width:900px) and (max-width:1199px) and (hover:none) and (pointer:coarse){
-  body .topbar{ width:calc(100% - 242px) !important; margin-left:242px !important; }
-}
-@media (min-width:1200px) and (hover:none) and (pointer:coarse){
-  body .topbar{ width:calc(100% - 268px) !important; margin-left:268px !important; }
-}
-</style>
+
 
 </body>
 
