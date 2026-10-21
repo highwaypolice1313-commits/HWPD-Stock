@@ -293,6 +293,16 @@ async function sGetAll() {
     }
   });
 
+    // ✅ ซ่อมเสร็จ/ลบงานซ่อมแล้ว แต่สถานะยังค้างเป็น "ซ่อมบำรุง" → แสดงตามข้อมูลจริง
+  const openRepairIds = new Set(
+    maint.filter(m => m['สถานะ'] !== 'ซ่อมเสร็จ').map(m => m['รหัสครุภัณฑ์'])
+  );
+  assets.forEach(a => {
+    if (a['สถานะ'] === 'ซ่อมบำรุง' && !openRepairIds.has(a['รหัสครุภัณฑ์'])) {
+      a['สถานะ'] = activeBorrowedIds.has(a['รหัสครุภัณฑ์']) ? 'กำลังยืม' : 'พร้อมใช้งาน';
+    }
+  });
+  
   return {
     assets, borrow, maint, components, users, settings,
     dashboard: buildDashboardJS(assets, borrow, maint, settings.renewalAlertDays)
@@ -430,6 +440,20 @@ async function setAssetStatusSb(assetId, status, holder) {
   if (!data || !data.length) {
     throw new Error('อัปเดตสถานะครุภัณฑ์ไม่สำเร็จ: ไม่พบรหัส ' + assetId + ' หรือไม่มีสิทธิ์แก้ไข');
   }
+}
+// ✅ ซิงก์สถานะครุภัณฑ์กับงานซ่อม: ถ้าไม่มีงานซ่อมค้างและไม่ได้จำหน่าย ให้คืนสถานะตามรายการยืมจริง
+async function syncAssetRepairStatusSb(assetId) {
+  const { data: asset, error: eA } = await sb.from('assets').select('status').eq('id', assetId).maybeSingle();
+  if (eA) throw new Error('อ่านสถานะครุภัณฑ์ไม่สำเร็จ: ' + eA.message);
+  if (!asset || asset.status === 'จำหน่ายแล้ว') return;          // <-- ไม่แตะครุภัณฑ์ที่จำหน่ายแล้ว
+
+  const { data: open, error: eO } = await sb.from('maint').select('id')
+    .eq('asset_id', assetId).neq('status', 'ซ่อมเสร็จ').is('deleted_at', null).limit(1);
+  if (eO) throw new Error('ตรวจงานซ่อมไม่สำเร็จ: ' + eO.message);
+  if (open && open.length) return;                                // <-- ยังมีงานซ่อมค้าง คงสถานะซ่อมบำรุงไว้
+
+  const borrowed = await hasActiveBorrowSb(assetId);
+  await setAssetStatusSb(assetId, borrowed ? 'กำลังยืม' : 'พร้อมใช้งาน'); // holder ไม่ถูกแก้
 }
 
 // ==================== ASSETS ====================
@@ -688,13 +712,10 @@ async function sUpdateMaint(p, actor) {
   if (error) throw new Error(error.message);
   if (p.tireSize) await sb.from('assets').update({ tire_size: p.tireSize }).eq('id', m.asset_id);
 
-  // ✅ ปิดงานซ่อม: ตั้งเป็นพร้อมใช้งานเฉพาะเมื่อไม่มีรายการยืมค้างอยู่
-  if (p.status === 'ซ่อมเสร็จ') {
-    if (!(await hasActiveBorrowSb(m.asset_id))) {
-      await setAssetStatusSb(m.asset_id, 'พร้อมใช้งาน');
-    }
-  } else if (p.status === 'รอซ่อม' || p.status === 'กำลังซ่อม') {
+  if (p.status === 'รอซ่อม' || p.status === 'กำลังซ่อม') {
     await setAssetStatusSb(m.asset_id, 'ซ่อมบำรุง');
+  } else if (p.status === 'ซ่อมเสร็จ') {
+    await syncAssetRepairStatusSb(m.asset_id);                    // <-- ปิดงานซ่อม: คืนสถานะครุภัณฑ์ทันที
   }
   await logActivitySb(actor, 'อัปเดตงานซ่อม', p.id);
   return { updated: true };
@@ -705,12 +726,7 @@ async function sDeleteMaint(p, actor, role) {
   const { data: m } = await sb.from('maint').select('asset_id').eq('id', p.id).maybeSingle();
   if (!m) throw new Error('ไม่พบรายการซ่อมรหัส ' + p.id);
   await softDeleteSb('maint', p.id, actor, role);
-  // ถ้าไม่มีงานซ่อมที่ยังค้างเหลืออยู่ และไม่มีรายการยืมค้าง ให้คืนสถานะครุภัณฑ์เป็นพร้อมใช้งาน
-  const { data: others } = await sb.from('maint').select('id')
-    .eq('asset_id', m.asset_id).neq('status', 'ซ่อมเสร็จ').is('deleted_at', null);
-  if ((!others || !others.length) && !(await hasActiveBorrowSb(m.asset_id))) {
-    await sb.from('assets').update({ status: 'พร้อมใช้งาน' }).eq('id', m.asset_id).eq('status', 'ซ่อมบำรุง');
-  }
+  await syncAssetRepairStatusSb(m.asset_id);                      // <-- ลบงานซ่อม: คืนสถานะครุภัณฑ์ตามข้อมูลจริง
   await logActivitySb(actor, 'ลบงานซ่อม (ไปถังขยะ)', p.id);
   return { deleted: true };
 }
