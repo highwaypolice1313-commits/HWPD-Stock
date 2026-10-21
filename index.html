@@ -25951,9 +25951,9 @@ html[data-theme="cibnight"] #assetList .sx-sn{ color:#e6eef8 !important; opacity
    กฎ touch ก่อนหน้าบังคับให้แถบเป็นแถบล่าง และซ่อนการ์ดผู้ใช้ จึงแก้ทับเฉพาะช่วงนี้ */
 @media (min-width:900px) and (hover:none) and (pointer:coarse){
   body .tabbar{
-    left:16px !important; right:auto !important;
-    top:16px !important; bottom:16px !important;
-    height:calc(100vh - 32px) !important; max-height:none !important;
+    left:max(16px, env(safe-area-inset-left)) !important; right:auto !important;
+    top:max(16px, env(safe-area-inset-top)) !important; bottom:max(16px, env(safe-area-inset-bottom)) !important;
+    height:auto !important; max-height:none !important;
     overflow-x:hidden !important; overflow-y:auto !important;
     touch-action:pan-y !important;
   }
