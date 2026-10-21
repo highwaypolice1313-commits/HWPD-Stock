@@ -25103,7 +25103,11 @@ window.exportAllBackup = async function(){
     var s = String(info || '');
     return (state.users || []).find(function(u){ return officerFullName(u) === s || u['ชื่อ-สกุล'] === s; }) || null;
   }
-  function canMine(){ return isAdmin() || !!(window.canOpenTab && window.canOpenTab('mine')); }
+  function canMine(){
+    if (isAdmin()) return true;
+    var w = window.__perms;
+    return !!(w && (w.admin || (w.perms || []).indexOf('my_tab') !== -1));
+  }
   function fmtShort(v){
     var d = v ? toDate(v) : null;
     if (!d || isNaN(d)) return '-';
@@ -25381,6 +25385,21 @@ window.exportAllBackup = async function(){
   setInterval(showSettingsTab, 1000);
 })();
 </script>      
+
+<script id="mine-settings-observer-v1">
+(function(){
+  var view = document.getElementById('view-settings');
+  if (!view) return;
+  var busy = false;
+  function go(){
+    if (busy || state.tab !== 'settings' || typeof window.refreshMine !== 'function') return;
+    busy = true;
+    Promise.resolve().then(function(){ window.refreshMine(); }).then(function(){ busy = false; }, function(){ busy = false; });
+  }
+  new MutationObserver(go).observe(view, { childList: true });
+  go();
+})();
+</script>
       
 </body>
 
