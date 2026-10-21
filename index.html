@@ -8458,11 +8458,11 @@ function committeeSignBlockHtml(compact) {
   const signs = auditSignCurrent || [];
  
   const S = compact
-    ? { headSig: 36, headSigH: '7mm', headLabel: 40, headW: 150, headFs: '10pt',
-        memSig: 20, memSigH: '8mm', memLabel: 24, memW: 93, memFs: '8.5pt',
+    ? { headSig: 44, headSigH: '11mm', headLabel: 40, headW: 150, headFs: '10pt',
+        memSig: 26, memSigH: '12mm', memLabel: 24, memW: 93, memFs: '8.5pt',
         gap: '2mm', cellPad: '0.5mm 0', pairW: '186mm' }
-    : { headSig: 42, headSigH: '11mm', headLabel: 44, headW: 170, headFs: '12.5pt',
-        memSig: 21, memSigH: '13mm', memLabel: 25, memW: 93, memFs: '9.5pt',
+    : { headSig: 52, headSigH: '16mm', headLabel: 44, headW: 170, headFs: '12.5pt',
+        memSig: 28, memSigH: '18mm', memLabel: 25, memW: 93, memFs: '9.5pt',
         gap: '5mm', cellPad: '2mm 0', pairW: '186mm' };
  
   const heads = [], mems = [], secs = [];
@@ -10984,7 +10984,7 @@ function assetTimelineHtml(a, id) {
       <span style="width:16px;height:16px;display:inline-flex;color:var(--gold-deep);">${svgSz(ICONS.clock, 16)}</span>
       <span>ไทม์ไลน์ครุภัณฑ์</span>
     </div>
-    <div style="position:relative;">
+    <div style="max-height:280px; overflow-y:auto; padding-right:6px; overscroll-behavior:contain;"><div style="position:relative;">
       <div style="position:absolute; left:11px; top:12px; bottom:12px; width:1px; background:var(--panel-line);"></div>
       ${events.map((e, i) => `
       <div style="position:relative; display:flex; gap:10px; align-items:flex-start; padding-bottom:${i === last ? 0 : 14}px;">
@@ -10999,7 +10999,7 @@ function assetTimelineHtml(a, id) {
           ${e.note ? `<div style="font-size:11px; color:var(--ink-faint); margin-top:1px; line-height:1.45; word-break:break-word;">${escapeHtml(e.note)}</div>` : ''}
         </div>
       </div>`).join('')}
-    </div>
+    </div></div>
   </div>`;
 }
 
@@ -16488,6 +16488,15 @@ ovOf('btnMemoPrint').onclick = () => {
 }
 
 /* ---------- ฟอร์มสร้างเอกสาร (กรอกข้อมูล + ตัวอย่างสด) ---------- */
+// ผู้ครอบครองปัจจุบันของรายการ: ผู้ยืมที่กำลังยืม ถ้าไม่มีใช้ผู้ถือครองในทะเบียน
+function holderNameForAssetId(id) {
+  if (!id) return '';
+  const b = (state.borrow || []).find(x => x['รหัสครุภัณฑ์'] === id &&
+    ['กำลังยืม', 'เกินกำหนด'].includes(effectiveBorrowStatus(x)));
+  if (b && b['ผู้ยืม']) return b['ผู้ยืม'];
+  const a = (state.assets || []).find(x => x['รหัสครุภัณฑ์'] === id);
+  return a ? (a['ผู้ครอบครอง/หน่วยงาน'] || '') : '';
+}
 function buildMemoItemList(opts) {
   if (opts.borrow) {
     const b = opts.borrow;
@@ -17055,9 +17064,10 @@ function openPrintMemoForm(opts) {
   const dueDateIso = borrow && borrow['กำหนดคืน'] ? isoDate(borrow['กำหนดคืน']) : '';
   const defaultSubject = docSubject(memoFormCtx, items[0] && items[0].name ? items[0].name : '')
     || ('ขอเบิก' + (items[0] && items[0].name ? items[0].name : 'พัสดุครุภัณฑ์'));
+  const holderDefault = items[0] && items[0].id ? holderNameForAssetId(items[0].id) : '';
   const requesterNameDefault = memoFormCtx && memoFormCtx.reporter
     ? memoFormCtx.reporter
-    : (borrow ? (borrow['ผู้ยืม'] || '') : (state.user && state.user.name) || '');
+    : (holderDefault || (borrow ? (borrow['ผู้ยืม'] || '') : (state.user && state.user.name) || ''));
   const approverNameDefault = borrow ? (borrow['ผู้อนุมัติ'] || '') : '';
 
   const reqIdx = findOfficerIndexByName(requesterNameDefault);
@@ -20049,7 +20059,7 @@ function renderSettings() {
   if (!state.settingsTab) state.settingsTab = 'general';
 
   const TABS = [
-    { id: 'mine', label: 'ฉัน' },
+    { id: 'mine', label: 'โปรไฟล์' },
     { id: 'general',   label: 'ทั่วไป' },
     { id: 'committee', label: 'คณะกรรมการตรวจสอบ' },
     { id: 'units',     label: 'หมวดหมู่ & หน่วยนับ' },
@@ -22081,7 +22091,7 @@ function openOilMemoForm(opts) {
                   <input class="input" id="oil_docno_suffix" value="${nextDocNo()}" style="flex:1;">
                 </div>
               </div>
-              <div class="field"><label>เรื่อง</label><input class="input" id="oil_subject" value="ขอเบิกน้ำมันเครื่อง"></div>
+              <div class="field"><label>เรื่อง</label><input class="input" id="oil_subject" value="${escapeHtml('ขอเบิกน้ำมันเครื่อง' + (pre && pre['ชื่อครุภัณฑ์'] ? ' ' + pre['ชื่อครุภัณฑ์'] : ''))}"></div>
             </div>
             <div class="field"><label>เรียน</label><input class="input" id="oil_addressee" value="${escapeHtml((state.settings && state.settings.memoAddressee) || '')}"></div>
           </div>
@@ -25792,6 +25802,30 @@ html[data-theme="cibnight"] #assetList .sx-tag{
 }
 html[data-theme="cibnight"] #assetList .sx-sn{ color:#e6eef8 !important; opacity:1 !important; }
 </style>
+
+<style id="profile-logout-v1">
+.mn-logout-wrap{ margin:18px 0 6px; }
+.mn-logout{ width:100%; height:48px; border-radius:16px; border:1px solid color-mix(in srgb, var(--bad,#dc2626) 45%, transparent);
+  background:var(--bad-wash,#fee2e2); color:var(--bad,#dc2626); font:inherit; font-weight:700; font-size:15px; cursor:pointer; }
+</style>
+<script id="profile-logout-v1-js">
+(function(){
+  function addLogout(){
+    var mn = document.querySelector('#view-settings .mn');
+    if (!mn || mn.querySelector('.mn-logout-wrap')) return;
+    var w = document.createElement('div');
+    w.className = 'mn-logout-wrap';
+    w.innerHTML = '<button type="button" class="mn-logout">ออกจากระบบ</button>';
+    w.querySelector('button').addEventListener('click', function(){
+      var b = document.getElementById('btnLogout');
+      if (b) b.click();
+    });
+    mn.appendChild(w);
+  }
+  new MutationObserver(addLogout).observe(document.body, { childList:true, subtree:true });
+  addLogout();
+})();
+</script>
 </body>
 
 <script id="maint-live-v1">
