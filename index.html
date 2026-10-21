@@ -25434,6 +25434,279 @@ syncChip();
 })();
 </script>      
 
+<style id="home-staff-v1">
+  .hs{display:grid;gap:16px;padding:4px 0 24px;box-sizing:border-box;width:100%}
+  .hs *{box-sizing:border-box}
+  .hs-hero{background:linear-gradient(135deg,var(--navy,#0f2d4f) 0%,#17324f 100%);color:#fff;border-radius:22px;padding:20px;position:relative;overflow:hidden}
+  .hs-hero::after{content:"";position:absolute;right:-40px;top:-40px;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle,rgba(245,184,0,.35),transparent 70%);pointer-events:none}
+  .hs-k{font-size:12.5px;color:#a9c4e6;position:relative;z-index:1}
+  .hs-t{font-size:20px;font-weight:700;margin:4px 0 14px;line-height:1.35;position:relative;z-index:1}
+  .hs-row{display:flex;align-items:center;gap:12px;position:relative;z-index:1}
+  .hs-track{flex:1;height:8px;border-radius:99px;background:rgba(255,255,255,.18);overflow:hidden}
+  .hs-fill{height:100%;background:linear-gradient(90deg,var(--gold,#f5b800),#ffd65c);transition:width .3s ease}
+  .hs-pct{font-weight:700;color:var(--gold,#f5b800);font-size:15px;white-space:nowrap}
+  .hs-btn{margin-top:14px;position:relative;z-index:1;background:var(--gold,#f5b800);color:var(--navy,#0f2d4f);border:0;border-radius:999px;padding:10px 18px;font:inherit;font-weight:700;cursor:pointer}
+  .hs-search{display:flex;align-items:center;gap:10px;background:var(--panel,#fff);border:1px solid var(--panel-line,#e6ecf3);border-radius:999px;padding:0 16px;height:52px;box-shadow:0 6px 18px rgba(15,45,79,.06)}
+  .hs-search svg{flex:none;color:var(--navy,#0f2d4f)}
+  .hs-search input{border:0;outline:0;flex:1;min-width:0;background:transparent;font:inherit;font-size:15px;color:var(--ink,#0f172a)}
+  .hs-cats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+  .hs-cat{background:none;border:0;padding:0;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--ink,#0f172a);font:inherit;min-width:0}
+  .hs-cat-ic{width:56px;height:56px;border-radius:50%;background:var(--panel,#fff);border:1px solid var(--panel-line,#e6ecf3);display:flex;align-items:center;justify-content:center;color:var(--navy,#0f2d4f);box-shadow:0 4px 12px rgba(15,45,79,.06)}
+  .hs-cat-ic svg{width:24px;height:24px}
+  .hs-cat span{font-size:12.5px;color:var(--ink-dim,#64748b);white-space:nowrap}
+  .hs-kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .hs-kpi{background:var(--panel,#fff);border:1px solid var(--panel-line,#e6ecf3);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:6px;min-width:0}
+  .hs-kpi-top{display:flex;align-items:center;gap:8px}
+  .hs-dot{width:10px;height:10px;border-radius:50%;background:#94a3b8;flex:none}
+  .hs-kpi-l{font-size:13.5px;color:var(--ink-dim,#64748b);font-weight:500}
+  .hs-kpi-v{font-size:28px;font-weight:700;line-height:1.05;color:var(--ink,#0f172a)}
+  .hs-kpi-s{font-size:12.5px;color:var(--ink-dim,#64748b)}
+  .hs-kpi.ok .hs-dot{background:var(--ok,#16a34a)}
+  .hs-kpi.warn .hs-dot{background:var(--warn,#d97706)}
+  .hs-kpi.bad .hs-dot{background:var(--bad,#dc2626)}
+  .hs-kpi.info .hs-dot{background:#2563eb}
+  .hs-sec{display:flex;align-items:center;justify-content:space-between;margin:4px 2px 0}
+  .hs-sec h2{margin:0;font-size:16px;color:var(--ink,#0f172a)}
+  .hs-count{font-size:12px;font-weight:700;background:#eef3fa;color:#1e3a5f;border-radius:999px;padding:3px 10px}
+  .hs-scroll{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;margin:0 -16px;padding:2px 16px 8px}
+  .hs-scroll::-webkit-scrollbar{display:none}
+  .hs-card{flex:0 0 220px;scroll-snap-align:start;background:var(--panel,#fff);border:1px solid var(--panel-line,#e6ecf3);border-radius:20px;padding:14px;cursor:pointer;text-align:left;font:inherit;color:inherit;box-shadow:0 6px 18px rgba(15,45,79,.05)}
+  .hs-img{height:104px;border-radius:14px;background:linear-gradient(135deg,#eaf1fb,#fdf6e3);display:flex;align-items:center;justify-content:center;color:var(--navy,#0f2d4f);margin-bottom:12px;overflow:hidden}
+  .hs-img img{width:100%;height:100%;object-fit:cover}
+  .hs-card-t{font-weight:700;font-size:15px;line-height:1.35;overflow-wrap:anywhere}
+  .hs-card-s{font-size:12.5px;color:var(--ink-dim,#64748b);margin-top:3px}
+  .hs-pill{display:inline-block;font-size:11.5px;font-weight:600;border-radius:999px;padding:4px 10px;margin-top:10px}
+  .hs-pill.ok{background:var(--ok-wash,#dcfce7);color:#166534}
+  .hs-pill.warn{background:var(--warn-wash,#fef3c7);color:#92400e}
+  .hs-pill.bad{background:var(--bad-wash,#fee2e2);color:#991b1b}
+  .hs-pill.info{background:#eaf1fb;color:#1e4f8f}
+  .hs-list{background:var(--panel,#fff);border:1px solid var(--panel-line,#e6ecf3);border-radius:20px;padding:4px 16px}
+  .hs-li{display:flex;align-items:center;gap:12px;padding:13px 0;cursor:pointer;min-height:58px}
+  .hs-li + .hs-li{border-top:1px solid #eef2f7}
+  .hs-li-ic{width:42px;height:42px;border-radius:14px;background:#eaf1fb;color:var(--navy,#0f2d4f);display:flex;align-items:center;justify-content:center;flex:none;font-weight:700}
+  .hs-li-ic.warn{background:var(--warn-wash,#fef3c7);color:#92400e}
+  .hs-li-ic.bad{background:var(--bad-wash,#fee2e2);color:#991b1b}
+  .hs-li-ic.ok{background:var(--ok-wash,#dcfce7);color:#166534}
+  .hs-li-ic svg{width:20px;height:20px}
+  .hs-li-tx{flex:1;min-width:0}
+  .hs-li-tt{font-size:15px;font-weight:600;overflow-wrap:anywhere}
+  .hs-li-ss{font-size:12.5px;color:var(--ink-dim,#64748b);margin-top:2px;overflow-wrap:anywhere}
+  .hs-li-end{flex:none}
+  .hs-more{padding:12px 0 14px;text-align:center;font-size:13px;color:var(--ink-dim,#64748b)}
+  .hs-empty{border:1px dashed #d5deea;border-radius:16px;padding:18px;text-align:center;color:var(--ink-dim,#64748b);font-size:14px}
+  @media (min-width:900px){
+    .hs{max-width:1180px;margin:0 auto}
+    .hs-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}
+    .hs-two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+  }
+</style>
+
+<script id="home-staff-v1-js">
+(function(){
+  var seq = 0;
+  var MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+  var SVG = {
+    box:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 8l-9-5-9 5 9 5 9-5zM3 8v8l9 5 9-5V8"/></svg>',
+    swap:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 7h13l-4-4M17 17H4l4 4"/></svg>',
+    repair:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 7a4 4 0 105 5l-9 9-4-4 9-9z"/></svg>',
+    check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12l4 4 10-10"/></svg>',
+    chart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+    search:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>',
+    user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></svg>',
+    chev:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>'
+  };
+  var CATS = [
+    { k:'assets', label:'ครุภัณฑ์', ic:SVG.box },
+    { k:'borrow', label:'ยืม-คืน',   ic:SVG.swap },
+    { k:'maint',  label:'ซ่อม',      ic:SVG.repair },
+    { k:'monthly',label:'ตรวจ',      ic:SVG.check },
+    { k:'reports',label:'รายงาน',    ic:SVG.chart }
+  ];
+
+  function esc(s){ return escapeHtml(String(s == null ? '' : s)); }
+  function can(k){ return typeof canOpenTab === 'function' ? !!canOpenTab(k) : false; }
+  function go(k){ if (typeof renderTab === 'function') renderTab(k); }
+  function auditor(){ return !isAdmin() && can('monthly'); }
+  function greet(){ var h = new Date().getHours(); return h < 12 ? 'สวัสดีตอนเช้า' : (h < 17 ? 'สวัสดีตอนบ่าย' : 'สวัสดีตอนเย็น'); }
+  function monthLabel(){ var d = new Date(); return MONTHS[d.getMonth()] + ' ' + (d.getFullYear() + 543); }
+  function pctOf(n, d){ return d ? Math.round(n / d * 100) : 0; }
+
+  // ดึงผลตรวจเดือนนี้ (ค้นทั้ง พ.ศ. และ ค.ศ. เหมือนหน้า "ของฉัน")
+  async function fetchMonth(){
+    var now = new Date(), mo = now.getMonth() + 1, ce = now.getFullYear();
+    var parts = await Promise.all([
+      supaApiGet('getMonthlyChecks', { year: ce + 543, month: mo }).catch(function(){ return []; }),
+      supaApiGet('getMonthlyChecks', { year: ce, month: mo }).catch(function(){ return []; })
+    ]);
+    return [].concat(parts[0] || [], parts[1] || []);
+  }
+  function recOf(list, u){
+    var k = mcKey(u);
+    return list.find(function(r){ return r['รหัสจนท.'] === k; })
+        || list.find(function(r){ return r['ชื่อผู้ถูกตรวจ'] === officerFullName(u) || r['ชื่อผู้ถูกตรวจ'] === u['ชื่อ-สกุล']; })
+        || null;
+  }
+  function monthTone(rec){
+    var r = rec ? rec['ผล'] : '';
+    if (r === 'ครบ') return { cls:'ok', txt:'ตรวจแล้ว · ครบ' };
+    if (r === 'มีปัญหา') return { cls:'bad', txt:'ตรวจแล้ว · มีปัญหา' };
+    return { cls:'warn', txt:'ยังไม่ตรวจ' };
+  }
+  function holdingsOf(u){ return (u && typeof mcHoldingsOf === 'function') ? mcHoldingsOf(u) : []; }
+  function assetOf(id){ return (state.assets || []).find(function(a){ return a['รหัสครุภัณฑ์'] === id; }) || null; }
+
+  function catRow(){
+    var list = CATS.filter(function(c){ return can(c.k); });
+    if (!list.length) return '';
+    return '<div class="hs-cats">' + list.map(function(c){
+      return '<button type="button" class="hs-cat" data-go="' + c.k + '"><div class="hs-cat-ic">' + c.ic + '</div><span>' + c.label + '</span></button>';
+    }).join('') + '</div>';
+  }
+  function searchBox(){
+    return '<label class="hs-search">' + SVG.search +
+      '<input id="hsQ" type="search" placeholder="ค้นหาครุภัณฑ์ รหัส หรือชื่อ จนท." autocomplete="off"></label>';
+  }
+
+  /* ---------------- เจ้าหน้าที่ ---------------- */
+  function buildOfficer(monthList){
+    var me = typeof myOfficerRow === 'function' ? myOfficerRow() : null;
+    var name = me ? officerFullName(me) : ((state.user && state.user.name) || '');
+    var unit = me ? (me['หน่วยงาน'] || '') : 'ไม่พบข้อมูลของคุณในทะเบียน กรุณาติดต่อแอดมิน';
+    var hold = me ? holdingsOf(me) : [];
+    var rec = me ? recOf(monthList, me) : null;
+    var tone = monthTone(rec);
+    var overdue = hold.filter(function(b){ return effectiveBorrowStatus(b) === 'เกินกำหนด'; }).length;
+
+    var mine = function(b){ return me && (eqCiJs_(b['ผู้ยืม'], name) || eqCiJs_(b['ผู้ยืม'], me['ชื่อ-สกุล'])); };
+    var reqAll = (state.borrow || []).filter(mine);
+    var reqActive = reqAll.filter(function(b){ var s = effectiveBorrowStatus(b); return s === 'กำลังยืม' || s === 'เกินกำหนด'; });
+
+    var myMaint = me ? (state.maint || []).filter(function(m){ return eqCiJs_(m['ผู้แจ้ง'], myReporterName()); }) : [];
+    var openMaint = myMaint.filter(function(m){ return m['สถานะ'] !== 'ซ่อมเสร็จ'; });
+
+    var heroT = overdue ? ('มี ' + overdue + ' รายการเกินกำหนดคืน กรุณาติดต่อคืนครุภัณฑ์')
+      : (hold.length ? ('ถืออยู่ ' + hold.length + ' รายการ · ไม่มีรายการเกินกำหนด') : 'ยังไม่มีครุภัณฑ์ที่ถืออยู่');
+    var pct = rec && rec['ผล'] === 'ครบ' ? 100 : (rec ? 50 : 0);
+
+    var cards = hold.length ? '<div class="hs-scroll">' + hold.map(function(b){
+      var a = assetOf(b['รหัสครุภัณฑ์']);
+      var img = a && /^https?:/.test(a['รูปภาพ(URL)'] || '') ? '<img src="' + esc(a['รูปภาพ(URL)']) + '" alt="">' : SVG.box;
+      var st = effectiveBorrowStatus(b);
+      var cls = st === 'เกินกำหนด' ? 'bad' : (st === 'กำลังยืม' ? 'warn' : 'ok');
+      return '<button type="button" class="hs-card" data-aid="' + esc(b['รหัสครุภัณฑ์']) + '">' +
+        '<div class="hs-img">' + img + '</div>' +
+        '<div class="hs-card-t">' + esc(b['ชื่อครุภัณฑ์']) + '</div>' +
+        '<div class="hs-card-s">' + esc(b['รหัสครุภัณฑ์']) + ' · กำหนดคืน ' + esc(systemDate(b['กำหนดคืน'])) + '</div>' +
+        '<span class="hs-pill ' + cls + '">' + esc(st) + '</span></button>';
+    }).join('') + '</div>' : '<div class="hs-empty">ไม่มีครุภัณฑ์ที่ถืออยู่</div>';
+
+    var maintRows = openMaint.slice(0, 5).map(function(m){
+      return '<div class="hs-li"><div class="hs-li-ic warn">' + SVG.repair + '</div><div class="hs-li-tx">' +
+        '<div class="hs-li-tt">' + esc(m['ชื่อครุภัณฑ์']) + '</div>' +
+        '<div class="hs-li-ss">' + esc(m['อาการ/ปัญหา'] || '-') + ' · ' + esc(m['สถานะ']) + '</div></div></div>';
+    }).join('');
+
+    return '<div class="hs">' +
+      '<div class="hs-hero"><div class="hs-k">' + greet() + ' · ' + esc(name) + '</div>' +
+        '<div class="hs-t">' + esc(heroT) + '</div>' +
+        '<div class="hs-row"><span class="hs-k" style="min-width:72px">ตรวจประจำเดือน</span><div class="hs-track"><div class="hs-fill" style="width:' + pct + '%"></div></div><div class="hs-pct">' + pct + '%</div></div>' +
+        '<div class="hs-k" style="margin-top:10px;position:relative;z-index:1">' + esc(unit) + '</div>' +
+      '</div>' +
+      searchBox() + catRow() +
+      '<div class="hs-kpis">' +
+        kpi('ครุภัณฑ์ที่ถืออยู่', hold.length, hold.length ? 'info' : '', overdue ? 'เกินกำหนด ' + overdue + ' รายการ' : 'ไม่มีรายการเกินกำหนด') +
+        kpi('คำขอยืมทั้งหมด', reqAll.length, '', 'กำลังยืม ' + reqActive.length + ' รายการ') +
+        kpi('งานซ่อมที่แจ้ง', myMaint.length, openMaint.length ? 'warn' : 'ok', 'ยังไม่เสร็จ ' + openMaint.length + ' รายการ') +
+        kpi('ตรวจประจำเดือน', rec ? esc(rec['ผล']) : 'ยังไม่ตรวจ', tone.cls, tone.txt) +
+      '</div>' +
+      '<div class="hs-sec"><h2>ครุภัณฑ์ที่ฉันถืออยู่</h2><span class="hs-count">' + hold.length + '</span></div>' +
+      cards +
+      (openMaint.length ? '<div class="hs-sec"><h2>งานซ่อมที่ฉันแจ้ง</h2><span class="hs-count">' + openMaint.length + '</span></div><div class="hs-list">' + maintRows + '</div>' : '') +
+    '</div>';
+  }
+
+  function kpi(label, value, tone, sub){
+    return '<div class="hs-kpi ' + tone + '"><div class="hs-kpi-top"><span class="hs-dot"></span><span class="hs-kpi-l">' + esc(label) + '</span></div>' +
+      '<div class="hs-kpi-v">' + value + '</div><div class="hs-kpi-s">' + esc(sub) + '</div></div>';
+  }
+
+  /* ---------------- ผู้ตรวจสอบ ---------------- */
+  function buildAuditor(monthList){
+    var holders = (state.users || []).filter(function(u){ return holdingsOf(u).length > 0; });
+    var rows = holders.map(function(u){ return { u:u, rec:recOf(monthList, u) }; });
+    var total = rows.length;
+    var done = rows.filter(function(r){ return !!r.rec; }).length;
+    var bad = rows.filter(function(r){ return r.rec && r.rec['ผล'] === 'มีปัญหา'; }).length;
+    var pending = rows.filter(function(r){ return !r.rec; });
+    var pct = pctOf(done, total);
+
+    var pendRows = pending.slice(0, 8).map(function(r){
+      return '<div class="hs-li" data-go="monthly"><div class="hs-li-ic">' + SVG.user + '</div><div class="hs-li-tx">' +
+        '<div class="hs-li-tt">' + esc(officerFullName(r.u)) + '</div>' +
+        '<div class="hs-li-ss">' + esc(r.u['หน่วยงาน'] || '') + ' · ' + holdingsOf(r.u).length + ' รายการที่ถือ</div></div>' +
+        '<span class="hs-li-end">' + SVG.chev + '</span></div>';
+    }).join('');
+
+    return '<div class="hs">' +
+      '<div class="hs-hero"><div class="hs-k">การตรวจประจำเดือน · ' + esc(monthLabel()) + '</div>' +
+        '<div class="hs-t">ตรวจแล้ว ' + done + '/' + total + ' คน</div>' +
+        '<div class="hs-row"><div class="hs-track"><div class="hs-fill" style="width:' + pct + '%"></div></div><div class="hs-pct">' + pct + '%</div></div>' +
+        '<button type="button" class="hs-btn" data-go="monthly">' + (pending.length ? 'เริ่มตรวจต่อ' : 'ดูผลการตรวจ') + '</button>' +
+      '</div>' +
+      searchBox() + catRow() +
+      '<div class="hs-kpis">' +
+        kpi('ตรวจแล้ว', done, 'ok', 'จากผู้ที่ต้องตรวจ ' + total + ' คน') +
+        kpi('ยังไม่ได้ตรวจ', pending.length, pending.length ? 'warn' : 'ok', pending.length ? 'ต้องติดตามเดือนนี้' : 'ตรวจครบทุกคนแล้ว') +
+        kpi('มีปัญหา', bad, bad ? 'bad' : '', bad ? 'ต้องติดตามผล' : 'ไม่พบปัญหา') +
+        kpi('ความคืบหน้า', pct + '%', 'info', monthLabel()) +
+      '</div>' +
+      '<div class="hs-sec"><h2>ยังไม่ได้ตรวจเดือนนี้</h2><span class="hs-count">' + pending.length + '</span></div>' +
+      '<div class="hs-list">' + (pendRows || '<div class="hs-empty" style="margin:12px 0">ตรวจครบทุกคนแล้ว</div>') + '</div>' +
+      (pending.length > 8 ? '<div class="hs-more">และอีก ' + (pending.length - 8) + ' คน</div>' : '') +
+    '</div>';
+  }
+
+  /* ---------------- render + bind ---------------- */
+  async function renderHomeStaff(){
+    var el = document.getElementById('view-dashboard');
+    if (!el) return;
+    var my = ++seq;
+    el.innerHTML = '<div class="hs"><div class="hs-hero"><div class="hs-k">กำลังโหลดข้อมูล…</div></div></div>';
+    var monthList = await fetchMonth();
+    if (my !== seq) return;               // มีการเรนเดอร์ใหม่กว่าแล้ว
+    el.innerHTML = auditor() ? buildAuditor(monthList) : buildOfficer(monthList);
+    bind(el);
+  }
+
+  function bind(el){
+    if (el._hsBound) return;
+    el._hsBound = true;
+    el.addEventListener('click', function(e){
+      var g = e.target.closest('[data-go]');
+      if (g) { go(g.getAttribute('data-go')); return; }
+      var a = e.target.closest('[data-aid]');
+      if (a && typeof openAssetDetail === 'function') openAssetDetail(a.getAttribute('data-aid'));
+    });
+    el.addEventListener('keydown', function(e){
+      if (e.target.id !== 'hsQ' || e.key !== 'Enter') return;
+      var q = e.target.value.trim();
+      go('assets');
+      setTimeout(function(){
+        var s = document.querySelector('#view-assets input[type="search"], #view-assets input[placeholder*="ค้นหา"]');
+        if (s && q) { s.value = q; s.dispatchEvent(new Event('input', { bubbles:true })); }
+      }, 300);
+    });
+  }
+
+  // แทนที่หน้าภาพรวมเฉพาะผู้ที่ไม่ใช่แอดมิน (แอดมินยังเห็นภาพรวมเดิม)
+  var _origDashboard = renderDashboard;
+  renderDashboard = function(){
+    if (isAdmin()) return _origDashboard.apply(this, arguments);
+    return renderHomeStaff();
+  };
+})();
+</script>
+
 </body>
 
 <script id="maint-live-v1">
