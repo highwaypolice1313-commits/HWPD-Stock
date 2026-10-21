@@ -14412,7 +14412,8 @@ function offIssues(u, dup) {
   return out;
 }
 function offBuildRows() {
-  const users = state.users || [];
+  // เรียงลำดับเดียวกันทุกสิทธิ์ (ยศ → ตำแหน่ง → ชื่อ) ไม่ขึ้นกับลำดับที่โหลดมา
+  const users = (state.users || []).slice().sort(comparePoliceOfficers);
   const dup = offDupRoles(users);
   return users.map(u => ({
     u,
@@ -25750,6 +25751,15 @@ syncChip();
 #view-dashboard .hs-menu .dbx-sec{color:var(--ink)}
 #view-settings .nm-a,#view-settings .nm-b{white-space:nowrap}
 
+/* ---- โหมดมืด: การ์ดครุภัณฑ์ อ่านชัดขึ้น ---- */
+:root[data-mode="dark"] .ba-card .ba-cat,
+:root[data-mode="dark"] .ba-card .ba-cat small,
+:root[data-mode="dark"] .ba-card .ba-cat b,
+:root[data-mode="dark"] .ba-card .ax-sn,
+:root[data-mode="dark"] .ba-card .ba-cell small,
+:root[data-mode="dark"] .ba-card .ba-cell b{ color:var(--ink) !important; opacity:1 !important; }
+:root[data-mode="dark"] .ba-card .ba-cat{ background:rgba(255,255,255,.12) !important; border-color:rgba(255,255,255,.22) !important; }
+
 /* ---- ครุภัณฑ์ที่ฉันถืออยู่: เต็มความกว้าง + ตัวอักษรชัดในโหมดมืด ---- */
 #view-dashboard .hs-scroll .hs-card{flex:1 0 220px;min-width:220px;max-width:none}
 #view-dashboard .hs-card-t{color:var(--ink)}
@@ -25759,83 +25769,9 @@ syncChip();
 #view-dashboard .hs-pill.warn{border-color:var(--warn)}
 #view-dashboard .hs-pill.bad{border-color:var(--bad)}
 
+/* ---- โหมดมืด: เพิ่มความคมชัดของตัวอักษรรองทั้งระบบ (หน้าครุภัณฑ์ ฯลฯ) ---- */
+:root[data-mode="dark"]{ --ink-dim:#d3dfeb !important; --ink-faint:#b4c6d9 !important; }
 </style>
-
-<style id="cibnight-shop-v4">
-/* ===== ทะเบียนครุภัณฑ์ · CIB โหมดมืด ===== */
-
-/* 1) หมวดหมู่: ไม่มีกรอบ ไม่มีพื้น ตัวหนังสือขาว */
-html[data-theme="cibnight"] body #view-assets .ba-cat,
-html[data-theme="cibnight"] body #view-assets .ba-card .ba-cat{
-  background:none !important;
-  background-color:transparent !important;
-  border:0 !important;
-  border-color:transparent !important;
-  outline:0 !important;
-  box-shadow:none !important;
-  padding:0 !important;
-  border-radius:0 !important;
-  color:#ffffff !important;
-  opacity:1 !important;
-}
-html[data-theme="cibnight"] body #view-assets .ba-cat small,
-html[data-theme="cibnight"] body #view-assets .ba-cat b{
-  color:#ffffff !important;
-  opacity:1 !important;
-}
-
-/* 2) รหัสครุภัณฑ์ */
-html[data-theme="cibnight"] body #view-assets .ba-card .ax-sn{
-  color:#ffffff !important;
-  opacity:1 !important;
-}
-
-/* 3) ชื่อครุภัณฑ์ */
-html[data-theme="cibnight"] body #view-assets .ba-card .asset-card-title{
-  color:#ffffff !important;
-  opacity:1 !important;
-}
-
-/* 4) การ์ดแบบชอปปิ้ง: พื้นเข้ม ขอบชัด */
-html[data-theme="cibnight"] body #view-assets .ba-card{
-  background:#06213f !important;
-  border:1px solid #2a5a94 !important;
-}
-</style>
-
-<style id="cibnight-sx-v6">
-/* ===== ทะเบียนครุภัณฑ์แบบชอปปิ้ง · CIB โหมดมืด ===== */
-
-/* การ์ด */
-html[data-theme="cibnight"] #assetList .sx-card{
-  background:#06213f !important;
-  border:1px solid #2a5a94 !important;
-  box-shadow:0 10px 26px rgba(0,0,0,.35) !important;
-}
-
-/* ชื่อครุภัณฑ์ */
-html[data-theme="cibnight"] #assetList .sx-name{
-  color:#ffffff !important;
-  opacity:1 !important;
-}
-
-/* ป้ายหมวดหมู่และ "-": คงกรอบไว้ ปรับให้พื้นและตัวหนังสือชัด */
-html[data-theme="cibnight"] #assetList .sx-tag{
-  background:rgba(255,255,255,.14) !important;
-  background-color:rgba(255,255,255,.14) !important;
-  border:1px solid rgba(255,255,255,.28) !important;
-  color:#ffffff !important;
-  opacity:1 !important;
-  box-shadow:none !important;
-}
-
-/* รหัสครุภัณฑ์ */
-html[data-theme="cibnight"] #assetList .sx-sn{
-  color:#e6eef8 !important;
-  opacity:1 !important;
-}
-</style>
-      
 </body>
 
 <script id="maint-live-v1">
