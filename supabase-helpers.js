@@ -492,6 +492,15 @@ async function sDeleteAsset(id, actor, role) {
   return { deleted: true };
 }
 
+// ✅ หา officer_id จากชื่อผู้ยืม ใช้เมื่อหน้าเว็บไม่ได้ส่ง officerId มา
+// คืน null ถ้าไม่พบหรือพบซ้ำหลายคน (ไม่เดาให้)
+async function resolveOfficerIdSb(borrowerName) {
+  const { data, error } = await sb.from('users').select('id,name');
+  if (error || !data) return null;
+  const hits = data.filter(u => samePerson(u.name, borrowerName));
+  return hits.length === 1 ? hits[0].id : null;
+}
+
 // ==================== BORROW ====================
 async function sBorrowAsset(p, actor, directApprove) {
   const id = genId('BRW');
@@ -503,8 +512,9 @@ async function sBorrowAsset(p, actor, directApprove) {
     throw new Error('ครุภัณฑ์นี้ถูกยืมอยู่แล้ว ต้องคืนก่อนจึงจะยืมใหม่ได้');
   }
 
+  const officerId = p.officerId || await resolveOfficerIdSb(p.borrower);
   const row = {
-    id, asset_id: p.assetId, asset_name: p.assetName || '', borrower: p.borrower, officer_id: p.officerId || null,
+    id, asset_id: p.assetId, asset_name: p.assetName || '', borrower: p.borrower, officer_id: officerId || null,
     borrower_line_id: p.borrowerLineId || '', borrow_date: p.borrowDate || null, due_date: p.dueDate || null,
     status, approver: p.approver || (directApprove ? actor : ''), note: p.note || '',
     component_ids: componentIds.join(','), photo_out: p.conditionPhotoOut || '',
