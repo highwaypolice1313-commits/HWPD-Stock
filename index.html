@@ -8917,6 +8917,13 @@ async function apiGet(action, params = {}) {
   return supaApiGet(action, params);
 }
 async function apiPost(action, payload) {
+  // ✅ จดว่ารายการนี้เพิ่งถูกแก้โดยเครื่องนี้ เพื่อให้ realtime ไม่โหลดซ้ำ
+  if (action === 'addMaint') {
+    window.__ownInsertAt = Date.now();
+  } else if (payload && payload.id && /Maint$/.test(action)) {
+    window.__ownWrites = window.__ownWrites || {};
+    window.__ownWrites[payload.id] = Date.now();
+  }
   return supaApiPost(action, payload, state.role, state.user && state.user.name);
 }
 
@@ -14077,6 +14084,7 @@ function openMaintForm(presetId, presetType) {
     const trig = document.getElementById('f_reporterTrigger');
     trig.style.pointerEvents = reporterCanPick ? '' : 'none';
     trig.style.opacity = reporterCanPick ? '' : '0.75';
+            paintReporterAvatar();
   }
 
   const currentAsset = () => state.assets.find(a => a['รหัสครุภัณฑ์'] === val('f_asset'));
@@ -25042,52 +25050,105 @@ window.exportAllBackup = async function(){
 (function(){
   if (window.__maintLiveInit) return; window.__maintLiveInit = true;
   window.__liveEvents = window.__liveEvents || [];
-  var chan = null, timer = null;
+  var chan = null, timer = null, running = false, pending = false;
+  var OWN_MS = 8000; // ช่วงเวลาที่ถือว่าเหตุการณ์เป็นของเครื่องนี้
+
   function canSee(){ return typeof canReportAtAll === 'function' && canReportAtAll(); }
+  function isMe(name){ return typeof nameIsMe === 'function' && nameIsMe(name); }
+  function isOwnWrite(id){
+    var t = window.__ownWrites && window.__ownWrites[id];
+    return !!t && (Date.now() - t) < OWN_MS;
+  }
+  function isOwnInsert(){
+    return !!window.__ownInsertAt && (Date.now() - window.__ownInsertAt) < OWN_MS;
+  }
+
+  // ลบแจ้งเตือนของรายการที่ปิดงาน ถูกลบ หรือไม่อยู่ในรายการแล้ว
+  function pruneEvents(){
+    var live = state.maint || [];
+    window.__liveEvents = window.__liveEvents.filter(function(ev){
+      if (!ev.mid) return true;
+      var m = live.find(function(x){ return x['รหัสรายการ'] === ev.mid; });
+      return !!m && m['สถานะ'] !== 'ซ่อมเสร็จ';
+    });
+  }
+  function refreshBell(){
+    pruneEvents();
+    if (typeof refreshNotifBadge === 'function') refreshNotifBadge();
+  }
   function pushEvent(ev){
     window.__liveEvents.unshift(Object.assign({ at: Date.now() }, ev));
     window.__liveEvents = window.__liveEvents.slice(0, 20);
-    if (typeof refreshNotifBadge === 'function') refreshNotifBadge();
+    refreshBell();
   }
   function notify(text){
     toast(text);
     if (navigator.vibrate) navigator.vibrate([120, 80, 120]);
   }
+
+  // รวมคำขอรีเฟรชให้เหลือครั้งเดียว และไม่ทำงานซ้อนกัน
   function scheduleRefresh(){
     clearTimeout(timer);
-    timer = setTimeout(async function(){
-      if (typeof loadAll !== 'function') return;
-      if (state.tab === 'maint' && !document.querySelector('#modalRoot .overlay')) {
-        await reloadThen(renderMaint);
-      } else {
-        try { await loadAll(false); } catch(e){}
-        if (typeof refreshNotifBadge === 'function') refreshNotifBadge();
-      }
-    }, 600);
+    timer = setTimeout(runRefresh, 600);
   }
+  async function runRefresh(){
+    if (running) { pending = true; return; }
+    running = true;
+    try {
+      if (typeof loadAll !== 'function') return;
+      var quietMaint = state.tab === 'maint' && !document.querySelector('#modalRoot .overlay');
+      if (quietMaint) await reloadThen(renderMaint); // <-- เรนเดอร์ครั้งเดียว
+      else await loadAll(false);
+    } catch (e) { /* เงียบไว้ เพราะหน้าอื่นอาจกำลังทำงานอยู่ */ }
+    finally {
+      running = false;
+      refreshBell();
+      if (pending) { pending = false; scheduleRefresh(); }
+    }
+  }
+
   function onInsert(payload){
     var r = payload.new || {};
+    if (isOwnInsert() && isMe(r.reporter)) { refreshBell(); return; }
     scheduleRefresh();
-    if (!canSee()) return;
-    if (typeof nameIsMe === 'function' && nameIsMe(r.reporter)) return; // ไม่แจ้งตัวเองที่เป็นคนแจ้ง
-    var title = 'แจ้งซ่อมใหม่: ' + (r.asset_name || '-');
-    pushEvent({ tone: 'info', title: title, sub: 'ผู้แจ้ง ' + (r.reporter || '-') + (r.issue ? ' · ' + r.issue : ''), tab: 'maint' });
+    if (!canSee() || isMe(r.reporter)) return;
+    var title = 'มีแจ้งซ่อมใหม่: ' + (r.asset_name || '-');
+    pushEvent({
+      tone: 'info', title: title,
+      sub: 'ผู้แจ้ง ' + (r.reporter || '-') + (r.issue ? ' · ' + r.issue : ''),
+      tab: 'maint', mid: r.id
+    });
     notify(title + ' (' + (r.reporter || '-') + ')');
   }
+
   function onUpdate(payload){
     var r = payload.new || {};
+    // ✅ รายการที่เราแก้เองบนเครื่องนี้: ไม่โหลดซ้ำ ไม่เรนเดอร์ซ้ำ แค่อัปเดตกระดิ่ง
+    if (isOwnWrite(r.id)) { refreshBell(); return; }
+
+    // ✅ ปิดงานหรือลบแล้ว: เอาออกจากกระดิ่งทันที
+    if (r.deleted_at || r.status === 'ซ่อมเสร็จ') {
+      window.__liveEvents = window.__liveEvents.filter(function(ev){ return ev.mid !== r.id; });
+      refreshBell();
+    }
+
     var local = (state.maint || []).find(function(x){ return x['รหัสรายการ'] === r.id; });
     var before = local ? local['สถานะ'] : null;
     scheduleRefresh();
     if (!r.status || before === r.status) return;
-    var own = window.__ownMaint && window.__ownMaint.id === r.id && window.__ownMaint.status === r.status && (Date.now() - window.__ownMaint.at) < 8000;
-    if (own) return; // ไม่แจ้งเตือนการกระทำของตนเอง
-    var mine = typeof nameIsMe === 'function' && nameIsMe(r.reporter);
+
+    var mine = isMe(r.reporter);
     if (!mine && !canSee()) return;
     var title = 'งานซ่อม ' + (r.asset_name || '-') + ' → ' + r.status;
-    pushEvent({ tone: r.status === 'ซ่อมเสร็จ' ? 'ok' : 'warn', title: title, sub: mine ? 'รายการที่คุณแจ้ง' : 'ผู้แจ้ง ' + (r.reporter || '-'), tab: 'maint' });
+    pushEvent({
+      tone: r.status === 'ซ่อมเสร็จ' ? 'ok' : 'warn',
+      title: title,
+      sub: mine ? 'รายการของคุณ' : 'ผู้แจ้ง ' + (r.reporter || '-'),
+      tab: 'maint', mid: r.id
+    });
     notify(title);
   }
+
   function subscribe(){
     if (chan || typeof sb === 'undefined' || !state.user) return;
     chan = sb.channel('maint-live')
@@ -25098,5 +25159,19 @@ window.exportAllBackup = async function(){
   function unsubscribe(){ if (chan) { sb.removeChannel(chan); chan = null; } }
   setInterval(function(){ if (state.user) subscribe(); else unsubscribe(); }, 2000);
 })();
+
+// ✅ แสดงรูปผู้แจ้งในฟอร์มแจ้งซ่อม (ใช้ข้อมูลรูปเดียวกับหน้าเลือกรายชื่อ)
+function paintReporterAvatar(){
+  var icon = document.getElementById('f_reporterIcon');
+  if (!icon) return;
+  var field = document.getElementById('f_reporter');
+  var name = field ? field.value : '';
+  var i = name ? findOfficerIndexByName(name) : '';
+  var u = (i === '') ? null : (state.users || [])[Number(i)];
+  var photo = u && u['รูปถ่าย'];
+  icon.innerHTML = photo
+    ? '<img class="li-avatar" src="' + escapeHtml(photo) + '" alt="" loading="lazy" decoding="async">'
+    : ICONS.user;
+}
 </script>
 </html>
