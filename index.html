@@ -8428,7 +8428,7 @@ function committeeOneBlock(m, sigMm, fs, sigUrl, sigH, widthMm, align, labelMm) 
   const role = toThaiNumber(escapeHtml(m.role));
   const fullName = (rank ? rank + ' ' : '') + name;
   const img = sigUrl
-    ? `<img src="${escapeHtml(sigUrl)}" alt="" style="position:absolute; left:0; bottom:0; width:100%; height:100%; object-fit:contain;">`
+    ? `<img src="${escapeHtml(sigUrl)}" alt="" style="position:absolute; left:0; right:0; bottom:0; margin:0 auto; width:auto; height:auto; max-width:80%; max-height:85%; object-fit:contain;">`
     : '';
  
   const gap = 1.5;
@@ -10830,9 +10830,13 @@ function isAssetBorrowable(a) {
   return !!a && String(a['สถานะ'] || '') === 'พร้อมใช้งาน' && !assetBorrowState(a['รหัสครุภัณฑ์']);
 }
 
-function openAssetPickerSheet(currentId, onPick, onlyAvailable = true, excludeFn = null) {
+function openAssetPickerSheet(currentId, onPick, onlyAvailable = true, excludeFn = null, scopeOpts = null) {
   let available = onlyAvailable ? state.assets.filter(isAssetBorrowable) : state.assets.slice();
   if (typeof excludeFn === 'function') available = available.filter(a => !excludeFn(a));
+  // ขอบเขต "ของฉัน" / "ทั้งหมด" (ส่ง scopeOpts = { mineFn } เท่านั้น) ค่าเริ่มต้นคือของฉันถ้ามี
+  const mineCount = (scopeOpts && typeof scopeOpts.mineFn === 'function') ? available.filter(scopeOpts.mineFn).length : 0;
+  let pickScope = mineCount ? 'mine' : 'all';
+  const pool = () => (pickScope === 'mine' ? available.filter(scopeOpts.mineFn) : available);
   let pickCat = 'all', pickQ = '';
   const openGroups = new Set();          // กลุ่มที่ผู้ใช้กดเปิดเอง
   const closedGroups = new Set();        // กลุ่มที่ผู้ใช้กดพับเอง
@@ -10876,7 +10880,7 @@ function openAssetPickerSheet(currentId, onPick, onlyAvailable = true, excludeFn
     const prevScroll = prevSheet ? prevSheet.scrollTop : 0;
 
     const q = pickQ.trim().toLowerCase();
-    let list = available.filter(a => pickCat === 'all' || a['หมวดหมู่'] === pickCat);
+    let list = pool().filter(a => pickCat === 'all' || a['หมวดหมู่'] === pickCat);
     if (q) list = list.filter(a => matches(a, q));
 
     // จัดกลุ่มตามชื่อครุภัณฑ์
@@ -10903,7 +10907,7 @@ function openAssetPickerSheet(currentId, onPick, onlyAvailable = true, excludeFn
       return autoOpen;
     };
 
-    const catCounts = getCategories().map(c => ({ c, n: available.filter(a => a['หมวดหมู่'] === c).length })).filter(x => x.n);
+    const catCounts = getCategories().map(c => ({ c, n: pool().filter(a => a['หมวดหมู่'] === c).length })).filter(x => x.n);
 
     pickerRoot.innerHTML = `
       <div class="overlay" style="z-index:95;">
@@ -10911,9 +10915,13 @@ function openAssetPickerSheet(currentId, onPick, onlyAvailable = true, excludeFn
           <button class="sheet-close" id="apClose" type="button">${ICONS.close}</button>
           <div class="sheet-handle"></div>
           <div class="sheet-title">เลือกครุภัณฑ์</div>
+          ${mineCount ? `<div style="display:flex; gap:8px; margin:0 0 10px;">
+            <button type="button" class="btn ${pickScope === 'mine' ? 'btn-primary' : 'btn-ghost'}" data-pscope="mine" style="flex:1; height:36px; font-size:13px;">ของฉัน (${mineCount})</button>
+            <button type="button" class="btn ${pickScope === 'all' ? 'btn-primary' : 'btn-ghost'}" data-pscope="all" style="flex:1; height:36px; font-size:13px;">ทั้งหมด (${available.length})</button>
+          </div>` : ''}
           <div class="search-row"><input class="input" id="apSearch" placeholder="ค้นหาชื่อ / รหัส / หมายเลขเครื่อง / ทะเบียน..." value="${escapeHtml(pickQ)}" autocomplete="off"></div>
           <div class="chip-row">
-            <div class="chip ${pickCat === 'all' ? 'active' : ''}" data-pcat="all">ทั้งหมด (${available.length})</div>
+            <div class="chip ${pickCat === 'all' ? 'active' : ''}" data-pcat="all">ทั้งหมด (${pool().length})</div>
             ${catCounts.map(x => `<div class="chip ${pickCat === x.c ? 'active' : ''}" data-pcat="${escapeHtml(x.c)}">${escapeHtml(x.c)} (${x.n})</div>`).join('')}
           </div>
           <div class="hint" style="margin:0 0 10px;">พบ ${list.length} รายการ ใน ${groups.length} กลุ่ม</div>
@@ -10944,6 +10952,10 @@ function openAssetPickerSheet(currentId, onPick, onlyAvailable = true, excludeFn
     };
     document.querySelectorAll('[data-pcat]').forEach(c => c.onclick = () => {
       pickCat = c.dataset.pcat; openGroups.clear(); closedGroups.clear(); draw();
+      const s = pickerRoot.querySelector('.sheet'); if (s) s.scrollTop = 0;
+    });
+    document.querySelectorAll('[data-pscope]').forEach(b => b.onclick = () => {
+      pickScope = b.dataset.pscope; openGroups.clear(); closedGroups.clear(); draw();
       const s = pickerRoot.querySelector('.sheet'); if (s) s.scrollTop = 0;
     });
     document.querySelectorAll('.ap-group-head').forEach(h => h.onclick = () => {
@@ -16913,6 +16925,7 @@ function renderDocBlocks() {
   const host = document.getElementById('m_docAsset');
   const gen = document.getElementById('m_generalItems');
   if (!host || !gen) return;
+  syncRepairRequesterLock();
 
   if (typeRow) {
     typeRow.innerHTML = ctx && ctx.create && ctx.type !== 'general'
@@ -16951,6 +16964,50 @@ function renderDocBlocks() {
 }
 
 // ผูกเหตุการณ์ของบล็อกครุภัณฑ์
+// ผู้แจ้งในใบแจ้งซ่อม: ใช้กติกาเดียวกับฟอร์มแจ้งซ่อม
+// แอดมิน/ผู้ตรวจสอบเลือกผู้แจ้งได้ (ค่าตั้งต้นตามผู้ถือครอง/ผู้ยืมของรายการ) คนอื่นล็อกเป็นชื่อของตนเอง
+function setRepairRequester(u, name) {
+  const g = id => document.getElementById(id);
+  if (!g('m_reqName')) return;
+  const sp = u ? { rank: u['ยศ'] || '', name: u['ชื่อ-สกุล'] || '' } : splitRankName(name || '');
+  const prev = ((g('m_reqRank').value || '') + ' ' + (g('m_reqName').value || '')).trim();
+  const next = ((sp.rank || '') + ' ' + (sp.name || '')).trim();
+  if (prev !== next) {                                  // เปลี่ยนคน = ลายเซ็นเดิมใช้ไม่ได้
+    g('m_reqSig').value = '';
+    g('m_reqSigIcon').innerHTML = ICONS.edit;
+    g('m_reqSigTitle').textContent = 'ลายเซ็น (ไม่บังคับ)';
+  }
+  g('m_reqRank').value = sp.rank;
+  g('m_reqName').value = sp.name;
+  g('m_reqPosition').value = u ? (u['ตำแหน่ง'] || '') : '';
+  g('m_reqTitle').textContent = next || 'แตะเพื่อเลือกผู้ขอเบิก/ยืม';
+  g('m_reqSub').textContent = (u && u['ตำแหน่ง']) ? u['ตำแหน่ง'] : 'เลือกจากทำเนียบ หรือพิมพ์ค้นหา';
+  g('m_reqIcon').innerHTML = (u && u['รูปถ่าย'])
+    ? '<img src="' + u['รูปถ่าย'] + '" style="width:100%;height:100%;object-fit:cover;border-radius:13px;">'
+    : ICONS.user;
+  refreshMemoLivePreview();
+}
+function setRepairRequesterByHolder(assetId) {
+  const i = findOfficerIndexByName(holderNameForAssetId(assetId));
+  setRepairRequester(i === '' ? null : state.users[Number(i)], '');
+}
+// ล็อกหรือปลดล็อกช่องผู้แจ้งของเอกสารใบแจ้งซ่อม (เฉพาะเอกสารซ่อมที่กำลังสร้าง)
+function syncRepairRequesterLock() {
+  const ctx = memoFormCtx;
+  const trig = document.getElementById('m_reqTrigger');
+  if (!trig) return;
+  const locked = !!(ctx && ctx.create && ctx.type === 'repair') && !canReportAnyMaint();
+  trig.style.pointerEvents = locked ? 'none' : '';
+  trig.style.opacity = locked ? '0.75' : '';
+  const sub = document.getElementById('m_reqSub');
+  if (locked) {
+    setRepairRequester(myOfficerRow(), myReporterName());
+    sub.textContent = 'ผู้แจ้งคือชื่อของคุณ';
+  } else if (sub && sub.textContent === 'ผู้แจ้งคือชื่อของคุณ') {
+    sub.textContent = 'เลือกจากทำเนียบ หรือพิมพ์ค้นหา';
+  }
+}
+
 function wireDocAsset(ctx, host) {
   const isOil = ctx.type === 'oil';
   const trig = host.querySelector('#da_assetTrigger');
@@ -16959,6 +17016,7 @@ function wireDocAsset(ctx, host) {
     (id) => {
       const a = state.assets.find(x => x['รหัสครุภัณฑ์'] === id);
       if (!a) { toast('ไม่พบข้อมูลครุภัณฑ์'); return; }
+      if (ctx.type === 'repair' && canReportAnyMaint()) setRepairRequesterByHolder(id);
       ctx.asset = a;
       ctx.plate = a['ทะเบียนรถ'] || '';
       ctx.maintType = '';
@@ -16968,7 +17026,8 @@ function wireDocAsset(ctx, host) {
       refreshMemoLivePreview();
     },
     false,
-    a => (isOil && a['หมวดหมู่'] !== VEHICLE_CAT) || !canReportMaint(a['รหัสครุภัณฑ์'])
+    a => (isOil && a['หมวดหมู่'] !== VEHICLE_CAT) || !canReportMaint(a['รหัสครุภัณฑ์']),
+    (ctx.type === 'repair' && canReportAnyMaint()) ? { mineFn: a => ownsAssetForMe(a['รหัสครุภัณฑ์']) } : null
   );
   host.querySelectorAll('#da_mtRow [data-mt]').forEach(c => c.onclick = () => {
     captureDocDraft();
@@ -25137,7 +25196,6 @@ window.exportAllBackup = async function(){
 
 <style id="mine-dash-v3">
   #view-mine{ box-sizing:border-box; }
-  #view-settings{ padding-bottom:calc(104px + env(safe-area-inset-bottom,0px)); }
   #mineSettingsPanel{ margin-bottom:12px; position:relative; clear:both; }
   #mineSettingsPanel .mn{ padding:0; max-width:none; }
 
@@ -25833,29 +25891,6 @@ html[data-theme="cibnight"] #assetList .sx-tag{
 html[data-theme="cibnight"] #assetList .sx-sn{ color:#e6eef8 !important; opacity:1 !important; }
 </style>
 
-<style id="profile-logout-v1">
-.mn-logout-wrap{ margin:18px 0 6px; }
-.mn-logout{ width:100%; height:48px; border-radius:16px; border:1px solid color-mix(in srgb, var(--bad,#dc2626) 45%, transparent);
-  background:var(--bad-wash,#fee2e2); color:var(--bad,#dc2626); font:inherit; font-weight:700; font-size:15px; cursor:pointer; }
-</style>
-<script id="profile-logout-v1-js">
-(function(){
-  function addLogout(){
-    var mn = document.querySelector('#view-settings .mn');
-    if (!mn || mn.querySelector('.mn-logout-wrap')) return;
-    var w = document.createElement('div');
-    w.className = 'mn-logout-wrap';
-    w.innerHTML = '<button type="button" class="mn-logout">ออกจากระบบ</button>';
-    w.querySelector('button').addEventListener('click', function(){
-      var b = document.getElementById('btnLogout');
-      if (b) b.click();
-    });
-    mn.appendChild(w);
-  }
-  new MutationObserver(addLogout).observe(document.body, { childList:true, subtree:true });
-  addLogout();
-})();
-</script>
 </body>
 
 <script id="maint-live-v1">
