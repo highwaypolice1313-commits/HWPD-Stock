@@ -25368,6 +25368,19 @@ window.exportAllBackup = async function(){
   #mineSettingsPanel .mn{ padding:0; max-width:none; }
   }
 </style>
+
+<script id="settings-access-v1">
+(function(){
+  // ✅ แสดงปุ่ม "ตั้งค่า" ให้ผู้ที่เข้าแท็บ "ของฉัน" ได้ (เจ้าหน้าที่ / ผู้ตรวจสอบ) และแอดมิน
+  function showSettingsTab(){
+    var b = document.querySelector('.tab[data-tab="settings"]');
+    if (!b || window.__perms === undefined && !isAdmin()) return;
+    var allowed = isAdmin() || !!(window.canOpenTab && window.canOpenTab('mine'));
+    if (allowed && b.style.display === 'none') b.style.display = '';
+  }
+  setInterval(showSettingsTab, 1000);
+})();
+</script>      
       
 </body>
 
