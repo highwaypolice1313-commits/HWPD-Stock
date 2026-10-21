@@ -17017,6 +17017,7 @@ function wireDocAsset(ctx, host) {
       const a = state.assets.find(x => x['รหัสครุภัณฑ์'] === id);
       if (!a) { toast('ไม่พบข้อมูลครุภัณฑ์'); return; }
       if (ctx.type === 'repair' && canReportAnyMaint()) setRepairRequesterByHolder(id);
+      if (ctx.type === 'oil') setSignerOfficer('m_req', holderOfficerOf(a));
       ctx.asset = a;
       ctx.plate = a['ทะเบียนรถ'] || '';
       ctx.maintType = '';
@@ -22100,6 +22101,34 @@ function ensureOilExtraCss() {
   document.head.appendChild(s);
 }
       
+// ผู้เบิกน้ำมันเครื่องใช้ผู้ยืมปัจจุบันของรถก่อน ถ้าไม่มีการยืมอยู่ใช้ผู้ครอบครอง (เหมือนฟอร์มแจ้งซ่อม)
+// ถ้าหาในทำเนียบไม่พบ ผู้เบิกจะไม่เปลี่ยนค่าเดิม
+function holderOfficerOf(a) {
+  if (!a) return null;
+  const i = findOfficerIndexByName(holderNameForAssetId(a['รหัสครุภัณฑ์']));
+  return i === '' ? null : state.users[Number(i)];
+}
+function setSignerOfficer(prefix, u) {
+  const g = id => document.getElementById(prefix + id);
+  if (!u || !g('Name')) return;
+  const rank = u['ยศ'] || '', nm = u['ชื่อ-สกุล'] || '';
+  const next = (rank + ' ' + nm).trim();
+  const prev = ((g('Rank').value || '') + ' ' + (g('Name').value || '')).trim();
+  if (prev !== next) {                                  // เปลี่ยนคน = ลายเซ็นเดิมใช้ไม่ได้
+    g('Sig').value = '';
+    g('SigIcon').innerHTML = ICONS.edit;
+    g('SigTitle').textContent = 'ลายเซ็น (ไม่บังคับ)';
+  }
+  g('Rank').value = rank;
+  g('Name').value = nm;
+  g('Position').value = u['ตำแหน่ง'] || '';
+  g('Title').textContent = next;
+  g('Sub').textContent = u['ตำแหน่ง'] || 'ไม่ระบุตำแหน่ง';
+  g('Icon').innerHTML = u['รูปถ่าย']
+    ? '<img src="' + u['รูปถ่าย'] + '" style="width:100%;height:100%;object-fit:cover;border-radius:13px;">'
+    : ICONS.user;
+}
+
 function openOilMemoForm(opts) {
   opts = opts || {};
   ensureAssetFormCss();
@@ -22248,6 +22277,7 @@ function openOilMemoForm(opts) {
     const mi = document.getElementById('oil_mile');
     const info = latestOilInfo(id);
     if (!mi.value && info.mile) mi.value = info.mile;
+    setSignerOfficer('oil_req', holderOfficerOf(a));
     refreshOilPreview();
   }
   document.getElementById('oil_assetTrigger').onclick = () =>
