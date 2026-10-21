@@ -22508,7 +22508,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 </style>
 <script id="pressFxJs">
 (function(){
-  var SEL = 'button, a, [role="button"], .btn, .icon-btn, .tab, .fab, .chip, .sort-chip-row, .memo-sort-chip, .memo-month-chip, .list-item, .off-row, .asset-card, .memo-card, .memo-group-head, .more-item, .role-select-card, .theme-card, .sw-btn, .nav-collapse-btn, .ax-round, .ax-gcard .ax-ghead';
+  var SEL = 'button, a, [role="button"], .btn, .icon-btn, .tab, .fab, .chip, .sort-chip-row, .memo-sort-chip, .memo-month-chip, .sx-card, .list-item, .off-row, .asset-card, .memo-card, .memo-group-head, .more-item, .role-select-card, .theme-card, .sw-btn, .nav-collapse-btn, .ax-round, .ax-gcard .ax-ghead';
   var NO = 'input, textarea, select, [contenteditable="true"], .no-press';
   var timers = new WeakMap();
   function findTarget(node){
@@ -25934,6 +25934,38 @@ html[data-theme="cibnight"] #assetList .sx-tag{
   box-shadow:none !important;
 }
 html[data-theme="cibnight"] #assetList .sx-sn{ color:#e6eef8 !important; opacity:1 !important; }
+</style>
+
+<style id="ipad-landscape-nav-and-shop-press-fix">
+/* (1) การ์ดครุภัณฑ์แบบชอปปิ้ง: ให้มีอนิเมชั่นตอนกดเหมือนปุ่มอื่นบนมือถือ/iPad
+   กฎ touch ก่อนหน้าบังคับ transform:none ทำให้ :active ไม่ทำงาน จึงต้องยกระดับความจำเพาะ */
+#view-assets .sx-card:active,
+#view-assets .sx-card.press-on{
+  transform:scale(.97) !important;
+  filter:brightness(.96) !important;
+  box-shadow:inset 0 2px 5px rgba(0,0,0,.14) !important;
+  transition:transform .08s ease-out, filter .08s ease-out, box-shadow .08s ease-out !important;
+}
+
+/* (2) iPad แนวนอน (กว้าง ≥900px + จอสัมผัส): คืนแถบเมนูด้านข้างให้แสดงเต็มความสูง
+   กฎ touch ก่อนหน้าบังคับให้แถบเป็นแถบล่าง และซ่อนการ์ดผู้ใช้ จึงแก้ทับเฉพาะช่วงนี้ */
+@media (min-width:900px) and (hover:none) and (pointer:coarse){
+  body .tabbar{
+    left:16px !important; right:auto !important;
+    top:16px !important; bottom:16px !important;
+    width:236px !important; height:calc(100vh - 32px) !important; max-height:none !important;
+    overflow-x:hidden !important; overflow-y:auto !important;
+    touch-action:pan-y !important;
+  }
+  body .tabbar .tab, body .tabbar .tab-more{ touch-action:manipulation !important; }
+  body #navUserCard, body .nav-user-card{
+    display:flex !important; visibility:visible !important;
+    width:auto !important; height:auto !important;
+    max-width:none !important; max-height:none !important; min-height:62px !important;
+    margin-top:auto !important; margin-left:0 !important; margin-right:0 !important; margin-bottom:0 !important;
+    padding:10px 10px 8px !important; overflow:visible !important;
+  }
+}
 </style>
 
 </body>
