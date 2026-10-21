@@ -25981,6 +25981,13 @@ html[data-theme="cibnight"] #assetList .sx-sn{ color:#e6eef8 !important; opacity
   body .topbar #topCapsule > button.cap-avatar{ display:grid !important; }
   body .topbar #topCapsule .cap-sep{ display:block !important; }
 }
+/* (4) iPad แนวนอน: แถบเมนูแคบ (ย่อ) ให้ปุ่มย่อ/ขยายกับเมนูแรกห่างกัน และเว้นระยะระหว่างเมนูมากขึ้น */
+@media (min-width:900px) and (hover:none) and (pointer:coarse){
+  body .tabbar{ gap:6px !important; }
+  body .tabbar > .tab-pill + .tab,
+  body.nav-collapsed .tabbar > .tab-pill + .tab{ margin-top:72px !important; }
+  body .nav-collapse-btn{ top:14px !important; }
+}
 </style>
 
 </body>
