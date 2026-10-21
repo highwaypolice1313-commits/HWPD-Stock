@@ -25331,15 +25331,25 @@ window.exportAllBackup = async function(){
   }
 
   function host(){
-    var h = document.getElementById('mineSettingsPanel');
-    if (h) return h;
     var view = document.getElementById('view-settings');
     if (!view || !canMine()) return null;
-    h = document.createElement('div');
-    h.id = 'mineSettingsPanel';
-    view.insertBefore(h, view.firstChild);
+
+    var h = document.getElementById('mineSettingsPanel');
+    // ✅ ถ้าอยู่ในแท็บย่อยของหน้าตั้งค่าเต็มแล้ว ให้ใช้ที่เดิม
+    if (h && h.closest('.settings-panel')) return h;
+
+    var title = view.querySelector('.section-title');   // <-- หัวข้อ "ตั้งค่า"
+    if (!h) {
+      h = document.createElement('div');
+      h.id = 'mineSettingsPanel';
+    }
+    // ✅ วางการ์ดต่อจากหัวข้อ "ตั้งค่า" เสมอ
+    if (h.parentNode !== view || (title && h.previousElementSibling !== title)) {
+      view.insertBefore(h, title ? title.nextSibling : view.firstChild);
+    }
     return h;
   }
+      
   function syncChip(){
     var chip = document.querySelector('#settingsTabRow [data-stab="mine"]');
     if (chip) chip.style.display = canMine() ? '' : 'none';
