@@ -311,7 +311,7 @@ async function sGetAll() {
 
 async function sGetUsers() {
   const { data, error } = await sb.from('v_users')
-    .select('id,line_user_id,name,position,unit,role,rank,memo_role,photo,username,created_at,signature');
+    .select('id,line_user_id,name,position,unit,role,rank,memo_role,photo,username,created_at,signature,badge_no,birth_date,auth_user_id');
   if (error) throw new Error(error.message);
   return data.map(u => { const t = userToThai(u); t['มีรหัสผ่านแล้ว'] = false; return t; });
 }
