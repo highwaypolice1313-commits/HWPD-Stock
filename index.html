@@ -26026,6 +26026,16 @@ html[data-theme="cibnight"] #assetList .sx-sn{ color:#e6eef8 !important; opacity
   }
   body .topbar{ position:sticky !important; }
 }
+/* (8) iPad แนวนอน: แถบบนขยายเต็มความกว้างจอ (ลากใต้เมนูด้านข้าง) ให้ #topCapsule อยู่ในแถบบนเสมอ
+   ระยะซ้ายเว้นตามความกว้างเมนูจริง: กาง 210px (900–1199) / 236px (1200+), ย่อ 114px */
+@media (min-width:900px) and (hover:none) and (pointer:coarse){
+  body .topbar{ margin-left:0 !important; width:100% !important; max-width:100% !important; padding-left:234px !important; }
+  body.nav-collapsed .topbar{ padding-left:138px !important; }
+}
+@media (min-width:1200px) and (hover:none) and (pointer:coarse){
+  body .topbar{ padding-left:260px !important; }
+  body.nav-collapsed .topbar{ padding-left:138px !important; }
+}
 </style>
 
 </body>
