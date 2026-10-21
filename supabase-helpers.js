@@ -264,6 +264,20 @@ async function fetchAll(table, columns = '*', orderCol) {
   return out;
 }
 
+// แนบ "อายุ(ปี)" ให้ทุกสิทธิ์ผ่านฟังก์ชัน officer_ages (ไม่มีวันเกิดในข้อมูลที่ส่งให้เจ้าหน้าที่)
+async function attachOfficerAges(users, authIds) {
+  let ages = {};
+  try {
+    const { data } = await sb.rpc('officer_ages');
+    (data || []).forEach(r => { ages[r.auth_user_id] = r.age_years; });
+  } catch (e) {}
+  users.forEach((u, i) => {
+    const aid = authIds[i];
+    if (aid && ages[aid] != null) u['อายุ(ปี)'] = ages[aid];
+  });
+  return users;
+}
+
 async function sGetAll() {
   // อ่านจาก view ทั้งหมด (view จะกรองรายการที่อยู่ในถังขยะออกให้แล้ว)
   const [assetsD, borrowD, maintD, componentsD, usersD] = await Promise.all([
@@ -278,7 +292,7 @@ async function sGetAll() {
   const borrow = borrowD.filter(r => !r.deleted_at).map(borrowToThai);
   const maint = maintD.map(maintToThai);
   const components = componentsD.map(componentToThai);
-  const users = usersD.map(userToThai);
+  const users = await attachOfficerAges(usersD.map(userToThai), usersD.map(r => r.auth_user_id));
   markOverdue(borrow);
 
   // ✅ แสดงสถานะ "กำลังยืม" ตามรายการยืมที่ค้างอยู่เสมอ แม้ตารางครุภัณฑ์จะไม่ตรงกัน
@@ -311,9 +325,10 @@ async function sGetAll() {
 
 async function sGetUsers() {
   const { data, error } = await sb.from('v_users')
-    .select('id,line_user_id,name,position,unit,role,rank,memo_role,photo,username,created_at,signature,badge_no,birth_date,auth_user_id');
+    .select('id,line_user_id,name,position,unit,role,rank,memo_role,photo,username,created_at,signature,badge_no,auth_user_id');
   if (error) throw new Error(error.message);
-  return data.map(u => { const t = userToThai(u); t['มีรหัสผ่านแล้ว'] = false; return t; });
+  const list = data.map(u => { const t = userToThai(u); t['มีรหัสผ่านแล้ว'] = false; return t; });
+  return attachOfficerAges(list, data.map(r => r.auth_user_id));
 }
 async function sGetMemos() {
   const { data, error } = await sb.from('v_memos').select('*').order('created_at', { ascending: false });
