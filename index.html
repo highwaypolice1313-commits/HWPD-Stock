@@ -9394,6 +9394,7 @@ function renderTab(name) {
 
 function renderTabNow(name) {
 if (!isAdmin() && window.__perms !== undefined && window.canOpenTab && !window.canOpenTab(name)) name = 'dashboard';   // ✅ ทุกหน้าต้องมีสิทธิ์ (รู้สิทธิ์แล้วเท่านั้น กันเด้งตอนโหลด)
+  if (name === 'settings' && state.tab !== 'settings') state.settingsTab = 'mine';   // เข้าหน้าตั้งค่าครั้งแรกเปิดแท็บ "ฉัน"
   state.tab = name;
   saveUi({ tab: name, scrollY: renderTabNow._restore ? (loadUi().scrollY || 0) : 0 });
   window.__countStat = true;   // [เพิ่ม] เพิ่งเปิดหน้าจากเมนู -> อนุญาตให้ stat-num นับขึ้น
@@ -20046,7 +20047,7 @@ function renderSettings() {
   if (!state.settingsTab) state.settingsTab = 'general';
 
   const TABS = [
-    { id: 'mine', label: 'ของฉัน' },
+    { id: 'mine', label: 'ฉัน' },
     { id: 'general',   label: 'ทั่วไป' },
     { id: 'committee', label: 'คณะกรรมการตรวจสอบ' },
     { id: 'units',     label: 'หมวดหมู่ & หน่วยนับ' },
@@ -25511,7 +25512,6 @@ syncChip();
     memos:'เอกสารใบเบิก', reports:'รายงาน', audit:'ตรวจนับประจำปี', monthly:'ตรวจประจำเดือน', settings:'ตั้งค่า'
   };
   var MENU_ORDER = ['assets','borrow','users','maint','memos','reports','audit','monthly','settings'];
-  var SEARCH_ICON = '<svg viewBox="0 0 20 20" fill="none"><circle cx="8.7" cy="8.7" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M12.5 12.5L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
   var CHEV = '<svg viewBox="0 0 20 20" fill="none"><path d="M8 5l5 5-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
   function esc(s){ return escapeHtml(String(s == null ? '' : s)); }
@@ -25557,10 +25557,6 @@ syncChip();
           '<span class="dbx-tile-ico">' + icon(k) + '</span><span>' + esc(MENU_LABEL[k]) + '</span></button>';
       }).join('') +
       '</div></div></div>';
-  }
-  function searchBox(){
-    return '<label class="hs-search">' + SEARCH_ICON +
-      '<input id="hsQ" type="search" placeholder="ค้นหาครุภัณฑ์ รหัส หรือชื่อ จนท." autocomplete="off"></label>';
   }
   function kpi(label, value, tone, sub){
     return '<div class="hs-kpi ' + tone + '"><div class="hs-kpi-top"><span class="hs-dot"></span><span class="hs-kpi-l">' + esc(label) + '</span></div>' +
@@ -25684,15 +25680,6 @@ syncChip();
       if (g) { go(g.getAttribute('data-go')); return; }
       var a = e.target.closest('[data-aid]');
       if (a && typeof openAssetDetail === 'function') openAssetDetail(a.getAttribute('data-aid'));
-    });
-    el.addEventListener('keydown', function(e){
-      if (e.target.id !== 'hsQ' || e.key !== 'Enter') return;
-      var q = e.target.value.trim();
-      go('assets');
-      setTimeout(function(){
-        var s = document.querySelector('#view-assets input[type="search"], #view-assets input[placeholder*="ค้นหา"]');
-        if (s && q) { s.value = q; s.dispatchEvent(new Event('input', { bubbles:true })); }
-      }, 300);
     });
   }
 
