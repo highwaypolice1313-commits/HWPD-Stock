@@ -24244,6 +24244,21 @@ window.exportAllBackup = async function(){
           'กำหนดคืน ' + escapeHtml(systemDate(b['กำหนดคืน']))) + '</small></div></div>';
     }).join('') : '<div class="ad-empty">ยังไม่มีประวัติการยืม</div>';
 
+    var mhist = (state.maint || [])
+      .filter(function(m){ return m['รหัสครุภัณฑ์'] === id; })
+      .sort(function(x, y){ return String(y['วันที่แจ้ง'] || '').localeCompare(String(x['วันที่แจ้ง'] || '')); })
+      .slice(0, 20);
+    var mIco = typeof dbxTabIcon === 'function' ? dbxTabIcon('maint') : '';
+    var maintHtml = mhist.length ? mhist.map(function(m){
+      var done = m['สถานะ'] === 'ซ่อมเสร็จ';
+      var cost = Number(m['ค่าใช้จ่าย(บาท)']) || 0;
+      return '<div><i>' + mIco + '</i><div><b>' + escapeHtml(m['อาการ/ปัญหา'] || '-') + '</b>' +
+        '<small>' + escapeHtml(systemDate(m['วันที่แจ้ง'])) + ' · ' + escapeHtml(m['ผู้แจ้ง'] || '-') +
+        (done && m['วันที่ซ่อมเสร็จ'] ? ' · เสร็จ ' + escapeHtml(systemDate(m['วันที่ซ่อมเสร็จ'])) : '') +
+        (cost ? ' · ' + cost.toLocaleString('en-US') + ' บาท' : '') +
+        ' · ' + escapeHtml(m['สถานะ'] || '-') + '</small></div></div>';
+    }).join('') : '<div class="ad-empty">ยังไม่มีประวัติการซ่อม</div>';
+
     showSheet(
       '<div class="sheet-title">รายละเอียดครุภัณฑ์</div>' +
       '<div class="ad-wrap">' +
@@ -24253,9 +24268,11 @@ window.exportAllBackup = async function(){
         '<div><div class="ad-title">' + escapeHtml(a['ชื่อครุภัณฑ์'] || '-') + '</div>' +
           '<div class="ad-sub">' + escapeHtml(a['หมวดหมู่'] || '-') + ' · ' + escapeHtml(id) + '</div></div>' +
         '<div class="ad-tabs"><button class="on" type="button" data-t="0">รายละเอียด</button>' +
-          '<button type="button" data-t="1">ประวัติการยืม</button></div>' +
+          '<button type="button" data-t="1">ประวัติการยืม</button>' +
+          '<button type="button" data-t="2">ประวัติการซ่อม</button></div>' +
         '<div data-p="0"><div class="ad-spec">' + specs.join('') + '</div></div>' +
         '<div data-p="1" hidden><div class="ad-log">' + logHtml + '</div></div>' +
+        '<div data-p="2" hidden><div class="ad-log">' + maintHtml + '</div></div>' +
         '<button class="ad-go" type="button" data-borrow="1"' + (ok ? '' : ' disabled') + '>' +
           (ok ? 'ยืมรายการนี้' : 'ไม่ว่าง') + '</button>' +
       '</div>',
