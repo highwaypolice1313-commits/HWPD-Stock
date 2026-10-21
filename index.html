@@ -25567,6 +25567,22 @@ syncChip();
       '<div class="hs-kpi-v">' + value + '</div><div class="hs-kpi-s">' + esc(sub) + '</div></div>';
   }
 
+  function holdSection(hold){
+    var cards = hold.length ? '<div class="hs-scroll">' + hold.map(function(b){
+      var a = assetOf(b['รหัสครุภัณฑ์']);
+      var img = a && /^https?:/.test(a['รูปภาพ(URL)'] || '') ? '<img src="' + esc(a['รูปภาพ(URL)']) + '" alt="">' : icon('assets');
+      var st = effectiveBorrowStatus(b);
+      var cls = st === 'เกินกำหนด' ? 'bad' : (st === 'กำลังยืม' ? 'warn' : 'ok');
+      return '<button type="button" class="hs-card" data-aid="' + esc(b['รหัสครุภัณฑ์']) + '">' +
+        '<div class="hs-img">' + img + '</div>' +
+        '<div class="hs-card-t">' + esc(b['ชื่อครุภัณฑ์']) + '</div>' +
+        '<div class="hs-card-s">' + esc(b['รหัสครุภัณฑ์']) + ' · กำหนดคืน ' + esc(systemDate(b['กำหนดคืน'])) + '</div>' +
+        '<span class="hs-pill ' + cls + '">' + esc(st) + '</span></button>';
+    }).join('') + '</div>' : '<div class="hs-empty">ไม่มีครุภัณฑ์ที่ถืออยู่</div>';
+
+    return '<div class="hs-sec"><h2>ครุภัณฑ์ที่ฉันถืออยู่</h2><span class="hs-count">' + hold.length + '</span></div>' + cards;
+  }
+
   /* ---------------- เจ้าหน้าที่ ---------------- */
   function buildOfficer(monthList){
     var me = typeof myOfficerRow === 'function' ? myOfficerRow() : null;
@@ -25587,18 +25603,6 @@ syncChip();
       : (hold.length ? ('ถืออยู่ ' + hold.length + ' รายการ · ไม่มีรายการเกินกำหนด') : 'ยังไม่มีครุภัณฑ์ที่ถืออยู่');
     var pct = rec && rec['ผล'] === 'ครบ' ? 100 : (rec ? 50 : 0);
 
-    var cards = hold.length ? '<div class="hs-scroll">' + hold.map(function(b){
-      var a = assetOf(b['รหัสครุภัณฑ์']);
-      var img = a && /^https?:/.test(a['รูปภาพ(URL)'] || '') ? '<img src="' + esc(a['รูปภาพ(URL)']) + '" alt="">' : icon('assets');
-      var st = effectiveBorrowStatus(b);
-      var cls = st === 'เกินกำหนด' ? 'bad' : (st === 'กำลังยืม' ? 'warn' : 'ok');
-      return '<button type="button" class="hs-card" data-aid="' + esc(b['รหัสครุภัณฑ์']) + '">' +
-        '<div class="hs-img">' + img + '</div>' +
-        '<div class="hs-card-t">' + esc(b['ชื่อครุภัณฑ์']) + '</div>' +
-        '<div class="hs-card-s">' + esc(b['รหัสครุภัณฑ์']) + ' · กำหนดคืน ' + esc(systemDate(b['กำหนดคืน'])) + '</div>' +
-        '<span class="hs-pill ' + cls + '">' + esc(st) + '</span></button>';
-    }).join('') + '</div>' : '<div class="hs-empty">ไม่มีครุภัณฑ์ที่ถืออยู่</div>';
-
     var maintRows = openMaint.slice(0, 5).map(function(m){
       return '<div class="hs-li"><div class="hs-li-ic warn">' + icon('maint') + '</div><div class="hs-li-tx">' +
         '<div class="hs-li-tt">' + esc(m['ชื่อครุภัณฑ์']) + '</div>' +
@@ -25618,8 +25622,7 @@ syncChip();
         kpi('งานซ่อมที่แจ้ง', myMaint.length, openMaint.length ? 'warn' : 'ok', 'ยังไม่เสร็จ ' + openMaint.length + ' รายการ') +
         kpi('ตรวจประจำเดือน', rec ? esc(rec['ผล']) : 'ยังไม่ตรวจ', tone.cls, tone.txt) +
       '</div>' +
-      '<div class="hs-sec"><h2>ครุภัณฑ์ที่ฉันถืออยู่</h2><span class="hs-count">' + hold.length + '</span></div>' +
-      cards +
+      holdSection(hold) +
       (openMaint.length ? '<div class="hs-sec"><h2>งานซ่อมที่ฉันแจ้ง</h2><span class="hs-count">' + openMaint.length + '</span></div><div class="hs-list">' + maintRows + '</div>' : '') +
     '</div>';
   }
@@ -25654,6 +25657,7 @@ syncChip();
         kpi('มีปัญหา', bad, bad ? 'bad' : '', bad ? 'ต้องติดตามผล' : 'ไม่พบปัญหา') +
         kpi('ความคืบหน้า', pct + '%', 'info', monthLabel()) +
       '</div>' +
+      (function(){ var me = typeof myOfficerRow === 'function' ? myOfficerRow() : null; return me ? holdSection(holdingsOf(me)) : ''; })() +
       '<div class="hs-sec"><h2>ยังไม่ได้ตรวจเดือนนี้</h2><span class="hs-count">' + pending.length + '</span></div>' +
       '<div class="hs-list">' + (pendRows || '<div class="hs-empty" style="margin:12px 0">ตรวจครบทุกคนแล้ว</div>') + '</div>' +
       (pending.length > 8 ? '<div class="hs-more">และอีก ' + (pending.length - 8) + ' คน</div>' : '') +
