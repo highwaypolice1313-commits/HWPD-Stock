@@ -25493,6 +25493,12 @@ syncChip();
   @media (min-width:900px){
     #view-dashboard .hs-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}
   }
+
+  #view-dashboard .hs-menu{display:grid;gap:10px;margin:0}
+  #view-dashboard .hs-menu .dbx-sec{margin:0 2px}
+  #view-dashboard .hs-menu .dbx-menu-wrap{margin:0 !important}
+  #view-dashboard .hs-menu .dbx-menu{margin:0 !important;padding:2px 0 6px !important;width:100%;gap:10px}
+  #view-dashboard .hs-menu .dbx-menu .dbx-tile{flex:1 0 92px;width:auto !important;min-width:92px !important;max-width:none !important}
 </style>
 
 <script id="home-staff-v2-js">
@@ -25544,13 +25550,13 @@ syncChip();
   function menuHtml(){
     var keys = MENU_ORDER.filter(can);
     if (!keys.length) return '';
-    return '<div class="dbx-sec">เมนูลัด</div>' +
+    return '<div class="hs-menu"><div class="dbx-sec">เมนูลัด</div>' +
       '<div class="dbx-menu-wrap"><div class="dbx-menu is-open" id="hsMenu">' +
       keys.map(function(k){
         return '<button class="dbx-tile" data-go="' + k + '" type="button">' +
           '<span class="dbx-tile-ico">' + icon(k) + '</span><span>' + esc(MENU_LABEL[k]) + '</span></button>';
       }).join('') +
-      '</div></div>';
+      '</div></div></div>';
   }
   function searchBox(){
     return '<label class="hs-search">' + SEARCH_ICON +
