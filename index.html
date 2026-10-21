@@ -25045,6 +25045,16 @@ window.exportAllBackup = async function(){
 })();
 </script>
 
+<style>
+  /* ✅ ป้าย "ซ่อมเสร็จ" สีเขียวเข้ม อ่านง่าย */
+  .status-badge.status-done { background:#16a34a; color:#fff; }
+  /* ✅ ขั้นสุดท้ายของ timeline (เสร็จ) เป็นสีเขียวแทนสีเหลือง */
+  .stg-s:last-child .stg-d.now {
+    background:#16a34a; border-color:#16a34a;
+    box-shadow:0 0 0 3px rgba(22,163,74,.25);
+  }
+</style>
+
 </body>
 <script id="maint-live-v1">
 (function(){
@@ -25173,5 +25183,10 @@ function paintReporterAvatar(){
     ? '<img class="li-avatar" src="' + escapeHtml(photo) + '" alt="" loading="lazy" decoding="async">'
     : ICONS.user;
 }
+
+// ✅ ป้ายสถานะ "ซ่อมเสร็จ" ใช้สีเขียวเข้ม
+var _statusClassBase = statusClass;
+statusClass = function(s){ return s === 'ซ่อมเสร็จ' ? 'status-done' : _statusClassBase(s); };
+      
 </script>
 </html>
