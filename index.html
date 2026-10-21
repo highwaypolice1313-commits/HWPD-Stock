@@ -26027,7 +26027,18 @@ html[data-theme="cibnight"] #assetList .sx-sn{ color:#e6eef8 !important; opacity
   }
   body .topbar{ position:sticky !important; }
 }
-
+/* (10) เจอสาเหตุจริงแล้ว: บล็อก CSS เดิมของระบบที่ใช้กับ "ทุกอุปกรณ์จอสัมผัส" (ไม่ว่าจอกว้างเท่าไร)
+   มีกฎ .topbar{ width:100% !important; } โดยไม่ล้าง margin-left ที่มาจากกฎเดสก์ท็อป (900–1199px = 242px, 1200px+ = 268px)
+   เมื่อเมนูไม่ได้ถูกย่อ แถบบนจึงกว้างเกินจอไปเท่ากับความกว้างเมนู ดัน #topCapsule หลุดออกไปนอกขอบขวาที่มองไม่เห็น
+   (ตอนย่อเมนูไม่เป็นไร เพราะมีกฎ body.nav-collapsed .topbar ที่ตั้ง width ให้ตรงอยู่แล้วและมีลำดับความสำคัญสูงกว่า)
+   แก้โดยตั้ง width ให้ตรงกับ margin-left ของแต่ละช่วงจอ เฉพาะตอนเมนูไม่ได้ถูกย่อ */
+@media (min-width:900px) and (max-width:1199px) and (hover:none) and (pointer:coarse){
+  body .topbar{ width:calc(100% - 242px) !important; margin-left:242px !important; }
+}
+@media (min-width:1200px) and (hover:none) and (pointer:coarse){
+  body .topbar{ width:calc(100% - 268px) !important; margin-left:268px !important; }
+}
+</style>
 
 </body>
 
