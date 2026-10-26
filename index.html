@@ -15784,8 +15784,7 @@ function buildMemoBodyHtml(m) {
       <div id="ed_apvposition">${escapeHtml(toThaiNumber(apv.position)) || '&nbsp;'}</div>
       <div id="ed_apvdate">${escapeHtml(apv.date) || '&nbsp;'}</div>
     </div>
-    <p class="pf-body pf-receipt">${m.receiptText ? '- ' + m.receiptText : '- ได้รับ<span id="ed_items2">' + itemsText + '</span>'} เพื่อใช้ในการปฏิบัติหน้าที่ราชการต่อไป</p>
-   <div class="pf-sign">
+    <p class="pf-body pf-receipt">${m.receiptText ? '- ' + m.receiptText : '- ได้รับ<span id="ed_items2">' + itemsText + '</span>'}${m.receiptSuffix || ' เพื่อใช้ในการปฏิบัติหน้าที่ราชการต่อไป'}</p>   <div class="pf-sign">
 <div class="pf-sign-rank" id="ed_reqrank2"><span class="pf-rank">${escapeHtml(req.rank) || '&nbsp;'}</span>${sigImg(req.sig)}</div>     <div>( <span id="ed_reqname2">${escapeHtml(req.name) || '.....................................'}</span> )</div>     <div id="ed_reqposition3">${escapeHtml(toThaiNumber(req.position)) || '&nbsp;'}<span class="pf-role-tag">/ผู้เบิก</span></div>
      <div id="ed_reqdate2">${escapeHtml(req.date) || '&nbsp;'}</div>
    </div>
@@ -16624,6 +16623,7 @@ function collectMemoFormData() {
     verb: dp.verb,
     approveNote: dp.approveNote,
     receiptText: dp.receiptText,
+    receiptSuffix: dp.receiptSuffix,
     dueDateText: document.getElementById('m_duedate') ? thaiDateAbbr(val('m_duedate')) : '',
     requester: { 
       rank: val('m_reqRank'), 
@@ -16800,9 +16800,30 @@ function docSubject(ctx, name) {
   return 'ขอซ่อมบำรุง' + n;
 }
 
+// ข้อความ "ได้รับ" สำหรับเอกสารเบิก/ยืมของครุภัณฑ์ทุกหมวด พร้อมส่วนควบและวันที่เริ่มใช้งาน
+function joinThaiList(list) {
+  return list.length === 1 ? list[0] : list.slice(0, -1).join(', ') + ' และ ' + list[list.length - 1];
+}
+function receiptForItems(items) {
+  if (!items || !items.length) return null;
+  const phrases = items.map(it => {
+    const comps = it.id ? componentsOf(it.id) : [];
+    const compPhrases = comps.map(c =>
+      escapeHtml(compDisplayName(c)) + ' จำนวน ' + toThaiNumber(compQty(c)) + ' ชิ้น');
+    const compText = compPhrases.length ? ' พร้อม' + joinThaiList(compPhrases) : '';
+    return itemPhraseList([it]) + compText;
+  });
+  const dEl = document.getElementById('m_recvdate');
+  const recvDate = thaiDateAbbr((dEl && dEl.value) || val('m_reqDate') || '');
+  return {
+    receiptText: 'ได้รับ' + joinThaiList(phrases),
+    receiptSuffix: ' ไว้ใช้ในการปฏิบัติหน้าที่ราชการไว้เรียบร้อยแล้ว ทั้งนี้ ตั้งแต่เมื่อวันที่ ' + recvDate + ' เป็นต้นไป'
+  };
+}      
 // เนื้อความของเอกสารตามประเภท: กริยา รายการ และหมายเหตุท้ายเอกสาร
 function docPhrase(domItems, ctx) {
-  const generic = { items: domItems, itemsText: itemPhraseList(domItems), verb: undefined, approveNote: undefined };
+  const rc = receiptForItems(domItems);
+  const generic = { items: domItems, itemsText: itemPhraseList(domItems), verb: undefined, approveNote: undefined, ...(rc || {}) };
   if (!ctx || (ctx.create && ctx.type === 'general')) return generic;
   const isOil = ctx.type === 'oil' || (!ctx.create && repairTypeOf(ctx.issue) === 'ถ่ายน้ำมันเครื่อง');
   const isRepair = ctx.type === 'repair' || ctx.kind === 'repair';
@@ -17219,6 +17240,7 @@ function openPrintMemoForm(opts) {
               <button type="button" class="mf-add" id="btnAddItem">+ เพิ่มรายการพัสดุ</button>
             </div>
             ${dueDateText ? `<div class="field"><label>กำหนดส่งคืนภายในวันที่</label><input class="input" type="date" id="m_duedate" value="${dueDateIso}"></div>` : ''}
+          <div class="field"><label>วันที่เริ่มใช้งาน (ได้รับ)</label><input class="input" type="date" id="m_recvdate"></div>
           </div>
           <div class="mf-section">
             <div class="mf-section-title"><span class="mf-step">3</span> ผู้ขอเบิก/ยืม</div>
