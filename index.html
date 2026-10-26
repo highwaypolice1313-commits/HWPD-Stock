@@ -598,6 +598,8 @@ html:not(.has-thsarabun) .pf-title{ font-size:26pt; line-height:30pt; }
 .pf-receipt + .pf-sign{ margin-top:10pt; }
 .pf-sign + .pf-sign{ margin-top:12pt; }
 
+.pf-role-tag{ white-space:nowrap; color:#000; }
+
 .pf-doc[contenteditable="true"]{ cursor:text; }
 .pf-doc[contenteditable="true"] span:hover, .pf-doc[contenteditable="true"] div:hover{ background:rgba(187,138,63,.16); border-radius:3px; }
 .pf-doc[contenteditable="true"]:focus{ outline:none; }
@@ -3982,12 +3984,6 @@ html, body{
 /* ตำแหน่ง/ชื่อ/วันที่ ห้ามตัดขึ้นบรรทัดใหม่ */
 .pf-sign > div:not(.pf-sign-rank){
   white-space:nowrap !important;
-}
-
-.pf-sign-rank{ position:relative; }
-.pf-role-tag{
-  position:absolute; right:-2.2cm; top:50%; transform:translateY(-50%);
-  font-size:12pt; white-space:nowrap; color:#000;
 }
 
 /* ลายเซ็นอยู่ฝั่งขวา */
@@ -15777,7 +15773,7 @@ function buildMemoBodyHtml(m) {
     <p class="pf-body">ด้วยข้าฯ <span id="ed_reqfull">${escapeHtml(((req.rank||'') + ' ' + (req.name||'')).trim())}</span> <span id="ed_reqposition">${escapeHtml(req.position||'')}</span> มีความประสงค์${escapeHtml(m.verb || 'ขอเบิก')}<span id="ed_items">${itemsText}</span> เพื่อใช้ในการปฏิบัติหน้าที่ราชการ</p>
     <p class="pf-body">จึงเรียนมาเพื่อโปรดพิจารณา</p>
     <div class="pf-sign">
-<div class="pf-sign-rank" id="ed_reqrank"><span class="pf-rank">${escapeHtml(req.rank) || '&nbsp;'}</span>${sigImg(req.sig)}<span class="pf-role-tag">/ผู้เบิก</span></div>      <div>( <span id="ed_reqname">${escapeHtml(req.name) || '.....................................'}</span> )</div>
+<div class="pf-sign-rank" id="ed_reqrank"><span class="pf-rank">${escapeHtml(req.rank) || '&nbsp;'}</span>${sigImg(req.sig)}</div>      <div>( <span id="ed_reqname">${escapeHtml(req.name) || '.....................................'}</span> )</div>
       <div id="ed_reqposition2">${escapeHtml(req.position) || '&nbsp;'}</div>
       <div id="ed_reqdate">${escapeHtml(req.date) || '&nbsp;'}</div>
     </div>
@@ -15790,13 +15786,13 @@ function buildMemoBodyHtml(m) {
     </div>
     <p class="pf-body pf-receipt">${m.receiptText ? '- ' + m.receiptText : '- ได้รับ<span id="ed_items2">' + itemsText + '</span>'} เพื่อใช้ในการปฏิบัติหน้าที่ราชการต่อไป</p>
    <div class="pf-sign">
-<div class="pf-sign-rank" id="ed_reqrank2"><span class="pf-rank">${escapeHtml(req.rank) || '&nbsp;'}</span>${sigImg(req.sig)}<span class="pf-role-tag">/ผู้เบิก</span></div>     <div>( <span id="ed_reqname2">${escapeHtml(req.name) || '.....................................'}</span> )</div>
-     <div id="ed_reqposition3">${escapeHtml(toThaiNumber(req.position)) || '&nbsp;'}</div>
+<div class="pf-sign-rank" id="ed_reqrank2"><span class="pf-rank">${escapeHtml(req.rank) || '&nbsp;'}</span>${sigImg(req.sig)}></div>     <div>( <span id="ed_reqname2">${escapeHtml(req.name) || '.....................................'}</span> )</div>
+     <div id="ed_reqposition3">${escapeHtml(toThaiNumber(req.position)) || '&nbsp;'}<span class="pf-role-tag">/ผู้เบิก</span></div>
      <div id="ed_reqdate2">${escapeHtml(req.date) || '&nbsp;'}</div>
    </div>
     <div class="pf-sign">
-<div class="pf-sign-rank" id="ed_issrank"><span class="pf-rank">${escapeHtml(iss.rank) || '&nbsp;'}</span>${sigImg(iss.sig)}<span class="pf-role-tag">/ผู้จ่าย</span></div>      <div>( <span id="ed_issname">${escapeHtml(iss.name) || '.....................................'}</span> )</div>
-      <div id="ed_issposition">${escapeHtml(toThaiNumber(iss.position)) || '&nbsp;'}</div>
+<div class="pf-sign-rank" id="ed_issrank"><span class="pf-rank">${escapeHtml(iss.rank) || '&nbsp;'}</span>${sigImg(iss.sig)}</div>      <div>( <span id="ed_issname">${escapeHtml(iss.name) || '.....................................'}</span> )</div>
+      <div id="ed_issposition">${escapeHtml(toThaiNumber(iss.position)) || '&nbsp;'}<span class="pf-role-tag">/ผู้จ่าย</span></div>
       <div id="ed_issdate">${escapeHtml(iss.date) || '&nbsp;'}</div>
     </div>
     ${m.dueDateText ? `<div class="pf-field-line" style="margin-top:8pt;"><span class="pf-label">กำหนดส่งคืนภายในวันที่</span><span id="ed_duedate">${escapeHtml(toThaiNumber(m.dueDateText))}</span></div>` : ''}
