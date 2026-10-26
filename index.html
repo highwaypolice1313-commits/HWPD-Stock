@@ -16816,7 +16816,7 @@ function receiptForItems(items) {
       groups[n] = (groups[n] || 0) + compQty(c);
     });
     const compPhrases = Object.keys(groups).map(n =>
-      escapeHtml(n) + ' จำนวน ' + toThaiNumber(groups[n]) + ' ชิ้น');
+      '<span style="white-space:nowrap">' + escapeHtml(n) + ' จำนวน ' + toThaiNumber(groups[n]) + ' ชิ้น</span>');
     const compText = compPhrases.length ? ' พร้อม' + joinThaiList(compPhrases) : '';
     return itemPhraseList([it]) + compText;
   });
@@ -16826,7 +16826,7 @@ function receiptForItems(items) {
     receiptText: 'ได้รับ' + joinThaiList(phrases),
     receiptSuffix: ' ไว้ใช้ในการปฏิบัติหน้าที่ราชการไว้เรียบร้อยแล้ว ทั้งนี้ ตั้งแต่เมื่อวันที่ ' + recvDate + ' เป็นต้นไป'
   };
-}    
+}
 // เนื้อความของเอกสารตามประเภท: กริยา รายการ และหมายเหตุท้ายเอกสาร
 function docPhrase(domItems, ctx) {
   const rc = receiptForItems(domItems);
