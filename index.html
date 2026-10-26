@@ -3984,6 +3984,12 @@ html, body{
   white-space:nowrap !important;
 }
 
+.pf-sign-rank{ position:relative; }
+.pf-role-tag{
+  position:absolute; right:-2.2cm; top:50%; transform:translateY(-50%);
+  font-size:12pt; white-space:nowrap; color:#000;
+}
+
 /* ลายเซ็นอยู่ฝั่งขวา */
 .pf-doc .pf-sigimg{
   position:static;
@@ -15771,8 +15777,7 @@ function buildMemoBodyHtml(m) {
     <p class="pf-body">ด้วยข้าฯ <span id="ed_reqfull">${escapeHtml(((req.rank||'') + ' ' + (req.name||'')).trim())}</span> <span id="ed_reqposition">${escapeHtml(req.position||'')}</span> มีความประสงค์${escapeHtml(m.verb || 'ขอเบิก')}<span id="ed_items">${itemsText}</span> เพื่อใช้ในการปฏิบัติหน้าที่ราชการ</p>
     <p class="pf-body">จึงเรียนมาเพื่อโปรดพิจารณา</p>
     <div class="pf-sign">
-      <div class="pf-sign-rank" id="ed_reqrank"><span class="pf-rank">${escapeHtml(req.rank) || '&nbsp;'}</span>${sigImg(req.sig)}</div>
-      <div>( <span id="ed_reqname">${escapeHtml(req.name) || '.....................................'}</span> )</div>
+<div class="pf-sign-rank" id="ed_reqrank"><span class="pf-rank">${escapeHtml(req.rank) || '&nbsp;'}</span>${sigImg(req.sig)}<span class="pf-role-tag">/ผู้เบิก</span></div>      <div>( <span id="ed_reqname">${escapeHtml(req.name) || '.....................................'}</span> )</div>
       <div id="ed_reqposition2">${escapeHtml(req.position) || '&nbsp;'}</div>
       <div id="ed_reqdate">${escapeHtml(req.date) || '&nbsp;'}</div>
     </div>
@@ -15785,14 +15790,12 @@ function buildMemoBodyHtml(m) {
     </div>
     <p class="pf-body pf-receipt">${m.receiptText ? '- ' + m.receiptText : '- ได้รับ<span id="ed_items2">' + itemsText + '</span>'} เพื่อใช้ในการปฏิบัติหน้าที่ราชการต่อไป</p>
    <div class="pf-sign">
-     <div class="pf-sign-rank" id="ed_reqrank2"><span class="pf-rank">${escapeHtml(req.rank) || '&nbsp;'}</span>${sigImg(req.sig)}</div>
-     <div>( <span id="ed_reqname2">${escapeHtml(req.name) || '.....................................'}</span> )</div>
+<div class="pf-sign-rank" id="ed_reqrank2"><span class="pf-rank">${escapeHtml(req.rank) || '&nbsp;'}</span>${sigImg(req.sig)}<span class="pf-role-tag">/ผู้เบิก</span></div>     <div>( <span id="ed_reqname2">${escapeHtml(req.name) || '.....................................'}</span> )</div>
      <div id="ed_reqposition3">${escapeHtml(toThaiNumber(req.position)) || '&nbsp;'}</div>
      <div id="ed_reqdate2">${escapeHtml(req.date) || '&nbsp;'}</div>
    </div>
     <div class="pf-sign">
-      <div class="pf-sign-rank" id="ed_issrank"><span class="pf-rank">${escapeHtml(iss.rank) || '&nbsp;'}</span>${sigImg(iss.sig)}</div>
-      <div>( <span id="ed_issname">${escapeHtml(iss.name) || '.....................................'}</span> )</div>
+<div class="pf-sign-rank" id="ed_issrank"><span class="pf-rank">${escapeHtml(iss.rank) || '&nbsp;'}</span>${sigImg(iss.sig)}<span class="pf-role-tag">/ผู้จ่าย</span></div>      <div>( <span id="ed_issname">${escapeHtml(iss.name) || '.....................................'}</span> )</div>
       <div id="ed_issposition">${escapeHtml(toThaiNumber(iss.position)) || '&nbsp;'}</div>
       <div id="ed_issdate">${escapeHtml(iss.date) || '&nbsp;'}</div>
     </div>
@@ -16911,7 +16914,7 @@ function docAssetHtml(ctx) {
     </div>
     ${chips ? `<div class="field"><label>ประเภทงานซ่อม</label><div class="chip-row" id="da_mtRow" style="flex-wrap:wrap; overflow:visible;">${chips}</div></div>` : ''}
     ${!isOil && mt === 'เปลี่ยนยาง' ? `<div class="field"><label>ขนาดยาง</label><input class="input" id="m_tire" placeholder="เช่น 265/65R17" value="${escapeHtml(tireVal)}"></div>` : ''}
-    ${isOil ? `${oilSpecField(d.spec || '')}
+      ${isOil ? `${oilSpecField(d.spec || defaultOilKind(a))}
       <div class="memo-two-col">
         <div class="field"><label>จำนวน (ลิตร)</label><input class="input" type="number" min="0" step="any" id="m_oilqty" value="${escapeHtml(d.qty != null ? d.qty : defaultOilQty(a))}"></div>
         <div class="field"><label>เลขไมล์ปัจจุบัน</label><input class="input" id="m_oilmile" inputmode="numeric" value="${escapeHtml(d.mile || '')}"></div>
@@ -22275,6 +22278,15 @@ function openOilMemoForm(opts) {
     document.getElementById('oil_radio').value = oilRadioOf(a['ชื่อครุภัณฑ์']);
     const q = document.getElementById('oil_qty');
     if (!q.value) q.value = defaultOilQty(a);
+        const sp = document.getElementById('oil_spec');
+if (sp && !sp.value) {
+  const k = defaultOilKind(a);
+  if (k) {
+    sp.value = k;
+    document.querySelectorAll('#oil_specChips .om-chip')
+      .forEach(x => x.classList.toggle('on', x.dataset.spec === k));
+  }
+}
     const mi = document.getElementById('oil_mile');
     const info = latestOilInfo(id);
     if (!mi.value && info.mile) mi.value = info.mile;
@@ -22310,12 +22322,20 @@ refreshMemoLivePreview = function () {
 /* ตัวเลือกประเภทเอกสาร เมื่อกดปุ่ม + ในหน้าเอกสารใบเบิก */
 
         /* ---------- ค่าน้ำมันเครื่องตามประเภทรถ (แก้ได้ในฟอร์ม) ---------- */
+      
 function defaultOilQty(a) {
   const n = String((a && a['ชื่อครุภัณฑ์']) || '');
   if (n.indexOf('กระบะ') !== -1) return '7';
   if (n.indexOf('วิทยุ') !== -1) return '5';
   return '';
 }
+function defaultOilKind(a) {
+  const n = String((a && a['ชื่อครุภัณฑ์']) || '');
+  if (n.indexOf('กระบะ') !== -1) return 'ดีเซล';
+  if (n.indexOf('วิทยุ') !== -1) return 'เบนซิล';
+  return '';
+}
+      
 function oilRadioOf(name) {
   return ((String(name || '').match(/\d+/g)) || []).pop() || '';
 }
@@ -22340,24 +22360,40 @@ document.addEventListener('click', e => {
   const chip = e.target.closest && e.target.closest('[data-vtype="ถ่ายน้ำมันเครื่อง"]');
   if (!chip) return;
   setTimeout(() => {
+    const sp = document.getElementById('oil_spec') || document.getElementById('f_oilSpec');
+if (sp && !sp.value) {
+  const k = defaultOilKind(a);
+  if (k) sp.value = k;
+}    
     const q = document.getElementById('f_oilQty');
     const a = state.assets.find(x => x['รหัสครุภัณฑ์'] === val('f_asset'));
     if (q && !q.value && a) q.value = defaultOilQty(a);
+        if (a) {
+  const sp = document.getElementById('oil_spec');
+  if (sp && !sp.value) {
+    const k = defaultOilKind(a);
+    if (k) {
+      sp.value = k;
+      document.querySelectorAll('#oil_specChips .om-chip')
+        .forEach(x => x.classList.toggle('on', x.dataset.spec === k));
+    }
+  }
+}
   }, 0);
 }, true);
 
-const OIL_SPECS = ['5W-30', '5W-40', '10W-30', '10W-40', '15W-40', '20W-50', 'SAE 40'];
+const OIL_SPECS = ['เบนซิล', 'ดีเซล', 'กึ่งสังเคราะห์', 'สังเคราะห์แท้'];
 
 function oilSpecField(cur) {
   const isPreset = OIL_SPECS.includes(cur);
   const isCustom = !!cur && !isPreset;
-  return `<div class="field"><label>ชนิด/เบอร์น้ำมันเครื่อง</label>
+  return `<div class="field"><label>ชนิดน้ำมันเครื่อง</label>
     <div class="om-chips oil-spec-grid" id="oil_specChips">
       ${OIL_SPECS.map(s => `<button type="button" class="om-chip oil-spec-chip ${cur === s ? 'on' : ''}" data-spec="${escapeHtml(s)}">${escapeHtml(s)}</button>`).join('')}
       <button type="button" class="om-chip oil-spec-chip oil-spec-custom ${isCustom ? 'on' : ''}" data-spec="__custom">กำหนดเอง</button>
     </div>
     <input type="hidden" id="oil_spec" value="${escapeHtml(cur || '')}">
-    <input class="input" id="oil_spec_custom" placeholder="พิมพ์เบอร์น้ำมัน" style="margin-top:8px;display:${isCustom ? 'block' : 'none'}" value="${escapeHtml(isCustom ? cur : '')}">
+    <input class="input" id="oil_spec_custom" placeholder="พิมพ์ชนิดน้ำมัน" style="margin-top:8px;display:${isCustom ? 'block' : 'none'}" value="${escapeHtml(isCustom ? cur : '')}">
   </div>`;
 }
 
