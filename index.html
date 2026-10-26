@@ -15786,8 +15786,7 @@ function buildMemoBodyHtml(m) {
     </div>
     <p class="pf-body pf-receipt">${m.receiptText ? '- ' + m.receiptText : '- ได้รับ<span id="ed_items2">' + itemsText + '</span>'} เพื่อใช้ในการปฏิบัติหน้าที่ราชการต่อไป</p>
    <div class="pf-sign">
-<div class="pf-sign-rank" id="ed_reqrank2"><span class="pf-rank">${escapeHtml(req.rank) || '&nbsp;'}</span>${sigImg(req.sig)}></div>     <div>( <span id="ed_reqname2">${escapeHtml(req.name) || '.....................................'}</span> )</div>
-     <div id="ed_reqposition3">${escapeHtml(toThaiNumber(req.position)) || '&nbsp;'}<span class="pf-role-tag">/ผู้เบิก</span></div>
+<div class="pf-sign-rank" id="ed_reqrank2"><span class="pf-rank">${escapeHtml(req.rank) || '&nbsp;'}</span>${sigImg(req.sig)}</div>     <div>( <span id="ed_reqname2">${escapeHtml(req.name) || '.....................................'}</span> )</div>     <div id="ed_reqposition3">${escapeHtml(toThaiNumber(req.position)) || '&nbsp;'}<span class="pf-role-tag">/ผู้เบิก</span></div>
      <div id="ed_reqdate2">${escapeHtml(req.date) || '&nbsp;'}</div>
    </div>
     <div class="pf-sign">
