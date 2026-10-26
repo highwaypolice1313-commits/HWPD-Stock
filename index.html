@@ -16595,9 +16595,11 @@ function collectMemoFormData() {
   const serials = document.querySelectorAll('.memo-item-serial');
   const qtys = document.querySelectorAll('.memo-item-qty');
   const units = document.querySelectorAll('.memo-item-unit');
+  const ids = document.querySelectorAll('.memo-item-id');
   
   const items = Array.from(names).map((el, i) => ({
-    name: el.value.trim(), 
+    id: ids[i] ? ids[i].value.trim() : '',
+    name: el.value.trim(),
     brand: brands[i] ? brands[i].value.trim() : '', 
     serial: serials[i] ? toThaiNumber(serials[i].value.trim()) : '', 
     qty: toThaiNumber((qtys[i] && qtys[i].value) || 1),
@@ -16808,8 +16810,13 @@ function receiptForItems(items) {
   if (!items || !items.length) return null;
   const phrases = items.map(it => {
     const comps = it.id ? componentsOf(it.id) : [];
-    const compPhrases = comps.map(c =>
-      escapeHtml(compDisplayName(c)) + ' จำนวน ' + toThaiNumber(compQty(c)) + ' ชิ้น');
+    const groups = {};
+    comps.forEach(c => {
+      const n = compDisplayName(c);
+      groups[n] = (groups[n] || 0) + compQty(c);
+    });
+    const compPhrases = Object.keys(groups).map(n =>
+      escapeHtml(n) + ' จำนวน ' + toThaiNumber(groups[n]) + ' ชิ้น');
     const compText = compPhrases.length ? ' พร้อม' + joinThaiList(compPhrases) : '';
     return itemPhraseList([it]) + compText;
   });
@@ -16819,7 +16826,7 @@ function receiptForItems(items) {
     receiptText: 'ได้รับ' + joinThaiList(phrases),
     receiptSuffix: ' ไว้ใช้ในการปฏิบัติหน้าที่ราชการไว้เรียบร้อยแล้ว ทั้งนี้ ตั้งแต่เมื่อวันที่ ' + recvDate + ' เป็นต้นไป'
   };
-}      
+}    
 // เนื้อความของเอกสารตามประเภท: กริยา รายการ และหมายเหตุท้ายเอกสาร
 function docPhrase(domItems, ctx) {
   const rc = receiptForItems(domItems);
